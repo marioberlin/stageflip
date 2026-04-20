@@ -22,6 +22,8 @@
     "test": "turbo run test",
     "e2e": "playwright test",
     "e2e:install": "playwright install --with-deps chromium",
+    "check-licenses": "tsx scripts/check-licenses.ts",
+    "check-remotion-imports": "tsx scripts/check-remotion-imports.ts",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "turbo run build && changeset publish"
