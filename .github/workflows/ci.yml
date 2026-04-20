@@ -68,6 +68,9 @@ jobs:
       - name: Gate - skill drift
         run: pnpm check-skill-drift
 
+      - name: Gate - skills-sync (auto-gen freshness)
+        run: pnpm skills-sync:check
+
       - name: Gate - determinism (scoped to clip/runtime code)
         run: pnpm check-determinism
 
