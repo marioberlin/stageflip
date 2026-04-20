@@ -20,6 +20,8 @@
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
     "test": "turbo run test",
+    "e2e": "playwright test",
+    "e2e:install": "playwright install --with-deps chromium",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "turbo run build && changeset publish"
