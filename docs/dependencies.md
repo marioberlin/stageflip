@@ -2,7 +2,7 @@
 
 This document is the **source of truth** for dependency versions. Every value below is picked deliberately; bumps require a dedicated PR with ADR.
 
-**Status**: Pending Phase 0 / T-001a audit. Values below are **minimum floors** until the audit runs.
+**Status**: Phase 0 / T-001a audit complete on 2026-04-20. Locked versions recorded in §3 and §4.
 
 ---
 
@@ -41,97 +41,119 @@ These are floors — actual locked versions determined by audit. Bumping the flo
 
 | Package | Floor | Locked | Notes |
 |---|---|---|---|
-| Node | 20 LTS | _pending_ | Target current active LTS; bump to 22 / 24 as they become active |
-| pnpm | 9.x | _pending_ | — |
+| Node | 20 LTS | **22.17.1** | ADR-001 D2 pins Node 22 LTS; bump to 24 when deps support |
+| pnpm | 9.x | **9.15.0** | Provisioned via Corepack; pinned in root `packageManager` field |
 
 ### Core tooling
 
 | Package | Floor | Locked | Notes |
 |---|---|---|---|
-| typescript | 5.6 | _pending_ | No TS 6 without ADR |
-| biome | 1.9 | _pending_ | — |
-| turbo | 2.x | _pending_ | — |
-| vitest | 2.x | _pending_ | — |
-| @vitest/coverage-v8 | matches vitest | _pending_ | — |
-| @playwright/test | 1.49 | _pending_ | — |
-| @changesets/cli | 2.x | _pending_ | — |
-| tsup | 8.x | _pending_ | — |
-| size-limit + preset-big-lib | 11.x | _pending_ | — |
-| license-checker | 25.x | _pending_ | — |
+| typescript | 5.6 | **5.6.3** | TS 6.0.3 available but blocked — requires ADR per this doc |
+| @biomejs/biome | 1.9 | **1.9.4** | Biome 2.x available but blocked — biome.json schema pinned to 1.9.4 |
+| turbo | 2.x | **2.9.6** | Installed at T-001; audited here |
+| vitest | 2.x | **2.1.9** | Vitest 4.x available but blocked — major bump requires ADR |
+| @vitest/coverage-v8 | matches vitest | **2.1.9** | — |
+| @playwright/test | 1.49 | **1.59.1** | — |
+| @changesets/cli | 2.x | **2.31.0** | — |
+| tsup | 8.x | **8.5.1** | — |
+| size-limit | 11.x | **11.2.0** | 12.x available but blocked — major bump requires ADR |
+| @size-limit/preset-big-lib | 11.x | **11.2.0** | matches size-limit |
+| license-checker | 25.x | **25.0.1** | — |
+| tsx | — | **4.21.0** | TypeScript runner for `scripts/` gates (T-010, T-014) |
 
 ### Schema + runtime libraries
 
 | Package | Floor | Locked | Notes |
 |---|---|---|---|
-| zod | 3.23 | _pending_ | Zod 4 requires ADR (breaking changes) |
-| react | 19 | _pending_ | — |
-| react-dom | 19 | _pending_ | — |
-| next | 15 | _pending_ | — |
-| jotai | 2.x | _pending_ | — |
-| hono | 4.x | _pending_ | — |
-| tailwindcss | 4.x | _pending_ | v4 has different config; migration documented in skill |
-| @fontsource/* | latest | _pending_ | Version independently; keep in sync |
+| zod | 3.23 | **3.25.76** | Zod 4.3.6 available but blocked per floor note — requires ADR |
+| react | 19 | **19.2.5** | — |
+| react-dom | 19 | **19.2.5** | — |
+| next | 15 | **15.5.15** | Next 16 available but blocked — requires ADR |
+| jotai | 2.x | **2.19.1** | — |
+| hono | 4.x | **4.12.14** | — |
+| tailwindcss | 4.x | **4.2.2** | v4 has different config; migration documented in skill |
+| @fontsource/* | latest | _per-package_ | Versioned independently; pin at package install time |
 
 ### Media / rendering
 
 | Package | Floor | Locked | Notes |
 |---|---|---|---|
-| sharp | 0.33 | _pending_ | — |
-| ssim.js | latest | _pending_ | For T-100 parity harness |
-| puppeteer | 23.x | _pending_ | Coordinated with vendored Hyperframes engine version |
-| fluent-ffmpeg | latest | _pending_ | System FFmpeg required; `doctor` validates |
-| culori | latest | _pending_ | For interpolateColors (T-042) |
-| flubber | latest | _pending_ | For interpolatePath (T-052) |
-| gsap | 3.x | _pending_ | Business Green license procured; track GreenSock terms |
-| lottie-web | latest | _pending_ | — |
-| three | latest | _pending_ | — |
+| sharp | 0.33 | **0.34.5** | 0.x stable line — minor bumps on 0.34 accepted |
+| ssim.js | latest | **3.5.0** | For T-100 parity harness |
+| puppeteer | 23.x | **23.11.1** | Puppeteer 24 available but blocked — coordinated with vendored Hyperframes engine version (Phase 4) |
+| fluent-ffmpeg | latest | **2.1.3** | System FFmpeg required; `doctor` validates |
+| culori | latest | **4.0.2** | For interpolateColors (T-042) |
+| flubber | latest | **0.4.2** | For interpolatePath (T-052) |
+| gsap | 3.x | **3.15.0** | Business Green license procured; track GreenSock terms |
+| lottie-web | latest | **5.13.0** | — |
+| three | latest | **0.184.0** | — |
 
 ### Infrastructure
 
 | Package | Floor | Locked | Notes |
 |---|---|---|---|
-| firebase-admin | 13.x | _pending_ | — |
-| firebase | 11.x | _pending_ | Client SDK |
-| @modelcontextprotocol/sdk | latest | _pending_ | Track closely; ecosystem evolving |
-| @anthropic-ai/sdk | latest | _pending_ | Primary LLM provider |
-| @google/generative-ai | latest | _pending_ | Gemini fallback |
-| openai | latest | _pending_ | Second fallback |
-| bullmq | latest | _pending_ | Queue |
-| @upstash/redis | latest | _pending_ | Queue backing |
+| firebase-admin | 13.x | **13.8.0** | — |
+| firebase | 11.x | **11.10.0** | Firebase 12 available but blocked — major bump requires ADR |
+| @modelcontextprotocol/sdk | latest | **1.29.0** | Track closely; ecosystem evolving |
+| @anthropic-ai/sdk | latest | **0.90.0** | Primary LLM provider |
+| @google/generative-ai | latest | **0.24.1** | Gemini fallback |
+| openai | latest | **6.34.0** | Second fallback |
+| bullmq | latest | **5.75.2** | Queue |
+| @upstash/redis | latest | **1.37.0** | Queue backing |
 
 ### Utilities
 
 | Package | Floor | Locked | Notes |
 |---|---|---|---|
-| nanoid | latest | _pending_ | IDs |
-| fast-json-patch | latest | _pending_ | Undo/redo |
-| fast-check | latest | _pending_ | Property-based tests |
-| jszip | latest | _pending_ | PPTX + HTML5 ZIP |
-| jspdf | latest | _pending_ | Vector PDF |
-| gray-matter | latest | _pending_ | Skill frontmatter |
-| remark | latest | _pending_ | Skill link parsing |
-| ts-morph | latest | _pending_ | Skill generator AST |
+| nanoid | latest | **5.1.9** | IDs |
+| fast-json-patch | latest | **3.1.1** | Undo/redo |
+| fast-check | latest | **4.7.0** | Property-based tests |
+| jszip | latest | **3.10.1** | PPTX + HTML5 ZIP |
+| jspdf | latest | **4.2.1** | Vector PDF |
+| gray-matter | latest | **4.0.3** | Skill frontmatter |
+| remark | latest | **15.0.1** | Skill link parsing |
+| ts-morph | latest | **28.0.0** | Skill generator AST |
 
 ### Import pipelines
 
 | Package | Floor | Locked | Notes |
 |---|---|---|---|
-| linkedom | latest | _pending_ | Server-side DOM |
-| xml2js or fast-xml-parser | latest | _pending_ | PPTX parsing |
-| googleapis | latest | _pending_ | Google Slides import |
+| linkedom | latest | **0.18.12** | Server-side DOM |
+| fast-xml-parser | latest | **5.7.1** | Chosen over xml2js (faster, maintained) |
+| googleapis | latest | **171.4.0** | Google Slides import |
 
 ---
 
 ## 4. Audit History
 
-### Audit 0 — Pending (T-001a)
+### Audit 0 — 2026-04-20 (T-001a)
 
-Date: _pending_
-Node: _pending_
-Rationale: _pending_
-ADR: ADR-001
+- **Date**: 2026-04-20
+- **Node**: 22.17.1 (local), floor `>=22.0.0` encoded in root `package.json` `engines`
+- **pnpm**: 9.15.0 via Corepack
+- **ADR**: ADR-001
+- **Method**: `npm view <pkg> version` for each entry in §3; when `latest` exceeds the floor major, re-query with the floor-constrained range.
 
-Concrete versions will populate this table after T-001a runs.
+**Majors blocked (would require follow-up ADR to bump)**:
+- typescript 6.0.3 → pinned 5.6.3 (floor prohibits TS 6 without ADR)
+- @biomejs/biome 2.4.12 → pinned 1.9.4 (biome.json v1.9 schema)
+- vitest 4.1.4 → pinned 2.1.9
+- @vitest/coverage-v8 4.1.4 → pinned 2.1.9
+- zod 4.3.6 → pinned 3.25.76 (floor prohibits Zod 4 without ADR)
+- next 16.2.4 → pinned 15.5.15
+- firebase 12.12.0 → pinned 11.10.0
+- puppeteer 24.42.0 → pinned 23.11.1 (coordinated with vendored Hyperframes engine, Phase 4)
+- size-limit 12.1.0 → pinned 11.2.0
+
+**Installed at root** (tooling shared across workspace):
+typescript, @biomejs/biome, turbo, vitest, @vitest/coverage-v8, @playwright/test, @changesets/cli, tsup, size-limit, @size-limit/preset-big-lib, license-checker, tsx.
+
+**Recorded but not installed**: runtime/library deps (react, zod, sharp, etc.) are pinned in §3 but installed into individual packages when those packages receive their proper scaffold (T-011 onward).
+
+**Follow-ups**:
+- Engineering-lead signoff box on ADR-001 Ratification Signoff can now be checked.
+- Blocked majors should be re-evaluated at the next quarterly audit (2026-07-20).
+- `@fontsource/*` and other per-package deps are versioned when their host package is scaffolded.
 
 ---
 
