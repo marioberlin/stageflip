@@ -72,3 +72,15 @@ export {
   type SeriesProps,
   type SeriesSequenceProps,
 } from './series.js';
+
+export {
+  Composition,
+  __clearCompositionRegistry,
+  getComposition,
+  listCompositions,
+  registerComposition,
+  renderFrame,
+  unregisterComposition,
+  type CompositionDefinition,
+  type CompositionProps,
+} from './composition.js';
