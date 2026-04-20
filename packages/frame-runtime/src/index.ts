@@ -15,3 +15,40 @@ export {
   type FrameProviderProps,
   type VideoConfig,
 } from './frame-context.js';
+
+export {
+  EASINGS,
+  NAMED_EASINGS,
+  cubicBezier,
+  linear,
+  ease,
+  easeIn,
+  easeOut,
+  easeInOut,
+  quadIn,
+  quadOut,
+  quadInOut,
+  cubicIn,
+  cubicOut,
+  cubicInOut,
+  quartIn,
+  quartOut,
+  quartInOut,
+  quintIn,
+  quintOut,
+  quintInOut,
+  expoIn,
+  expoOut,
+  expoInOut,
+  circIn,
+  circOut,
+  circInOut,
+  backIn,
+  backOut,
+  type EasingFn,
+  type NamedEasing,
+} from './easings.js';
+
+export { interpolate, type ExtrapolationMode, type InterpolateOptions } from './interpolate.js';
+
+export { spring, type SpringConfig } from './spring.js';
