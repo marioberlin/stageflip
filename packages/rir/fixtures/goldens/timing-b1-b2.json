@@ -1,0 +1,120 @@
+{
+  "diagnostics": [],
+  "rir": {
+    "durationFrames": 60,
+    "elements": [
+      {
+        "animations": [
+          {
+            "animation": {
+              "easing": "ease-out",
+              "from": 0,
+              "kind": "fade",
+              "to": 1
+            },
+            "autoplay": true,
+            "id": "fade-in",
+            "timing": {
+              "durationFrames": 15,
+              "endFrame": 15,
+              "startFrame": 0
+            }
+          }
+        ],
+        "content": {
+          "align": "left",
+          "color": "#000000",
+          "fontFamily": "system-ui",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "lineHeight": 1.4,
+          "text": "fade",
+          "type": "text"
+        },
+        "id": "fader",
+        "locked": false,
+        "stacking": "auto",
+        "timing": {
+          "durationFrames": 60,
+          "endFrame": 60,
+          "startFrame": 0
+        },
+        "transform": {
+          "height": 30,
+          "opacity": 1,
+          "rotation": 0,
+          "width": 100,
+          "x": 0,
+          "y": 0
+        },
+        "type": "text",
+        "visible": true,
+        "zIndex": 0
+      },
+      {
+        "animations": [
+          {
+            "animation": {
+              "direction": "left",
+              "distance": 200,
+              "easing": "ease-out",
+              "kind": "slide"
+            },
+            "autoplay": true,
+            "id": "slide-in",
+            "timing": {
+              "durationFrames": 30,
+              "endFrame": 50,
+              "startFrame": 20
+            }
+          }
+        ],
+        "content": {
+          "align": "left",
+          "color": "#000000",
+          "fontFamily": "system-ui",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "lineHeight": 1.4,
+          "text": "slide",
+          "type": "text"
+        },
+        "id": "slider",
+        "locked": false,
+        "stacking": "auto",
+        "timing": {
+          "durationFrames": 60,
+          "endFrame": 60,
+          "startFrame": 0
+        },
+        "transform": {
+          "height": 30,
+          "opacity": 1,
+          "rotation": 0,
+          "width": 100,
+          "x": 0,
+          "y": 50
+        },
+        "type": "text",
+        "visible": true,
+        "zIndex": 10
+      }
+    ],
+    "fontRequirements": [],
+    "frameRate": 30,
+    "height": 1080,
+    "id": "doc_b1_b2",
+    "meta": {
+      "compilerVersion": "golden-v1",
+      "digest": "d7df5d91",
+      "sourceDocId": "doc_b1_b2",
+      "sourceVersion": 0
+    },
+    "mode": "slide",
+    "stackingMap": {
+      "fader": "auto",
+      "slider": "auto"
+    },
+    "width": 1920
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "meta": {
+    "id": "doc_min_video",
+    "version": 0,
+    "createdAt": "2026-04-20T00:00:00.000Z",
+    "updatedAt": "2026-04-20T00:00:00.000Z"
+  },
+  "theme": { "tokens": {} },
+  "variables": {},
+  "components": {},
+  "content": {
+    "mode": "video",
+    "aspectRatio": "16:9",
+    "durationMs": 10000,
+    "frameRate": 30,
+    "tracks": [
+      {
+        "id": "t1",
+        "kind": "visual",
+        "elements": [
+          {
+            "id": "hero",
+            "type": "text",
+            "transform": { "x": 100, "y": 50, "width": 300, "height": 80 },
+            "text": "15s ad"
+          }
+        ]
+      }
+    ]
+  }
+}

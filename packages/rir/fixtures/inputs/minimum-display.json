@@ -1,0 +1,25 @@
+{
+  "meta": {
+    "id": "doc_min_display",
+    "version": 0,
+    "createdAt": "2026-04-20T00:00:00.000Z",
+    "updatedAt": "2026-04-20T00:00:00.000Z"
+  },
+  "theme": { "tokens": {} },
+  "variables": {},
+  "components": {},
+  "content": {
+    "mode": "display",
+    "sizes": [{ "id": "mpu", "width": 300, "height": 250 }],
+    "durationMs": 15000,
+    "budget": { "totalZipKb": 150 },
+    "elements": [
+      {
+        "id": "cta",
+        "type": "text",
+        "transform": { "x": 20, "y": 200, "width": 260, "height": 30 },
+        "text": "Shop Now"
+      }
+    ]
+  }
+}

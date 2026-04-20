@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "id": "doc_theme_vars",
+    "version": 1,
+    "createdAt": "2026-04-20T00:00:00.000Z",
+    "updatedAt": "2026-04-20T00:00:00.000Z"
+  },
+  "theme": {
+    "tokens": {
+      "color.primary": "#2b5fda",
+      "color.accent": "#ff8800"
+    }
+  },
+  "variables": {
+    "company": "StageFlip",
+    "year": 2026
+  },
+  "components": {},
+  "content": {
+    "mode": "slide",
+    "slides": [
+      {
+        "id": "s1",
+        "elements": [
+          {
+            "id": "title",
+            "type": "text",
+            "transform": { "x": 0, "y": 0, "width": 600, "height": 60 },
+            "text": "{{company}} — {{year}}",
+            "color": "theme:color.primary"
+          },
+          {
+            "id": "accent",
+            "type": "shape",
+            "transform": { "x": 0, "y": 70, "width": 200, "height": 4 },
+            "shape": "rect",
+            "fill": "theme:color.accent"
+          }
+        ]
+      }
+    ]
+  }
+}

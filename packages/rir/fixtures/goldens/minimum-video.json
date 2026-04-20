@@ -1,0 +1,55 @@
+{
+  "diagnostics": [],
+  "rir": {
+    "durationFrames": 300,
+    "elements": [
+      {
+        "animations": [],
+        "content": {
+          "align": "left",
+          "color": "#000000",
+          "fontFamily": "system-ui",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "lineHeight": 1.4,
+          "text": "15s ad",
+          "type": "text"
+        },
+        "id": "hero",
+        "locked": false,
+        "stacking": "auto",
+        "timing": {
+          "durationFrames": 300,
+          "endFrame": 300,
+          "startFrame": 0
+        },
+        "transform": {
+          "height": 80,
+          "opacity": 1,
+          "rotation": 0,
+          "width": 300,
+          "x": 100,
+          "y": 50
+        },
+        "type": "text",
+        "visible": true,
+        "zIndex": 0
+      }
+    ],
+    "fontRequirements": [],
+    "frameRate": 30,
+    "height": 1080,
+    "id": "doc_min_video",
+    "meta": {
+      "compilerVersion": "golden-v1",
+      "digest": "c0d81853",
+      "sourceDocId": "doc_min_video",
+      "sourceVersion": 0
+    },
+    "mode": "video",
+    "stackingMap": {
+      "hero": "auto"
+    },
+    "width": 1920
+  }
+}

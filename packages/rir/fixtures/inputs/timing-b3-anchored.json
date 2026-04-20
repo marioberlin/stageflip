@@ -1,0 +1,47 @@
+{
+  "meta": {
+    "id": "doc_b3",
+    "version": 0,
+    "createdAt": "2026-04-20T00:00:00.000Z",
+    "updatedAt": "2026-04-20T00:00:00.000Z"
+  },
+  "theme": { "tokens": {} },
+  "variables": {},
+  "components": {},
+  "content": {
+    "mode": "slide",
+    "slides": [
+      {
+        "id": "s1",
+        "durationMs": 3000,
+        "elements": [
+          {
+            "id": "anchor",
+            "type": "text",
+            "transform": { "x": 0, "y": 0, "width": 200, "height": 40 },
+            "text": "Anchor"
+          },
+          {
+            "id": "follower",
+            "type": "text",
+            "transform": { "x": 0, "y": 50, "width": 200, "height": 40 },
+            "text": "Follows anchor",
+            "animations": [
+              {
+                "id": "after-anchor",
+                "timing": {
+                  "kind": "anchored",
+                  "anchor": "anchor",
+                  "anchorEdge": "end",
+                  "offsetFrames": 5,
+                  "durationFrames": 20
+                },
+                "animation": { "kind": "fade" }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
