@@ -10,19 +10,19 @@ Five surfaces backed by one core: **web editors**, **CLI**, **Claude plugin**, *
 
 ## Status
 
-**Phase 0 (Bootstrap) complete** — awaiting human ratification. Phase 1 (Schema + RIR + Determinism) is the next batch.
+**Phase 1 (Schema + RIR + Determinism) ratified 2026-04-20.** Phase 2 (Frame Runtime) is in progress. Firebase storage (T-035–T-039) is deferred to a dedicated infra pass; it does not block Phase 2.
 
 What works today:
 
-- 51-member pnpm + Turborepo workspace on Node 22 / TypeScript 5.6 strict
-- Every hard quality gate that can run pre-Phase-1 is wired:
-  `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`, `pnpm e2e`, `pnpm check-licenses`, `pnpm check-remotion-imports`, `pnpm check-skill-drift`
-- GitHub Actions enforces all of the above on every PR (`.github/workflows/ci.yml`); weekly `pnpm audit` + license recheck (`.github/workflows/audit.yml`)
-- 57 `SKILL.md` files (17 substantive concepts + 40 placeholders)
-- 13 per-phase PR templates
-- Changesets for publishable packages; BSL 1.1 license (converts to Apache 2.0 on 2030-05-18 per [ADR-001](docs/decisions/ADR-001-initial-stack.md))
+- **47 test tasks, 181+ passing cases** across the workspace
+- **`@stageflip/schema`** (92 tests): 11 discriminated element types, 3 content modes, animations + timing B1–B5, migration framework, property-based round-trip
+- **`@stageflip/rir`** (36 tests): 4 T-030 passes + T-031 timing-flatten/stacking + 9 golden fixtures; deterministic digest
+- **`@stageflip/storage`** (23 tests): 3-method contract + dev-grade in-memory adapter with bounded-buffer fan-out
+- **`@stageflip/determinism`** (14 tests): runtime shim intercepting 9 non-deterministic APIs + `check-determinism` source-lint gate
+- **`@stageflip/skills-core`** (14 tests) + **`@stageflip/skills-sync`**: skill tree parsing, validation, and the first auto-generated reference (schema)
+- **CI gates (all green)**: typecheck, lint, test, build, `check-licenses`, `check-remotion-imports`, `check-skill-drift`, `check-determinism`, `skills-sync:check`, Playwright smoke, weekly audit
 
-Not yet wired (owned by later tasks): `check-determinism` (T-028), size-limit budgets (T-049+), parity harness (T-100+), Vercel previews (T-017 deferred).
+Still to come: frame-runtime (Phase 2), ClipRuntime contract + live runtimes (Phase 3), CDP export (Phase 4), parity harness (Phase 5), per-mode apps (Phases 6/8/9), agent (Phase 7), MCP + plugin (Phase 10), importers (Phase 11), collab + hardening (Phase 12).
 
 ## Quickstart
 

@@ -216,6 +216,7 @@ When a task references these, treat as **API specs only**. Read docs; do not cop
 
 ## Phase 1 — Schema + RIR + Determinism Foundation (Week 4–8)
 
+**Status**: ✅ **Ratified 2026-04-20.** Core tasks T-020–T-034 merged (T-035–T-039 Firebase storage deferred; non-blocking). Exit criteria met: RIR handles all 11 element types; determinism shim intercepts rAF + timers; storage contract supports snapshot + patch + delta.
 **Goal**: Typed core. Everything downstream depends on this being rock-solid.
 **Exit criteria**: RIR handles all 11 element types; determinism shim intercepts rAF + timers; storage contract supports snapshot + patch + delta.
 
