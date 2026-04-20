@@ -153,7 +153,11 @@ importers:
 
   packages/skills-sync: {}
 
-  packages/storage: {}
+  packages/storage:
+    dependencies:
+      zod:
+        specifier: 3.25.76
+        version: 3.25.76
 
   packages/storage-firebase: {}
 
