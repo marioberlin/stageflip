@@ -102,31 +102,17 @@ export const ELEMENT_TYPES = [
 ] as const;
 export type ElementType = (typeof ELEMENT_TYPES)[number];
 
-// Re-export every per-type schema and type so callers can import from this
-// barrel without reaching into individual files.
-export {
-  audioElementSchema,
-  chartElementSchema,
-  clipElementSchema,
-  codeElementSchema,
-  elementBaseSchema,
-  embedElementSchema,
-  imageElementSchema,
-  shapeElementSchema,
-  tableElementSchema,
-  textElementSchema,
-  videoElementSchema,
-};
-export type {
-  AudioElement,
-  ChartElement,
-  ClipElement,
-  CodeElement,
-  ElementBase,
-  EmbedElement,
-  ImageElement,
-  ShapeElement,
-  TableElement,
-  TextElement,
-  VideoElement,
-};
+// Re-export everything from each per-type file so callers can import from
+// this barrel without reaching into individual files. New exports added to
+// any element file propagate automatically.
+export * from './audio.js';
+export * from './base.js';
+export * from './chart.js';
+export * from './clip.js';
+export * from './code.js';
+export * from './embed.js';
+export * from './image.js';
+export * from './shape.js';
+export * from './table.js';
+export * from './text.js';
+export * from './video.js';
