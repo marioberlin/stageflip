@@ -60,8 +60,10 @@ describe('migrate()', () => {
   });
 
   it('treats missing meta.schemaVersion as 0', () => {
-    const noVersion = { ...V0_DOC, meta: { ...V0_DOC.meta } };
-    delete (noVersion.meta as Partial<typeof noVersion.meta>).schemaVersion;
+    // Omit schemaVersion via destructure rather than `delete`.
+    const { schemaVersion: _omit, ...metaWithoutVersion } = V0_DOC.meta;
+    void _omit;
+    const noVersion = { ...V0_DOC, meta: metaWithoutVersion };
     const result = migrate(noVersion);
     expect(result.fromVersion).toBe(0);
     expect(result.applied.length).toBeGreaterThan(0);
