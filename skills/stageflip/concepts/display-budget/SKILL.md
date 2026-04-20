@@ -61,6 +61,15 @@ against the total budget.
 - Large animated SVGs — rasterize to APNG and measure.
 - Any XHR / fetch — blocked at runtime by the display export target's CSP.
 
+## Current state (Phase 1 exit)
+
+- **Shape is in the schema**: `displayBudgetSchema` in
+  `packages/schema/src/content/display.ts`. Fields + refine match the
+  T-021 [rev] spec verbatim. Validated by 16 content tests.
+- **Enforcement points** listed above are **not yet implemented** — Phase 9
+  (T-200..T-209) wires RIR-compile checks, editor preview estimator,
+  minification pipeline, and IAB/GDN validator image.
+
 ## Related
 
 - Profile: `profiles/display/SKILL.md`

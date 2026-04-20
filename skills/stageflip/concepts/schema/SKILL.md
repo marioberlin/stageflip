@@ -71,22 +71,50 @@ semantic tool call with a Zod-validated input and output. See
 ## Example — the minimum valid document
 
 ```ts
-import { Document } from '@stageflip/schema';
+import { documentSchema, type Document } from '@stageflip/schema';
 
-const doc: Document = {
-  meta: { id: 'doc_01H...', version: 1, updatedAt: '2026-04-20T00:00:00Z' },
-  theme: { tokens: { 'color.bg': '#fff', 'color.fg': '#0a0a0a' } },
+const doc: Document = documentSchema.parse({
+  meta: {
+    id: 'doc_01H',
+    version: 1,
+    createdAt: '2026-04-20T00:00:00.000Z',
+    updatedAt: '2026-04-20T00:00:00.000Z',
+  },
+  theme: { tokens: { 'color.bg': '#ffffff', 'color.fg': '#0a0a0a' } },
   variables: {},
   components: {},
   content: {
     mode: 'slide',
-    slides: [{ id: 's1', elements: [{ id: 'e1', type: 'text', text: 'Hi' }] }],
+    slides: [
+      {
+        id: 's1',
+        elements: [
+          {
+            id: 'e1',
+            type: 'text',
+            transform: { x: 0, y: 0, width: 100, height: 50 },
+            text: 'Hi',
+          },
+        ],
+      },
+    ],
   },
-};
+});
 ```
+
+## Implementation
+
+- Package: `@stageflip/schema` (T-020–T-024, T-034 auto-gen reference)
+- Element schemas: `packages/schema/src/elements/*.ts`
+- Content modes: `packages/schema/src/content/{slide,video,display}.ts`
+- Document wrapper: `packages/schema/src/document.ts`
+- Animations + timing: `packages/schema/src/{animations,timing}.ts`
+- Migrations: `packages/schema/src/migrations/` (framework; currently v0→v1 identity)
+- Tests: 92 cases covering all 11 types, animations, content modes, migrations,
+  plus property-based round-trip (T-024, via `fast-check`)
 
 ## Related
 
 - RIR compiler: `concepts/rir/SKILL.md`
 - Auto-generated schema reference: `reference/schema/SKILL.md`
-- Migration framework: T-023
+- Migration framework + versioning: T-023

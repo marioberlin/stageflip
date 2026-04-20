@@ -65,6 +65,12 @@ Flag IDs are content-hash-derived (`sha256(source + category + location +
 originalSnippet).slice(0, 12)`) so re-importing the same file produces the
 same flag set.
 
+## Current state (Phase 1 exit)
+
+Not yet implemented. Phase 11 (T-248 reporter; T-240..T-247 importers) wires
+the LossFlag type and the editor/export UX. Phase 1's schema does not yet
+carry flags on `Document` — they are produced at import time.
+
 ## Related
 
 - Reporter: T-248

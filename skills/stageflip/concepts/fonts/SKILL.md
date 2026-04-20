@@ -63,8 +63,16 @@ export const fonts: FontRequirement[] = [
 ];
 ```
 
+## Current state (Phase 1 exit)
+
+- **RIR font aggregation** is live: `compileRIR` walks text + clip elements and
+  emits a deduplicated `FontRequirement[]` (by family / weight / style / subsets).
+  See `packages/rir/src/compile/passes.ts` → `aggregateFonts`.
+- **FontManager runtime** (blocking canvas render on font readiness; CDP
+  pre-embedding) is **not yet implemented** — T-072 (Phase 3).
+
 ## Related
 
 - Runtime contract: `runtimes/contract/SKILL.md`
 - RIR font aggregation pass: `concepts/rir/SKILL.md`
-- Task: T-072 (implementation)
+- Task: T-072 (runtime implementation, pending)

@@ -89,9 +89,25 @@ Occasionally docs refer to the nested kind as `@stageflip/runtimes/contract`
 (slash form) — that is conceptual shorthand. The actual npm/workspace name
 uses a dash: `@stageflip/runtimes-contract`.
 
+## Implementation
+
+- **`@stageflip/skills-core`** (T-013): `parseSkillFile`, `loadSkillTree`,
+  `validateSkill`, `validateTree`. Zod frontmatter schema with a preprocessor
+  for the YAML-date coercion gotcha. 14 unit + integration tests.
+- **`@stageflip/skills-sync`** (T-034): generators that emit auto-generated
+  skill files. First generator is `generateSchemaSkill` for
+  `reference/schema/SKILL.md`. Pattern extends to tools (T-169), CLI (T-220),
+  clips catalog (T-227), validation rules (T-107).
+- **`scripts/check-skill-drift.ts`** (T-014): link-integrity + tier-coverage;
+  parse errors reported as drift, not crashes.
+- **`scripts/sync-skills.ts`** (T-034): orchestrator with a `--check` mode
+  that fails CI on any drift between generator output and committed files.
+- **CI**: both `pnpm check-skill-drift` and `pnpm skills-sync:check` run on
+  every PR.
+
 ## Related
 
 - `check-skill-drift`: T-014
 - `@stageflip/skills-core`: T-013 (parse/validate)
-- `@stageflip/skills-sync`: T-220 (generators)
+- `@stageflip/skills-sync`: T-034 (first generator); T-169/T-220/T-227 extend
 - CLAUDE.md §5

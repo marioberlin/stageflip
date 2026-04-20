@@ -62,6 +62,12 @@ The Executor (T-152) monitors `X-RateLimit-Remaining` and slows down when it
 falls below 20%. This prevents a single agent run from self-throttling mid-
 execution.
 
+## Current state (Phase 1 exit)
+
+Not yet implemented. Phase 12 (T-263) wires Hono middleware + `@upstash/redis`
+counters. The three-dimension model (user / org / key) and per-surface
+defaults are design contracts this skill commits to.
+
 ## Related
 
 - Auth: `concepts/auth/SKILL.md`

@@ -64,6 +64,12 @@ capped.
 See `workflows/import-*/SKILL.md` for how each importer invokes this
 pipeline.
 
+## Current state (Phase 1 exit)
+
+Not yet implemented. Phase 11 (T-249) delivers the 8-step pipeline; T-246
+adds the AI-QC convergence loop. The `Theme` shape (`themeSchema`) the
+pipeline outputs into is live in `@stageflip/schema`.
+
 ## Related
 
 - Schema theme tokens: `concepts/schema/SKILL.md`

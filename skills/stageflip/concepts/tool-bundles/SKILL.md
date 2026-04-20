@@ -79,6 +79,16 @@ bundles.
 }
 ```
 
+## Current state (Phase 1 exit)
+
+Not yet implemented. Phase 7 delivers:
+- Tool-bundle loader + meta-tools (T-151a)
+- Tool-router with Zod-validated I/O (T-154)
+- The 14 handler bundles (T-155–T-168)
+- Auto-generated `tools/*/SKILL.md` per bundle (T-169)
+
+Skills under `tools/` today are placeholders authored in T-012.
+
 ## Related
 
 - Planner: `concepts/agent-planner/SKILL.md`

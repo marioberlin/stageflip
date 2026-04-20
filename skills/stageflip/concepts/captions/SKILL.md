@@ -49,6 +49,14 @@ Caption appearance comes from the theme's caption slot (`theme.captions.*`).
 Burned-in vs. sidecar `.vtt` is an export-time choice. IAB banners don't
 support captions (budget-forbidden); see `concepts/display-budget`.
 
+## Current state (Phase 1 exit)
+
+- **Schema shape** is live: `captionTrackSchema` + `captionSegmentSchema` in
+  `packages/schema/src/content/video.ts`. `VideoContent.captions` is optional
+  and carries pre-segmented Whisper output.
+- **Pipeline** (Whisper integration, per-aspect packing) is **not yet
+  implemented** — Phase 8 (T-184, T-185).
+
 ## Related
 
 - Mode: `modes/stageflip-video/SKILL.md`

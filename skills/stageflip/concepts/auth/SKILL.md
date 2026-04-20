@@ -59,6 +59,13 @@ server-side checks.
 EU-residency orgs are assigned to a dedicated Firestore region (T-271). Cross-
 region access is blocked at the rules level; exports run in-region.
 
+## Current state (Phase 1 exit)
+
+Not yet implemented. Phase 12 (T-262 auth + tenancy; T-263 rate limits;
+T-271 EU region) delivers this concept end-to-end. Until then, the rule
+model + MCP flow described above is the design contract future code will
+satisfy.
+
 ## Related
 
 - Rate limits: `concepts/rate-limits/SKILL.md`

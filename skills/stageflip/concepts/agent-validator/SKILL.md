@@ -66,6 +66,11 @@ interface ValidationResult {
 A `fail` or `pass-with-notes` routes back to the Executor (or to the user,
 depending on severity).
 
+## Current state (Phase 1 exit)
+
+Not yet implemented. Phase 7 (T-153) delivers the Validator. Parity harness
+(the programmatic half) lands in Phase 5 (T-100).
+
 ## Related
 
 - Executor: `concepts/agent-executor/SKILL.md`
