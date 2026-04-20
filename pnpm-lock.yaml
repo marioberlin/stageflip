@@ -158,7 +158,17 @@ importers:
         specifier: 3.25.76
         version: 3.25.76
 
-  packages/skills-sync: {}
+  packages/skills-sync:
+    dependencies:
+      '@stageflip/schema':
+        specifier: workspace:^
+        version: link:../schema
+      '@stageflip/skills-core':
+        specifier: workspace:^
+        version: link:../skills-core
+      zod:
+        specifier: 3.25.76
+        version: 3.25.76
 
   packages/storage:
     dependencies:
