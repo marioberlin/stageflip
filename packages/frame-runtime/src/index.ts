@@ -58,3 +58,5 @@ export {
 } from './interpolate-colors.js';
 
 export { spring, type SpringConfig } from './spring.js';
+
+export { Sequence, type SequenceLayout, type SequenceProps } from './sequence.js';
