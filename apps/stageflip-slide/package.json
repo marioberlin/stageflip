@@ -2,5 +2,6 @@
   "name": "@stageflip/app-slide",
   "version": "0.0.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "description": "Stub. StageFlip.Slide Next.js editor app — scaffolded by Phase 6 (T-122)."
 }

@@ -60,6 +60,7 @@ These are floors — actual locked versions determined by audit. Bumping the flo
 | @size-limit/preset-big-lib | 11.x | **11.2.0** | matches size-limit |
 | license-checker | 25.x | **25.0.1** | — |
 | tsx | — | **4.21.0** | TypeScript runner for `scripts/` gates (T-010, T-014) |
+| @types/node | 22.x | **22.19.17** | Types for Node 22 API; used by `scripts/` + packages that touch `node:fs`/`node:path` (e.g. `@stageflip/skills-core`). Pinned at root. |
 
 ### Schema + runtime libraries
 
@@ -146,7 +147,7 @@ These are floors — actual locked versions determined by audit. Bumping the flo
 - size-limit 12.1.0 → pinned 11.2.0
 
 **Installed at root** (tooling shared across workspace):
-typescript, @biomejs/biome, turbo, vitest, @vitest/coverage-v8, @playwright/test, @changesets/cli, tsup, size-limit, @size-limit/preset-big-lib, license-checker, tsx.
+typescript, @biomejs/biome, turbo, vitest, @vitest/coverage-v8, @playwright/test, @changesets/cli, tsup, size-limit, @size-limit/preset-big-lib, license-checker, tsx, @types/node.
 
 **Recorded but not installed**: runtime/library deps (react, zod, sharp, etc.) are pinned in §3 but installed into individual packages when those packages receive their proper scaffold (T-011 onward).
 

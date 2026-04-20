@@ -2,5 +2,6 @@
   "name": "@stageflip/app-dev-harness",
   "version": "0.0.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "description": "Stub. Vite dev harness for frame-runtime scrub — scaffolded by Phase 2 (T-050)."
 }

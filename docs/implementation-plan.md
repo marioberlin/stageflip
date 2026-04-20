@@ -195,8 +195,8 @@ When a task references these, treat as **API specs only**. Read docs; do not cop
 |---|---|---|
 | T-001 | Initialize pnpm monorepo + Turborepo; scaffold all package dirs per architecture §12 | S |
 | **T-001a [new]** | **Version audit**: query npm for latest-stable of each dep in architecture §4; lock in `docs/dependencies.md`; install; build; commit with ADR-001 | S |
-| T-002 | TypeScript strict base config (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`) | S |
-| T-003 | Biome config (unified lint + format) | S |
+| T-002 | ~~TypeScript strict base config~~ — **covered-by-T-001** (`tsconfig.base.json` shipped with `noUncheckedIndexedAccess` + `exactOptionalPropertyTypes` in the scaffold commit) | S |
+| T-003 | ~~Biome config~~ — **covered-by-T-001** (`biome.json` shipped with format + lint rules in the scaffold commit) | S |
 | T-004 | Vitest workspace + coverage thresholds | S |
 | T-005 | Playwright setup (smoke test) | S |
 | T-006 | GitHub Actions CI with all gates from A.6 | M |
