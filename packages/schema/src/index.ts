@@ -5,5 +5,7 @@
 // content types (slide / video / display) arrive with T-021; animations + timing
 // arrive with T-022; versioning + migrations with T-023.
 
+export * from './animations.js';
 export * from './elements/index.js';
 export * from './primitives.js';
+export * from './timing.js';
