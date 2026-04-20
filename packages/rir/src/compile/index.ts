@@ -1,9 +1,12 @@
 // packages/rir/src/compile/index.ts
-// compileRIR — orchestrates the T-030 passes (theme-resolve, variable-resolve,
-// component-expand, binding-resolve, font-aggregate) into a pre-T-031 RIRDocument.
-// Timing-flatten and stacking-context are T-031's job; this compiler emits
-// identity timing (element spans the full composition) and `stacking: 'auto'`
-// for every element. A downstream call to the T-031 passes will refine both.
+// compileRIR — orchestrates every RIR compile pass into a final RIRDocument:
+//   T-030 passes: theme-resolve, variable-resolve, component-expand (stub),
+//                 binding-resolve, font-aggregate, lower-tree (zIndex, content)
+//   T-031 passes: stacking-context, timing-flatten
+//
+// The output is deterministic: identical (Document, opts) pairs yield
+// byte-identical RIRDocument values. The only wall-clock-like side-input is
+// opts.compilerVersion, which callers supply.
 
 import type { Document, Element } from '@stageflip/schema';
 import { documentSchema } from '@stageflip/schema';
@@ -16,6 +19,7 @@ import type {
   RIRElementContent,
   StackingMap,
 } from '../types.js';
+import { finalizeRIR } from './finalize.js';
 import {
   type DataSourceProvider,
   DiagnosticSink,
@@ -122,6 +126,9 @@ function elementToRIR(el: Element, zIndex: number, window: { durationFrames: num
     visible: el.visible ?? true,
     locked: el.locked ?? false,
     stacking: 'auto' as const,
+    // T-030 leaves animations empty; T-031 (finalize pass) resolves them
+    // after element windows are known.
+    animations: [] as RIRElement['animations'],
   };
 
   const content: RIRElementContent = toRIRContent(el);
@@ -321,7 +328,7 @@ export function compileRIR(input: unknown, opts: CompileRIROptions = {}): Compil
     };
   }
 
-  const rir: RIRDocument = {
+  const preFinal: RIRDocument = {
     id: expanded.meta.id,
     width: 1920,
     height: 1080,
@@ -335,19 +342,32 @@ export function compileRIR(input: unknown, opts: CompileRIROptions = {}): Compil
       sourceDocId: expanded.meta.id,
       sourceVersion: expanded.meta.version,
       compilerVersion: opts.compilerVersion ?? DEFAULT_COMPILER_VERSION,
-      digest: hashString(
-        JSON.stringify({
-          elements: rirElements.map((e) => ({ id: e.id, type: e.type, zIndex: e.zIndex })),
-          fontRequirements,
-          mode: expanded.content.mode,
-        }),
-      ),
+      // Digest is computed from the FINAL tree below (after T-031 refinements).
+      digest: '00000000',
     },
   };
 
-  // Silence unused-binding lint when `expanded` is the passthrough of `doc`.
-  void expanded;
+  // T-031: stacking-context + timing-flatten + animation resolution.
+  const finalized = finalizeRIR(preFinal, expanded, sink);
 
+  // Digest over the finalized structure so post-T-031 diffs are stable.
+  const digest = hashString(
+    JSON.stringify({
+      elements: finalized.elements.map((e) => ({
+        id: e.id,
+        type: e.type,
+        zIndex: e.zIndex,
+        stacking: e.stacking,
+        timing: e.timing,
+        animations: e.animations.map((a) => ({ id: a.id, timing: a.timing })),
+      })),
+      fontRequirements,
+      stackingMap: finalized.stackingMap,
+      mode: expanded.content.mode,
+    }),
+  );
+
+  const rir: RIRDocument = { ...finalized, meta: { ...finalized.meta, digest } };
   return { rir, diagnostics: sink.items };
 }
 
