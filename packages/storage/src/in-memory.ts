@@ -1,7 +1,9 @@
 // packages/storage/src/in-memory.ts
-// Minimal in-memory StorageAdapter. Implements all three contract methods
-// end-to-end so the shape is exercised; T-026 supersedes with a fuller
-// dev-grade adapter (tests + concurrency semantics).
+// Dev-grade in-memory StorageAdapter. Implements all three contract methods
+// with tested concurrency semantics: multi-subscriber fan-out, per-doc
+// isolation, bounded buffer with drop-oldest policy, abort-signal cleanup.
+// Minimum-viable version shipped in T-025; dev-grade assurances added in
+// T-026 (see packages/storage/src/in-memory.dev-grade.test.ts).
 
 import {
   type ChangeSet,
@@ -12,17 +14,32 @@ import {
   type SubscribeOptions,
 } from './contract.js';
 
-/** Simple async queue used to deliver updates to live subscribers. */
+/**
+ * Async queue used to deliver updates to a single subscriber. Bounded buffer
+ * prevents a slow consumer from pinning unbounded memory; on overflow the
+ * oldest queued update is dropped and a drop counter is surfaced via
+ * `droppedCount()` so tests can assert backpressure behaviour.
+ */
 class UpdateQueue {
   private buffer: Uint8Array[] = [];
   private waiters: Array<(value: IteratorResult<Uint8Array>) => void> = [];
   private closed = false;
+  private dropped = 0;
+
+  constructor(readonly maxBuffered: number = 1024) {}
 
   push(update: Uint8Array): void {
     if (this.closed) return;
     const waiter = this.waiters.shift();
-    if (waiter) waiter({ value: update, done: false });
-    else this.buffer.push(update);
+    if (waiter) {
+      waiter({ value: update, done: false });
+      return;
+    }
+    this.buffer.push(update);
+    while (this.buffer.length > this.maxBuffered) {
+      this.buffer.shift();
+      this.dropped += 1;
+    }
   }
 
   close(): void {
@@ -36,6 +53,16 @@ class UpdateQueue {
     if (buffered !== undefined) return Promise.resolve({ value: buffered, done: false });
     if (this.closed) return Promise.resolve({ value: undefined, done: true });
     return new Promise((resolve) => this.waiters.push(resolve));
+  }
+
+  /** Total updates dropped by the overflow policy. Exposed for tests. */
+  droppedCount(): number {
+    return this.dropped;
+  }
+
+  /** Whether the queue has been closed via `close()`. */
+  isClosed(): boolean {
+    return this.closed;
   }
 }
 
@@ -130,5 +157,29 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     this.snapshots.clear();
     this.history.clear();
     this.subscribers.clear();
+  }
+
+  /** Number of live subscribers for a docId. 0 when unknown. */
+  subscriberCount(docId: string): number {
+    return this.subscribers.get(docId)?.size ?? 0;
+  }
+
+  /** Number of docs the adapter knows about (either snapshot or history present). */
+  docCount(): number {
+    const ids = new Set<string>();
+    for (const k of this.snapshots.keys()) ids.add(k);
+    for (const k of this.history.keys()) ids.add(k);
+    return ids.size;
+  }
+
+  /** Drop all state for one document. Live subscribers on that doc are closed. */
+  clear(docId: string): void {
+    const subs = this.subscribers.get(docId);
+    if (subs) {
+      for (const q of subs) q.close();
+      this.subscribers.delete(docId);
+    }
+    this.snapshots.delete(docId);
+    this.history.delete(docId);
   }
 }
