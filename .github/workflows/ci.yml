@@ -68,6 +68,9 @@ jobs:
       - name: Gate - skill drift
         run: pnpm check-skill-drift
 
+      - name: Gate - determinism (scoped to clip/runtime code)
+        run: pnpm check-determinism
+
   e2e:
     name: e2e (Playwright smoke)
     runs-on: ubuntu-latest

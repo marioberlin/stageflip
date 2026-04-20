@@ -80,7 +80,7 @@ Coverage thresholds: 85% lines/functions/statements, 80% branches (T-004).
 - Ships an `organizeImports` rule; replaces eslint-plugin-import for our needs.
 - Biome 2.x exists (major bump) but the 1.9 schema is stable; a future ADR will ratify any bump.
 
-**Determinism gate caveat** (T-028, Phase 1): Biome does not have a "scoped API-forbidden" rule that covers our invariant I-2 needs. We will use a narrow custom ESLint plugin *only* for the `check-determinism` gate, scoped to the runtime/clip directories. That doesn't reopen the Biome decision for general-purpose linting.
+**Determinism gate caveat** (T-028, Phase 1): Biome does not have a "scoped API-forbidden" rule that covers our invariant I-2 needs. The original plan was a narrow custom ESLint plugin scoped to the runtime/clip directories. **Revision (2026-04-20, landed with T-028):** we opted for the TypeScript compiler API (already installed) inside `scripts/check-determinism.ts` instead. Rationale: no new tool category added to the stack, rule logic lives next to our other `check-*` scripts, and the escape-hatch comment (`// determinism-safe: <reason>`) is handled uniformly with our own source-walk. This does not reopen the Biome decision for general-purpose linting.
 
 ### D6. TS bundler → **tsup 8.x**
 
