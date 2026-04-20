@@ -46,6 +46,8 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies (frozen lockfile)
+        # --frozen-lockfile also serves as the lockfile-drift check; install
+        # fails if package.json + pnpm-lock.yaml disagree.
         run: pnpm install --frozen-lockfile
 
       - name: Typecheck
@@ -87,8 +89,26 @@ jobs:
       - name: Install dependencies (frozen lockfile)
         run: pnpm install --frozen-lockfile
 
-      - name: Install Chromium for Playwright
+      - name: Resolve Playwright version for cache key
+        id: pw
+        run: |
+          VERSION=$(pnpm exec playwright --version | awk '{print $2}')
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
+      - name: Install Chromium for Playwright (when cache miss)
+        if: steps.pw-cache.outputs.cache-hit != 'true'
         run: pnpm exec playwright install --with-deps chromium
+
+      - name: Install Chromium system deps (cache hit path)
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
 
       - name: Run Playwright smoke tests
         run: pnpm e2e
@@ -100,3 +120,44 @@ jobs:
           name: playwright-report
           path: playwright-report
           retention-days: 7
+
+  changesets:
+    name: changeset present (on PR)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Assert changeset present if any publishable package changed
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          # Any packages/* change EXCEPT @stageflip/testing (path: packages/testing).
+          pkg_changed=$(printf '%s\n' "$changed" | grep -E '^packages/' | grep -v '^packages/testing/' || true)
+          new_changeset=$(printf '%s\n' "$changed" | grep -E '^\.changeset/[a-z0-9-]+\.md$' || true)
+          if [ -n "$pkg_changed" ] && [ -z "$new_changeset" ]; then
+            echo "::error::Publishable package changed but no new changeset was added."
+            echo "Files that triggered this:"
+            printf '  %s\n' $pkg_changed
+            echo "Run: pnpm changeset"
+            exit 1
+          fi
+          echo "changeset check passed"

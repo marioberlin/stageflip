@@ -1,0 +1,64 @@
+# .github/dependabot.yml
+# Dependency-update automation per docs/dependencies.md §2. Dependabot opens
+# PRs for patch and minor bumps within the pinned floors. Major bumps surface
+# as PRs too but are not auto-merged — each major requires an ADR per
+# ADR-001 §D4 and docs/dependencies.md §4 ('blocked majors' list).
+#
+# Weekly schedule aligns with .github/workflows/audit.yml (Monday 09:00 UTC).
+
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: UTC
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+      - automated
+    commit-message:
+      prefix: chore(deps)
+      include: scope
+    # Block majors explicitly for every package docs/dependencies.md §4 lists
+    # as blocked. Dependabot will not open PRs attempting these bumps.
+    ignore:
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
+      - dependency-name: "@biomejs/biome"
+        update-types: [version-update:semver-major]
+      - dependency-name: vitest
+        update-types: [version-update:semver-major]
+      - dependency-name: "@vitest/coverage-v8"
+        update-types: [version-update:semver-major]
+      - dependency-name: zod
+        update-types: [version-update:semver-major]
+      - dependency-name: next
+        update-types: [version-update:semver-major]
+      - dependency-name: firebase
+        update-types: [version-update:semver-major]
+      - dependency-name: puppeteer
+        update-types: [version-update:semver-major]
+      - dependency-name: size-limit
+        update-types: [version-update:semver-major]
+      - dependency-name: "@size-limit/preset-big-lib"
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: UTC
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - automated
+      - ci
+    commit-message:
+      prefix: chore(ci)
+      include: scope
