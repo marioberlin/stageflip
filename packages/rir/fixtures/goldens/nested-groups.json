@@ -1,0 +1,212 @@
+{
+  "diagnostics": [],
+  "rir": {
+    "durationFrames": 30,
+    "elements": [
+      {
+        "animations": [],
+        "content": {
+          "children": [
+            {
+              "animations": [],
+              "content": {
+                "children": [
+                  {
+                    "animations": [],
+                    "content": {
+                      "align": "left",
+                      "color": "#000000",
+                      "fontFamily": "system-ui",
+                      "fontSize": 16,
+                      "fontWeight": 400,
+                      "lineHeight": 1.4,
+                      "text": "a",
+                      "type": "text"
+                    },
+                    "id": "leaf-a",
+                    "locked": false,
+                    "stacking": "auto",
+                    "timing": {
+                      "durationFrames": 30,
+                      "endFrame": 30,
+                      "startFrame": 0
+                    },
+                    "transform": {
+                      "height": 30,
+                      "opacity": 1,
+                      "rotation": 0,
+                      "width": 100,
+                      "x": 0,
+                      "y": 0
+                    },
+                    "type": "text",
+                    "visible": true,
+                    "zIndex": 0
+                  },
+                  {
+                    "animations": [],
+                    "content": {
+                      "align": "left",
+                      "color": "#000000",
+                      "fontFamily": "system-ui",
+                      "fontSize": 16,
+                      "fontWeight": 400,
+                      "lineHeight": 1.4,
+                      "text": "b",
+                      "type": "text"
+                    },
+                    "id": "leaf-b",
+                    "locked": false,
+                    "stacking": "auto",
+                    "timing": {
+                      "durationFrames": 30,
+                      "endFrame": 30,
+                      "startFrame": 0
+                    },
+                    "transform": {
+                      "height": 30,
+                      "opacity": 1,
+                      "rotation": 0,
+                      "width": 100,
+                      "x": 0,
+                      "y": 40
+                    },
+                    "type": "text",
+                    "visible": true,
+                    "zIndex": 10
+                  }
+                ],
+                "clip": false,
+                "type": "group"
+              },
+              "id": "inner",
+              "locked": false,
+              "stacking": "auto",
+              "timing": {
+                "durationFrames": 30,
+                "endFrame": 30,
+                "startFrame": 0
+              },
+              "transform": {
+                "height": 100,
+                "opacity": 1,
+                "rotation": 0,
+                "width": 480,
+                "x": 10,
+                "y": 10
+              },
+              "type": "group",
+              "visible": true,
+              "zIndex": 0
+            },
+            {
+              "animations": [],
+              "content": {
+                "align": "left",
+                "color": "#000000",
+                "fontFamily": "system-ui",
+                "fontSize": 16,
+                "fontWeight": 400,
+                "lineHeight": 1.4,
+                "text": "c",
+                "type": "text"
+              },
+              "id": "leaf-c",
+              "locked": false,
+              "stacking": "auto",
+              "timing": {
+                "durationFrames": 30,
+                "endFrame": 30,
+                "startFrame": 0
+              },
+              "transform": {
+                "height": 30,
+                "opacity": 1,
+                "rotation": 0,
+                "width": 480,
+                "x": 10,
+                "y": 120
+              },
+              "type": "text",
+              "visible": true,
+              "zIndex": 10
+            }
+          ],
+          "clip": false,
+          "type": "group"
+        },
+        "id": "outer",
+        "locked": false,
+        "stacking": "auto",
+        "timing": {
+          "durationFrames": 30,
+          "endFrame": 30,
+          "startFrame": 0
+        },
+        "transform": {
+          "height": 500,
+          "opacity": 1,
+          "rotation": 0,
+          "width": 500,
+          "x": 0,
+          "y": 0
+        },
+        "type": "group",
+        "visible": true,
+        "zIndex": 0
+      },
+      {
+        "animations": [],
+        "content": {
+          "align": "left",
+          "color": "#000000",
+          "fontFamily": "system-ui",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "lineHeight": 1.4,
+          "text": "sibling",
+          "type": "text"
+        },
+        "id": "sibling",
+        "locked": false,
+        "stacking": "auto",
+        "timing": {
+          "durationFrames": 30,
+          "endFrame": 30,
+          "startFrame": 0
+        },
+        "transform": {
+          "height": 30,
+          "opacity": 1,
+          "rotation": 0,
+          "width": 500,
+          "x": 0,
+          "y": 520
+        },
+        "type": "text",
+        "visible": true,
+        "zIndex": 10
+      }
+    ],
+    "fontRequirements": [],
+    "frameRate": 30,
+    "height": 1080,
+    "id": "doc_groups",
+    "meta": {
+      "compilerVersion": "golden-v1",
+      "digest": "e57d2f77",
+      "sourceDocId": "doc_groups",
+      "sourceVersion": 0
+    },
+    "mode": "slide",
+    "stackingMap": {
+      "inner": "auto",
+      "leaf-a": "auto",
+      "leaf-b": "auto",
+      "leaf-c": "auto",
+      "outer": "auto",
+      "sibling": "auto"
+    },
+    "width": 1920
+  }
+}

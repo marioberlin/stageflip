@@ -1,0 +1,54 @@
+{
+  "meta": {
+    "id": "doc_stacking",
+    "version": 0,
+    "createdAt": "2026-04-20T00:00:00.000Z",
+    "updatedAt": "2026-04-20T00:00:00.000Z"
+  },
+  "theme": { "tokens": {} },
+  "variables": {},
+  "components": {},
+  "content": {
+    "mode": "slide",
+    "slides": [
+      {
+        "id": "s1",
+        "elements": [
+          {
+            "id": "plain",
+            "type": "text",
+            "transform": { "x": 0, "y": 0, "width": 100, "height": 30 },
+            "text": "plain"
+          },
+          {
+            "id": "widget",
+            "type": "embed",
+            "transform": { "x": 0, "y": 50, "width": 400, "height": 300 },
+            "src": "https://example.com/widget"
+          },
+          {
+            "id": "model",
+            "type": "clip",
+            "transform": { "x": 0, "y": 400, "width": 600, "height": 400 },
+            "runtime": "three",
+            "clipName": "product-reveal"
+          },
+          {
+            "id": "fx",
+            "type": "clip",
+            "transform": { "x": 0, "y": 810, "width": 600, "height": 100 },
+            "runtime": "shader",
+            "clipName": "glitch"
+          },
+          {
+            "id": "motion",
+            "type": "clip",
+            "transform": { "x": 0, "y": 920, "width": 600, "height": 80 },
+            "runtime": "gsap",
+            "clipName": "motion-text"
+          }
+        ]
+      }
+    ]
+  }
+}

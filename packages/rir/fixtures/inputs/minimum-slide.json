@@ -1,0 +1,27 @@
+{
+  "meta": {
+    "id": "doc_min_slide",
+    "version": 0,
+    "createdAt": "2026-04-20T00:00:00.000Z",
+    "updatedAt": "2026-04-20T00:00:00.000Z"
+  },
+  "theme": { "tokens": {} },
+  "variables": {},
+  "components": {},
+  "content": {
+    "mode": "slide",
+    "slides": [
+      {
+        "id": "s1",
+        "elements": [
+          {
+            "id": "e1",
+            "type": "text",
+            "transform": { "x": 0, "y": 0, "width": 200, "height": 50 },
+            "text": "Hello, world"
+          }
+        ]
+      }
+    ]
+  }
+}

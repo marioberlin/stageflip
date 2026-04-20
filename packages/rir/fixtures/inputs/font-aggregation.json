@@ -1,0 +1,53 @@
+{
+  "meta": {
+    "id": "doc_fonts",
+    "version": 0,
+    "createdAt": "2026-04-20T00:00:00.000Z",
+    "updatedAt": "2026-04-20T00:00:00.000Z"
+  },
+  "theme": { "tokens": {} },
+  "variables": {},
+  "components": {},
+  "content": {
+    "mode": "slide",
+    "slides": [
+      {
+        "id": "s1",
+        "elements": [
+          {
+            "id": "h1",
+            "type": "text",
+            "transform": { "x": 0, "y": 0, "width": 500, "height": 60 },
+            "text": "Header",
+            "fontFamily": "Inter"
+          },
+          {
+            "id": "h2",
+            "type": "text",
+            "transform": { "x": 0, "y": 70, "width": 500, "height": 40 },
+            "text": "Also header",
+            "fontFamily": "Inter"
+          },
+          {
+            "id": "body",
+            "type": "text",
+            "transform": { "x": 0, "y": 120, "width": 500, "height": 200 },
+            "text": "body copy",
+            "fontFamily": "Charter"
+          },
+          {
+            "id": "anim",
+            "type": "clip",
+            "transform": { "x": 0, "y": 340, "width": 500, "height": 60 },
+            "runtime": "gsap",
+            "clipName": "motion-text",
+            "fonts": [
+              { "family": "Inter", "weight": 600 },
+              { "family": "Inter", "weight": 400, "style": "italic" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,173 @@
+{
+  "diagnostics": [],
+  "rir": {
+    "durationFrames": 30,
+    "elements": [
+      {
+        "animations": [],
+        "content": {
+          "align": "left",
+          "color": "#000000",
+          "fontFamily": "system-ui",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "lineHeight": 1.4,
+          "text": "plain",
+          "type": "text"
+        },
+        "id": "plain",
+        "locked": false,
+        "stacking": "auto",
+        "timing": {
+          "durationFrames": 30,
+          "endFrame": 30,
+          "startFrame": 0
+        },
+        "transform": {
+          "height": 30,
+          "opacity": 1,
+          "rotation": 0,
+          "width": 100,
+          "x": 0,
+          "y": 0
+        },
+        "type": "text",
+        "visible": true,
+        "zIndex": 0
+      },
+      {
+        "animations": [],
+        "content": {
+          "allowFullscreen": false,
+          "sandbox": [
+            "allow-scripts"
+          ],
+          "src": "https://example.com/widget",
+          "type": "embed"
+        },
+        "id": "widget",
+        "locked": false,
+        "stacking": "isolate",
+        "timing": {
+          "durationFrames": 30,
+          "endFrame": 30,
+          "startFrame": 0
+        },
+        "transform": {
+          "height": 300,
+          "opacity": 1,
+          "rotation": 0,
+          "width": 400,
+          "x": 0,
+          "y": 50
+        },
+        "type": "embed",
+        "visible": true,
+        "zIndex": 10
+      },
+      {
+        "animations": [],
+        "content": {
+          "clipName": "product-reveal",
+          "params": {},
+          "runtime": "three",
+          "type": "clip"
+        },
+        "id": "model",
+        "locked": false,
+        "stacking": "isolate",
+        "timing": {
+          "durationFrames": 30,
+          "endFrame": 30,
+          "startFrame": 0
+        },
+        "transform": {
+          "height": 400,
+          "opacity": 1,
+          "rotation": 0,
+          "width": 600,
+          "x": 0,
+          "y": 400
+        },
+        "type": "clip",
+        "visible": true,
+        "zIndex": 20
+      },
+      {
+        "animations": [],
+        "content": {
+          "clipName": "glitch",
+          "params": {},
+          "runtime": "shader",
+          "type": "clip"
+        },
+        "id": "fx",
+        "locked": false,
+        "stacking": "isolate",
+        "timing": {
+          "durationFrames": 30,
+          "endFrame": 30,
+          "startFrame": 0
+        },
+        "transform": {
+          "height": 100,
+          "opacity": 1,
+          "rotation": 0,
+          "width": 600,
+          "x": 0,
+          "y": 810
+        },
+        "type": "clip",
+        "visible": true,
+        "zIndex": 30
+      },
+      {
+        "animations": [],
+        "content": {
+          "clipName": "motion-text",
+          "params": {},
+          "runtime": "gsap",
+          "type": "clip"
+        },
+        "id": "motion",
+        "locked": false,
+        "stacking": "auto",
+        "timing": {
+          "durationFrames": 30,
+          "endFrame": 30,
+          "startFrame": 0
+        },
+        "transform": {
+          "height": 80,
+          "opacity": 1,
+          "rotation": 0,
+          "width": 600,
+          "x": 0,
+          "y": 920
+        },
+        "type": "clip",
+        "visible": true,
+        "zIndex": 40
+      }
+    ],
+    "fontRequirements": [],
+    "frameRate": 30,
+    "height": 1080,
+    "id": "doc_stacking",
+    "meta": {
+      "compilerVersion": "golden-v1",
+      "digest": "d4c2600e",
+      "sourceDocId": "doc_stacking",
+      "sourceVersion": 0
+    },
+    "mode": "slide",
+    "stackingMap": {
+      "fx": "isolate",
+      "model": "isolate",
+      "motion": "auto",
+      "plain": "auto",
+      "widget": "isolate"
+    },
+    "width": 1920
+  }
+}

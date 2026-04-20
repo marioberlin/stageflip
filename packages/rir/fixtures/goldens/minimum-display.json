@@ -1,0 +1,55 @@
+{
+  "diagnostics": [],
+  "rir": {
+    "durationFrames": 450,
+    "elements": [
+      {
+        "animations": [],
+        "content": {
+          "align": "left",
+          "color": "#000000",
+          "fontFamily": "system-ui",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "lineHeight": 1.4,
+          "text": "Shop Now",
+          "type": "text"
+        },
+        "id": "cta",
+        "locked": false,
+        "stacking": "auto",
+        "timing": {
+          "durationFrames": 450,
+          "endFrame": 450,
+          "startFrame": 0
+        },
+        "transform": {
+          "height": 30,
+          "opacity": 1,
+          "rotation": 0,
+          "width": 260,
+          "x": 20,
+          "y": 200
+        },
+        "type": "text",
+        "visible": true,
+        "zIndex": 0
+      }
+    ],
+    "fontRequirements": [],
+    "frameRate": 30,
+    "height": 1080,
+    "id": "doc_min_display",
+    "meta": {
+      "compilerVersion": "golden-v1",
+      "digest": "59a861e2",
+      "sourceDocId": "doc_min_display",
+      "sourceVersion": 0
+    },
+    "mode": "display",
+    "stackingMap": {
+      "cta": "auto"
+    },
+    "width": 1920
+  }
+}

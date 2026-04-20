@@ -1,0 +1,169 @@
+{
+  "diagnostics": [],
+  "rir": {
+    "durationFrames": 30,
+    "elements": [
+      {
+        "animations": [],
+        "content": {
+          "align": "left",
+          "color": "#000000",
+          "fontFamily": "Inter",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "lineHeight": 1.4,
+          "text": "Header",
+          "type": "text"
+        },
+        "id": "h1",
+        "locked": false,
+        "stacking": "auto",
+        "timing": {
+          "durationFrames": 30,
+          "endFrame": 30,
+          "startFrame": 0
+        },
+        "transform": {
+          "height": 60,
+          "opacity": 1,
+          "rotation": 0,
+          "width": 500,
+          "x": 0,
+          "y": 0
+        },
+        "type": "text",
+        "visible": true,
+        "zIndex": 0
+      },
+      {
+        "animations": [],
+        "content": {
+          "align": "left",
+          "color": "#000000",
+          "fontFamily": "Inter",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "lineHeight": 1.4,
+          "text": "Also header",
+          "type": "text"
+        },
+        "id": "h2",
+        "locked": false,
+        "stacking": "auto",
+        "timing": {
+          "durationFrames": 30,
+          "endFrame": 30,
+          "startFrame": 0
+        },
+        "transform": {
+          "height": 40,
+          "opacity": 1,
+          "rotation": 0,
+          "width": 500,
+          "x": 0,
+          "y": 70
+        },
+        "type": "text",
+        "visible": true,
+        "zIndex": 10
+      },
+      {
+        "animations": [],
+        "content": {
+          "align": "left",
+          "color": "#000000",
+          "fontFamily": "Charter",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "lineHeight": 1.4,
+          "text": "body copy",
+          "type": "text"
+        },
+        "id": "body",
+        "locked": false,
+        "stacking": "auto",
+        "timing": {
+          "durationFrames": 30,
+          "endFrame": 30,
+          "startFrame": 0
+        },
+        "transform": {
+          "height": 200,
+          "opacity": 1,
+          "rotation": 0,
+          "width": 500,
+          "x": 0,
+          "y": 120
+        },
+        "type": "text",
+        "visible": true,
+        "zIndex": 20
+      },
+      {
+        "animations": [],
+        "content": {
+          "clipName": "motion-text",
+          "params": {},
+          "runtime": "gsap",
+          "type": "clip"
+        },
+        "id": "anim",
+        "locked": false,
+        "stacking": "auto",
+        "timing": {
+          "durationFrames": 30,
+          "endFrame": 30,
+          "startFrame": 0
+        },
+        "transform": {
+          "height": 60,
+          "opacity": 1,
+          "rotation": 0,
+          "width": 500,
+          "x": 0,
+          "y": 340
+        },
+        "type": "clip",
+        "visible": true,
+        "zIndex": 30
+      }
+    ],
+    "fontRequirements": [
+      {
+        "family": "Inter",
+        "style": "normal"
+      },
+      {
+        "family": "Charter",
+        "style": "normal"
+      },
+      {
+        "family": "Inter",
+        "style": "normal",
+        "weight": 600
+      },
+      {
+        "family": "Inter",
+        "style": "italic",
+        "weight": 400
+      }
+    ],
+    "frameRate": 30,
+    "height": 1080,
+    "id": "doc_fonts",
+    "meta": {
+      "compilerVersion": "golden-v1",
+      "digest": "f564eb2a",
+      "sourceDocId": "doc_fonts",
+      "sourceVersion": 0
+    },
+    "mode": "slide",
+    "stackingMap": {
+      "anim": "auto",
+      "body": "auto",
+      "h1": "auto",
+      "h2": "auto"
+    },
+    "width": 1920
+  }
+}

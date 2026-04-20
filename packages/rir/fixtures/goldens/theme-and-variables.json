@@ -1,0 +1,83 @@
+{
+  "diagnostics": [],
+  "rir": {
+    "durationFrames": 30,
+    "elements": [
+      {
+        "animations": [],
+        "content": {
+          "align": "left",
+          "color": "#2b5fda",
+          "fontFamily": "system-ui",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "lineHeight": 1.4,
+          "text": "StageFlip — 2026",
+          "type": "text"
+        },
+        "id": "title",
+        "locked": false,
+        "stacking": "auto",
+        "timing": {
+          "durationFrames": 30,
+          "endFrame": 30,
+          "startFrame": 0
+        },
+        "transform": {
+          "height": 60,
+          "opacity": 1,
+          "rotation": 0,
+          "width": 600,
+          "x": 0,
+          "y": 0
+        },
+        "type": "text",
+        "visible": true,
+        "zIndex": 0
+      },
+      {
+        "animations": [],
+        "content": {
+          "fill": "#ff8800",
+          "shape": "rect",
+          "type": "shape"
+        },
+        "id": "accent",
+        "locked": false,
+        "stacking": "auto",
+        "timing": {
+          "durationFrames": 30,
+          "endFrame": 30,
+          "startFrame": 0
+        },
+        "transform": {
+          "height": 4,
+          "opacity": 1,
+          "rotation": 0,
+          "width": 200,
+          "x": 0,
+          "y": 70
+        },
+        "type": "shape",
+        "visible": true,
+        "zIndex": 10
+      }
+    ],
+    "fontRequirements": [],
+    "frameRate": 30,
+    "height": 1080,
+    "id": "doc_theme_vars",
+    "meta": {
+      "compilerVersion": "golden-v1",
+      "digest": "d66bb224",
+      "sourceDocId": "doc_theme_vars",
+      "sourceVersion": 1
+    },
+    "mode": "slide",
+    "stackingMap": {
+      "accent": "auto",
+      "title": "auto"
+    },
+    "width": 1920
+  }
+}
