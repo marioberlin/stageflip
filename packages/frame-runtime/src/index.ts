@@ -86,3 +86,5 @@ export {
   type CompositionDefinition,
   type CompositionProps,
 } from './composition.js';
+
+export { useMediaSync, type UseMediaSyncOptions } from './use-media-sync.js';
