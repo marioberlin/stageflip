@@ -63,6 +63,9 @@ jobs:
       - name: Gate - Remotion import ban
         run: pnpm check-remotion-imports
 
+      - name: Gate - skill drift
+        run: pnpm check-skill-drift
+
   e2e:
     name: e2e (Playwright smoke)
     runs-on: ubuntu-latest
