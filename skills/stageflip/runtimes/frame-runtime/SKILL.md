@@ -49,6 +49,7 @@ must be rendered inside a `FrameProvider` (or a `<Composition>` mounted via
 | `<Series>` + `<Series.Sequence durationInFrames offset? name? layout?>` | Auto-chained sequences; `from` computed from cumulative duration + offset. |
 | Hooks: `useCurrentFrame()`, `useVideoConfig()` | Read the current frame or config. Throw outside a FrameProvider. |
 | `useMediaSync(ref, { offsetMs?, durationMs? })` | Drives an `<video>` / `<audio>` `.currentTime` from the FrameClock; pauses when outside the active window. Skips seeks within half a frame of drift. |
+| `useAudioVisualizer(ref, options?)` | Returns `{ frequency, waveform, volume }` from a Web Audio `AnalyserNode`. Editor / preview only — not determinism-clean. |
 
 Shared layout types:
 - `'absolute-fill'` (default on Sequence / Loop / Series.Sequence) → wraps in a
@@ -191,6 +192,7 @@ or Infinity across the envelope.
 | `src/composition.ts` | T-047 | Registry + `renderFrame` |
 | `src/interpolate-path.ts` | T-052 | SVG path morph (flubber) |
 | `src/use-media-sync.ts` | T-055 | `<video>` / `<audio>` sync hook |
+| `src/use-audio-visualizer.ts` | T-053 | Web Audio analyser hook (editor-only) |
 | `src/properties.test.ts` | T-048 | Cross-primitive property suite |
 
 ## Test suite
@@ -198,7 +200,7 @@ or Infinity across the envelope.
 - Unit tests co-located with each source file.
 - `properties.test.ts` gathers wider fast-check sweeps (monotonicity,
   convergence, boundary).
-- `frame-runtime` total: 314 cases across 13 files (as of T-055).
+- `frame-runtime` total: 328 cases across 14 files (as of T-053).
 - Environment: `happy-dom` (see `vitest.config.ts`); faster than jsdom and
   sufficient for React rendering.
 - Auto-cleanup is NOT globally enabled — every React test calls
