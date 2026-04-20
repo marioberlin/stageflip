@@ -6,7 +6,11 @@
 //
 // Uses the source files of @stageflip/skills-core directly via a relative
 // import so the gate does not require a prior build. tsx resolves .js imports
-// against their .ts source.
+// against their .ts source. If @stageflip/skills-core ever gains build-time
+// codegen (generated types, compiled Zod schemas, etc.), this direct import
+// will miss them — at that point, switch to importing `@stageflip/skills-core`
+// (the built package) and add a `pnpm --filter=@stageflip/skills-core build`
+// step before invoking this script.
 
 import { loadSkillTree, SKILL_TIERS, validateTree } from '../packages/skills-core/src/index.js';
 import type { SkillTree } from '../packages/skills-core/src/index.js';
