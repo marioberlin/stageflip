@@ -24,6 +24,7 @@
     "e2e:install": "playwright install --with-deps chromium",
     "check-licenses": "tsx scripts/check-licenses.ts",
     "check-remotion-imports": "tsx scripts/check-remotion-imports.ts",
+    "check-skill-drift": "tsx scripts/check-skill-drift.ts",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "turbo run build && changeset publish"
