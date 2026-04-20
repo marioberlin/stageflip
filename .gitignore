@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.next/
+.turbo/
+*.tsbuildinfo
+
+# Test artifacts
+coverage/
+.vitest/
+playwright-report/
+test-results/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# StageFlip-specific
+# Reference code is local-only; never committed. This is deliberate — see docs/architecture.md § 14.
+reference/
+
+# Render artifacts (local dev)
+.stageflip-cache/
+*.stageflip-render/
+
+# Secrets / credentials
+*.pem
+*.key
+firebase-adminsdk-*.json

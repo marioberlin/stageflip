@@ -1,0 +1,20 @@
+PLACEHOLDER — License decision pending.
+
+The product owner must choose between:
+
+1. Apache License 2.0
+   - Fully open source, permissive.
+   - Standard attribution + notice obligations.
+   - Anyone can use, modify, and redistribute (including commercially).
+
+2. Business Source License 1.1
+   - Source-available with competitive-use restriction.
+   - Converts to Apache 2.0 after a defined change date (typical: 4 years).
+   - Allows non-production use, research, internal evaluation freely.
+   - Protects commercial moat during early growth.
+
+Decision tracked in: docs/decisions/ADR-001-initial-stack.md
+
+This file will be replaced with the full license text once the decision is made.
+Do not ship, distribute, or publish any artifact derived from this repository
+until the license is finalized.
