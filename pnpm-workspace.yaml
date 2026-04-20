@@ -1,0 +1,8 @@
+# pnpm-workspace.yaml
+# Workspace package globs. Keep in sync with architecture §12 monorepo map.
+
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "packages/runtimes/*"
+  - "packages/profiles/*"
