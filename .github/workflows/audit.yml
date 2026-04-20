@@ -1,0 +1,48 @@
+# .github/workflows/audit.yml
+# Weekly pnpm audit + license recheck. Referenced by docs/dependencies.md §2.
+# Runs on schedule and on manual dispatch. High-severity CVEs fail this
+# workflow; triage lives outside CI (Orchestrator routes to a dep-bump PR,
+# which requires an ADR for major bumps).
+#
+# Security note: this workflow does not use any untrusted event payloads.
+
+name: Weekly Audit
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  audit:
+    name: pnpm audit + license recheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: pnpm audit (high severity or greater)
+        run: pnpm audit --audit-level high --prod
+
+      - name: License gate recheck
+        run: pnpm check-licenses
