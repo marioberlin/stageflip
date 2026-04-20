@@ -1,7 +1,7 @@
 # .github/workflows/ci.yml
 # Main CI for StageFlip. Runs every hard quality gate from docs/implementation-plan.md §A.6
 # that exists today. Gates added by later tasks (check-determinism -> T-028, check-skill-drift
-# -> T-014, size-limit budgets, parity -> Phase 5) append to this file as those tasks land.
+# -> T-014, size-limit -> T-049, parity -> Phase 5) append to this file as those tasks land.
 #
 # Security note: the only ${{ }} interpolations used are github.ref (in concurrency) and
 # env.NODE_VERSION (set by this workflow). No untrusted event payloads are inlined into run:
@@ -73,6 +73,9 @@ jobs:
 
       - name: Gate - determinism (scoped to clip/runtime code)
         run: pnpm check-determinism
+
+      - name: Gate - bundle-size budget (size-limit)
+        run: pnpm size-limit
 
   e2e:
     name: e2e (Playwright smoke)
