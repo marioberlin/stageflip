@@ -5,3 +5,5 @@
 // as their input shape.
 
 export * from './types.js';
+export { compileRIR, type CompileRIROptions } from './compile/index.js';
+export type { DataSourceProvider } from './compile/passes.js';
