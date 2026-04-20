@@ -12,10 +12,12 @@
 import { z } from 'zod';
 
 import {
+  type AnimationKind,
   type ChartData,
   ELEMENT_TYPES,
   type ElementType,
   type FontRequirement,
+  animationKindSchema,
   fontRequirementSchema,
 } from '@stageflip/schema';
 
@@ -231,6 +233,28 @@ const rirGroupContentSchema: z.ZodType<RIRGroupContent> = z.lazy(() =>
     .strict(),
 ) as z.ZodType<RIRGroupContent>;
 
+/* --------------------------- Resolved animation --------------------------- */
+
+/**
+ * An animation with its B1–B5 timing resolved to absolute frames by T-031.
+ * `animation` is the AnimationKind from the canonical schema, passed through
+ * unchanged — per-runtime semantics live there.
+ */
+export const rirAnimationSchema = z
+  .object({
+    id: z.string().min(1),
+    timing: rirTimingSchema,
+    animation: animationKindSchema,
+    autoplay: z.boolean(),
+  })
+  .strict();
+export type RIRAnimation = {
+  id: string;
+  timing: RIRTiming;
+  animation: AnimationKind;
+  autoplay: boolean;
+};
+
 /* --------------------------- Element + document --------------------------- */
 
 export type RIRElementContent =
@@ -269,6 +293,7 @@ export interface RIRElement {
   visible: boolean;
   locked: boolean;
   stacking: RIRStacking;
+  animations: RIRAnimation[];
   content: RIRElementContent;
 }
 
@@ -283,6 +308,7 @@ export const rirElementSchema: z.ZodType<RIRElement> = z.lazy(() =>
       visible: z.boolean(),
       locked: z.boolean(),
       stacking: rirStackingSchema,
+      animations: z.array(rirAnimationSchema),
       content: rirElementContentSchema,
     })
     .strict(),
