@@ -7,6 +7,7 @@ export * from './animations.js';
 export * from './content/index.js';
 export * from './document.js';
 export * from './elements/index.js';
+export * from './migrations/index.js';
 export * from './primitives.js';
 export * from './theme.js';
 export * from './timing.js';
