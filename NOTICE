@@ -1,0 +1,39 @@
+StageFlip
+Copyright 2026 Mario Tiedemann
+
+Licensed under the Business Source License 1.1 (the "License"); you may not use
+this work except in compliance with the License. A copy of the License is
+distributed with this work in the file named LICENSE. On the Change Date
+(2030-05-18) this work converts to the Apache License, Version 2.0.
+
+-------------------------------------------------------------------------------
+Third-Party Attributions
+-------------------------------------------------------------------------------
+
+This product includes software from third parties. Their individual copyrights
+and licenses are preserved as required. Comprehensive attribution lives in
+THIRD_PARTY.md; that document is the source of truth for every external
+dependency and studied codebase.
+
+As of this NOTICE, no third-party code has been vendored into the StageFlip
+repository. Vendored attributions will be added in-place as vendoring occurs:
+
+* @hyperframes/engine (Apache License 2.0, © HeyGen Inc.) — scheduled for
+  Phase 4 / task T-080 under packages/renderer-cdp/vendor/. At that time the
+  upstream LICENSE and NOTICE files will be copied verbatim into the vendor
+  directory, this NOTICE will be amended with the attribution block required
+  by Apache 2.0 §4, and THIRD_PARTY.md §2 will record the pinned commit.
+
+Runtime npm dependencies are audited by the CI gate `pnpm check-licenses`
+(scheduled for task T-010). That gate enforces the license whitelist in
+THIRD_PARTY.md §1.1 and fails on any dependency under GPL, AGPL, SSPL, the
+Remotion License, or any custom license with competitive-use restrictions.
+
+-------------------------------------------------------------------------------
+Trademarks
+-------------------------------------------------------------------------------
+
+"StageFlip", "StageFlip.Slide", "StageFlip.Video", and "StageFlip.Display" are
+trademarks of Mario Tiedemann. All other trademarks referenced in this project
+are the property of their respective owners; see THIRD_PARTY.md §5 for the
+complete list and the contexts in which each is used.
