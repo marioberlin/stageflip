@@ -60,3 +60,7 @@ export {
 export { spring, type SpringConfig } from './spring.js';
 
 export { Sequence, type SequenceLayout, type SequenceProps } from './sequence.js';
+
+export { Loop, type LoopProps } from './loop.js';
+
+export { Freeze, type FreezeProps } from './freeze.js';
