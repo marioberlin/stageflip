@@ -178,6 +178,17 @@ root — per-package install matches the rule from Audit 0.
 **Not a policy change**: next quarterly audit (2026-07-20) re-queries these
 alongside everything else.
 
+### Audit 2 addendum — 2026-04-20 (T-042 install sites)
+
+Backfill-only pass. T-042 (`interpolateColors`) installs `culori` into its
+host package. Types published separately on DefinitelyTyped.
+
+**Install sites for §3 entries**:
+- `culori` **4.0.2** (MIT) — installed in `@stageflip/frame-runtime`
+  dependencies; consumed by `interpolateColors`. Zero runtime transitive deps.
+- `@types/culori` **2.1.1** (MIT, devDep) — installed in
+  `@stageflip/frame-runtime` devDependencies.
+
 ---
 
 ## 5. Vendored Code Pinning

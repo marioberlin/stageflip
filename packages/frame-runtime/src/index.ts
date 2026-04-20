@@ -51,4 +51,10 @@ export {
 
 export { interpolate, type ExtrapolationMode, type InterpolateOptions } from './interpolate.js';
 
+export {
+  interpolateColors,
+  type ColorSpace,
+  type InterpolateColorsOptions,
+} from './interpolate-colors.js';
+
 export { spring, type SpringConfig } from './spring.js';
