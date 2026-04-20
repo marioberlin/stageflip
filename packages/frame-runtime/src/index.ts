@@ -64,3 +64,11 @@ export { Sequence, type SequenceLayout, type SequenceProps } from './sequence.js
 export { Loop, type LoopProps } from './loop.js';
 
 export { Freeze, type FreezeProps } from './freeze.js';
+
+export {
+  Series,
+  SeriesSequence,
+  type SeriesComponent,
+  type SeriesProps,
+  type SeriesSequenceProps,
+} from './series.js';
