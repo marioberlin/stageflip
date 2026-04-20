@@ -189,6 +189,28 @@ host package. Types published separately on DefinitelyTyped.
 - `@types/culori` **2.1.1** (MIT, devDep) — installed in
   `@stageflip/frame-runtime` devDependencies.
 
+### Audit 3 addendum — 2026-04-20 (T-052 install sites)
+
+Backfill-only pass. T-052 (`interpolatePath`) installs `flubber` into its
+host package.
+
+**Install sites for §3 entries**:
+- `flubber` **0.4.2** (MIT) — installed in `@stageflip/frame-runtime`
+  dependencies; consumed by `interpolatePath`. Transitive deps (all MIT):
+  d3-array, d3-polygon, earcut, svg-path-properties, svgpath,
+  topojson-client — `pnpm check-licenses` audited 436 total deps: PASS.
+- `@types/flubber` **0.4.0** (MIT, devDep) — installed in
+  `@stageflip/frame-runtime` devDependencies.
+
+**Bundle-size impact** (T-049 gate): flubber pushes
+`@stageflip/frame-runtime` from 4.66 KB gz to 23.39 KB gz — under
+the 25 KB budget but with only 1.61 KB of headroom. Adding another
+sizeable dependency (e.g. ToneJS-backed audio utilities for T-053)
+without tree-shaking will blow the budget. Likely mitigation is
+dynamic import of `flubber` inside `interpolatePath` so the base
+runtime stays lightweight; deferred until we see actual usage
+patterns from T-050 / Phase 3 clips.
+
 ---
 
 ## 5. Vendored Code Pinning
