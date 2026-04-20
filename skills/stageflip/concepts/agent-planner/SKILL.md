@@ -66,6 +66,11 @@ re-invoked with the failing step highlighted and asked to split it. If the
 Executor reports `tool-missing`, the Planner adds the appropriate bundle and
 re-emits.
 
+## Current state (Phase 1 exit)
+
+Not yet implemented. Phase 7 (T-151) delivers the Planner; this skill records
+the contract the implementation will satisfy.
+
 ## Related
 
 - Executor: `concepts/agent-executor/SKILL.md`

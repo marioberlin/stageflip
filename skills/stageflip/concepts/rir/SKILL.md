@@ -50,9 +50,18 @@ Reserves gaps for future-inserted elements without renumbering the whole
 stack. Runtimes that need an extra layer (three, shader, embed) get wrapped in
 an `isolation: isolate` container so they can't leak out of their slot.
 
+## Implementation
+
+- Package: `@stageflip/rir` (T-029 types, T-030 compiler, T-031 finalize, T-032 fixtures)
+- Entry point: `compileRIR(document, opts)` — returns `{ rir, diagnostics }`
+- Pass implementations: `packages/rir/src/compile/passes.ts`
+- Finalize pass (stacking + timing): `packages/rir/src/compile/finalize.ts`
+- Orchestrator: `packages/rir/src/compile/index.ts`
+- Golden fixtures: `packages/rir/fixtures/inputs/` paired with `fixtures/goldens/`
+
 ## Related
 
 - Schema: `concepts/schema/SKILL.md`
 - Fonts: `concepts/fonts/SKILL.md`
 - Determinism: `concepts/determinism/SKILL.md`
-- Compiler tasks: T-030, T-031 (rev), T-032 (golden fixtures)
+- Compiler tasks: T-030, T-031, T-032

@@ -60,6 +60,13 @@ Tool schemas, CLI reference, and the skills tree are *all* auto-generated:
 `check-skill-drift` (T-014) runs each generator and diffs against the checked-in
 skill file. Drift = CI failure.
 
+## Current state (Phase 1 exit)
+
+Not yet implemented. Phase 10 (T-222 server, T-223 auth, T-224 plugin)
+delivers the MCP integration. `@stageflip/mcp-server` and `@stageflip/plugin`
+packages are scaffolded but empty. The auto-gen table above already works
+for one of its rows — `reference/schema/SKILL.md` is live via T-034.
+
 ## Related
 
 - Auth: `concepts/auth/SKILL.md`

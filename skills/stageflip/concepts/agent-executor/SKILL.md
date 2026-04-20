@@ -66,6 +66,12 @@ patches are **not** rolled back (user's editor can undo). Stream emits a
 - Bundle selection: Planner.
 - Parity diff: parity harness, run after Executor finishes.
 
+## Current state (Phase 1 exit)
+
+Not yet implemented. Phase 7 (T-152) delivers the Executor. This skill
+records the contract the implementation will satisfy; event stream shape +
+AbortController semantics are settled here.
+
 ## Related
 
 - Planner: `concepts/agent-planner/SKILL.md`

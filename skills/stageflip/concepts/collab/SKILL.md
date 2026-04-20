@@ -62,8 +62,17 @@ The storage contract's delta methods (T-025) sit idle through Phases 1–11.
 T-260 is the first task that actually exercises them in prod. The contract
 is deliberately shaped to make this seamless.
 
+## Current state (Phase 1 exit)
+
+- **Storage contract is live** (T-025, T-026). All three method pairs
+  (snapshot / update delta / patch) are implemented by `InMemoryStorageAdapter`
+  with multi-subscriber fan-out, per-doc isolation, abort-signal cleanup, and
+  bounded-buffer drop-oldest policy. 23 tests in `@stageflip/storage`.
+- **CRDT (Yjs) + presence (RTDB)** remain unimplemented — Phase 12
+  (T-260, T-261). The delta methods are the integration point they will use.
+
 ## Related
 
-- Storage contract: T-025, `packages/storage/`
+- Storage contract: T-025, T-026 · `packages/storage/`
 - Presence impl: T-261
 - Tasks: T-260 (CRDT), T-261 (presence)

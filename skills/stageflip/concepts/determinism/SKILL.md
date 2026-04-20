@@ -75,9 +75,22 @@ Every escape hatch should link to an ADR explaining why.
 - Imports must be deterministic: same PPTX → same canonical doc.
 - Export → web preview → export again must produce the same bytes.
 
+## Implementation
+
+- **Runtime shim**: `@stageflip/determinism` (T-027). `installShim(opts)` returns
+  an uninstall function. Intercepts 9 APIs with a seeded mulberry32 PRNG for
+  `Math.random`; uninstall restores originals. See
+  `packages/determinism/src/shim.ts`.
+- **Source-lint gate**: `scripts/check-determinism.ts` (T-028). Uses the
+  TypeScript compiler API (ADR-002 §D5 revision — not ESLint) to walk
+  `packages/frame-runtime/src/**`, `packages/runtimes/*/src/clips/**`, and
+  `packages/renderer-core/src/clips/**`. 8 rule categories; `// determinism-safe`
+  escape-hatch honored.
+- **CI wiring**: `pnpm check-determinism` in `.github/workflows/ci.yml`.
+
 ## Related
 
-- Shim: T-027
-- ESLint plugin: T-028
-- Parity harness: T-100
-- ADR template for escape hatches: (pending — track in issue)
+- Shim impl: T-027
+- Source-lint gate: T-028
+- Parity harness: T-100 (Phase 5)
+- ADR-002 §D5: tool choice rationale for the source-lint
