@@ -92,12 +92,6 @@ importers:
       flubber:
         specifier: 0.4.2
         version: 0.4.2
-      react:
-        specifier: 19.2.5
-        version: 19.2.5
-      react-dom:
-        specifier: 19.2.5
-        version: 19.2.5(react@19.2.5)
     devDependencies:
       '@testing-library/react':
         specifier: 16.3.2
@@ -120,6 +114,12 @@ importers:
       happy-dom:
         specifier: 20.9.0
         version: 20.9.0
+      react:
+        specifier: 19.2.5
+        version: 19.2.5
+      react-dom:
+        specifier: 19.2.5
+        version: 19.2.5(react@19.2.5)
 
   packages/import-google-slides: {}
 
@@ -3347,6 +3347,14 @@ snapshots:
     optionalDependencies:
       vite: 5.4.21(@types/node@22.19.17)(terser@5.46.1)
 
+  '@vitest/mocker@2.1.9(vite@5.4.21(@types/node@25.6.0)(terser@5.46.1))':
+    dependencies:
+      '@vitest/spy': 2.1.9
+      estree-walker: 3.0.3
+      magic-string: 0.30.21
+    optionalDependencies:
+      vite: 5.4.21(@types/node@25.6.0)(terser@5.46.1)
+
   '@vitest/pretty-format@2.1.9':
     dependencies:
       tinyrainbow: 1.2.0
@@ -4999,7 +5007,7 @@ snapshots:
   vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.1):
     dependencies:
       '@vitest/expect': 2.1.9
-      '@vitest/mocker': 2.1.9(vite@5.4.21(@types/node@22.19.17)(terser@5.46.1))
+      '@vitest/mocker': 2.1.9(vite@5.4.21(@types/node@25.6.0)(terser@5.46.1))
       '@vitest/pretty-format': 2.1.9
       '@vitest/runner': 2.1.9
       '@vitest/snapshot': 2.1.9

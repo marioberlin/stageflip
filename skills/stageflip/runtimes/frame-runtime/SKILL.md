@@ -3,7 +3,7 @@ title: Frame Runtime
 id: skills/stageflip/runtimes/frame-runtime
 tier: runtime
 status: substantive
-last_updated: 2026-04-20
+last_updated: 2026-04-21
 owner_task: T-051
 related:
   - skills/stageflip/concepts/determinism/SKILL.md
@@ -205,16 +205,15 @@ or Infinity across the envelope.
 
 ## Public-API freeze (T-054)
 
-Before Phase 3, `@stageflip/frame-runtime`:
+Landed. `@stageflip/frame-runtime`:
 
-- Flips `react` and `react-dom` from `dependencies` to `peerDependencies`
-  with a matching `devDependencies` copy for tests. Consumers get a single
-  React copy instead of two.
-- Locks the public surface — anything added after T-054 ships as a minor
-  version bump per Changesets; anything removed is a major.
-
-Until then, minor breaking changes are allowed in the name of the surface's
-ergonomics.
+- `react` + `react-dom` are `peerDependencies` (`^19.0.0`) with a pinned
+  `devDependencies` copy for tests. Consumers get a single React copy.
+- `culori` and `flubber` stay regular runtime `dependencies`; their output
+  is wrapped by this package's own formatter and not re-exposed.
+- Surface is frozen against the exports listed above. Additions ship as a
+  minor bump per Changesets; removals / breaking signatures require a
+  major.
 
 ## Related
 
