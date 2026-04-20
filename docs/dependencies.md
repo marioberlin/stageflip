@@ -204,12 +204,16 @@ host package.
 
 **Bundle-size impact** (T-049 gate): flubber pushes
 `@stageflip/frame-runtime` from 4.66 KB gz to 23.39 KB gz — under
-the 25 KB budget but with only 1.61 KB of headroom. Adding another
-sizeable dependency (e.g. ToneJS-backed audio utilities for T-053)
-without tree-shaking will blow the budget. Likely mitigation is
-dynamic import of `flubber` inside `interpolatePath` so the base
-runtime stays lightweight; deferred until we see actual usage
-patterns from T-050 / Phase 3 clips.
+the 25 KB budget but with only 1.61 KB of headroom. Likely
+mitigation is dynamic import of `flubber` inside `interpolatePath`
+so the base runtime stays lightweight.
+
+Subsequent budget deltas:
+- T-055 (`useMediaSync`): +0.19 KB → 23.58 KB gz.
+- T-053 (`useAudioVisualizer`): +0.47 KB → 24.05 KB gz. Headroom
+  down to **0.95 KB**. Flubber-dynamic-import is now the next
+  scheduled mitigation; owner: whoever touches frame-runtime next
+  (likely T-050 dev-harness work).
 
 ---
 

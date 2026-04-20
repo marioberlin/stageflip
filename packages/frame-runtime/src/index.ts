@@ -88,3 +88,9 @@ export {
 } from './composition.js';
 
 export { useMediaSync, type UseMediaSyncOptions } from './use-media-sync.js';
+
+export {
+  useAudioVisualizer,
+  type AudioVisualizerOptions,
+  type AudioVisualizerSnapshot,
+} from './use-audio-visualizer.js';
