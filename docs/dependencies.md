@@ -61,6 +61,10 @@ These are floors — actual locked versions determined by audit. Bumping the flo
 | license-checker | 25.x | **25.0.1** | — |
 | tsx | — | **4.21.0** | TypeScript runner for `scripts/` gates (T-010, T-014) |
 | @types/node | 22.x | **22.19.17** | Types for Node 22 API; used by `scripts/` + packages that touch `node:fs`/`node:path` (e.g. `@stageflip/skills-core`). Pinned at root. |
+| @types/react | matches React | **19.2.14** | Types for React 19; devDep of packages that render (`@stageflip/frame-runtime`). |
+| @types/react-dom | matches react-dom | **19.2.3** | Types for `react-dom`; paired with `@types/react`. |
+| @testing-library/react | 16.x | **16.3.2** | React component testing; used by `@stageflip/frame-runtime` (T-040+). |
+| happy-dom | 20.x | **20.9.0** | Fast DOM test environment for Vitest; selected over jsdom for render tests. |
 
 ### Schema + runtime libraries
 
@@ -155,6 +159,24 @@ typescript, @biomejs/biome, turbo, vitest, @vitest/coverage-v8, @playwright/test
 - Engineering-lead signoff box on ADR-001 Ratification Signoff can now be checked.
 - Blocked majors should be re-evaluated at the next quarterly audit (2026-07-20).
 - `@fontsource/*` and other per-package deps are versioned when their host package is scaffolded.
+
+### Audit 1 addendum — 2026-04-20 (T-040 / Phase 2 kickoff backfill)
+
+Backfill-only pass. Phase 2 (frame-runtime) introduces a set of test-infra
+deps that were not enumerated in §3 at T-001a time; recorded here for
+audit-history consistency rather than re-running the full `npm view` sweep.
+
+**Added to §3**:
+- `@types/react` → pinned **19.2.14** (matches React 19 floor)
+- `@types/react-dom` → pinned **19.2.3**
+- `@testing-library/react` → pinned **16.3.2** (React component testing)
+- `happy-dom` → pinned **20.9.0** (DOM env for Vitest; chosen over jsdom)
+
+**Installed at**: `@stageflip/frame-runtime` devDependencies. Not hoisted to
+root — per-package install matches the rule from Audit 0.
+
+**Not a policy change**: next quarterly audit (2026-07-20) re-queries these
+alongside everything else.
 
 ---
 
