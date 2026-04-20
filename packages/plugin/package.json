@@ -2,5 +2,25 @@
   "name": "@stageflip/plugin",
   "version": "0.0.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --dts --format esm,cjs --clean",
+    "dev": "tsup src/index.ts --dts --format esm,cjs --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src",
+    "test": "vitest run --passWithNoTests"
+  }
 }
