@@ -1,4 +1,7 @@
 // packages/rir/src/index.ts
-// rir — stub entry. Populated by later tasks in docs/implementation-plan.md.
+// @stageflip/rir — types for the Renderable Intermediate Representation.
+// The compiler itself (T-030) and its sub-passes (T-031, stacking + timing
+// flatten) import this package for their output shape. Renderers import it
+// as their input shape.
 
-export {};
+export * from './types.js';
