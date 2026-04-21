@@ -34,7 +34,10 @@ describe('bundleDoctor', () => {
     expect(report.sizeBytes).toBeGreaterThan(0);
     expect(report.path).toMatch(/dist\/browser\/bundle\.js$/);
     expect(report.message).toContain('cdp-host-bundle');
-    expect(report.message).toMatch(/\d+(\.\d+)? KB/);
+    // T-100e bundle is ~1.59 MB so the formatter should switch to MB;
+    // accept either unit so the test stays robust if T-100d-size
+    // bundles ever re-surface (e.g. CSS-only rebuilds for doctor tests).
+    expect(report.message).toMatch(/\d+(\.\d+)? (KB|MB)/);
   });
 
   it('flags warn=true when the bundle exceeds warnAtBytes', async () => {
@@ -48,5 +51,30 @@ describe('bundleDoctor', () => {
     const report = await bundleDoctor({ warnAtBytes: 100 * 1024 * 1024 });
     expect(report.warn).toBe(false);
     expect(report.message).toContain('within');
+  });
+
+  it('returns exists=false with actionable message when the bundle is missing', async () => {
+    // Point bundleDoctor at a path that certainly doesn't exist so it
+    // takes the catch branch. No module mocking needed.
+    const report = await bundleDoctor({
+      path: '/tmp/stageflip-cdp-host-bundle-does-not-exist.js',
+      warnAtBytes: 1,
+    });
+    expect(report.exists).toBe(false);
+    expect(report.sizeBytes).toBe(0);
+    expect(report.warn).toBe(false);
+    expect(report.message).toContain('bundle not found');
+    expect(report.message).toContain('pnpm --filter @stageflip/cdp-host-bundle build');
+    expect(report.path).toBe('/tmp/stageflip-cdp-host-bundle-does-not-exist.js');
+  });
+
+  it('honours a custom path when provided', async () => {
+    // Pointing at a real file different from bundlePath() should still
+    // report exists:true with that file's size.
+    const realPath = await bundlePath();
+    const report = await bundleDoctor({ path: realPath, warnAtBytes: 1 });
+    expect(report.exists).toBe(true);
+    expect(report.path).toBe(realPath);
+    expect(report.sizeBytes).toBeGreaterThan(0);
   });
 });

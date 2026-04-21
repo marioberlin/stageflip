@@ -105,20 +105,47 @@ export interface BundleDoctorReport {
   readonly message: string;
 }
 
+/** Format a byte count as `"X.Y MB"` at >=1 MB, else `"X.Y KB"`. */
+function formatBytes(bytes: number): string {
+  if (bytes >= 1_000_000) {
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  }
+  return `${(bytes / 1024).toFixed(1)} KB`;
+}
+
+/**
+ * Inspect the compiled CDP host bundle and emit a `BundleDoctorReport`.
+ *
+ * Reads the file at `opts.path` (defaults to `bundlePath()`); if
+ * present, records `sizeBytes` from `fs.stat` and classifies as
+ * `warn` when the size exceeds `warnAtBytes` (default 1.75 MB raw).
+ * If the file is missing, the returned report has `exists: false`,
+ * `sizeBytes: 0`, `warn: false` and a `message` telling the operator
+ * to run the build step.
+ *
+ * The `path` override is useful for the parity CLI (T-101) and tests
+ * — pass an arbitrary file path to diagnose a non-default bundle
+ * location, or a non-existent path to exercise the missing-bundle
+ * branch.
+ *
+ * Never throws. Callers should treat `warn === true` as informational,
+ * not a hard failure — `size-limit` owns the CI-enforced bound.
+ */
 export async function bundleDoctor(opts?: {
   readonly warnAtBytes?: number;
+  readonly path?: string;
 }): Promise<BundleDoctorReport> {
   const warnAtBytes = opts?.warnAtBytes ?? 1_750_000; // 1.75 MB raw
-  const path = await bundlePath();
+  const path = opts?.path ?? (await bundlePath());
   try {
     const st = await stat(path);
     const sizeBytes = st.size;
     const warn = sizeBytes > warnAtBytes;
-    const kb = (sizeBytes / 1024).toFixed(1);
-    const limitKb = (warnAtBytes / 1024).toFixed(0);
+    const size = formatBytes(sizeBytes);
+    const limit = formatBytes(warnAtBytes);
     const message = warn
-      ? `cdp-host-bundle: ${kb} KB exceeds ${limitKb} KB warning threshold`
-      : `cdp-host-bundle: ${kb} KB (within ${limitKb} KB threshold)`;
+      ? `cdp-host-bundle: ${size} exceeds ${limit} warning threshold`
+      : `cdp-host-bundle: ${size} (within ${limit} threshold)`;
     return { path, exists: true, sizeBytes, warnAtBytes, warn, message };
   } catch {
     return {
