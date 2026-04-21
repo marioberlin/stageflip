@@ -73,3 +73,35 @@ export {
   exportDocument,
   PreflightBlockedError,
 } from './export-dispatcher';
+
+export {
+  type ChildRunner,
+  type ChildStdin,
+  createNodeChildRunner,
+  type SpawnedProcess,
+} from './child-runner';
+
+export {
+  type EncoderProfile,
+  type EncoderProfileId,
+  ENCODER_PROFILES,
+  getEncoderProfile,
+  PROFILE_H264,
+  PROFILE_H265,
+  PROFILE_PRORES_4444,
+  PROFILE_VP9,
+} from './ffmpeg-profiles';
+
+export {
+  buildFfmpegArgs,
+  FFmpegEncoder,
+  FFmpegEncoderError,
+  type FFmpegEncoderOptions,
+} from './ffmpeg-encoder';
+
+export {
+  doctor,
+  type DoctorCodecs,
+  type DoctorOptions,
+  type DoctorReport,
+} from './ffmpeg-doctor';
