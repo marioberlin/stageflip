@@ -11,7 +11,8 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const VENDOR_ENGINE = resolve(HERE, '..', 'vendor', 'engine');
+const VENDOR_ROOT = resolve(HERE, '..', 'vendor');
+const VENDOR_ENGINE = resolve(VENDOR_ROOT, 'engine');
 
 interface Pin {
   upstream: string;
@@ -55,5 +56,28 @@ describe('vendor/engine (T-080)', () => {
     expect(existsSync(pkgPath)).toBe(true);
     const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as { name?: string };
     expect(pkg.name).toBe('@hyperframes/engine');
+  });
+});
+
+describe('vendor/NOTICE (T-081)', () => {
+  const noticePath = join(VENDOR_ROOT, 'NOTICE');
+
+  it('exists at vendor/ root', () => {
+    expect(existsSync(noticePath)).toBe(true);
+  });
+
+  it('attributes @hyperframes/engine under Apache-2.0 with upstream + commit', () => {
+    const notice = readFileSync(noticePath, 'utf8');
+    expect(notice).toMatch(/@hyperframes\/engine/);
+    expect(notice).toMatch(/HeyGen Inc\./);
+    expect(notice).toMatch(/Apache License,? Version 2\.0/);
+    expect(notice).toMatch(/https:\/\/github\.com\/heygen-com\/hyperframes/);
+    expect(notice).toContain(EXPECTED_COMMIT);
+  });
+
+  it('documents the StageFlip modification policy (THIRD_PARTY.md §2)', () => {
+    const notice = readFileSync(noticePath, 'utf8');
+    expect(notice).toMatch(/Modifications by StageFlip/i);
+    expect(notice).toMatch(/Modified by StageFlip/);
   });
 });
