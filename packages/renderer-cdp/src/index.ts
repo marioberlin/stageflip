@@ -40,7 +40,23 @@ export {
 export { type FrameSink, InMemoryFrameSink } from './frame-sink';
 
 export {
+  type AssetKind,
   type AssetRef,
+  collectAssetRefs,
+  rewriteDocumentAssets,
+} from './asset-refs';
+
+export {
+  type AssetResolution,
+  type AssetResolver,
+  InMemoryAssetResolver,
+  type LossFlag,
+  resolveAssets,
+  type ResolvedAssetEntry,
+  type ResolveAssetsResult,
+} from './asset-resolver';
+
+export {
   preflight,
   type PreflightBlocker,
   type PreflightBlockerKind,

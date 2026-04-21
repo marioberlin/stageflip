@@ -130,7 +130,10 @@ describe('preflight', () => {
     expect(report.bakeTasks).toHaveLength(0);
   });
 
-  it('placeholder-stubs assetRefs for T-084a to fill in', () => {
+  it('collects empty assetRefs when no elements carry URLs', () => {
+    // Clip elements are opaque to asset preflight (params are runtime-
+    // specific); T-084a only surfaces refs from URL-bearing content types
+    // (image, video, audio, embed).
     registerRuntime(stubRuntime('css', ['solid-background']));
     const report = preflight(doc([clipElement('a', 'css', 'solid-background')]));
     expect(Array.isArray(report.assetRefs)).toBe(true);

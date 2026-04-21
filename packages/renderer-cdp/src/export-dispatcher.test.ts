@@ -263,3 +263,77 @@ describe('exportDocument — failure modes', () => {
     expect(sinkFrames).toEqual([0, 1, 2, 3]);
   });
 });
+
+describe('exportDocument — asset preflight integration (T-084a)', () => {
+  function imageEl(id: string, srcUrl: string): RIRElement {
+    return {
+      id,
+      type: 'image',
+      transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, opacity: 1 },
+      timing: { startFrame: 0, endFrame: 30, durationFrames: 30 },
+      zIndex: 0,
+      visible: true,
+      locked: false,
+      stacking: 'auto',
+      animations: [],
+      content: { type: 'image', srcUrl, fit: 'cover' },
+    };
+  }
+
+  it('rewrites URLs via the resolver before mounting the session', async () => {
+    const session = new FakeCdpSession();
+    const sink = new InMemoryFrameSink();
+    const { InMemoryAssetResolver } = await import('./asset-resolver');
+    const resolver = new InMemoryAssetResolver({
+      'https://cdn/a.png': 'file:///cache/a.png',
+    });
+
+    const result = await exportDocument(doc([imageEl('i', 'https://cdn/a.png')], 1), {
+      session,
+      sink,
+      assetResolver: resolver,
+    });
+
+    expect(result.lossFlags).toHaveLength(0);
+    const firstEl = result.document.elements[0];
+    expect(firstEl?.content.type === 'image' && firstEl.content.srcUrl).toBe('file:///cache/a.png');
+    // Resolver was consulted exactly once — and before session.mount.
+    expect(resolver.calls).toHaveLength(1);
+  });
+
+  it('surfaces loss-flagged refs and leaves their URLs remote', async () => {
+    const session = new FakeCdpSession();
+    const sink = new InMemoryFrameSink();
+    const { InMemoryAssetResolver } = await import('./asset-resolver');
+    const resolver = new InMemoryAssetResolver({}); // every URL misses → loss-flag
+
+    const result = await exportDocument(doc([imageEl('i', 'https://cdn/missing.png')], 1), {
+      session,
+      sink,
+      assetResolver: resolver,
+    });
+
+    expect(result.lossFlags).toHaveLength(1);
+    expect(result.lossFlags[0]?.ref.url).toBe('https://cdn/missing.png');
+    const firstEl = result.document.elements[0];
+    expect(firstEl?.content.type === 'image' && firstEl.content.srcUrl).toBe(
+      'https://cdn/missing.png',
+    );
+  });
+
+  it('skips asset preflight entirely when no resolver is supplied', async () => {
+    const session = new FakeCdpSession();
+    const sink = new InMemoryFrameSink();
+
+    const result = await exportDocument(doc([imageEl('i', 'https://cdn/a.png')], 1), {
+      session,
+      sink,
+    });
+
+    expect(result.lossFlags).toHaveLength(0);
+    const firstEl = result.document.elements[0];
+    expect(firstEl?.content.type === 'image' && firstEl.content.srcUrl).toBe(
+      'https://cdn/a.png', // untouched
+    );
+  });
+});

@@ -19,6 +19,7 @@
 import type { RIRDocument } from '@stageflip/rir';
 
 import { type CdpSession, LiveTierAdapter, type MountedComposition } from './adapter';
+import { type AssetResolver, type LossFlag, resolveAssets } from './asset-resolver';
 import type { FrameSink } from './frame-sink';
 import { type PreflightBlocker, type PreflightReport, preflight } from './preflight';
 
@@ -30,14 +31,30 @@ export interface ExportOptions {
    * document: `{ start: 0, end: document.durationFrames }`.
    */
   readonly frameRange?: { readonly start: number; readonly end: number };
+  /**
+   * Optional asset preflight. When provided, every URL-bearing content
+   * ref in the document is passed through the resolver; resolved URLs are
+   * rewritten to `file://` paths before the session mounts. Loss-flagged
+   * refs (refs the resolver refused) land in `ExportResult.lossFlags`
+   * with their original URLs left intact — the session sees them remote.
+   *
+   * Omit to skip asset preflight entirely (URLs stay as-is).
+   */
+  readonly assetResolver?: AssetResolver;
 }
 
 export interface ExportResult {
+  /**
+   * Document as seen by the session. If `assetResolver` was provided and
+   * rewrote any URLs, this is the rewritten document (not the input).
+   */
   readonly document: RIRDocument;
   readonly preflight: PreflightReport;
   readonly startFrame: number;
   readonly endFrame: number;
   readonly framesRendered: number;
+  /** Asset refs the resolver refused. Empty when no resolver was supplied. */
+  readonly lossFlags: readonly LossFlag[];
 }
 
 /**
@@ -73,12 +90,23 @@ export async function exportDocument(
   const range = opts.frameRange ?? { start: 0, end: document.durationFrames };
   let mounted: MountedComposition | null = null;
   let framesRendered = 0;
+  let documentForSession = document;
+  let lossFlags: readonly LossFlag[] = [];
 
   try {
     // Range validation lives inside try so its RangeError throws through
     // finally — sink is still closed on invalid input (owned since entry).
     validateFrameRange(range, document.durationFrames);
-    mounted = await adapter.mount(document);
+
+    // Asset preflight runs before mount so the session only ever sees
+    // rewritten local URLs for refs the resolver fetched successfully.
+    if (opts.assetResolver !== undefined) {
+      const resolved = await resolveAssets(document, opts.assetResolver);
+      documentForSession = resolved.document;
+      lossFlags = resolved.lossFlags;
+    }
+
+    mounted = await adapter.mount(documentForSession);
     for (let frame = range.start; frame < range.end; frame++) {
       const buffer = await adapter.renderFrame(mounted, frame);
       await sink.onFrame(frame, buffer);
@@ -90,11 +118,12 @@ export async function exportDocument(
   }
 
   return {
-    document,
+    document: documentForSession,
     preflight: report,
     startFrame: range.start,
     endFrame: range.end,
     framesRendered,
+    lossFlags,
   };
 }
 

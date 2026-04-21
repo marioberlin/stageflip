@@ -12,17 +12,8 @@ import { aggregateFontRequirements } from '@stageflip/fonts';
 import type { RIRDocument } from '@stageflip/rir';
 import type { FontRequirement } from '@stageflip/runtimes-contract';
 
+import { type AssetRef, collectAssetRefs } from './asset-refs';
 import { type DispatchedClip, dispatchClips } from './dispatch';
-
-/**
- * Placeholder asset-ref shape for T-084a. Kept generic here so T-084a can
- * tighten the contract without a breaking change. Every value is a record
- * the real preflight-asset-resolver will populate; today it's always empty.
- */
-export interface AssetRef {
-  readonly kind: 'image' | 'video' | 'audio' | 'font' | 'lottie';
-  readonly url: string;
-}
 
 /** A blocker prevents the export from proceeding. */
 export type PreflightBlockerKind =
@@ -125,9 +116,10 @@ export function preflight(document: RIRDocument): PreflightReport {
     }),
   );
 
-  // assetRefs is intentionally empty until T-084a walks the RIR to collect
-  // them. The field exists today so consumers can wire against the shape.
-  const assetRefs: AssetRef[] = [];
+  // Collect URL-bearing refs from the RIR. Resolution (fetch / cache /
+  // rewrite) is a separate async phase driven by an AssetResolver; see
+  // asset-resolver.ts and exportDocument's `assetResolver` option.
+  const assetRefs = collectAssetRefs(document);
 
   return {
     liveTasks,
@@ -137,3 +129,5 @@ export function preflight(document: RIRDocument): PreflightReport {
     blockers,
   };
 }
+
+export type { AssetRef };
