@@ -14,7 +14,7 @@
 // file inside its rootDir with explicit sanitation to block traversal.
 // Absolute paths, `..`, and leading/trailing slashes are rejected.
 
-import { access, copyFile, mkdir, readdir, rm, stat } from 'node:fs/promises';
+import { access, copyFile, mkdir, readFile, readdir, rm, stat } from 'node:fs/promises';
 import { dirname, join, resolve, sep } from 'node:path';
 
 export interface StoredArtifact {
@@ -95,7 +95,6 @@ export class InMemoryArtifactStore implements ArtifactStore {
     this.calls.push({ op: 'put', key: k });
     // Read the file into memory so tests don't have to create real sources
     // — but still exercise the "what would the FS store do" path.
-    const { readFile } = await import('node:fs/promises');
     const bytes = await readFile(sourcePath);
     this.entries.set(k, new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength));
     return {
@@ -164,29 +163,35 @@ export class LocalFsArtifactStore implements ArtifactStore {
   }
 
   async put(key: string, sourcePath: string): Promise<StoredArtifact> {
-    const target = this.resolveKeyPath(key);
+    const k = sanitizeArtifactKey(key);
+    const target = this.resolveKeyPath(k);
     await mkdir(dirname(target), { recursive: true });
     await copyFile(sourcePath, target);
     const st = await stat(target);
-    return { key, localPath: target, sizeBytes: st.size };
+    return { key: k, localPath: target, sizeBytes: st.size };
   }
 
   async has(key: string): Promise<boolean> {
+    // Mirror `get`'s file-only semantics: a directory at the key path does
+    // NOT count as "present" — otherwise `has(key) === true` followed by
+    // `get(key) === null` would be an observable inconsistency on nested
+    // keys whose intermediate directories were created by a prior `put`.
     const target = this.resolveKeyPath(key);
     try {
-      await access(target);
-      return true;
+      const st = await stat(target);
+      return st.isFile();
     } catch {
       return false;
     }
   }
 
   async get(key: string): Promise<StoredArtifact | null> {
-    const target = this.resolveKeyPath(key);
+    const k = sanitizeArtifactKey(key);
+    const target = this.resolveKeyPath(k);
     try {
       const st = await stat(target);
       if (!st.isFile()) return null;
-      return { key, localPath: target, sizeBytes: st.size };
+      return { key: k, localPath: target, sizeBytes: st.size };
     } catch {
       return null;
     }

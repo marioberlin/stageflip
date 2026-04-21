@@ -209,4 +209,31 @@ describe('LocalFsArtifactStore', () => {
     // @ts-expect-error — intentional bad input
     expect(() => new LocalFsArtifactStore({})).toThrow(/rootDir/);
   });
+
+  it('has() is file-only — a directory created by a nested put does not count as present', async () => {
+    // Reviewer-flagged consistency bug: prior to the fix, `has` used
+    // `access` and returned true for directories, while `get` used
+    // `stat+isFile` and returned null. Now both use stat+isFile.
+    const src = join(tempRoot, 's.bin');
+    await writeFile(src, new Uint8Array([0]));
+    const store = new LocalFsArtifactStore({ rootDir: storeRoot });
+    await store.put('runs/42/out.mp4', src);
+
+    // The directories runs/ and runs/42/ exist on disk but are not
+    // artifact keys themselves.
+    expect(await store.has('runs')).toBe(false);
+    expect(await store.has('runs/42')).toBe(false);
+    expect(await store.has('runs/42/out.mp4')).toBe(true);
+  });
+
+  it('put returns the sanitised key (round-trips through get)', async () => {
+    const src = join(tempRoot, 's.bin');
+    await writeFile(src, new Uint8Array([0]));
+    const store = new LocalFsArtifactStore({ rootDir: storeRoot });
+
+    const putResult = await store.put('round.trip.mp4', src);
+    const getResult = await store.get(putResult.key);
+    expect(getResult).not.toBeNull();
+    expect(getResult?.key).toBe(putResult.key);
+  });
 });
