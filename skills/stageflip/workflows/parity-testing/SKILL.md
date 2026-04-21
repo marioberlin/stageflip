@@ -53,6 +53,10 @@ thresholds, OR the number of failing frames stays within the fixture's
 | `fixtureManifestSchema` + `parseFixtureManifest(raw)` | `@stageflip/testing` | Parses a fixture JSON and validates thresholds + goldens (T-102). |
 | `parityThresholdsSchema` + `parityGoldensSchema` | `@stageflip/testing` | Standalone Zod schemas for the new T-102 fields. |
 | `resolveGoldenPath(manifest, fixtureDir, frame)` | `@stageflip/testing` | Resolves the absolute golden PNG path for a frame. Returns `null` when the manifest has no `goldens` block. |
+| `scoreFixture(fixturePath, opts?)` | `@stageflip/parity-cli` | End-to-end fixture scoring. Returns a `FixtureScoreOutcome` with status 'scored' / 'no-goldens' / 'no-candidates' / 'missing-frames'. |
+| `runCli(argv, io?)` + `parseArgs(argv)` | `@stageflip/parity-cli` | CLI entry — argv parse + exit-code-returning runner. Injectable `CliIo` for tests. |
+| `formatOutcome` + `formatSummary` | `@stageflip/parity-cli` | Pretty console-output helpers. |
+| `outcomeIsFailure(outcome)` | `@stageflip/parity-cli` | Predicate — only scored-and-failed counts as a hard CLI failure. |
 
 ## Minimum sketch
 
@@ -118,10 +122,50 @@ The remaining 2 shader variants (`shader-swirl-vortex`, `shader-glitch`)
 remain as T-067 input-only manifests; they can graduate to full parity
 coverage as operators commit their first goldens.
 
+## CLI (T-101)
+
+`pnpm parity` drives `scoreFrames` end-to-end: fixture parse →
+threshold resolve → golden + candidate path resolution → PNG load
+→ score → pretty report + exit code.
+
+```sh
+# Score an explicit fixture (candidate frames default to
+# <fixture-dir>/candidates/<fixture-name>/):
+pnpm parity packages/testing/fixtures/css-solid-background.json
+
+# Score every *.json under a directory:
+pnpm parity --fixtures-dir packages/testing/fixtures
+
+# Override the candidates directory (useful when the renderer
+# dropped PNGs somewhere other than the default):
+pnpm parity my-fixture.json --candidates /tmp/rendered-frames
+
+# Show help:
+pnpm parity --help
+```
+
+**Exit codes**:
+
+- `0` — every scored fixture passed. Skipped fixtures (no
+  goldens, no candidates, missing frames) do NOT fail the run,
+  so CI greens through until goldens are primed.
+- `1` — at least one fixture was scored and FAILED its
+  thresholds.
+- `2` — usage / argument error.
+
+**Skip reasons**:
+
+- `no-goldens` — manifest has no `goldens` block (fixture is
+  input-only).
+- `no-candidates` — candidates directory entirely missing.
+- `missing-frames` — some frames have no golden or no candidate.
+
+Programmatic consumers (future T-103 CI gate, T-105 visual diff)
+import `scoreFixture(fixturePath, opts?)` and `runCli(argv, io?)`
+from `@stageflip/parity-cli` directly.
+
 ## What comes later
 
-- **T-101** — `pnpm parity [<fixture>]` CLI that walks a fixture
-  directory and drives `scoreFrames`.
 - **T-103** — CI integration; gate runs on any PR touching rendering
   code or `packages/parity/**`.
 - **T-105** — visual-diff viewer (side-by-side / slider / overlay)
