@@ -1,0 +1,13 @@
+{
+  "name": "shader-flash-through-white",
+  "runtime": "shader",
+  "kind": "flash-through-white",
+  "description": "WebGL fragment shader — triangular white pulse peaking at progress=0.5.",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 30 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 30,
+    "props": {}
+  },
+  "referenceFrames": [0, 15, 29]
+}

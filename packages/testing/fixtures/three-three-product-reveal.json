@@ -1,0 +1,13 @@
+{
+  "name": "three-three-product-reveal",
+  "runtime": "three",
+  "kind": "three-product-reveal",
+  "description": "Three.js scene — pink cube rotating under directional + ambient lighting.",
+  "composition": { "width": 960, "height": 540, "fps": 30, "durationInFrames": 60 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 60,
+    "props": {}
+  },
+  "referenceFrames": [0, 30, 59]
+}
