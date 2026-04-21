@@ -151,8 +151,6 @@ export {
   type BrowserFactory,
   canvasPlaceholderHostHtml,
   type CaptureMode,
-  richPlaceholderControllerScript,
-  richPlaceholderHostHtml,
   createPuppeteerBrowserFactory,
   type HostHtmlBuilder,
   probeBeginFrameSupport,
@@ -161,6 +159,8 @@ export {
   type PuppetBrowser,
   type PuppetCdpClient,
   type PuppetPage,
+  richPlaceholderControllerScript,
+  richPlaceholderHostHtml,
 } from './puppeteer-session';
 
 export {

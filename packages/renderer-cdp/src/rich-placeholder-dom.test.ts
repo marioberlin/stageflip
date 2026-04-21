@@ -96,6 +96,23 @@ describe('richPlaceholderControllerScript — DOM behaviour', () => {
     expect(late.style.display).toBe('none');
   });
 
+  it('treats startFrame as inclusive (lower-bound off-by-one guard)', () => {
+    // Catches mutations of `n >= startFrame` → `n > startFrame` that
+    // would otherwise slip through the timing-window test above.
+    const doc = mkDoc([shapeElement('el', { startFrame: 20, endFrame: 30 })]);
+    const root = freshRoot();
+    const { setFrame } = richPlaceholderControllerScript(doc, root);
+    const el = root.querySelector<HTMLElement>('.__sf_el');
+    if (!el) throw new Error('expected one node');
+
+    setFrame(19);
+    expect(el.style.display).toBe('none');
+    setFrame(20);
+    expect(el.style.display).toBe('');
+    setFrame(21);
+    expect(el.style.display).toBe('');
+  });
+
   it('treats endFrame as exclusive', () => {
     const doc = mkDoc([shapeElement('el', { startFrame: 0, endFrame: 10 })]);
     const root = freshRoot();
