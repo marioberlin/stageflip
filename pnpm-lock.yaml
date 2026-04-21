@@ -193,6 +193,9 @@ importers:
 
   packages/renderer-cdp:
     dependencies:
+      '@stageflip/fonts':
+        specifier: workspace:*
+        version: link:../fonts
       '@stageflip/rir':
         specifier: workspace:*
         version: link:../rir
