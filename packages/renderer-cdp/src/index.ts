@@ -105,3 +105,11 @@ export {
   type DoctorOptions,
   type DoctorReport,
 } from './ffmpeg-doctor';
+
+export {
+  buildExtractFramesArgs,
+  ExtractVideoFramesError,
+  type ExtractVideoFramesOptions,
+  type ExtractVideoFramesResult,
+  extractVideoFrames,
+} from './video-frame-extractor';
