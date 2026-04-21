@@ -3,7 +3,7 @@
 // puppeteer launches; the full end-to-end path is exercised by the
 // reference-render.test.ts guarded suite when Chrome is available.
 
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CompositionConfig } from './adapter';
 import type { DispatchPlan } from './dispatch';
@@ -14,8 +14,18 @@ import {
   type PuppetPage,
   PuppeteerCdpSession,
   canvasPlaceholderHostHtml,
+  createPuppeteerBrowserFactory,
   probeBeginFrameSupport,
 } from './puppeteer-session';
+
+// Stub puppeteer-core at module level so createPuppeteerBrowserFactory's
+// lazy `import('puppeteer-core')` resolves to a captureable launch spy
+// without pulling in the real Chrome binding. No other test in this
+// file imports puppeteer-core directly.
+const launchSpy = vi.fn(async () => ({ close: async () => undefined }));
+vi.mock('puppeteer-core', () => ({
+  default: { launch: launchSpy },
+}));
 
 // --- fakes ------------------------------------------------------------------
 
@@ -547,6 +557,71 @@ describe('BEGIN_FRAME_LAUNCH_ARGS', () => {
 
   it('is frozen — callers cannot mutate the canonical list', () => {
     expect(Object.isFrozen(BEGIN_FRAME_LAUNCH_ARGS)).toBe(true);
+  });
+});
+
+describe('createPuppeteerBrowserFactory', () => {
+  beforeEach(() => {
+    launchSpy.mockClear();
+  });
+
+  /** Pull the `args` array off the most recent launch call. */
+  function lastLaunchArgs(): readonly string[] {
+    const call = launchSpy.mock.calls[0];
+    if (!call) throw new Error('expected one puppeteer launch call');
+    const opts = call[0] as { args?: readonly string[] };
+    return opts?.args ?? [];
+  }
+
+  it('appends BEGIN_FRAME_LAUNCH_ARGS under captureMode="beginframe" regardless of platform', async () => {
+    const factory = createPuppeteerBrowserFactory({
+      captureMode: 'beginframe',
+      platform: 'darwin',
+    });
+    await factory();
+    expect(lastLaunchArgs()).toContain('--enable-begin-frame-control');
+    expect(lastLaunchArgs()).toContain('--deterministic-mode');
+  });
+
+  it('appends BEGIN_FRAME_LAUNCH_ARGS under captureMode="auto" + platform="linux"', async () => {
+    const factory = createPuppeteerBrowserFactory({ captureMode: 'auto', platform: 'linux' });
+    await factory();
+    expect(lastLaunchArgs()).toContain('--enable-begin-frame-control');
+  });
+
+  it('omits BEGIN_FRAME_LAUNCH_ARGS under captureMode="auto" + platform="darwin"', async () => {
+    const factory = createPuppeteerBrowserFactory({ captureMode: 'auto', platform: 'darwin' });
+    await factory();
+    expect(lastLaunchArgs()).not.toContain('--enable-begin-frame-control');
+    expect(lastLaunchArgs()).not.toContain('--deterministic-mode');
+  });
+
+  it('omits BEGIN_FRAME_LAUNCH_ARGS under captureMode="screenshot" regardless of platform', async () => {
+    const factory = createPuppeteerBrowserFactory({ captureMode: 'screenshot', platform: 'linux' });
+    await factory();
+    expect(lastLaunchArgs()).not.toContain('--enable-begin-frame-control');
+  });
+
+  it('defaults to captureMode="auto" when the option is omitted', async () => {
+    // With platform left at process.platform and mode default, the only
+    // thing we can assert universally is that calling the factory
+    // doesn't throw and launches puppeteer-core exactly once.
+    const factory = createPuppeteerBrowserFactory({ platform: 'darwin' });
+    await factory();
+    expect(launchSpy).toHaveBeenCalledTimes(1);
+    expect(lastLaunchArgs()).not.toContain('--enable-begin-frame-control');
+  });
+
+  it('preserves caller-supplied args and appends BeginFrame flags after them', async () => {
+    const factory = createPuppeteerBrowserFactory({
+      captureMode: 'beginframe',
+      platform: 'linux',
+      args: ['--window-size=800,600'],
+    });
+    await factory();
+    const args = lastLaunchArgs();
+    expect(args[0]).toBe('--window-size=800,600');
+    expect(args).toContain('--enable-begin-frame-control');
   });
 });
 
