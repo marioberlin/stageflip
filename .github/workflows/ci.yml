@@ -104,6 +104,8 @@ jobs:
               - 'packages/cdp-host-bundle/**'
               - 'packages/frame-runtime/**'
               - 'packages/rir/**'
+              - 'packages/schema/**'
+              - 'packages/fonts/**'
               - 'packages/runtimes/**'
               - 'packages/testing/**'
               - '.github/workflows/ci.yml'

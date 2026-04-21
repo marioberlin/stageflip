@@ -176,9 +176,17 @@ that touches rendering-adjacent paths:
 - `packages/cdp-host-bundle/**`
 - `packages/frame-runtime/**`
 - `packages/rir/**`
+- `packages/schema/**` — upstream of RIR; schema-only changes can
+  still shift rendered output via the compiler.
+- `packages/fonts/**` — direct dep of renderer-cdp; font-loading
+  changes shift glyph rasterisation at capture time.
 - `packages/runtimes/**`
 - `packages/testing/**`
 - `.github/workflows/ci.yml`
+
+`packages/renderer-core/**` is **deliberately excluded** while the
+package remains a stub — add it to the filter when it gains real
+rendering logic.
 
 Path filtering is done by [dorny/paths-filter](https://github.com/dorny/paths-filter);
 PRs that don't touch the filter set skip the job entirely (and
