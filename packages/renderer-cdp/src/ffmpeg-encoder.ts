@@ -135,11 +135,12 @@ export class FFmpegEncoder implements FrameSink {
   }
 
   async close(): Promise<void> {
-    if (this.closed) {
-      // close is documented as idempotent (FrameSink contract); share the
-      // original exit promise so a re-entrant caller sees the same result.
-      return this.closeResult ?? Promise.resolve();
-    }
+    // FrameSink `close` is idempotent, including across concurrent async
+    // callers. Checking `closeResult` before any `await` ensures that two
+    // callers that both reach `close()` in the same sync tick both see
+    // the SAME in-flight finalize promise — we never start finalize twice
+    // (which would double-close stdin + double-await `wait`).
+    if (this.closeResult !== null) return this.closeResult;
     this.closed = true;
     this.closeResult = this.finalize();
     return this.closeResult;

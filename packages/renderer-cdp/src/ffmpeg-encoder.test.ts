@@ -16,7 +16,8 @@ interface FakeSpawn {
   command: string;
   args: readonly string[];
   writes: Uint8Array[];
-  stdinEnded: boolean;
+  stdinEndCalls: number;
+  waitCalls: number;
   killed: boolean;
   /** Resolve the process with this code (and stderr). Default: 0. */
   resolveWith: { code: number | null; stderr: string };
@@ -31,7 +32,8 @@ class FakeChildRunner implements ChildRunner {
       command,
       args: [...args],
       writes: [],
-      stdinEnded: false,
+      stdinEndCalls: 0,
+      waitCalls: 0,
       killed: false,
       resolveWith: this.nextResolve,
     };
@@ -43,10 +45,11 @@ class FakeChildRunner implements ChildRunner {
           record.writes.push(chunk);
         },
         async end(): Promise<void> {
-          record.stdinEnded = true;
+          record.stdinEndCalls++;
         },
       },
       async wait(): Promise<{ code: number | null; stderr: string }> {
+        record.waitCalls++;
         return record.resolveWith;
       },
       kill(): void {
@@ -180,7 +183,7 @@ describe('FFmpegEncoder', () => {
     await encoder.onFrame(0, new Uint8Array([0x01]));
     await encoder.close();
 
-    expect(runner.spawns[0]?.stdinEnded).toBe(true);
+    expect(runner.spawns[0]?.stdinEndCalls).toBe(1);
   });
 
   it('close raises FFmpegEncoderError on non-zero exit, with stderr carried through', async () => {
@@ -208,7 +211,23 @@ describe('FFmpegEncoder', () => {
     await expect(first).resolves.toBeUndefined();
     await expect(second).resolves.toBeUndefined();
     // stdin.end() was only called once.
-    expect(runner.spawns[0]?.stdinEnded).toBe(true);
+    expect(runner.spawns[0]?.stdinEndCalls).toBe(1);
+  });
+
+  it('close is safe against concurrent async callers', async () => {
+    // Two separate tasks both await close() "at the same time". Because
+    // close is async, each one reaches its first await before setting the
+    // closed flag — a naive guard would let both start finalize, ending
+    // stdin twice and awaiting wait() twice. The implementation stores
+    // closeResult before the first await so the second entry shares the
+    // same in-flight promise.
+    const runner = new FakeChildRunner();
+    const encoder = FFmpegEncoder.create({ ...baseOpts(), runner });
+    await Promise.all([encoder.close(), encoder.close(), encoder.close()]);
+    // Only one process was spawned; only one finalize ran.
+    expect(runner.spawns).toHaveLength(1);
+    expect(runner.spawns[0]?.stdinEndCalls).toBe(1);
+    expect(runner.spawns[0]?.waitCalls).toBe(1);
   });
 
   it('onFrame after close rejects', async () => {

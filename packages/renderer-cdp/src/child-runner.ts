@@ -7,9 +7,11 @@
 // the encoder.
 //
 // The shape is deliberately narrow: spawn returns a handle with a stdin
-// sink, a stderr capture tap, and a `wait()` that resolves with the exit
-// code + accumulated stderr text. No streaming stdout — ffmpeg writes video
-// to a file path, not to stdout, so stdout is ignored.
+// sink, a combined-output capture tap (stdout + stderr concatenated), and
+// a `wait()` that resolves with the exit code. ffmpeg writes encoder
+// errors to stderr but `-version` output to stdout on modern builds — the
+// doctor probe needs both; the encoder only cares about stderr, but
+// collecting stdout too costs nothing and keeps the interface uniform.
 
 import { spawn as nodeSpawn } from 'node:child_process';
 
@@ -23,9 +25,12 @@ export interface ChildStdin {
 export interface SpawnedProcess {
   readonly stdin: ChildStdin;
   /**
-   * Resolve when the process exits, with the exit code (null on signal)
-   * and any accumulated stderr text. Reject if spawn itself errored — a
-   * non-zero exit code is NOT a rejection, so callers can inspect it.
+   * Resolve when the process exits. `stderr` is the combined stdout +
+   * stderr text in emission order — kept in a single field for
+   * back-compat with the encoder path; the doctor probe relies on it
+   * because ffmpeg writes `-version` info to stdout. Reject only if
+   * spawn itself errored; a non-zero exit code resolves normally so
+   * callers can inspect it.
    */
   wait(): Promise<{ code: number | null; stderr: string }>;
   /** Force-terminate the process. No-op if already exited. */
@@ -45,12 +50,20 @@ export function createNodeChildRunner(): ChildRunner {
   return {
     spawn(command: string, args: readonly string[]): SpawnedProcess {
       const child = nodeSpawn(command, [...args], {
-        stdio: ['pipe', 'ignore', 'pipe'],
+        stdio: ['pipe', 'pipe', 'pipe'],
       });
 
-      let stderrBuf = '';
+      // Concatenate stdout + stderr in emission order. ffmpeg `-version`
+      // writes to stdout; encoder errors go to stderr. The doctor probe
+      // greps the combined buffer; the encoder path ignores stdout bytes
+      // (there aren't any during encode — video goes to a file) and reads
+      // its failure text from what would otherwise be stderr-only.
+      let outBuf = '';
+      child.stdout?.on('data', (chunk: Buffer) => {
+        outBuf += chunk.toString('utf8');
+      });
       child.stderr?.on('data', (chunk: Buffer) => {
-        stderrBuf += chunk.toString('utf8');
+        outBuf += chunk.toString('utf8');
       });
 
       const stdin: ChildStdin = {
@@ -86,7 +99,7 @@ export function createNodeChildRunner(): ChildRunner {
           return new Promise((resolve, reject) => {
             child.once('error', reject);
             child.once('close', (code) => {
-              resolve({ code, stderr: stderrBuf });
+              resolve({ code, stderr: outBuf });
             });
           });
         },
