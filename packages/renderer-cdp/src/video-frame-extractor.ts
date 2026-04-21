@@ -5,11 +5,22 @@
 // during capture — which is non-deterministic under BeginFrame.
 //
 // Adapted from the vendored engine's videoFrameExtractor (see
-// vendor/engine/src/services/videoFrameExtractor.ts, preserved verbatim).
-// This module reuses the same ffmpeg argv shape (`-ss`, `-i`, `-t`,
-// `-vf fps=`, output pattern) for byte-compatible frame output; the
-// wrapper layer is fresh and uses the T-085 ChildRunner seam so fake
-// spawns drive every test.
+// vendor/engine/src/services/videoFrameExtractor.ts). The parts we
+// preserve: the flag semantics that drive decoder behaviour — `-ss`
+// before `-i` (fast keyframe seek), `-t` for duration, `-vf fps=N` at
+// output rate, the 5-digit pattern `frame_%05d.<ext>`, and the upstream
+// JPG quality curve `Math.ceil((100 - quality) / 3)`. Decoded pixels are
+// identical to upstream for the same inputs on these shared paths.
+//
+// Deliberate deviations (decoded pixels unaffected):
+//   - We add `-hide_banner -loglevel error` up-front to match this
+//     package's own ffmpeg-encoder.ts house style.
+//   - We emit `-y` once up-front, not at the end as upstream does.
+//   - PNG path omits upstream's `-q:v 0` (PNG is lossless; that arg is
+//     a no-op). We keep `-compression_level 6`.
+//
+// The wrapper layer is fresh and uses the T-085 ChildRunner seam so
+// fake spawns drive every test.
 
 import { type ChildRunner, createNodeChildRunner } from './child-runner';
 
@@ -76,8 +87,11 @@ export function buildExtractFramesArgs(opts: ExtractVideoFramesOptions): {
   validateVideoPath(opts.videoPath);
 
   const format = opts.format ?? 'png';
-  const quality = opts.quality;
-  if (format === 'jpg' && quality !== undefined) validateQuality(quality);
+  // Normalise-then-validate: a caller that passes `quality: undefined`
+  // with `format: 'jpg'` still gets the 0..100 bounds check on the
+  // effective value.
+  const effectiveQuality = format === 'jpg' ? (opts.quality ?? 85) : undefined;
+  if (effectiveQuality !== undefined) validateQuality(effectiveQuality);
 
   const framePattern = `frame_%05d.${format}`;
   const outputPath = joinPath(opts.outputDir, framePattern);
@@ -99,8 +113,8 @@ export function buildExtractFramesArgs(opts: ExtractVideoFramesOptions): {
   if (format === 'jpg') {
     // Upstream's quality → `-q:v` mapping: 100 = best (q:v 1), 0 = worst
     // (q:v 33). `Math.ceil((100 - quality) / 3)` preserves that curve.
-    const effective = quality ?? 85;
-    args.push('-q:v', String(Math.ceil((100 - effective) / 3)));
+    // effectiveQuality is always defined on the jpg branch.
+    args.push('-q:v', String(Math.ceil((100 - (effectiveQuality ?? 85)) / 3)));
   } else {
     // PNG: lossless by definition; compression_level only affects file size.
     args.push('-compression_level', '6');

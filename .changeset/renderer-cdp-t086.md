@@ -19,12 +19,22 @@ New module `packages/renderer-cdp/src/video-frame-extractor.ts`:
   non-zero exit.
 
 Adapted from the vendored engine's
-`vendor/engine/src/services/videoFrameExtractor.ts`: same ffmpeg
-argv shape (`-ss` before `-i`, `-t` optional, `-vf fps=`, 5-digit
-pattern, JPG `-q:v` curve, PNG `-compression_level 6`) so extracted
-frames are byte-compatible with the upstream engine at the same
-inputs. The wrapper is fresh and uses our ChildRunner — no direct
-use of Node's `child_process`.
+`vendor/engine/src/services/videoFrameExtractor.ts`. Preserved
+behaviour: `-ss` before `-i` (fast keyframe seek), `-t` for
+duration, `-vf fps=N` output rate, 5-digit pattern
+`frame_%05d.<ext>`, upstream JPG quality curve
+`Math.ceil((100 - quality) / 3)`. Decoded pixels are identical to
+upstream for the same inputs.
+
+Deliberate argv deviations (decoded pixels unaffected):
+- Adds `-hide_banner -loglevel error` to match this package's own
+  `ffmpeg-encoder.ts` house style.
+- Emits `-y` once up-front (upstream: at the end).
+- PNG path omits upstream's `-q:v 0` (PNG is lossless; that arg is
+  a no-op). `-compression_level 6` preserved.
+
+The wrapper is fresh and uses our ChildRunner — no direct use of
+Node's `child_process`.
 
 Input validation is fail-loud:
 - `fps` positive finite.
