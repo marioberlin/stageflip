@@ -270,6 +270,24 @@ describe('resolveGoldenPath', () => {
     expect(path).toBe('/x/gold/f_15.jpg');
   });
 
+  it('replaces every ${frame} occurrence in a multi-token pattern', () => {
+    // Regression guard for the replace-vs-replaceAll footgun: a pattern
+    // like `dir-${frame}/f${frame}.png` (directory-per-frame layout) is
+    // legitimate and must not silently leave unreplaced tokens.
+    const manifest = parseFixtureManifest({
+      name: 'multi',
+      runtime: 'css',
+      kind: 'solid-background',
+      description: 'multi-token pattern',
+      composition: { width: 100, height: 100, fps: 30, durationInFrames: 30 },
+      clip: { from: 0, durationInFrames: 30, props: {} },
+      referenceFrames: [0, 15],
+      goldens: { dir: 'gold', pattern: 'dir-${frame}/f${frame}.jpg' },
+    });
+    const path = resolveGoldenPath(manifest, '/x', 5);
+    expect(path).toBe('/x/gold/dir-5/f5.jpg');
+  });
+
   it('returns null when the manifest has no goldens', () => {
     const bare = parseFixtureManifest({
       name: 'no-gold',

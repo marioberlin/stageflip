@@ -138,8 +138,10 @@ export function parseFixtureManifest(raw: unknown): FixtureManifest {
 
 /**
  * Default golden-PNG filename pattern used when `goldens.pattern` is
- * omitted. `${frame}` is substituted with the zero-padded frame
- * index.
+ * omitted. `${frame}` is substituted with the unpadded decimal frame
+ * index (e.g. `frame-5.png`, not `frame-005.png`). Callers that need
+ * zero-padded filenames must pre-pad and pass a custom `pattern`
+ * that embeds the already-padded string.
  */
 export const DEFAULT_GOLDEN_PATTERN = 'frame-${frame}.png';
 
@@ -149,10 +151,12 @@ export const DEFAULT_GOLDEN_PATTERN = 'frame-${frame}.png';
  * fixture JSON sits in. Returns `null` if the manifest has no
  * `goldens` block.
  *
- * Substitution is plain string replace on `${frame}`; no other
- * template expressions are honoured. Frame numbers are NOT
- * zero-padded by default — the caller can encode padding into the
- * pattern (e.g. `"frame-${frame}.png"` → supply a padded frame).
+ * Substitution is `String.prototype.replaceAll` on `${frame}` — every
+ * occurrence of the token is replaced, so patterns like
+ * `dir-${frame}/f${frame}.png` (directory-per-frame layouts) work
+ * correctly. No other template expressions are honoured. Frame
+ * numbers are NOT zero-padded — the caller encodes padding upstream
+ * and passes a pattern that bakes in the already-padded string.
  */
 export function resolveGoldenPath(
   manifest: FixtureManifest,
@@ -161,7 +165,7 @@ export function resolveGoldenPath(
 ): string | null {
   if (!manifest.goldens) return null;
   const pattern = manifest.goldens.pattern ?? DEFAULT_GOLDEN_PATTERN;
-  const filename = pattern.replace('${frame}', String(frame));
+  const filename = pattern.replaceAll('${frame}', String(frame));
   // Lightweight path join; avoids pulling in `node:path` here so the
   // package stays env-agnostic (tests + browser bundlers both OK).
   const dir = manifest.goldens.dir;
