@@ -303,14 +303,14 @@ When a task references these, treat as **API specs only**. Read docs; do not cop
 | T-080 | Vendor `@hyperframes/engine` into `packages/renderer-cdp/vendor/`; pin commit | M |
 | T-081 | `NOTICE` file (Apache-2.0 attributions) | S |
 | T-082 | `packages/renderer-cdp/vendor/README.md` — what's vendored, why, modifications | S |
-| T-083 | ClipRuntime ↔ CDP bridge adapter (one mapping per runtime kind; two-pass for bake) | L |
+| **T-083 [rev]** | **Live-tier CDP adapter** — single adapter module consuming `findClip(kind)` from `@stageflip/runtimes-contract`; wraps a CDP-controlled browser session; exposes `renderFrame(compositionId, frame) → Buffer` via `BeginFrame`. All 6 registered live runtimes share this single code path (no per-kind branching in the adapter). Two-pass bake orchestration moved into T-089. Resolves the vendored engine's `@hyperframes/core` transitive dep by reimplementing the two helpers (`quantizeTimeToFrame`, `MEDIA_VISUAL_STYLE_PROPERTIES`) in `renderer-cdp/src/` and patching the engine's `src/index.ts` with a `// Modified by StageFlip` header (first exercise of the T-081 modification protocol). See `docs/escalation-T-083.md` | L |
 | T-084 | Export dispatcher — reads RIR, orchestrates capture loop, handles async bake jobs in preflight phase | L |
 | **T-084a [new]** | **Asset preflight** — before capture loop: walk RIR, collect all `AssetRef`s (images, videos, audio, fonts, Lottie JSON); download/cache all to local disk keyed by content hash; rewrite RIR URLs to `file://` paths. Unsupported sources (YouTube embeds, arbitrary iframes): rasterize at preflight via Puppeteer screenshot, OR fail fast with loss-flag | M |
 | T-085 | FFmpeg integration: H.264, H.265, VP9, ProRes 4444 (alpha); CRF knobs. System FFmpeg via child_process; `doctor` command validates install | L |
 | T-086 | Video-frame pre-extraction at export time (adapted from vendored engine) | M |
 | T-087 | Audio mixer wiring (parse tracks, mix via FFmpeg filters, mux) | M |
 | T-088 | Export artifact storage interface (local FS + Firebase Storage) | M |
-| T-089 | Bake-runtime scaffolding — queue/cache interfaces; no implementation (Phase 12 fills) | M |
+| **T-089 [rev]** | **Bake-runtime scaffolding** — queue/cache interfaces **+ two-pass bake orchestration interface** (offline bake → cached artifact → live-tier playback); no concrete implementation (Phase 12 fills). Two-pass moved here from T-083 per `docs/escalation-T-083.md`. | M |
 | T-090 | Reference render tests: 3 fixture documents → MP4; ffprobe verifies | M |
 | T-091 | `skills/stageflip/reference/export-formats/SKILL.md` | M |
 

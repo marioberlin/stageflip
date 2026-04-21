@@ -4,7 +4,7 @@
 **To**: Orchestrator
 **Task**: `T-083 — ClipRuntime ↔ CDP bridge adapter (one mapping per runtime kind; two-pass for bake)` — Phase 4, Size L
 **Trigger** (CLAUDE.md §6): _"You discover an architectural question not covered by existing skills"_ — three, actually.
-**Status**: blocked pending decisions below. Working tree on `main` is clean; no work-in-progress.
+**Status**: **RESOLVED 2026-04-21.** Orchestrator accepted all three proposals verbatim (B1=Y, B2=Y, B3=a). `docs/implementation-plan.md` rows T-083 and T-089 marked `[rev]` in the same commit that records these decisions. Implementer proceeding.
 
 ---
 
