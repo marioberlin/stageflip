@@ -83,8 +83,10 @@ These are floors — actual locked versions determined by audit. Bumping the flo
 
 | Package | Floor | Locked | Notes |
 |---|---|---|---|
-| sharp | 0.33 | **0.34.5** | 0.x stable line — minor bumps on 0.34 accepted |
+| sharp | 0.33 | **0.34.5** | 0.x stable line — minor bumps on 0.34 accepted. Pre-pinned but NOT installed: sharp's libvips binding is LGPL-3.0-or-later which requires a dedicated ADR (THIRD_PARTY.md §1.1). T-100 initially targeted sharp, pivoted to pngjs to avoid LGPL exposure — see Audit 8. |
 | ssim.js | latest | **3.5.0** | For T-100 parity harness |
+| pngjs | latest | **7.0.0** | Pure-JS PNG decode for parity harness (T-100). Zero runtime transitive deps. Chosen over sharp to avoid LGPL-via-libvips. |
+| @types/pngjs | matches pngjs | **6.0.5** | Types for pngjs; devDep of `@stageflip/parity`. |
 | puppeteer | 23.x | **23.11.1** | Puppeteer 24 available but blocked — coordinated with vendored Hyperframes engine version (Phase 4) |
 | fluent-ffmpeg | latest | **2.1.3** | System FFmpeg required; `doctor` validates |
 | culori | latest | **4.0.2** | For interpolateColors (T-042) |
@@ -309,6 +311,47 @@ pinning still holds.
 Transitive growth: `pnpm check-licenses` went from 473 → ~485
 deps scanned (mostly puppeteer's own packaging — chromium-bidi,
 debug, devtools-protocol, ws all MIT/BSD/ISC/Apache). PASS.
+
+### Audit 8 addendum — 2026-04-21 (T-100 parity harness install sites)
+
+T-100 ships the Phase 5 parity harness — PSNR + SSIM comparators
+plus a scoring aggregator. Install sites for two new packages +
+a decision record for the sharp → pngjs pivot.
+
+**Install sites**:
+
+- `ssim.js` **3.5.0** (MIT) — installed in `@stageflip/parity`
+  dependencies. Pure-JS Weber-SSIM implementation; zero runtime
+  transitive deps of its own. Consumed by `ssim(a, b, opts)` which
+  forwards the optional `Options` object straight through.
+- `pngjs` **7.0.0** (MIT) — installed in `@stageflip/parity`
+  dependencies. Pure-JS PNG decode, zero runtime transitive deps.
+  Consumed by `loadPng(source)` only — one `new PNG().parse(bytes)`
+  call per decode.
+- `@types/pngjs` **6.0.5** (MIT, devDep) — installed in
+  `@stageflip/parity` devDependencies.
+
+**Decision: sharp → pngjs pivot**. T-100's first pass used `sharp`
+(already pre-pinned in §3). `pnpm check-licenses` then flagged
+`@img/sharp-libvips-darwin-arm64@1.2.4` as `LGPL-3.0-or-later`.
+Per `THIRD_PARTY.md` §1.1 + CLAUDE.md §3, LGPL requires a
+per-package ADR. pngjs achieves the same goal (PNG decode → RGBA
+buffer) with MIT + no native bindings + zero transitive deps, so
+the pivot avoids the policy exposure entirely at no practical cost
+at fixture sizes. Sharp's §3 entry is retained but annotated as
+pre-pinned-but-uninstalled pending any future task that actually
+needs its image-processing surface (and the corresponding ADR).
+
+Alignment: `ssim.js` was pre-pinned in §3 at T-001a time; `pngjs`
+is net-new to §3 in this audit, no bump ADR needed.
+
+Transitive growth: +2 packages (pngjs core + @types/pngjs). All
+MIT. `pnpm check-licenses` PASS at 481 deps scanned (was 479 at
+Phase 4 exit).
+
+**Not a regular dep**: `@stageflip/parity` is `private: true` so
+publishing is gated alongside the other workspace packages at
+Phase 10.
 
 ---
 
