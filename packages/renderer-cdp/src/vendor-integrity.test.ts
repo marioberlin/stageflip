@@ -104,7 +104,8 @@ describe('vendor/README.md (T-082)', () => {
 
   it('lists or links the current modification record', () => {
     const readme = readFileSync(readmePath, 'utf8');
-    expect(readme).toMatch(/Modifications/i);
+    expect(readme).toMatch(/## Modifications/);
+    expect(readme).toMatch(/Modified by StageFlip, YYYY-MM-DD/);
   });
 
   it('cross-references the canonical provenance files', () => {

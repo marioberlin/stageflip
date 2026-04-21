@@ -49,6 +49,15 @@ above this boundary, in the ClipRuntime contract and above.
   `@hyperframes/player`, `@hyperframes/producer`. T-083 will decide
   whether the two core helpers get re-implemented in
   `renderer-cdp/src/` or vendored in a second payload.
+
+  Note for T-083: the engine's entrypoint
+  [`engine/src/index.ts`](./engine/src/index.ts) re-exports both
+  symbols to its own consumers
+  (`export { quantizeTimeToFrame, MEDIA_VISUAL_STYLE_PROPERTIES } from "@hyperframes/core"`).
+  Any StageFlip code that imports from the vendored engine therefore
+  carries a transitive dependency on `@hyperframes/core` — that
+  dependency needs to resolve (re-impl, second vendor payload, or
+  patched re-export) before the engine can be linked in.
 - **Studied, not vendored**: the rest of the Hyperframes monorepo
   at `reference/hyperframes/` (gitignored, local-only). See
   [`THIRD_PARTY.md`](../../../THIRD_PARTY.md) §3.
