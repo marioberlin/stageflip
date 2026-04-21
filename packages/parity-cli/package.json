@@ -1,0 +1,39 @@
+{
+  "name": "@stageflip/parity-cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "stageflip-parity": "./bin/parity.js"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@stageflip/parity": "workspace:*",
+    "@stageflip/testing": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/pngjs": "6.0.5",
+    "@vitest/coverage-v8": "2.1.9",
+    "pngjs": "7.0.0",
+    "vitest": "2.1.9"
+  }
+}
