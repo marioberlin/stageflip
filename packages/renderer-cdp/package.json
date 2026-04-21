@@ -24,6 +24,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@stageflip/cdp-host-bundle": "workspace:*",
     "@stageflip/fonts": "workspace:*",
     "@stageflip/rir": "workspace:*",
     "@stageflip/runtimes-contract": "workspace:*",

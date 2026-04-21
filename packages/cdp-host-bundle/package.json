@@ -1,0 +1,45 @@
+{
+  "name": "@stageflip/cdp-host-bundle",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/node/index.js",
+  "types": "./dist/node/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/node/index.d.ts",
+      "import": "./dist/node/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "pnpm run build:browser && pnpm run build:node",
+    "build:browser": "vite build",
+    "build:node": "tsup src/index.ts --dts --format esm --outDir dist/node --clean",
+    "dev": "vite build --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@stageflip/frame-runtime": "workspace:*",
+    "@stageflip/rir": "workspace:*",
+    "@stageflip/runtimes-contract": "workspace:*",
+    "@stageflip/runtimes-css": "workspace:*",
+    "react": "19.2.5",
+    "react-dom": "19.2.5"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.2",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "4.7.0",
+    "@vitest/coverage-v8": "2.1.9",
+    "happy-dom": "20.9.0",
+    "vite": "5.4.21",
+    "vitest": "2.1.9"
+  }
+}
