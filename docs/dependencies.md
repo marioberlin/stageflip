@@ -118,6 +118,8 @@ These are floors — actual locked versions determined by audit. Bumping the flo
 | gray-matter | latest | **4.0.3** | Skill frontmatter |
 | remark | latest | **15.0.1** | Skill link parsing |
 | ts-morph | latest | **28.0.0** | Skill generator AST |
+| vite | 5.x | **5.4.21** | Dev harness (T-050); matches version already hoisted via vitest. Vite 6.x blocked, ADR required |
+| @vitejs/plugin-react | 4.x | **4.7.0** | Dev harness (T-050). plugin-react 5.x blocked, ADR required |
 
 ### Import pipelines
 
@@ -218,6 +220,26 @@ Subsequent budget deltas:
   the base bundle. Main now measures **~5.3 KB gz** (limit 10 KB);
   sub-entry measures **~19.5 KB gz** (limit 25 KB). Consumers that
   don't morph paths save 18.75 KB.
+
+### Audit 4 addendum — 2026-04-21 (T-050 dev-harness deps)
+
+Backfill-only pass. T-050 scaffolds `apps/stageflip-app-dev-harness` as
+a Vite + React playground for the frame-runtime primitives. None of
+these ship to consumers.
+
+**Added to §3**:
+- `vite` **5.4.21** (MIT) — matches the version already hoisted
+  transitively via vitest. Installed as a devDependency in
+  `@stageflip/app-dev-harness`.
+- `@vitejs/plugin-react` **4.7.0** (MIT) — installed as a
+  devDependency in `@stageflip/app-dev-harness`.
+
+Transitive growth: `pnpm check-licenses` went from 436 → 463 deps
+scanned; all additions MIT/Apache-2.0/BSD — PASS unchanged.
+
+**Not a policy change**: Vite + plugin-react stay pinned to their
+current stable versions; majors (Vite 6.x, plugin-react 5.x) are
+future ADR work, same handling as other blocked-majors in §3.
 
 ---
 

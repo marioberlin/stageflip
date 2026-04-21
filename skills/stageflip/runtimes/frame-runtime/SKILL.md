@@ -200,6 +200,20 @@ or Infinity across the envelope.
 | `src/use-audio-visualizer.ts` | T-053 | Web Audio analyser hook (editor-only) |
 | `src/properties.test.ts` | T-048 | Cross-primitive property suite |
 
+## Dev harness
+
+`apps/stageflip-app-dev-harness` (T-050) is a Vite + React single-page app
+that mounts the primitives behind a frame slider. Run it from the repo root:
+
+```
+pnpm --filter @stageflip/app-dev-harness dev
+```
+
+Demo compositions (see `apps/dev-harness/src/compositions.tsx`) cover
+`interpolate`, `interpolateColors`, `spring`, `<Sequence>`, `<Loop>`, and
+`<Series>`. Use this as the quickest sanity check when adding or changing a
+primitive — drive the slider and watch the preview update.
+
 ## Test suite
 
 - Unit tests co-located with each source file.
