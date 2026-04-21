@@ -148,7 +148,7 @@ and pins the handle's `beginFrameTimeTicks` to `frame * (1000 / fps)`
 virtual time. Screenshot mode ignores the tick state.
 
 Host HTML is **pluggable** via `HostHtmlBuilder`. Three builders ship
-today; the last is partial (CSS runtime only, other 5 land with T-100e):
+today:
 
 - `canvasPlaceholderHostHtml` (T-090, default) — a single canvas page
   that paints a deterministic frame-number gradient. Ignores the
@@ -159,14 +159,17 @@ today; the last is partial (CSS runtime only, other 5 land with T-100e):
   runtime registration. Clip elements render as labelled placeholder
   boxes. Captures reflect the real element tree (positions, text
   content, shape fills) but not clip output.
-- `createRuntimeBundleHostHtml(bundleSource)` (T-100d) — inlines a
-  Vite-emitted browser IIFE from `@stageflip/cdp-host-bundle`. The
-  bundle ships React + `FrameProvider` + a React composition
-  renderer + live-runtime registration. T-100d registers the CSS
-  runtime only; clips from other runtimes render as labelled
-  placeholder boxes until T-100e extends the bundle. Caller wires
-  the bundle once per session via
+- `createRuntimeBundleHostHtml(bundleSource)` (T-100d + T-100e) —
+  inlines a Vite-emitted browser IIFE from
+  `@stageflip/cdp-host-bundle`. The bundle ships React +
+  `FrameProvider` + a React composition renderer + live-runtime
+  registration for all 6 live runtimes (CSS, GSAP, Lottie, Shader,
+  Three, frame-runtime-bridge) with their demo clips pre-
+  registered. Caller wires the bundle once per session via
   `loadBundleSource()` from `@stageflip/cdp-host-bundle`.
+  `bundleDoctor({ warnAtBytes? })` surfaces the bundle's current
+  byte size + a configurable warning threshold for diagnostic
+  tooling.
 
 The `HostHtmlBuilder` signature changed in T-100c to carry the full
 `RIRDocument` alongside `plan` + `config`. Existing builders that
@@ -294,6 +297,7 @@ From `@stageflip/renderer-cdp`:
 | `richPlaceholderHostHtml`, `HostHtmlBuilder` (now receives `document`) | Rich placeholder host + extended builder contract | T-100c |
 | `createRuntimeBundleHostHtml(bundleSource)` | Builder that inlines the `@stageflip/cdp-host-bundle` IIFE into host HTML | T-100d |
 | From `@stageflip/cdp-host-bundle`: `loadBundleSource()`, `bundlePath()`, `Composition`, `BootedComposition` | React composition renderer + Vite-emitted IIFE loader | T-100d |
+| From `@stageflip/cdp-host-bundle`: `registerAllLiveRuntimes()`, `LIVE_RUNTIME_IDS`, `bundleDoctor()` | 6-runtime registration + bundle-size diagnostic | T-100e |
 | `dispatchClips(doc)` | RIR → DispatchPlan | T-083 |
 | `collectAssetRefs`, `rewriteDocumentAssets`, `resolveAssets`, `InMemoryAssetResolver` | Asset preflight | T-084a |
 | `InMemoryFrameSink`, `FrameSink` | Frame output seam | T-084 |
@@ -310,7 +314,6 @@ From `@stageflip/renderer-cdp`:
 
 | Item | Owner task / phase |
 |---|---|
-| Remaining 5 live runtimes (GSAP / Lottie / Shader / Three / frame-runtime-bridge) in the bundle host | T-100e / Phase 5 |
 | Concrete bake runtime (Blender, heavy three) | Phase 12 |
 | Firebase Storage `ArtifactStore` adapter | Phase 10+ (mirrors Phase 1 Firebase deferrals) |
 | CDP font pre-embedding (`@fontsource` base64 + `document.fonts.check`) | Next touches to T-084a |

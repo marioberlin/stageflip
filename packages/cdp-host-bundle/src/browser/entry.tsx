@@ -5,8 +5,9 @@
 // inlines into the host HTML sent to Chrome.
 //
 // Boot steps:
-//   1. Register all live runtimes (T-100d ships CSS only; T-100e
-//      extends to the other five).
+//   1. Register all 6 live runtimes (T-100d shipped CSS only; T-100e
+//      extends to GSAP, Lottie, Shader, Three, and the
+//      frame-runtime bridge).
 //   2. Read the RIRDocument from the `<script id="__sf_doc"
 //      type="application/json">` tag the host HTML injects.
 //   3. Render `<BootedComposition>` into `#__sf_root` at frame 0.
@@ -15,11 +16,10 @@
 //   5. Flip `window.__sf.ready = true`.
 
 import type { RIRDocument } from '@stageflip/rir';
-import { registerRuntime } from '@stageflip/runtimes-contract';
-import { createCssRuntime, solidBackgroundClip } from '@stageflip/runtimes-css';
 import { type Root, createRoot } from 'react-dom/client';
 
 import { BootedComposition } from '../composition.js';
+import { registerAllLiveRuntimes } from '../runtimes.js';
 
 declare global {
   interface Window {
@@ -31,8 +31,7 @@ declare global {
 }
 
 function boot(): void {
-  // Runtime registration. T-100d = CSS only. T-100e adds the rest.
-  registerRuntime(createCssRuntime([solidBackgroundClip]));
+  registerAllLiveRuntimes();
 
   const docScript = document.getElementById('__sf_doc');
   if (!docScript) {

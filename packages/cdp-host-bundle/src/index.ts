@@ -5,11 +5,16 @@
 // re-exported so renderer-cdp tests can drive the component directly
 // without going through the bundle.
 
-import { access, readFile } from 'node:fs/promises';
+import { access, readFile, stat } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export { Composition, BootedComposition, type CompositionProps } from './composition.js';
+export {
+  LIVE_RUNTIME_IDS,
+  type LiveRuntimeId,
+  registerAllLiveRuntimes,
+} from './runtimes.js';
 
 /**
  * Walk up from `start` until a directory containing `package.json`
@@ -74,4 +79,90 @@ export async function bundlePath(): Promise<string> {
   const here = dirname(fileURLToPath(import.meta.url));
   const root = await findPackageRoot(here);
   return join(root, 'dist', 'browser', 'bundle.js');
+}
+
+/**
+ * Report on the compiled bundle: its size in bytes, plus a comparison
+ * against a caller-supplied warning threshold. Intended as a
+ * diagnostic hook for the parity CLI (T-101) and any operator-facing
+ * doctor utility — flags a bundle that has ballooned without
+ * requiring a CI gate failure (size-limit handles the hard bound).
+ *
+ * Default threshold is 1.75 MB raw; T-100e ships at ~1.59 MB after
+ * registering all 6 runtimes, giving ~160 KB headroom. Callers
+ * targeting tighter budgets should pass their own `warnAtBytes`.
+ */
+export interface BundleDoctorReport {
+  readonly path: string;
+  readonly exists: boolean;
+  /** Raw byte size of the bundle (0 if `exists === false`). */
+  readonly sizeBytes: number;
+  /** Byte threshold above which `warn === true`. */
+  readonly warnAtBytes: number;
+  /** True when `sizeBytes > warnAtBytes`. */
+  readonly warn: boolean;
+  /** Human-readable summary: one line. */
+  readonly message: string;
+}
+
+/**
+ * Format a byte count as `"X.YZ MB"` at >=1 MB, else `"X.Y KB"`.
+ *
+ * Uses SI (decimal) conversions throughout — 1 KB = 1000 bytes,
+ * 1 MB = 1_000_000 bytes — so the cutoff threshold, divisor, and
+ * label all agree. Matches `size-limit`'s convention for bundle
+ * reports. A 1.75 MB threshold thus formats as `"1.75 MB"`, not
+ * `"1.67 MB"` (the MiB value for 1_750_000 bytes).
+ */
+function formatBytes(bytes: number): string {
+  if (bytes >= 1_000_000) {
+    return `${(bytes / 1_000_000).toFixed(2)} MB`;
+  }
+  return `${(bytes / 1000).toFixed(1)} KB`;
+}
+
+/**
+ * Inspect the compiled CDP host bundle and emit a `BundleDoctorReport`.
+ *
+ * Reads the file at `opts.path` (defaults to `bundlePath()`); if
+ * present, records `sizeBytes` from `fs.stat` and classifies as
+ * `warn` when the size exceeds `warnAtBytes` (default 1.75 MB raw).
+ * If the file is missing, the returned report has `exists: false`,
+ * `sizeBytes: 0`, `warn: false` and a `message` telling the operator
+ * to run the build step.
+ *
+ * The `path` override is useful for the parity CLI (T-101) and tests
+ * — pass an arbitrary file path to diagnose a non-default bundle
+ * location, or a non-existent path to exercise the missing-bundle
+ * branch.
+ *
+ * Never throws. Callers should treat `warn === true` as informational,
+ * not a hard failure — `size-limit` owns the CI-enforced bound.
+ */
+export async function bundleDoctor(opts?: {
+  readonly warnAtBytes?: number;
+  readonly path?: string;
+}): Promise<BundleDoctorReport> {
+  const warnAtBytes = opts?.warnAtBytes ?? 1_750_000; // 1.75 MB raw
+  const path = opts?.path ?? (await bundlePath());
+  try {
+    const st = await stat(path);
+    const sizeBytes = st.size;
+    const warn = sizeBytes > warnAtBytes;
+    const size = formatBytes(sizeBytes);
+    const limit = formatBytes(warnAtBytes);
+    const message = warn
+      ? `cdp-host-bundle: ${size} exceeds ${limit} warning threshold`
+      : `cdp-host-bundle: ${size} (within ${limit} threshold)`;
+    return { path, exists: true, sizeBytes, warnAtBytes, warn, message };
+  } catch {
+    return {
+      path,
+      exists: false,
+      sizeBytes: 0,
+      warnAtBytes,
+      warn: false,
+      message: `cdp-host-bundle: bundle not found at ${path} — run \`pnpm --filter @stageflip/cdp-host-bundle build\``,
+    };
+  }
 }
