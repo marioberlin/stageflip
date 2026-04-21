@@ -309,7 +309,7 @@ When a task references these, treat as **API specs only**. Read docs; do not cop
 | T-085 | FFmpeg integration: H.264, H.265, VP9, ProRes 4444 (alpha); CRF knobs. System FFmpeg via child_process; `doctor` command validates install | L |
 | T-086 | Video-frame pre-extraction at export time (adapted from vendored engine) | M |
 | T-087 | Audio mixer wiring (parse tracks, mix via FFmpeg filters, mux) | M |
-| T-088 | Export artifact storage interface (local FS + Firebase Storage) | M |
+| **T-088 [rev]** | **Export artifact storage** — `ArtifactStore` interface + `InMemoryArtifactStore` + `LocalFsArtifactStore` (this PR). Firebase Storage adapter deferred (mirrors the T-035..T-039 Firebase deferral from Phase 1); non-blocking. | M |
 | **T-089 [rev]** | **Bake-runtime scaffolding** — queue/cache interfaces **+ two-pass bake orchestration interface** (offline bake → cached artifact → live-tier playback); no concrete implementation (Phase 12 fills). Two-pass moved here from T-083 per `docs/escalation-T-083.md`. | M |
 | T-090 | Reference render tests: 3 fixture documents → MP4; ffprobe verifies | M |
 | T-091 | `skills/stageflip/reference/export-formats/SKILL.md` | M |
