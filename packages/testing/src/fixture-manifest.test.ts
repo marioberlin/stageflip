@@ -12,7 +12,12 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { fixtureManifestSchema, parseFixtureManifest } from './fixture-manifest.js';
+import {
+  DEFAULT_GOLDEN_PATTERN,
+  fixtureManifestSchema,
+  parseFixtureManifest,
+  resolveGoldenPath,
+} from './fixture-manifest.js';
 
 const FIXTURES_DIR = fileURLToPath(new URL('../fixtures', import.meta.url));
 
@@ -125,5 +130,179 @@ describe('fixture-manifest — fixture catalogue', () => {
       const manifest = parseFixtureManifest(loadRaw(file));
       expect(manifest.referenceFrames.length, `fixture ${file}`).toBeGreaterThanOrEqual(3);
     }
+  });
+});
+
+describe('fixture-manifest — parity thresholds (T-102)', () => {
+  const baseFixture = {
+    name: 'base',
+    runtime: 'css',
+    kind: 'solid-background',
+    description: 'base',
+    composition: { width: 100, height: 100, fps: 30, durationInFrames: 30 },
+    clip: { from: 0, durationInFrames: 30, props: {} },
+    referenceFrames: [0, 15, 29],
+  };
+
+  it('accepts a manifest with thresholds + goldens', () => {
+    const parsed = parseFixtureManifest({
+      ...baseFixture,
+      thresholds: { minPsnr: 34, minSsim: 0.97, maxFailingFrames: 0 },
+      goldens: { dir: 'goldens/base' },
+    });
+    expect(parsed.thresholds?.minPsnr).toBe(34);
+    expect(parsed.goldens?.dir).toBe('goldens/base');
+  });
+
+  it('accepts a region on thresholds', () => {
+    const parsed = parseFixtureManifest({
+      ...baseFixture,
+      thresholds: {
+        minPsnr: 30,
+        minSsim: 0.95,
+        region: { x: 10, y: 20, width: 50, height: 40 },
+      },
+    });
+    expect(parsed.thresholds?.region).toEqual({ x: 10, y: 20, width: 50, height: 40 });
+  });
+
+  it('accepts a manifest with neither thresholds nor goldens (backwards compat)', () => {
+    const parsed = parseFixtureManifest(baseFixture);
+    expect(parsed.thresholds).toBeUndefined();
+    expect(parsed.goldens).toBeUndefined();
+  });
+
+  it('rejects minSsim > 1', () => {
+    expect(() =>
+      parseFixtureManifest({ ...baseFixture, thresholds: { minSsim: 1.5 } }),
+    ).toThrow();
+  });
+
+  it('rejects negative minPsnr', () => {
+    expect(() =>
+      parseFixtureManifest({ ...baseFixture, thresholds: { minPsnr: -1 } }),
+    ).toThrow();
+  });
+
+  it('rejects a region with zero width', () => {
+    expect(() =>
+      parseFixtureManifest({
+        ...baseFixture,
+        thresholds: { region: { x: 0, y: 0, width: 0, height: 10 } },
+      }),
+    ).toThrow();
+  });
+
+  it('rejects unknown fields on thresholds (strict)', () => {
+    // Pass via `unknown` so the Zod strict check is what fails,
+    // not the TS structural check.
+    const bad: unknown = {
+      ...baseFixture,
+      thresholds: { minPsnr: 30, extra: 'no' },
+    };
+    expect(() => parseFixtureManifest(bad)).toThrow();
+  });
+
+  it('rejects an empty goldens.dir', () => {
+    expect(() =>
+      parseFixtureManifest({ ...baseFixture, goldens: { dir: '' } }),
+    ).toThrow();
+  });
+
+  it('accepts a custom goldens.pattern', () => {
+    const parsed = parseFixtureManifest({
+      ...baseFixture,
+      goldens: { dir: 'gold', pattern: 'f${frame}.jpg' },
+    });
+    expect(parsed.goldens?.pattern).toBe('f${frame}.jpg');
+  });
+});
+
+describe('resolveGoldenPath', () => {
+  const baseManifest = parseFixtureManifest({
+    name: 'base',
+    runtime: 'css',
+    kind: 'solid-background',
+    description: 'base',
+    composition: { width: 100, height: 100, fps: 30, durationInFrames: 30 },
+    clip: { from: 0, durationInFrames: 30, props: {} },
+    referenceFrames: [0, 15, 29],
+    goldens: { dir: 'goldens/base' },
+  });
+
+  it('joins fixtureDir + goldens.dir + default pattern with the frame substituted', () => {
+    const path = resolveGoldenPath(baseManifest, '/workspace/fixtures', 15);
+    expect(path).toBe('/workspace/fixtures/goldens/base/frame-15.png');
+  });
+
+  it('honours a trailing slash on fixtureDir', () => {
+    const path = resolveGoldenPath(baseManifest, '/workspace/fixtures/', 15);
+    expect(path).toBe('/workspace/fixtures/goldens/base/frame-15.png');
+  });
+
+  it('honours a leading slash on goldens.dir (strip it)', () => {
+    const manifest = parseFixtureManifest({
+      name: 'lead',
+      runtime: 'css',
+      kind: 'solid-background',
+      description: 'leading slash',
+      composition: { width: 100, height: 100, fps: 30, durationInFrames: 30 },
+      clip: { from: 0, durationInFrames: 30, props: {} },
+      referenceFrames: [0],
+      goldens: { dir: '/goldens/abs' },
+    });
+    const path = resolveGoldenPath(manifest, '/workspace', 0);
+    expect(path).toBe('/workspace/goldens/abs/frame-0.png');
+  });
+
+  it('honours a custom pattern', () => {
+    const manifest = parseFixtureManifest({
+      name: 'pat',
+      runtime: 'css',
+      kind: 'solid-background',
+      description: 'custom pattern',
+      composition: { width: 100, height: 100, fps: 30, durationInFrames: 30 },
+      clip: { from: 0, durationInFrames: 30, props: {} },
+      referenceFrames: [0, 15],
+      goldens: { dir: 'gold', pattern: 'f_${frame}.jpg' },
+    });
+    const path = resolveGoldenPath(manifest, '/x', 15);
+    expect(path).toBe('/x/gold/f_15.jpg');
+  });
+
+  it('replaces every ${frame} occurrence in a multi-token pattern', () => {
+    // Regression guard for the replace-vs-replaceAll footgun: a pattern
+    // like `dir-${frame}/f${frame}.png` (directory-per-frame layout) is
+    // legitimate and must not silently leave unreplaced tokens.
+    const manifest = parseFixtureManifest({
+      name: 'multi',
+      runtime: 'css',
+      kind: 'solid-background',
+      description: 'multi-token pattern',
+      composition: { width: 100, height: 100, fps: 30, durationInFrames: 30 },
+      clip: { from: 0, durationInFrames: 30, props: {} },
+      referenceFrames: [0, 15],
+      goldens: { dir: 'gold', pattern: 'dir-${frame}/f${frame}.jpg' },
+    });
+    const path = resolveGoldenPath(manifest, '/x', 5);
+    expect(path).toBe('/x/gold/dir-5/f5.jpg');
+  });
+
+  it('returns null when the manifest has no goldens', () => {
+    const bare = parseFixtureManifest({
+      name: 'no-gold',
+      runtime: 'css',
+      kind: 'solid-background',
+      description: 'no goldens',
+      composition: { width: 100, height: 100, fps: 30, durationInFrames: 30 },
+      clip: { from: 0, durationInFrames: 30, props: {} },
+      referenceFrames: [0],
+    });
+    expect(resolveGoldenPath(bare, '/x', 0)).toBeNull();
+  });
+
+  it('exposes the default pattern via DEFAULT_GOLDEN_PATTERN', () => {
+    expect(DEFAULT_GOLDEN_PATTERN).toContain('${frame}');
+    expect(DEFAULT_GOLDEN_PATTERN).toMatch(/\.png$/);
   });
 });

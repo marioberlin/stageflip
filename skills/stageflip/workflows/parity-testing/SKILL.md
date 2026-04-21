@@ -50,6 +50,9 @@ thresholds, OR the number of failing frames stays within the fixture's
 | `ParityThresholds` + `DEFAULT_THRESHOLDS` | `@stageflip/parity` | `{minPsnr, minSsim, maxFailingFrames}`. Defaults: 30 dB / 0.97 / 0. |
 | `resolveThresholds(override?)` | `@stageflip/parity` | Merges partial overrides onto the defaults; validates ranges. |
 | `scoreFrames(inputs, opts?)` | `@stageflip/parity` | Batch scorer — one `FrameScore` per input; aggregate verdict applies the failing-frames budget. |
+| `fixtureManifestSchema` + `parseFixtureManifest(raw)` | `@stageflip/testing` | Parses a fixture JSON and validates thresholds + goldens (T-102). |
+| `parityThresholdsSchema` + `parityGoldensSchema` | `@stageflip/testing` | Standalone Zod schemas for the new T-102 fields. |
+| `resolveGoldenPath(manifest, fixtureDir, frame)` | `@stageflip/testing` | Resolves the absolute golden PNG path for a frame. Returns `null` when the manifest has no `goldens` block. |
 
 ## Minimum sketch
 
@@ -77,13 +80,48 @@ if (!report.passed) {
 }
 ```
 
+## Fixture format (T-102)
+
+Parity fixtures live in `packages/testing/fixtures/*.json` and parse
+under `@stageflip/testing`'s `fixtureManifestSchema`. Core fields are
+still the T-067 seed (`name`, `runtime`, `kind`, `description`,
+`composition`, `clip`, `referenceFrames`). T-102 adds two optional
+blocks:
+
+- `thresholds` — per-fixture `minPsnr`, `minSsim`, `maxFailingFrames`,
+  and an optional focus `region`. Any field left unset falls through
+  to `@stageflip/parity`'s `DEFAULT_THRESHOLDS` at CLI time (T-101).
+  Region is used for the text-heavy SSIM ≥ 0.97 clause per the T-100
+  plan row.
+- `goldens` — `{ dir, pattern? }`. `dir` is the directory holding
+  reference PNGs (resolved relative to the fixture JSON file);
+  `pattern` defaults to `frame-${frame}.png`. `resolveGoldenPath(
+  manifest, fixtureDir, frame)` returns the absolute filesystem path
+  for a given frame — used by T-101's CLI when loading goldens.
+
+Fixtures without a `goldens` block are inputs-only (the T-067 seed
+shape). T-101's CLI should report "no goldens — skipping score"
+rather than failing when a fixture hasn't been primed yet.
+
+5 starter fixtures ship pre-populated with thresholds + goldens
+paths (one per runtime):
+
+| Fixture | Runtime | Notes |
+|---|---|---|
+| `css-solid-background` | css | 40 dB / 0.99 SSIM — lossless baseline |
+| `gsap-motion-text-gsap` | gsap | 30 dB / 0.97 SSIM on text region |
+| `lottie-lottie-logo` | lottie | 32 dB / 0.97 SSIM |
+| `shader-flash-through-white` | shader | 34 dB / 0.97 SSIM |
+| `three-three-product-reveal` | three | 30 dB / 0.95 SSIM |
+
+The remaining 2 shader variants (`shader-swirl-vortex`, `shader-glitch`)
+remain as T-067 input-only manifests; they can graduate to full parity
+coverage as operators commit their first goldens.
+
 ## What comes later
 
 - **T-101** — `pnpm parity [<fixture>]` CLI that walks a fixture
   directory and drives `scoreFrames`.
-- **T-102** — JSON fixture format formalisation (extends the T-067 seed
-  in `packages/testing/src/fixture-manifest.ts` with threshold config
-  + golden PNG paths).
 - **T-103** — CI integration; gate runs on any PR touching rendering
   code or `packages/parity/**`.
 - **T-105** — visual-diff viewer (side-by-side / slider / overlay)

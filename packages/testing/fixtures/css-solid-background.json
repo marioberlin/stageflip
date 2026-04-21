@@ -9,5 +9,11 @@
     "durationInFrames": 30,
     "props": { "color": "#ff0080" }
   },
-  "referenceFrames": [0, 15, 29]
+  "referenceFrames": [0, 15, 29],
+  "thresholds": {
+    "minPsnr": 40,
+    "minSsim": 0.99,
+    "maxFailingFrames": 0
+  },
+  "goldens": { "dir": "goldens/css-solid-background" }
 }

@@ -9,5 +9,11 @@
     "durationInFrames": 60,
     "props": {}
   },
-  "referenceFrames": [0, 30, 59]
+  "referenceFrames": [0, 30, 59],
+  "thresholds": {
+    "minPsnr": 30,
+    "minSsim": 0.95,
+    "maxFailingFrames": 0
+  },
+  "goldens": { "dir": "goldens/three-three-product-reveal" }
 }
