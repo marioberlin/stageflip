@@ -113,3 +113,12 @@ export {
   type ExtractVideoFramesResult,
   extractVideoFrames,
 } from './video-frame-extractor';
+
+export {
+  type AudioTrack,
+  buildMixAudioArgs,
+  MixAudioError,
+  type MixAudioOptions,
+  type MixAudioResult,
+  mixAudio,
+} from './audio-mixer';
