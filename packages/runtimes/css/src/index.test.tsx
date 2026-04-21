@@ -4,11 +4,19 @@
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import type { ClipRenderContext } from '@stageflip/runtimes-contract';
+import {
+  type ClipRenderContext,
+  __clearRuntimeRegistry,
+  findClip,
+  registerRuntime,
+} from '@stageflip/runtimes-contract';
 
 import { createCssRuntime, defineCssClip, solidBackgroundClip } from './index.js';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  __clearRuntimeRegistry();
+});
 
 interface BgProps {
   color: string;
@@ -147,5 +155,15 @@ describe('solidBackgroundClip — demo clip', () => {
     expect(div.style.left).toBe('0px');
     expect(div.style.right).toBe('0px');
     expect(div.style.bottom).toBe('0px');
+  });
+});
+
+describe('css runtime — contract-registry round-trip', () => {
+  it('registers cleanly and findClip resolves its demo kind', () => {
+    const rt = createCssRuntime([solidBackgroundClip]);
+    registerRuntime(rt);
+    const found = findClip('solid-background');
+    expect(found?.runtime).toBe(rt);
+    expect(found?.clip).toBe(solidBackgroundClip);
   });
 });
