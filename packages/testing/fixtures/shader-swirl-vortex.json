@@ -1,0 +1,13 @@
+{
+  "name": "shader-swirl-vortex",
+  "runtime": "shader",
+  "kind": "swirl-vortex",
+  "description": "WebGL fragment shader — rotating bands; angle scales with progress + radius.",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 60 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 60,
+    "props": {}
+  },
+  "referenceFrames": [0, 30, 59]
+}

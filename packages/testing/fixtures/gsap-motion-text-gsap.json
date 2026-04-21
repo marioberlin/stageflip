@@ -1,0 +1,13 @@
+{
+  "name": "gsap-motion-text-gsap",
+  "runtime": "gsap",
+  "kind": "motion-text-gsap",
+  "description": "GSAP timeline seek — text slides in (slide-up entrance over 0.6s).",
+  "composition": { "width": 960, "height": 540, "fps": 30, "durationInFrames": 60 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 60,
+    "props": { "text": "StageFlip", "entrance": "slide-up", "durationSec": 0.6 }
+  },
+  "referenceFrames": [0, 30, 59]
+}

@@ -1,0 +1,13 @@
+{
+  "name": "shader-glitch",
+  "runtime": "shader",
+  "kind": "glitch",
+  "description": "WebGL fragment shader — deterministic hash-noise channel shift / scanline tear.",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 60 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 60,
+    "props": {}
+  },
+  "referenceFrames": [0, 30, 59]
+}

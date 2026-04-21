@@ -1,0 +1,13 @@
+{
+  "name": "lottie-lottie-logo",
+  "runtime": "lottie",
+  "kind": "lottie-logo",
+  "description": "Lottie seek-by-time — rounded square rotating 360 degrees across the clip.",
+  "composition": { "width": 400, "height": 400, "fps": 30, "durationInFrames": 60 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 60,
+    "props": {}
+  },
+  "referenceFrames": [0, 30, 59]
+}

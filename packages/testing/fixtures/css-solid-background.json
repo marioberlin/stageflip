@@ -1,0 +1,13 @@
+{
+  "name": "css-solid-background",
+  "runtime": "css",
+  "kind": "solid-background",
+  "description": "Pure CSS fill — baseline sanity for the static runtime.",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 30 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 30,
+    "props": { "color": "#ff0080" }
+  },
+  "referenceFrames": [0, 15, 29]
+}
