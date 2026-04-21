@@ -30,7 +30,7 @@ Pure, deterministic, per-frame functions. All scanned by `check-determinism`.
 |---|---|
 | `interpolate(input, inputRange, outputRange, opts?)` | Monotonic range → numeric output with easing and extrapolation. |
 | `interpolateColors(input, inputRange, outputColors, opts?)` | Range → `#rrggbb` or `rgba()` via `culori`. `colorSpace: 'rgb' \| 'hsl' \| 'oklch'`. |
-| `interpolatePath(input, inputRange, outputPaths, opts?)` | Range → SVG path string via `flubber`. `clamp` only; no `extend` / `identity`. |
+| `interpolatePath(input, inputRange, outputPaths, opts?)` | Range → SVG path string via `flubber`. `clamp` only; no `extend` / `identity`. **Import path: `'@stageflip/frame-runtime/path'`** (sub-entry) — keeps flubber out of the base bundle. |
 | `spring({ frame, fps, mass?, stiffness?, damping?, from?, to?, overshootClamping? })` | Spring physics at a specific frame. Adaptive substepping; validated envelope. |
 | `EASINGS`, `NAMED_EASINGS`, per-easing exports (`linear`, `easeIn`, …), `cubicBezier(x1, y1, x2, y2)` | 25 named easings matching `@stageflip/schema` `namedEasingSchema`. |
 
@@ -118,10 +118,14 @@ const element = renderFrame('intro', 45);
 - **I-6 No Remotion**: `pnpm check-remotion-imports` fails on any import from
   `remotion` or `@remotion/*`. Implementation is clean-sheet from public
   Remotion docs (CLAUDE.md §7).
-- **I-14 Bundle budget**: `@stageflip/frame-runtime` ≤ 25 KB gz enforced by
-  `pnpm size-limit` (T-049). `react`, `react-dom`, and `culori` are ignored
-  (peer / runtime deps). Current measurement: 23.39 KB gz with `flubber`
-  (from T-052). Any further heavy dep must lazy-load.
+- **I-14 Bundle budget**: enforced by `pnpm size-limit` (T-049). Two
+  separately budgeted entry points:
+  - `@stageflip/frame-runtime` main: ≤ **10 KB gz** (measures
+    ~5.3 KB). `react`, `react-dom`, `culori` ignored.
+  - `@stageflip/frame-runtime/path` sub-entry: ≤ **25 KB gz**
+    (measures ~19.5 KB). `react`, `react-dom` ignored; flubber
+    counted here. Consumers who don't morph paths never import
+    this chunk.
 
 ## Extrapolation modes
 
@@ -190,7 +194,8 @@ or Infinity across the envelope.
 | `src/freeze.tsx` | T-045 | Remap-only |
 | `src/series.tsx` | T-046 | Auto-chained sequences |
 | `src/composition.ts` | T-047 | Registry + `renderFrame` |
-| `src/interpolate-path.ts` | T-052 | SVG path morph (flubber) |
+| `src/interpolate-path.ts` | T-052 | SVG path morph (flubber) — exported via `src/path.ts` sub-entry |
+| `src/path.ts` | chore/flubber-sub-entry | Sub-entry re-export so flubber stays out of base |
 | `src/use-media-sync.ts` | T-055 | `<video>` / `<audio>` sync hook |
 | `src/use-audio-visualizer.ts` | T-053 | Web Audio analyser hook (editor-only) |
 | `src/properties.test.ts` | T-048 | Cross-primitive property suite |

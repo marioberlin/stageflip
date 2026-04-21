@@ -211,9 +211,13 @@ so the base runtime stays lightweight.
 Subsequent budget deltas:
 - T-055 (`useMediaSync`): +0.19 KB → 23.58 KB gz.
 - T-053 (`useAudioVisualizer`): +0.47 KB → 24.05 KB gz. Headroom
-  down to **0.95 KB**. Flubber-dynamic-import is now the next
-  scheduled mitigation; owner: whoever touches frame-runtime next
-  (likely T-050 dev-harness work).
+  down to **0.95 KB** — triggered the flubber split below.
+- Flubber sub-entry split (chore/flubber-sub-entry): `interpolatePath`
+  moved from the main entry to a dedicated
+  `@stageflip/frame-runtime/path` sub-entry so flubber stays out of
+  the base bundle. Main now measures **~5.3 KB gz** (limit 10 KB);
+  sub-entry measures **~19.5 KB gz** (limit 25 KB). Consumers that
+  don't morph paths save 18.75 KB.
 
 ---
 

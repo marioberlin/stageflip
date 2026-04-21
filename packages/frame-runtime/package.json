@@ -10,6 +10,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./path": {
+      "types": "./dist/path.d.ts",
+      "import": "./dist/path.js",
+      "require": "./dist/path.cjs"
     }
   },
   "files": [
@@ -17,8 +22,8 @@
     "src"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --dts --format esm,cjs --clean",
-    "dev": "tsup src/index.ts --dts --format esm,cjs --watch",
+    "build": "tsup src/index.ts src/path.ts --dts --format esm,cjs --clean",
+    "dev": "tsup src/index.ts src/path.ts --dts --format esm,cjs --watch",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src",
     "test": "vitest run --passWithNoTests"

@@ -3,8 +3,16 @@
     "name": "@stageflip/frame-runtime (ESM, gzipped, all exports)",
     "path": "packages/frame-runtime/dist/index.js",
     "import": "*",
-    "limit": "25 KB",
+    "limit": "10 KB",
     "gzip": true,
     "ignore": ["react", "react-dom", "culori"]
+  },
+  {
+    "name": "@stageflip/frame-runtime/path (ESM, gzipped, all exports)",
+    "path": "packages/frame-runtime/dist/path.js",
+    "import": "*",
+    "limit": "25 KB",
+    "gzip": true,
+    "ignore": ["react", "react-dom"]
   }
 ]
