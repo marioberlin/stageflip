@@ -14,5 +14,11 @@
     "limit": "25 KB",
     "gzip": true,
     "ignore": ["react", "react-dom"]
+  },
+  {
+    "name": "@stageflip/cdp-host-bundle (IIFE, gzipped — T-100d scaffold + CSS runtime)",
+    "path": "packages/cdp-host-bundle/dist/browser/bundle.js",
+    "limit": "100 KB",
+    "gzip": true
   }
 ]

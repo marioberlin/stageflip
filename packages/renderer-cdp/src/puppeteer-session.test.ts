@@ -18,6 +18,7 @@ import {
   PuppeteerCdpSession,
   canvasPlaceholderHostHtml,
   createPuppeteerBrowserFactory,
+  createRuntimeBundleHostHtml,
   probeBeginFrameSupport,
   richPlaceholderHostHtml,
 } from './puppeteer-session';
@@ -808,6 +809,129 @@ describe('richPlaceholderHostHtml', () => {
     });
     // Raw U+2028 / U+2029 must NOT appear in the HTML; they should be
     // replaced with \u2028 / \u2029 escape sequences.
+    expect(html.includes('\u2028')).toBe(false);
+    expect(html.includes('\u2029')).toBe(false);
+    expect(html).toContain('\\u2028');
+    expect(html).toContain('\\u2029');
+  });
+});
+
+describe('createRuntimeBundleHostHtml', () => {
+  const fakeBundle = "console.log('stageflip-bundle');";
+  const sampleDoc: RIRDocument = mkDoc({
+    width: 320,
+    height: 240,
+    elements: [
+      {
+        id: 'bg',
+        type: 'shape',
+        transform: { x: 0, y: 0, width: 320, height: 240, rotation: 0, opacity: 1 },
+        timing: { startFrame: 0, endFrame: 30, durationFrames: 30 },
+        zIndex: 0,
+        visible: true,
+        locked: false,
+        stacking: 'auto',
+        animations: [],
+        content: { type: 'shape', shape: 'rect', fill: '#336699' },
+      },
+    ],
+  });
+
+  it('inlines the bundle source inside a <script> tag', () => {
+    const builder = createRuntimeBundleHostHtml(fakeBundle);
+    const html = builder({ plan: mkPlan(), config: mkConfig(), document: sampleDoc });
+    expect(html).toContain(fakeBundle);
+    expect(html).toContain('<script>');
+  });
+
+  it('embeds the RIR document as application/json under id="__sf_doc"', () => {
+    const builder = createRuntimeBundleHostHtml(fakeBundle);
+    const html = builder({ plan: mkPlan(), config: mkConfig(), document: sampleDoc });
+    expect(html).toContain('id="__sf_doc"');
+    expect(html).toContain('type="application/json"');
+    expect(html).toContain('"id":"bg"');
+  });
+
+  it('emits the #__sf_root mount point with composition dimensions', () => {
+    const builder = createRuntimeBundleHostHtml(fakeBundle);
+    const html = builder({
+      plan: mkPlan(),
+      config: mkConfig({ width: 1280, height: 720 }),
+      document: sampleDoc,
+    });
+    expect(html).toContain('id="__sf_root"');
+    expect(html).toContain('width:1280px');
+    expect(html).toContain('height:720px');
+  });
+
+  it('escapes `</script` in the embedded document JSON', () => {
+    // Same injection defence as richPlaceholderHostHtml. Text element
+    // content containing `</script>` must not terminate the JSON tag.
+    const docWithInjection = mkDoc({
+      elements: [
+        {
+          id: 'evil',
+          type: 'text',
+          transform: { x: 0, y: 0, width: 100, height: 20, rotation: 0, opacity: 1 },
+          timing: { startFrame: 0, endFrame: 30, durationFrames: 30 },
+          zIndex: 0,
+          visible: true,
+          locked: false,
+          stacking: 'auto',
+          animations: [],
+          content: {
+            type: 'text',
+            text: 'Hello </script> world',
+            fontFamily: 'Inter',
+            fontSize: 16,
+            fontWeight: 400,
+            color: '#fff',
+            align: 'left',
+            lineHeight: 1,
+          },
+        },
+      ],
+    });
+    const builder = createRuntimeBundleHostHtml(fakeBundle);
+    const html = builder({ plan: mkPlan(), config: mkConfig(), document: docWithInjection });
+    // Direct asserts on the escape: the raw `</script> world`
+    // substring from the text element must NOT appear in the HTML,
+    // and the escaped `<\/script> world` form MUST. The tag-count
+    // check stays as a secondary invariant.
+    expect(html).not.toContain('</script> world');
+    expect(html).toContain('<\\/script> world');
+    expect((html.match(/<script\b/gi) ?? []).length).toBe(2);
+    expect((html.match(/<\/script>/gi) ?? []).length).toBe(2);
+  });
+
+  it('escapes U+2028 and U+2029 line separators', () => {
+    const docWithLineSep = mkDoc({
+      elements: [
+        {
+          id: 't',
+          type: 'text',
+          transform: { x: 0, y: 0, width: 100, height: 20, rotation: 0, opacity: 1 },
+          timing: { startFrame: 0, endFrame: 30, durationFrames: 30 },
+          zIndex: 0,
+          visible: true,
+          locked: false,
+          stacking: 'auto',
+          animations: [],
+          content: {
+            type: 'text',
+            text: 'line\u2028sep\u2029',
+            fontFamily: 'Inter',
+            fontSize: 16,
+            fontWeight: 400,
+            color: '#fff',
+            align: 'left',
+            lineHeight: 1,
+          },
+        },
+      ],
+    });
+    const builder = createRuntimeBundleHostHtml(fakeBundle);
+    const html = builder({ plan: mkPlan(), config: mkConfig(), document: docWithLineSep });
     expect(html.includes('\u2028')).toBe(false);
     expect(html.includes('\u2029')).toBe(false);
     expect(html).toContain('\\u2028');

@@ -152,6 +152,7 @@ export {
   canvasPlaceholderHostHtml,
   type CaptureMode,
   createPuppeteerBrowserFactory,
+  createRuntimeBundleHostHtml,
   type HostHtmlBuilder,
   probeBeginFrameSupport,
   PuppeteerCdpSession,

@@ -273,6 +273,42 @@ export function richPlaceholderControllerScript(
   return { setFrame };
 }
 
+/**
+ * Build a host HTML string that inlines a compiled Vite IIFE bundle
+ * (from `@stageflip/cdp-host-bundle`) + the RIR document as a JSON
+ * blob. The bundle's browser entry reads the document, registers the
+ * available live runtimes, and mounts a React composition into
+ * `#__sf_root`. Exposes `window.__sf.setFrame(n)` + `window.__sf.ready`.
+ *
+ * T-100d ships the bundle with the CSS runtime only; clip kinds from
+ * other runtimes render as labelled placeholder boxes until T-100e
+ * extends the bundle.
+ *
+ * @param bundleSource The compiled IIFE string. Get via
+ *   `loadBundleSource()` from `@stageflip/cdp-host-bundle`.
+ */
+export function createRuntimeBundleHostHtml(bundleSource: string): HostHtmlBuilder {
+  return ({ config, document }) => {
+    // Same JSON injection defence as richPlaceholderHostHtml.
+    const serialised = JSON.stringify(document)
+      .replace(/<\/script/gi, '<\\/script')
+      .replace(/\u2028/g, '\\u2028')
+      .replace(/\u2029/g, '\\u2029');
+    return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>stageflip-cdp</title>
+<style>
+  html,body{margin:0;padding:0;background:#000;}
+  #__sf_root{position:relative;overflow:hidden;width:${config.width}px;height:${config.height}px;background:#fff;}
+  .__sf_placeholder{background:repeating-linear-gradient(45deg,#eee,#eee 8px,#ddd 8px,#ddd 16px);border:1px dashed #999;display:flex;align-items:center;justify-content:center;color:#555;font:12px monospace;}
+</style>
+</head><body>
+<div id="__sf_root"></div>
+<script id="__sf_doc" type="application/json">${serialised}</script>
+<script>${bundleSource}</script>
+</body></html>`;
+  };
+}
+
 export const richPlaceholderHostHtml: HostHtmlBuilder = ({ config, document }) => {
   // HTML's <script> content model terminates at the first `</script`
   // sequence (any case, any attribute suffix). JSON.stringify happily
