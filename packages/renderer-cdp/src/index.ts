@@ -1,18 +1,22 @@
 // packages/renderer-cdp/src/index.ts
-// Public surface of @stageflip/renderer-cdp. See individual modules for
-// detail; the shape is:
+// Public surface of @stageflip/renderer-cdp. Layers, outermost first:
 //
-//   - Helpers: reimpl of the two @hyperframes/core symbols the vendored
-//     engine uses (vendor-core-helpers).
-//   - Dispatcher: RIRDocument → DispatchPlan via the shared runtime
-//     registry (dispatch).
-//   - Adapter: live-tier LiveTierAdapter + CdpSession integration seam
-//     (adapter).
+//   - exportDocument + PreflightBlockedError — the top-level orchestrator
+//     (T-084) that ties preflight, adapter, and sink together.
+//   - preflight + PreflightReport — pure sync analysis (T-084).
+//   - resolveAssets + AssetResolver + InMemoryAssetResolver — async asset
+//     preflight, URL rewrite to file:// (T-084a).
+//   - collectAssetRefs + rewriteDocumentAssets — the pure traversal +
+//     rewriter under the resolver (T-084a).
+//   - LiveTierAdapter + CdpSession seam — the session abstraction (T-083).
+//   - dispatchClips — the RIR→registry resolver under the adapter (T-083).
+//   - InMemoryFrameSink + FrameSink — output seam for captured frames.
+//   - vendor-core-helpers — reimpl of the two @hyperframes/core symbols
+//     the vendored engine uses (T-083 B3 resolution).
 //
-// T-083 ships the dispatcher and the adapter skeleton. Real Puppeteer
-// wiring (a concrete CdpSession backed by the vendored engine) lands in
-// T-084+ — see docs/escalation-T-083.md §P1 and the plan's T-083 [rev]
-// row.
+// Real Puppeteer-backed CdpSession, disk / FFmpeg-pipe sinks, HTTP-backed
+// asset resolver + Puppeteer-screenshot rasterization for embeds land in
+// T-085+ / T-090. Tests inject fake sessions and in-memory resolvers.
 
 export {
   MEDIA_VISUAL_STYLE_PROPERTIES,
@@ -40,7 +44,23 @@ export {
 export { type FrameSink, InMemoryFrameSink } from './frame-sink';
 
 export {
+  type AssetKind,
   type AssetRef,
+  collectAssetRefs,
+  rewriteDocumentAssets,
+} from './asset-refs';
+
+export {
+  type AssetResolution,
+  type AssetResolver,
+  InMemoryAssetResolver,
+  type LossFlag,
+  resolveAssets,
+  type ResolvedAssetEntry,
+  type ResolveAssetsResult,
+} from './asset-resolver';
+
+export {
   preflight,
   type PreflightBlocker,
   type PreflightBlockerKind,
