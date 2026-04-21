@@ -3,11 +3,12 @@ title: Determinism
 id: skills/stageflip/concepts/determinism
 tier: concept
 status: substantive
-last_updated: 2026-04-20
+last_updated: 2026-04-21
 owner_task: T-027
 related:
   - skills/stageflip/concepts/rir/SKILL.md
   - skills/stageflip/runtimes/contract/SKILL.md
+  - skills/stageflip/runtimes/frame-runtime/SKILL.md
 ---
 
 # Determinism
