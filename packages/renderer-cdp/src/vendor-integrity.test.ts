@@ -16,10 +16,14 @@ const VENDOR_ENGINE = resolve(HERE, '..', 'vendor', 'engine');
 interface Pin {
   upstream: string;
   package: string;
+  packagePath: string;
   commit: string;
   vendoredAt: string;
   license: string;
+  task: string;
 }
+
+const EXPECTED_COMMIT = 'd1f992570a2a2d7cb4fa0b4a7e31687a0791803d';
 
 describe('vendor/engine (T-080)', () => {
   it('preserves upstream Apache-2.0 LICENSE at vendor root', () => {
@@ -29,15 +33,17 @@ describe('vendor/engine (T-080)', () => {
     expect(license).toMatch(/Apache License[\s\S]+Version 2\.0/);
   });
 
-  it('has PIN.json recording upstream + commit + date', () => {
+  it('has PIN.json recording upstream + exact commit + date', () => {
     const pinPath = join(VENDOR_ENGINE, 'PIN.json');
     expect(existsSync(pinPath)).toBe(true);
     const pin = JSON.parse(readFileSync(pinPath, 'utf8')) as Pin;
     expect(pin.upstream).toBe('https://github.com/heygen-com/hyperframes');
     expect(pin.package).toBe('@hyperframes/engine');
-    expect(pin.commit).toMatch(/^[0-9a-f]{40}$/);
+    expect(pin.packagePath).toBe('packages/engine');
+    expect(pin.commit).toBe(EXPECTED_COMMIT);
     expect(pin.vendoredAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(pin.license).toBe('Apache-2.0');
+    expect(pin.task).toBe('T-080');
   });
 
   it('carries the engine source entrypoint', () => {
