@@ -78,6 +78,11 @@ const REVIEWED_OK = new Map<string, string>([
   // spawndamnit 3.0.1 — LICENSE file is standard MIT text (copyright James Kyle).
   // Transitive dep of @changesets/cli. Reviewed 2026-04-20.
   ['spawndamnit', 'MIT (verified from LICENSE file)'],
+  // gsap 3.15.0 — reports its license as a URL ("Standard 'no charge' license:
+  // https://gsap.com/standard-license") rather than an SPDX id. Business Green
+  // license also procured per docs/dependencies.md §3 Media/rendering row.
+  // Consumed by @stageflip/runtimes-gsap (T-063). Reviewed 2026-04-21.
+  ['gsap', "Standard 'no charge' license (URL form); Business Green procured"],
 ]);
 
 /** Split a composite SPDX string into atomic tokens. */
