@@ -1,4 +1,8 @@
 // packages/renderer-cdp/src/bake.test.ts
+// Tests for the bake-tier scaffolding: InMemoryBakeCache round-trips,
+// InMemoryBakeOrchestrator register/listRuntimes semantics, and the
+// full bakeAll pipeline (cache hit/miss, no-runtime, bake-error
+// isolation, first-registered-wins, empty input).
 
 import { describe, expect, it } from 'vitest';
 

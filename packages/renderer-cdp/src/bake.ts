@@ -164,12 +164,13 @@ export class InMemoryBakeOrchestrator implements BakeOrchestrator {
     const failed: BakeFailure[] = [];
 
     for (const job of jobs) {
-      if (await this.cache.has(job.id)) {
-        const hit = await this.cache.get(job.id);
-        if (hit !== null) {
-          cached.push(hit);
-          continue;
-        }
+      // A single `get` is all we need: `null` is the canonical miss
+      // signal. Going through `has` first would TOCTOU-race with any
+      // disk-backed cache in Phase 12 and add a round-trip per hit.
+      const hit = await this.cache.get(job.id);
+      if (hit !== null) {
+        cached.push(hit);
+        continue;
       }
 
       const runtime = this.runtimes.find((r) => r.canBake(job.clipKind));
