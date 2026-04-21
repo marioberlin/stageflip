@@ -273,6 +273,7 @@ When a task references these, treat as **API specs only**. Read docs; do not cop
 
 ## Phase 3 — Runtime Contract + Core Live Runtimes (Week 15–18)
 
+**Status**: ✅ **Ratified 2026-04-21.** All 11 tasks merged (T-060–T-069, T-072). Exit criteria met: 5 concrete live-tier runtimes registered via `@stageflip/runtimes-contract` (css, gsap, lottie, shader, three) plus `frame-runtime-bridge`; 7 demo clips with JSON parity-fixture manifests under `packages/testing/fixtures/`; FontManager blocks editor render on font readiness via `useFontLoad`. CDP-side font pre-embedding + `--font-render-hinting=none` deferred to T-084a (Phase 4); PNG reference-frame generation deferred to T-100 (Phase 5).
 **Goal**: Open the creative ceiling via pluggable runtimes.
 **Exit criteria**: 5 runtimes registered; each with demo clip + parity fixture; FontManager blocks render on font readiness.
 
