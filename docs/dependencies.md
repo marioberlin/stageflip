@@ -262,6 +262,24 @@ consumers to hold their own needs legal review before
 `private: false`. Do not un-gate publish on this package without
 that review.
 
+### Audit 6 addendum — 2026-04-21 (T-066 three install site)
+
+Backfill-only pass. T-066 (`@stageflip/runtimes-three`) installs
+three.js into its host package.
+
+**Install sites for §3 entries**:
+- `three` **0.184.0** (MIT) — installed in
+  `@stageflip/runtimes-three` dependencies; consumed by the
+  `three-product-reveal` demo clip. Pure author-side import; the
+  runtime itself does not import `three`, keeping the host
+  THREE-agnostic.
+- `@types/three` **0.184.0** (MIT, devDep) — installed in
+  `@stageflip/runtimes-three` devDependencies.
+
+Transitive growth: `pnpm check-licenses` went from 465 → 473 deps
+scanned; additions are three's own packaging (fflate, meshopt,
+ktx-parse, draco, zstddec) all MIT/BSD/Apache. PASS unchanged.
+
 **Not a policy change**: Vite + plugin-react stay pinned to their
 current stable versions; majors (Vite 6.x, plugin-react 5.x) are
 future ADR work, same handling as other blocked-majors in §3.
