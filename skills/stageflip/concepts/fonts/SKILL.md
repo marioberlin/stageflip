@@ -3,7 +3,7 @@ title: FontManager
 id: skills/stageflip/concepts/fonts
 tier: concept
 status: substantive
-last_updated: 2026-04-20
+last_updated: 2026-04-21
 owner_task: T-072
 related:
   - skills/stageflip/concepts/rir/SKILL.md
@@ -63,13 +63,23 @@ export const fonts: FontRequirement[] = [
 ];
 ```
 
-## Current state (Phase 1 exit)
+## Current state (Phase 3 exit)
 
 - **RIR font aggregation** is live: `compileRIR` walks text + clip elements and
   emits a deduplicated `FontRequirement[]` (by family / weight / style / subsets).
   See `packages/rir/src/compile/passes.ts` → `aggregateFonts`.
-- **FontManager runtime** (blocking canvas render on font readiness; CDP
-  pre-embedding) is **not yet implemented** — T-072 (Phase 3).
+- **FontManager runtime (editor side)** landed with T-072. See
+  `@stageflip/fonts`:
+  - `aggregateFontRequirements(iterable)` — canonical dedup +
+    union over subsets / features + stable sort.
+  - `formatFontShorthand(req, px?)` — CSS shorthand suitable for
+    `document.fonts.check` / `.load`.
+  - `useFontLoad(requirements, options?)` — React hook returning
+    `{ status, error, loaded }`. Blocks the consumer's canvas render
+    on `document.fonts.check` / `.load` for every requirement.
+- **CDP pre-embedding + `@fontsource` base64 injection** is Phase 4
+  (T-084a asset preflight). The Chromium `--font-render-hinting=none`
+  flag lands with the CDP renderer vendor integration (T-080+).
 
 ## Related
 

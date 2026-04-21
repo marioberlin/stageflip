@@ -44,11 +44,17 @@ export interface ClipRenderContext<P = unknown> {
   props: P;
 }
 
-/** Requirement declared by a clip so the FontManager (T-072) can preload it. */
+/** Requirement declared by a clip so the FontManager can preload it. */
 export interface FontRequirement {
   family: string;
+  /** CSS weight — numeric (e.g. 400, 600) or keyword ('bold', 'variable'). */
   weight?: number | string;
+  /** CSS font-style. */
   style?: 'normal' | 'italic' | 'oblique';
+  /** Unicode subsets (matches `@fontsource` subsets: `'latin'`, `'cyrillic'`, ...). */
+  subsets?: readonly string[];
+  /** OpenType features to enable (e.g. `'ss01'`, `'tnum'`). */
+  features?: readonly string[];
 }
 
 /**
