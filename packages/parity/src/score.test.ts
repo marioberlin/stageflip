@@ -160,6 +160,71 @@ describe('scoreFrames', () => {
     expect(focusGood.minSsim).toBe(1);
   });
 
+  it('falls back to ssimOptions.region when FrameInput.region is undefined', () => {
+    // Same setup as the per-frame region test, but the region is supplied
+    // via ScoreOptions.ssimOptions instead of on the FrameInput.
+    const golden = solid(32, 32, [128, 128, 128, 255]);
+    const candidate = solid(32, 32, [128, 128, 128, 255]);
+    for (let y = 0; y < 16; y++) {
+      for (let x = 0; x < 16; x++) {
+        const off = (y * 32 + x) * 4;
+        candidate.data[off] = 0;
+        candidate.data[off + 1] = 0;
+        candidate.data[off + 2] = 0;
+      }
+    }
+    // Bottom-right is untouched → region there should score perfectly.
+    const bottomRight = scoreFrames([{ frame: 0, candidate, golden }], {
+      thresholds: { minPsnr: 30, minSsim: 0.97 },
+      ssimOptions: { region: { x: 16, y: 16, width: 16, height: 16 } },
+    });
+    expect(bottomRight.passed).toBe(true);
+    expect(bottomRight.minSsim).toBe(1);
+    // The PSNR metric also respects the option region (cross-metric
+    // coupling documented on ScoreOptions.ssimOptions); bottom-right is
+    // identical so PSNR stays at Infinity.
+    expect(bottomRight.minPsnr).toBe(Number.POSITIVE_INFINITY);
+
+    // And the top-left region fails — proving ssimOptions.region actually
+    // scoped the score (rather than being silently ignored).
+    const topLeft = scoreFrames([{ frame: 0, candidate, golden }], {
+      thresholds: { minPsnr: 30, minSsim: 0.97 },
+      ssimOptions: { region: { x: 0, y: 0, width: 16, height: 16 } },
+    });
+    expect(topLeft.passed).toBe(false);
+  });
+
+  it('per-frame region overrides ssimOptions.region on the same frame', () => {
+    // Candidate differs from golden only in top-left quadrant. Caller sets
+    // ssimOptions.region to the bad (top-left) area but the per-frame
+    // region points at the good (bottom-right) area — per-frame wins.
+    const golden = solid(32, 32, [128, 128, 128, 255]);
+    const candidate = solid(32, 32, [128, 128, 128, 255]);
+    for (let y = 0; y < 16; y++) {
+      for (let x = 0; x < 16; x++) {
+        const off = (y * 32 + x) * 4;
+        candidate.data[off] = 0;
+        candidate.data[off + 1] = 0;
+        candidate.data[off + 2] = 0;
+      }
+    }
+    const report = scoreFrames(
+      [
+        {
+          frame: 0,
+          candidate,
+          golden,
+          region: { x: 16, y: 16, width: 16, height: 16 },
+        },
+      ],
+      {
+        thresholds: { minPsnr: 30, minSsim: 0.97 },
+        ssimOptions: { region: { x: 0, y: 0, width: 16, height: 16 } },
+      },
+    );
+    expect(report.passed).toBe(true);
+  });
+
   it('produces an empty-batch report with trivially-passing aggregates', () => {
     const report = scoreFrames([]);
     expect(report.frames).toHaveLength(0);

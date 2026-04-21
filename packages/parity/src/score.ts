@@ -46,7 +46,14 @@ export interface ScoreReport {
   readonly minPsnr: number;
   /** Lowest SSIM observed across scored frames. `1` if no frames. */
   readonly minSsim: number;
-  /** Overall verdict after the `maxFailingFrames` budget is applied. */
+  /**
+   * Overall verdict after the `maxFailingFrames` budget is applied.
+   *
+   * **Empty-batch footgun**: an empty `frames` array trivially yields
+   * `passed: true`. `scoreFrames` does not guard against this — the
+   * caller (T-101 CLI / T-103 CI gate) is responsible for ensuring at
+   * least one frame was scored before trusting a pass verdict.
+   */
   readonly passed: boolean;
   /** Aggregate reasons — e.g. "3 frames failed; budget is 0". */
   readonly reasons: readonly string[];
@@ -62,6 +69,12 @@ export interface ScoreOptions {
   /**
    * Forwarded to every per-frame SSIM call. Per-frame `region` from
    * `FrameInput.region` takes precedence over `ssimOptions.region`.
+   *
+   * **Cross-metric coupling**: whichever region resolves (per-frame or
+   * ssimOptions) also gates PSNR scoring for that frame — otherwise
+   * cross-frame drift outside the focused area would dominate the PSNR
+   * score while SSIM only cared about the region. Setting
+   * `ssimOptions.region` therefore affects both metrics, not just SSIM.
    */
   readonly ssimOptions?: SsimOptions;
 }
@@ -73,6 +86,14 @@ export interface ScoreOptions {
  *
  * Throws only on upstream errors (dimension mismatch, empty image) —
  * threshold violations are reported as `passed: false`, never thrown.
+ *
+ * **Empty-input semantic**: `scoreFrames([])` returns
+ * `{passed: true, frames: [], failingFrames: 0, minPsnr: Infinity,
+ * minSsim: 1, reasons: []}` — there are no frames to fail. This is a
+ * footgun for consumers whose fixture loaders can silently yield an
+ * empty slice (path mismatch, renamed golden directory, swallowed IO
+ * error). T-101 CLI and T-103 CI gate should verify at least one
+ * frame was scored before treating `passed` as meaningful.
  */
 export function scoreFrames(inputs: readonly FrameInput[], options?: ScoreOptions): ScoreReport {
   const thresholds = resolveThresholds(options?.thresholds);

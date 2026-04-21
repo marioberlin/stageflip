@@ -12,10 +12,12 @@ related:
 
 # Workflow — Parity Testing
 
-**Status**: scaffolded. T-100 ships the comparator + scoring surface
-described below. T-101 ships the CLI wrapper. T-102 formalises fixture
-format. T-103 wires CI. T-107 replaces this file with the substantive
-workflow doc (when-to-score, how-to-debug-a-failure, threshold tuning).
+**Status**: module surface is substantive (T-100); workflow guidance
+is still thin. T-100 ships the comparator + scoring surface described
+below. T-101 ships the CLI wrapper. T-102 formalises fixture format.
+T-103 wires CI. T-107 replaces the "What comes later" section with
+substantive workflow material (when-to-score, how-to-debug-a-failure,
+threshold tuning).
 
 ## What parity-testing proves
 
