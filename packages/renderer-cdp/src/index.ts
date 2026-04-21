@@ -131,3 +131,17 @@ export {
   sanitizeArtifactKey,
   type StoredArtifact,
 } from './artifact-store';
+
+export {
+  type BakeArtifact,
+  type BakeArtifactKind,
+  type BakeCache,
+  type BakeFailure,
+  type BakeJob,
+  type BakeOrchestrationResult,
+  type BakeOrchestrator,
+  type BakeRuntime,
+  InMemoryBakeCache,
+  InMemoryBakeOrchestrator,
+  type InMemoryBakeOrchestratorOptions,
+} from './bake';
