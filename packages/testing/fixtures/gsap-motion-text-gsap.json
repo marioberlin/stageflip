@@ -9,5 +9,12 @@
     "durationInFrames": 60,
     "props": { "text": "StageFlip", "entrance": "slide-up", "durationSec": 0.6 }
   },
-  "referenceFrames": [0, 30, 59]
+  "referenceFrames": [0, 30, 59],
+  "thresholds": {
+    "minPsnr": 30,
+    "minSsim": 0.97,
+    "maxFailingFrames": 0,
+    "region": { "x": 200, "y": 200, "width": 560, "height": 140 }
+  },
+  "goldens": { "dir": "goldens/gsap-motion-text-gsap" }
 }

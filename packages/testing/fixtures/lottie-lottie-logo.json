@@ -9,5 +9,11 @@
     "durationInFrames": 60,
     "props": {}
   },
-  "referenceFrames": [0, 30, 59]
+  "referenceFrames": [0, 30, 59],
+  "thresholds": {
+    "minPsnr": 32,
+    "minSsim": 0.97,
+    "maxFailingFrames": 0
+  },
+  "goldens": { "dir": "goldens/lottie-lottie-logo" }
 }

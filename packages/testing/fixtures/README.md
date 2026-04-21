@@ -1,4 +1,4 @@
-# Parity fixtures (T-067)
+# Parity fixtures (T-067 seed, T-102 extended)
 
 One JSON manifest per demo clip shipped by the Phase 3 runtimes. Each
 manifest is the smallest description a future Puppeteer-backed renderer
@@ -21,15 +21,15 @@ directory at `pnpm test` time.
 
 ## Contents
 
-| File | Runtime | Clip kind |
-|---|---|---|
-| `css-solid-background.json` | `css` | `solid-background` |
-| `gsap-motion-text-gsap.json` | `gsap` | `motion-text-gsap` |
-| `lottie-lottie-logo.json` | `lottie` | `lottie-logo` |
-| `shader-flash-through-white.json` | `shader` | `flash-through-white` |
-| `shader-swirl-vortex.json` | `shader` | `swirl-vortex` |
-| `shader-glitch.json` | `shader` | `glitch` |
-| `three-three-product-reveal.json` | `three` | `three-product-reveal` |
+| File | Runtime | Clip kind | T-102 thresholds + goldens |
+|---|---|---|---|
+| `css-solid-background.json` | `css` | `solid-background` | ✓ (40 dB / 0.99) |
+| `gsap-motion-text-gsap.json` | `gsap` | `motion-text-gsap` | ✓ (30 dB / 0.97, text region) |
+| `lottie-lottie-logo.json` | `lottie` | `lottie-logo` | ✓ (32 dB / 0.97) |
+| `shader-flash-through-white.json` | `shader` | `flash-through-white` | ✓ (34 dB / 0.97) |
+| `shader-swirl-vortex.json` | `shader` | `swirl-vortex` | — |
+| `shader-glitch.json` | `shader` | `glitch` | — |
+| `three-three-product-reveal.json` | `three` | `three-product-reveal` | ✓ (30 dB / 0.95) |
 
 ## Adding a new fixture
 
@@ -52,6 +52,15 @@ The Phase 5 parity harness will:
    as PNG files — not present during T-067).
 5. Fail the gate if any frame scores below the configured thresholds.
 
-The T-102 "fixture format" task may extend this schema (e.g. adding per-
-frame PSNR thresholds, clip-local theming slots); T-067's schema is the
-minimal seed that T-102 either generalises or supersedes.
+T-102 extended the schema with two optional blocks: `thresholds`
+(`minPsnr`, `minSsim`, `maxFailingFrames`, optional focus `region`) and
+`goldens` (`dir` + optional filename `pattern`). 5 fixtures (one per
+runtime) ship pre-populated; the remaining 2 shader variants stay as
+input-only manifests until their first goldens are committed.
+`resolveGoldenPath(manifest, fixtureDir, frame)` in
+`@stageflip/testing` returns the absolute path for a specific frame's
+golden; `null` when the manifest has no `goldens` block.
+
+Per-fixture thresholds — when set — override `@stageflip/parity`'s
+`DEFAULT_THRESHOLDS` (30 dB / 0.97 / 0). T-101's CLI merges the two
+and prints the resolved values in its report.

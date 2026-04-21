@@ -9,5 +9,11 @@
     "durationInFrames": 30,
     "props": {}
   },
-  "referenceFrames": [0, 15, 29]
+  "referenceFrames": [0, 15, 29],
+  "thresholds": {
+    "minPsnr": 34,
+    "minSsim": 0.97,
+    "maxFailingFrames": 0
+  },
+  "goldens": { "dir": "goldens/shader-flash-through-white" }
 }
