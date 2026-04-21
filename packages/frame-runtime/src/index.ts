@@ -57,7 +57,8 @@ export {
   type InterpolateColorsOptions,
 } from './interpolate-colors.js';
 
-export { interpolatePath, type InterpolatePathOptions } from './interpolate-path.js';
+// interpolatePath lives on the `@stageflip/frame-runtime/path` sub-entry —
+// see `src/path.ts`. Keeps flubber out of the base bundle.
 
 export { spring, type SpringConfig } from './spring.js';
 
