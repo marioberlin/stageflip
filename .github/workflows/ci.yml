@@ -77,6 +77,65 @@ jobs:
       - name: Gate - bundle-size budget (size-limit)
         run: pnpm size-limit
 
+  parity:
+    name: parity (fixture scoring)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Path-filtered via dorny/paths-filter: skip unless a
+    # rendering-adjacent file changed. We run in CI because parsing +
+    # CLI correctness are cheap structural checks regardless of
+    # whether goldens are committed yet. Once goldens land (future
+    # task), this becomes a true behavioural gate. The
+    # skip-isn't-failure posture from T-101 means the current output
+    # is "all-skipped, exit 0" — which still catches fixture-manifest
+    # drift and CLI regressions.
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect rendering-adjacent changes
+        id: changed
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            rendering:
+              - 'packages/parity/**'
+              - 'packages/parity-cli/**'
+              - 'packages/renderer-cdp/**'
+              - 'packages/cdp-host-bundle/**'
+              - 'packages/frame-runtime/**'
+              - 'packages/rir/**'
+              - 'packages/runtimes/**'
+              - 'packages/testing/**'
+              - '.github/workflows/ci.yml'
+
+      - name: Setup pnpm
+        if: steps.changed.outputs.rendering == 'true'
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node ${{ env.NODE_VERSION }}
+        if: steps.changed.outputs.rendering == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies (frozen lockfile)
+        if: steps.changed.outputs.rendering == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Run parity harness (structural + scoring when goldens present)
+        if: steps.changed.outputs.rendering == 'true'
+        # `pnpm parity` exits 0 when every scored fixture passes and
+        # skipped fixtures don't count as failure. That means this
+        # job is always green while goldens are still being primed —
+        # but any CLI regression, fixture-schema drift, or threshold-
+        # resolution bug trips it immediately.
+        run: pnpm parity --fixtures-dir packages/testing/fixtures
+
+      - name: Skip reason
+        if: steps.changed.outputs.rendering != 'true'
+        run: echo "Skipped — no rendering-adjacent files changed in this PR."
+
   e2e:
     name: e2e (Playwright smoke)
     runs-on: ubuntu-latest

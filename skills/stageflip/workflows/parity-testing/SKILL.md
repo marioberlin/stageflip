@@ -164,10 +164,44 @@ Programmatic consumers (future T-103 CI gate, T-105 visual diff)
 import `scoreFixture(fixturePath, opts?)` and `runCli(argv, io?)`
 from `@stageflip/parity-cli` directly.
 
+## CI gate (T-103)
+
+`.github/workflows/ci.yml` ships a `parity` job that runs
+`pnpm parity --fixtures-dir packages/testing/fixtures` on any PR
+that touches rendering-adjacent paths:
+
+- `packages/parity/**`
+- `packages/parity-cli/**`
+- `packages/renderer-cdp/**`
+- `packages/cdp-host-bundle/**`
+- `packages/frame-runtime/**`
+- `packages/rir/**`
+- `packages/runtimes/**`
+- `packages/testing/**`
+- `.github/workflows/ci.yml`
+
+Path filtering is done by [dorny/paths-filter](https://github.com/dorny/paths-filter);
+PRs that don't touch the filter set skip the job entirely (and
+the skip step emits a visible `Skipped — no rendering-adjacent files
+changed` line for the UI).
+
+**Current behaviour** — while goldens are still being primed, the
+harness reports every fixture as `no-candidates` / `no-goldens`
+(depending on the fixture) and exits `0`. The job is therefore a
+*structural gate*: it catches fixture-manifest drift, CLI
+regressions, and threshold-resolution bugs, but not pixel drift.
+The same job becomes a *behavioural gate* automatically as
+goldens + candidates land under each fixture's `goldens.dir`
+(relative to the fixture JSON).
+
+**Priming goldens** (future) — once a fixture's candidate render
+pipeline is stable, commit the first set of goldens and run
+`pnpm parity` locally to confirm a clean PASS. Subsequent PRs
+that change rendering code must keep those goldens green or bump
+their thresholds in the manifest.
+
 ## What comes later
 
-- **T-103** — CI integration; gate runs on any PR touching rendering
-  code or `packages/parity/**`.
 - **T-105** — visual-diff viewer (side-by-side / slider / overlay)
   consuming the `ScoreReport`.
 - **T-107** — substantive workflow doc: when to update a golden, how
