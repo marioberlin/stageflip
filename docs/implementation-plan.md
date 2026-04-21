@@ -295,6 +295,7 @@ When a task references these, treat as **API specs only**. Read docs; do not cop
 
 ## Phase 4 — Vendored CDP Engine + Export Dispatcher (Week 19–22)
 
+**Status**: ✅ **Ratified 2026-04-21.** All 13 tasks merged (T-080–T-091, including T-084a [new] and T-083/T-088/T-089 [rev]). Exit criteria met: 3 reference fixtures render end-to-end through real puppeteer-core + real ffmpeg + ffprobe (see `@stageflip/renderer-cdp` `reference-render.e2e.test.ts`; 203 tests total in the package); zero Remotion imports (237 files scanned); asset preflight rewrites remote URLs to `file://` with loss-flag fallback for refs the resolver refuses. T-083 escalation (`docs/escalation-T-083.md`) resolved in-phase — B1+B2+B3(a). Deferred to Phase 5/12: BeginFrame-based deterministic capture (T-100), real host HTML bundle (T-100), concrete bake runtime (Phase 12), Firebase Storage `ArtifactStore` adapter, CDP font pre-embedding. See `docs/handover-phase4-complete.md` for the full closeout.
 **Goal**: Deterministic headless render to MP4/MOV/WebM.
 **Exit criteria**: `stageflip render` produces valid MP4 from a fixture document; no Remotion imports; asset preflight resolves all remote URLs to `file://` before capture.
 
