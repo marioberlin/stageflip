@@ -81,3 +81,37 @@ describe('vendor/NOTICE (T-081)', () => {
     expect(notice).toMatch(/Modified by StageFlip/);
   });
 });
+
+describe('vendor/README.md (T-082)', () => {
+  const readmePath = join(VENDOR_ROOT, 'README.md');
+
+  it('exists at vendor/ root (distinct from upstream engine README)', () => {
+    expect(existsSync(readmePath)).toBe(true);
+  });
+
+  it('explains what is vendored and pins @hyperframes/engine with the same commit', () => {
+    const readme = readFileSync(readmePath, 'utf8');
+    expect(readme).toMatch(/@hyperframes\/engine/);
+    expect(readme).toContain(EXPECTED_COMMIT);
+  });
+
+  it('explains why we vendor (not reimplement) and covers the upgrade protocol', () => {
+    const readme = readFileSync(readmePath, 'utf8');
+    expect(readme).toMatch(/Why vendor/i);
+    expect(readme).toMatch(/Upgrading/i);
+    expect(readme).toMatch(/ADR/);
+  });
+
+  it('lists or links the current modification record', () => {
+    const readme = readFileSync(readmePath, 'utf8');
+    expect(readme).toMatch(/Modifications/i);
+  });
+
+  it('cross-references the canonical provenance files', () => {
+    const readme = readFileSync(readmePath, 'utf8');
+    expect(readme).toMatch(/THIRD_PARTY\.md/);
+    expect(readme).toMatch(/docs\/dependencies\.md/);
+    expect(readme).toMatch(/NOTICE/);
+    expect(readme).toMatch(/PIN\.json/);
+  });
+});
