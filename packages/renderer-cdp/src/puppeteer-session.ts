@@ -1,24 +1,36 @@
 // packages/renderer-cdp/src/puppeteer-session.ts
 // Concrete CdpSession backed by puppeteer-core. Launches a headless
 // browser, hosts an HTML page that exposes `window.__sf.setFrame(n)`,
-// and captures frames via `page.screenshot({ type: 'png' })`.
+// and captures frames via either Chrome's deterministic
+// `HeadlessExperimental.beginFrame` (when the runtime supports it) or
+// the classic `Page.captureScreenshot` path otherwise.
 //
-// Scope note: this is the first concrete CdpSession in Phase 4. The
-// T-080 vendored engine's BeginFrame-based capture remains unused for
-// now; screenshot-based capture is good enough for T-090's
-// "valid MP4 from a fixture document" exit criterion. Byte-exact
-// parity under BeginFrame is T-100 territory.
+// BeginFrame integration (T-100b): the vendored engine's
+// `screenshotService.ts` is the reference implementation for the
+// BeginFrame protocol. We reimplement the narrow subset we need here
+// (rather than importing the vendored module) so that the test-fake
+// seam (PuppetPage / PuppetCdpClient) stays clean: fakes don't have to
+// satisfy puppeteer-core's full Page type. The BeginFrame flag set is
+// surfaced on `createPuppeteerBrowserFactory` for consumers that
+// launch chrome-headless-shell themselves.
 //
-// Host HTML is pluggable: callers pass a `HostHtmlBuilder` that
-// receives the dispatch plan + composition config and returns an HTML
-// string. The page must set `window.__sf.ready = true` once it is
-// prepared to accept seeks, and define `window.__sf.setFrame(n)` that
-// settles synchronously (or via await). T-090 ships a minimal canvas-
-// based placeholder builder; real React + runtime mounting lands
-// alongside the T-100 parity harness when the bundler is available.
+// Determinism note: BeginFrame crashes on macOS / Windows — the
+// hyperframes engine gates it on `process.platform === 'linux'` +
+// chrome-headless-shell. We mirror that gate. On a non-Linux host, or
+// when the runtime probe fails (recent chrome-headless-shell builds
+// dropped the beginFrame method while keeping HeadlessExperimental
+// available), we fall through to screenshot capture. Screenshot
+// capture is non-deterministic across runs; BeginFrame is what the
+// parity harness ultimately wants.
 
 import type { CdpSession, CompositionConfig, SessionHandle } from './adapter';
 import type { DispatchPlan } from './dispatch';
+
+/** Narrow slice of puppeteer-core's CDPSession we actually use. */
+export interface PuppetCdpClient {
+  send<T = unknown>(method: string, params?: Record<string, unknown>): Promise<T>;
+  detach(): Promise<void>;
+}
 
 /** Narrow slice of puppeteer-core's Browser we actually use. */
 export interface PuppetBrowser {
@@ -41,6 +53,12 @@ export interface PuppetPage {
   evaluate<T, A extends unknown[]>(fn: (...args: A) => T, ...args: A): Promise<T>;
   screenshot(opts?: { type?: 'png' | 'jpeg' }): Promise<Uint8Array>;
   close(): Promise<void>;
+  /**
+   * Optional: concrete puppeteer-core pages always expose this. The
+   * interface allows omission so cheap test fakes that only cover the
+   * screenshot path don't have to synthesise a CDP client.
+   */
+  createCDPSession?(): Promise<PuppetCdpClient>;
 }
 
 /** Factory returning a ready-to-use browser. Tests inject fakes. */
@@ -52,6 +70,19 @@ export type HostHtmlBuilder = (ctx: {
   readonly config: CompositionConfig;
 }) => string;
 
+/**
+ * Capture protocol selection.
+ *
+ *   - `'beginframe'` — force `HeadlessExperimental.beginFrame`. Fails
+ *     at mount time if the page has no `createCDPSession` or the
+ *     runtime probe doesn't succeed.
+ *   - `'screenshot'` — always use `page.screenshot()`. Matches the
+ *     pre-T-100b behaviour.
+ *   - `'auto'` (default) — BeginFrame on Linux when the probe
+ *     succeeds; screenshot otherwise.
+ */
+export type CaptureMode = 'auto' | 'beginframe' | 'screenshot';
+
 export interface PuppeteerCdpSessionOptions {
   readonly browserFactory: BrowserFactory;
   /** Custom host HTML. Defaults to a canvas-based placeholder. */
@@ -61,20 +92,36 @@ export interface PuppeteerCdpSessionOptions {
    * Default 5000.
    */
   readonly readyTimeoutMs?: number;
+  /** Capture mode. Default `'auto'`. See {@link CaptureMode}. */
+  readonly captureMode?: CaptureMode;
+  /**
+   * Override the platform probe for `'auto'` resolution. Defaults to
+   * `process.platform`. Tests inject `'linux'` to exercise the
+   * BeginFrame branch without running on Linux.
+   */
+  readonly platform?: NodeJS.Platform;
 }
 
 interface PuppetHandle {
   readonly _handle: symbol;
   readonly page: PuppetPage;
-  readonly ownsBrowser: boolean;
   readonly browser: PuppetBrowser;
+  readonly captureMode: 'beginframe' | 'screenshot';
+  readonly cdp: PuppetCdpClient | null;
+  readonly beginFrameIntervalMs: number;
+  /**
+   * Absolute virtual clock position for the next BeginFrame call.
+   * Advanced by `seek(frame)`; used by `capture(handle)`. Ignored on
+   * the screenshot path.
+   */
+  beginFrameTimeTicks: number;
 }
 
 /**
  * Placeholder host HTML: a single canvas filled with a deterministic
  * colour derived from `frame`. Enough to exercise the full pipeline
  * (launch → mount → seek → capture → encode) without a React bundler.
- * Real runtime mounting ships later.
+ * Real runtime mounting ships in T-100c.
  */
 export const canvasPlaceholderHostHtml: HostHtmlBuilder = ({ config }) => `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>stageflip-cdp</title>
@@ -106,6 +153,60 @@ export const canvasPlaceholderHostHtml: HostHtmlBuilder = ({ config }) => `<!DOC
 </script></body></html>`;
 
 /**
+ * Chrome flags required when the compositor is driven by
+ * `HeadlessExperimental.beginFrame`. Leaving any of these unset under
+ * BeginFrame mode either produces blank frames or wedges the probe.
+ * Cross-referenced with the vendored engine's `browserManager.ts`.
+ *
+ * These flags also must NOT be supplied under screenshot mode —
+ * `--enable-begin-frame-control` in particular puts Chrome in a
+ * waiting state the screenshot path never satisfies.
+ */
+export const BEGIN_FRAME_LAUNCH_ARGS: readonly string[] = Object.freeze([
+  '--deterministic-mode',
+  '--enable-begin-frame-control',
+  '--disable-new-content-rendering-timeout',
+  '--run-all-compositor-stages-before-draw',
+  '--disable-threaded-animation',
+  '--disable-threaded-scrolling',
+  '--disable-checker-imaging',
+  '--disable-image-animation-resync',
+  '--enable-surface-synchronization',
+]);
+
+/**
+ * Probe whether the live browser actually honours
+ * `HeadlessExperimental.beginFrame`. Recent chrome-headless-shell
+ * builds expose the domain enable call but silently drop the
+ * beginFrame method itself; without this probe the very first capture
+ * crashes with `'HeadlessExperimental.beginFrame' wasn't found`.
+ *
+ * Returns `true` on success, `false` on any failure (missing method,
+ * protocol error, timeout). Caller decides the fallback strategy.
+ */
+export async function probeBeginFrameSupport(
+  cdp: PuppetCdpClient,
+  opts?: { readonly timeoutMs?: number },
+): Promise<boolean> {
+  const timeoutMs = opts?.timeoutMs ?? 2000;
+  try {
+    await cdp.send('HeadlessExperimental.enable');
+    const begin = cdp.send('HeadlessExperimental.beginFrame', {
+      frameTimeTicks: 0,
+      interval: 33,
+      noDisplayUpdates: true,
+    });
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('probeBeginFrameSupport: timeout')), timeoutMs),
+    );
+    await Promise.race([begin, timeout]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Concrete CdpSession using puppeteer-core. One session = one browser
  * instance; `mount` opens a page, `close` closes it. The browser itself
  * is created lazily at first mount and reused across subsequent mounts
@@ -115,6 +216,8 @@ export class PuppeteerCdpSession implements CdpSession {
   private readonly browserFactory: BrowserFactory;
   private readonly hostHtmlBuilder: HostHtmlBuilder;
   private readonly readyTimeoutMs: number;
+  private readonly captureModeRequest: CaptureMode;
+  private readonly platform: NodeJS.Platform;
   /**
    * Cached in-flight browser promise. Caching the promise (not the
    * resolved value) is what makes `ensureBrowser` safe under concurrent
@@ -131,6 +234,8 @@ export class PuppeteerCdpSession implements CdpSession {
     this.browserFactory = opts.browserFactory;
     this.hostHtmlBuilder = opts.hostHtmlBuilder ?? canvasPlaceholderHostHtml;
     this.readyTimeoutMs = opts.readyTimeoutMs ?? 5000;
+    this.captureModeRequest = opts.captureMode ?? 'auto';
+    this.platform = opts.platform ?? process.platform;
   }
 
   async mount(plan: DispatchPlan, config: CompositionConfig): Promise<SessionHandle> {
@@ -140,34 +245,55 @@ export class PuppeteerCdpSession implements CdpSession {
     const html = this.hostHtmlBuilder({ plan, config });
     await page.setContent(html, { waitUntil: 'load' });
     await this.waitForReady(page);
+
+    const { captureMode, cdp } = await this.resolveCaptureMode(page);
+    const intervalMs = config.fps > 0 ? 1000 / config.fps : 0;
+
     const handle: PuppetHandle = {
       _handle: Symbol('puppeteer-cdp-session'),
       page,
-      ownsBrowser: false,
       browser,
+      captureMode,
+      cdp,
+      beginFrameIntervalMs: intervalMs,
+      beginFrameTimeTicks: 0,
     };
     this.handlesByPage.set(page, handle);
     return handle;
   }
 
   async seek(handle: SessionHandle, frame: number): Promise<void> {
-    const { page } = this.extract(handle);
-    await page.evaluate((f: number) => {
+    const h = this.extract(handle);
+    await h.page.evaluate((f: number) => {
       const sf = (globalThis as unknown as { __sf?: { setFrame?: (n: number) => void } }).__sf;
       sf?.setFrame?.(f);
     }, frame);
+    // BeginFrame captures consume the accumulated virtual clock — pin
+    // ticks to the absolute position for the requested frame so
+    // non-monotonic seeks (e.g. scrubbing preview) still render
+    // correctly. Screenshot mode ignores this value.
+    h.beginFrameTimeTicks = frame * h.beginFrameIntervalMs;
   }
 
   async capture(handle: SessionHandle): Promise<Uint8Array> {
-    const { page } = this.extract(handle);
-    const buf = await page.screenshot({ type: 'png' });
+    const h = this.extract(handle);
+    if (h.captureMode === 'beginframe') {
+      return this.captureViaBeginFrame(h);
+    }
+    const buf = await h.page.screenshot({ type: 'png' });
     return buf instanceof Uint8Array ? buf : new Uint8Array(buf as ArrayBufferLike);
   }
 
   async close(handle: SessionHandle): Promise<void> {
-    const { page } = this.extract(handle);
-    await page.close();
-    this.handlesByPage.delete(page);
+    const h = this.extract(handle);
+    if (h.cdp) {
+      // Detach the CDP client before closing the page so the browser
+      // doesn't keep a dead session reference. Swallow errors —
+      // detach can race with page teardown.
+      await h.cdp.detach().catch(() => undefined);
+    }
+    await h.page.close();
+    this.handlesByPage.delete(h.page);
   }
 
   /**
@@ -188,6 +314,75 @@ export class PuppeteerCdpSession implements CdpSession {
     } catch {
       // Factory failed; nothing to close.
     }
+  }
+
+  private async captureViaBeginFrame(h: PuppetHandle): Promise<Uint8Array> {
+    if (!h.cdp) {
+      throw new Error('PuppeteerCdpSession: beginframe mode requires a CDP client');
+    }
+    const result = await h.cdp.send<{ screenshotData?: string; hasDamage?: boolean }>(
+      'HeadlessExperimental.beginFrame',
+      {
+        frameTimeTicks: h.beginFrameTimeTicks,
+        interval: h.beginFrameIntervalMs,
+        screenshot: { format: 'png', optimizeForSpeed: true },
+      },
+    );
+    if (!result?.screenshotData) {
+      // No damage + no cached frame — re-request with a tiny clock
+      // advance to force the compositor. Matches the vendored engine's
+      // frame-0 fallback; happens once per mount at most.
+      const forced = await h.cdp.send<{ screenshotData?: string }>(
+        'HeadlessExperimental.beginFrame',
+        {
+          frameTimeTicks: h.beginFrameTimeTicks + 0.001,
+          interval: h.beginFrameIntervalMs,
+          screenshot: { format: 'png', optimizeForSpeed: true },
+        },
+      );
+      if (!forced?.screenshotData) {
+        throw new Error('PuppeteerCdpSession: BeginFrame produced no screenshot data');
+      }
+      return base64ToBytes(forced.screenshotData);
+    }
+    return base64ToBytes(result.screenshotData);
+  }
+
+  private async resolveCaptureMode(
+    page: PuppetPage,
+  ): Promise<{ captureMode: 'beginframe' | 'screenshot'; cdp: PuppetCdpClient | null }> {
+    const request = this.captureModeRequest;
+    if (request === 'screenshot') {
+      return { captureMode: 'screenshot', cdp: null };
+    }
+    if (request === 'beginframe') {
+      if (typeof page.createCDPSession !== 'function') {
+        throw new Error(
+          'PuppeteerCdpSession: captureMode="beginframe" requires a page that exposes createCDPSession()',
+        );
+      }
+      const cdp = await page.createCDPSession();
+      const ok = await probeBeginFrameSupport(cdp);
+      if (!ok) {
+        await cdp.detach().catch(() => undefined);
+        throw new Error(
+          'PuppeteerCdpSession: captureMode="beginframe" requested but HeadlessExperimental.beginFrame is unavailable',
+        );
+      }
+      return { captureMode: 'beginframe', cdp };
+    }
+    // 'auto': BeginFrame is gated on Linux + a live createCDPSession +
+    // a successful probe. Any failure falls through to screenshot.
+    if (this.platform !== 'linux' || typeof page.createCDPSession !== 'function') {
+      return { captureMode: 'screenshot', cdp: null };
+    }
+    const cdp = await page.createCDPSession();
+    const ok = await probeBeginFrameSupport(cdp);
+    if (!ok) {
+      await cdp.detach().catch(() => undefined);
+      return { captureMode: 'screenshot', cdp: null };
+    }
+    return { captureMode: 'beginframe', cdp };
   }
 
   private ensureBrowser(): Promise<PuppetBrowser> {
@@ -232,13 +427,30 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
+ * Decode a base64 string into a fresh `Uint8Array`. Handled via
+ * Node's `Buffer` API for correctness + speed; parity harness already
+ * pulls in node-only deps so the abstraction break is moot.
+ */
+function base64ToBytes(data: string): Uint8Array {
+  const buf = Buffer.from(data, 'base64');
+  return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+}
+
+/**
  * Production browser factory: lazy-loads puppeteer-core and launches a
  * headless browser. Call sites in tests replace this with a fake.
+ *
+ * BeginFrame support: pass `captureMode: 'beginframe'` to append the
+ * {@link BEGIN_FRAME_LAUNCH_ARGS}. Leave at `'auto'` / `'screenshot'`
+ * for the default flag set. The actual runtime mode negotiation still
+ * happens inside `PuppeteerCdpSession` — launch args only enable
+ * BeginFrame, they don't select it.
  */
 export function createPuppeteerBrowserFactory(opts: {
   readonly executablePath?: string;
   readonly args?: readonly string[];
   readonly headless?: boolean;
+  readonly captureMode?: CaptureMode;
 }): BrowserFactory {
   return async () => {
     const puppeteer = (await import('puppeteer-core')) as unknown as {
@@ -250,13 +462,17 @@ export function createPuppeteerBrowserFactory(opts: {
         }): Promise<PuppetBrowser>;
       };
     };
+    const effectiveArgs =
+      opts.captureMode === 'beginframe'
+        ? [...(opts.args ?? []), ...BEGIN_FRAME_LAUNCH_ARGS]
+        : (opts.args ?? undefined);
     const launchOpts: {
       executablePath?: string;
       args?: readonly string[];
       headless: boolean | 'shell';
     } = { headless: opts.headless ?? true };
     if (opts.executablePath !== undefined) launchOpts.executablePath = opts.executablePath;
-    if (opts.args !== undefined) launchOpts.args = opts.args;
+    if (effectiveArgs !== undefined) launchOpts.args = effectiveArgs;
     return puppeteer.default.launch(launchOpts);
   };
 }

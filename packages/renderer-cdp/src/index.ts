@@ -147,13 +147,17 @@ export {
 } from './bake';
 
 export {
+  BEGIN_FRAME_LAUNCH_ARGS,
   type BrowserFactory,
   canvasPlaceholderHostHtml,
+  type CaptureMode,
   createPuppeteerBrowserFactory,
   type HostHtmlBuilder,
+  probeBeginFrameSupport,
   PuppeteerCdpSession,
   type PuppeteerCdpSessionOptions,
   type PuppetBrowser,
+  type PuppetCdpClient,
   type PuppetPage,
 } from './puppeteer-session';
 

@@ -8,10 +8,13 @@ import { describe, expect, it } from 'vitest';
 import type { CompositionConfig } from './adapter';
 import type { DispatchPlan } from './dispatch';
 import {
+  BEGIN_FRAME_LAUNCH_ARGS,
   type PuppetBrowser,
+  type PuppetCdpClient,
   type PuppetPage,
   PuppeteerCdpSession,
   canvasPlaceholderHostHtml,
+  probeBeginFrameSupport,
 } from './puppeteer-session';
 
 // --- fakes ------------------------------------------------------------------
@@ -21,10 +24,65 @@ interface PageCall {
   readonly value?: unknown;
 }
 
+interface CdpCall {
+  readonly method: string;
+  readonly params?: Record<string, unknown>;
+}
+
+class FakeCdpClient implements PuppetCdpClient {
+  public readonly calls: CdpCall[] = [];
+  public detached = false;
+  /**
+   * Handlers keyed by CDP method. Defaults cover the probe path; tests
+   * override per-method to simulate success, empty-damage, or failure.
+   */
+  public readonly handlers = new Map<string, (params?: Record<string, unknown>) => unknown>([
+    ['HeadlessExperimental.enable', () => ({})],
+    [
+      'HeadlessExperimental.beginFrame',
+      () => ({ screenshotData: Buffer.from('png-bytes').toString('base64'), hasDamage: true }),
+    ],
+  ]);
+
+  async send<T = unknown>(method: string, params?: Record<string, unknown>): Promise<T> {
+    this.calls.push({ method, ...(params !== undefined ? { params } : {}) });
+    const handler = this.handlers.get(method);
+    if (!handler) {
+      throw new Error(`FakeCdpClient: unexpected CDP method ${method}`);
+    }
+    const out = handler(params);
+    if (out instanceof Error) throw out;
+    return out as T;
+  }
+
+  async detach(): Promise<void> {
+    this.detached = true;
+  }
+}
+
 class FakePage implements PuppetPage {
   public readonly calls: PageCall[] = [];
   public ready = false;
   public screenshotPayload = new Uint8Array([0x89, 0x50, 0x4e, 0x47]); // PNG magic
+  public lastCdp: FakeCdpClient | null = null;
+  /**
+   * Assigned via constructor when CDP support is desired — otherwise
+   * undefined so `typeof page.createCDPSession === 'function'` returns
+   * false (matches the production gate in resolveCaptureMode).
+   */
+  public createCDPSession?: () => Promise<PuppetCdpClient>;
+
+  constructor(opts?: { cdpFactory?: () => FakeCdpClient }) {
+    const factory = opts?.cdpFactory;
+    if (factory) {
+      this.createCDPSession = () => {
+        const client = factory();
+        this.lastCdp = client;
+        this.calls.push({ op: 'createCDPSession' });
+        return Promise.resolve(client);
+      };
+    }
+  }
 
   async setViewport(opts: {
     width: number;
@@ -63,9 +121,15 @@ class FakePage implements PuppetPage {
 class FakeBrowser implements PuppetBrowser {
   public readonly pages: FakePage[] = [];
   public closed = false;
+  /**
+   * When set, every new page gets CDP wiring via this factory.
+   * Defaults to screenshot-only pages.
+   */
+  public cdpFactory: (() => FakeCdpClient) | undefined;
 
   async newPage(): Promise<PuppetPage> {
-    const page = new FakePage();
+    const opts = this.cdpFactory ? { cdpFactory: this.cdpFactory } : undefined;
+    const page = new FakePage(opts);
     this.pages.push(page);
     return page;
   }
@@ -238,6 +302,231 @@ describe('PuppeteerCdpSession', () => {
     await expect(session.mount(mkPlan(), mkConfig())).rejects.toThrow(
       /did not set window\.__sf\.ready/,
     );
+  });
+});
+
+describe('PuppeteerCdpSession — BeginFrame mode', () => {
+  it('auto mode falls back to screenshot on non-linux hosts', async () => {
+    const browser = new FakeBrowser();
+    browser.cdpFactory = () => new FakeCdpClient();
+    const session = new PuppeteerCdpSession({
+      browserFactory: async () => browser,
+      platform: 'darwin',
+    });
+    const handle = await session.mount(mkPlan(), mkConfig());
+    await session.capture(handle);
+    // No CDP session created because auto skipped the probe.
+    expect(browser.pages[0]?.lastCdp).toBeNull();
+    expect(browser.pages[0]?.calls.some((c) => c.op === 'screenshot')).toBe(true);
+  });
+
+  it('auto mode selects BeginFrame on linux when the probe succeeds', async () => {
+    const browser = new FakeBrowser();
+    browser.cdpFactory = () => new FakeCdpClient();
+    const session = new PuppeteerCdpSession({
+      browserFactory: async () => browser,
+      platform: 'linux',
+    });
+    const handle = await session.mount(mkPlan(), mkConfig());
+    const buf = await session.capture(handle);
+    const page = browser.pages[0];
+    if (!page) throw new Error('expected page');
+    expect(page.lastCdp?.calls.some((c) => c.method === 'HeadlessExperimental.beginFrame')).toBe(
+      true,
+    );
+    // BeginFrame path returns the decoded screenshotData, not the
+    // page.screenshot payload — screenshot should never be called.
+    expect(page.calls.some((c) => c.op === 'screenshot')).toBe(false);
+    // Sanity: the fake encodes 'png-bytes' as the screenshot; decoding
+    // gives the raw ascii of that string.
+    expect(Buffer.from(buf).toString('utf8')).toBe('png-bytes');
+  });
+
+  it('auto mode falls back to screenshot when the beginFrame probe fails', async () => {
+    // Simulate a chrome-headless-shell that answers enable but rejects
+    // beginFrame (the case the vendored engine comment calls out).
+    const browser = new FakeBrowser();
+    browser.cdpFactory = () => {
+      const c = new FakeCdpClient();
+      c.handlers.set('HeadlessExperimental.beginFrame', () => {
+        throw new Error("'HeadlessExperimental.beginFrame' wasn't found");
+      });
+      return c;
+    };
+    const session = new PuppeteerCdpSession({
+      browserFactory: async () => browser,
+      platform: 'linux',
+    });
+    const handle = await session.mount(mkPlan(), mkConfig());
+    await session.capture(handle);
+    // CDP session was created (probe attempted) and then detached
+    // after the failed probe; captures took the screenshot path.
+    expect(browser.pages[0]?.lastCdp?.detached).toBe(true);
+    expect(browser.pages[0]?.calls.some((c) => c.op === 'screenshot')).toBe(true);
+  });
+
+  it('captureMode="beginframe" throws when the page has no createCDPSession', async () => {
+    const browser = new FakeBrowser(); // no cdpFactory on the browser
+    const session = new PuppeteerCdpSession({
+      browserFactory: async () => browser,
+      captureMode: 'beginframe',
+      platform: 'linux',
+    });
+    await expect(session.mount(mkPlan(), mkConfig())).rejects.toThrow(/createCDPSession/);
+  });
+
+  it('captureMode="beginframe" throws when the probe fails', async () => {
+    const browser = new FakeBrowser();
+    browser.cdpFactory = () => {
+      const c = new FakeCdpClient();
+      c.handlers.set('HeadlessExperimental.beginFrame', () => {
+        throw new Error('probe rejected');
+      });
+      return c;
+    };
+    const session = new PuppeteerCdpSession({
+      browserFactory: async () => browser,
+      captureMode: 'beginframe',
+      platform: 'linux',
+    });
+    await expect(session.mount(mkPlan(), mkConfig())).rejects.toThrow(/beginFrame is unavailable/);
+    // The probe-failing CDP client should still have been detached to
+    // avoid leaking the session.
+    expect(browser.pages[0]?.lastCdp?.detached).toBe(true);
+  });
+
+  it('seek advances the BeginFrame clock proportional to the frame number', async () => {
+    const browser = new FakeBrowser();
+    browser.cdpFactory = () => new FakeCdpClient();
+    const session = new PuppeteerCdpSession({
+      browserFactory: async () => browser,
+      platform: 'linux',
+    });
+    const handle = await session.mount(mkPlan(), mkConfig({ fps: 30 }));
+
+    await session.seek(handle, 0);
+    await session.capture(handle);
+    await session.seek(handle, 10);
+    await session.capture(handle);
+
+    const cdp = browser.pages[0]?.lastCdp;
+    if (!cdp) throw new Error('expected cdp client');
+    const beginFrames = cdp.calls.filter((c) => c.method === 'HeadlessExperimental.beginFrame');
+    // First call is the probe (ticks=0), second is frame 0 capture,
+    // third is frame 10 capture.
+    expect(beginFrames.length).toBeGreaterThanOrEqual(3);
+    const interval = 1000 / 30;
+    // Frame 10 capture → ticks = 10 * interval.
+    const frame10 = beginFrames[beginFrames.length - 1];
+    expect(frame10?.params?.frameTimeTicks).toBeCloseTo(10 * interval, 6);
+    expect(frame10?.params?.interval).toBeCloseTo(interval, 6);
+  });
+
+  it('forces a secondary beginFrame when the first returns no screenshotData', async () => {
+    let call = 0;
+    const browser = new FakeBrowser();
+    browser.cdpFactory = () => {
+      const c = new FakeCdpClient();
+      c.handlers.set('HeadlessExperimental.beginFrame', (params) => {
+        call++;
+        // First call (the probe) answers normally.
+        if (call === 1) return { screenshotData: Buffer.from('probe').toString('base64') };
+        // Second (real capture): no damage, no data.
+        if (call === 2) return { screenshotData: undefined, hasDamage: false };
+        // Third (forced retry with slight tick advance): return data.
+        return {
+          screenshotData: Buffer.from('forced').toString('base64'),
+          // Note: caller sent ticks + 0.001 — we don't verify exact
+          // match here, just that the retry fired.
+          _receivedTicks: params?.frameTimeTicks,
+        };
+      });
+      return c;
+    };
+    const session = new PuppeteerCdpSession({
+      browserFactory: async () => browser,
+      platform: 'linux',
+    });
+    const handle = await session.mount(mkPlan(), mkConfig());
+    const buf = await session.capture(handle);
+    expect(Buffer.from(buf).toString('utf8')).toBe('forced');
+  });
+
+  it('throws when both the primary and forced beginFrame return no data', async () => {
+    const browser = new FakeBrowser();
+    browser.cdpFactory = () => {
+      const c = new FakeCdpClient();
+      let seen = 0;
+      c.handlers.set('HeadlessExperimental.beginFrame', () => {
+        seen++;
+        // Let the probe succeed (call 1). Everything after returns empty.
+        if (seen === 1) return { screenshotData: Buffer.from('probe').toString('base64') };
+        return { screenshotData: undefined };
+      });
+      return c;
+    };
+    const session = new PuppeteerCdpSession({
+      browserFactory: async () => browser,
+      platform: 'linux',
+    });
+    const handle = await session.mount(mkPlan(), mkConfig());
+    await expect(session.capture(handle)).rejects.toThrow(/BeginFrame produced no screenshot data/);
+  });
+
+  it('close(handle) detaches the CDP session before closing the page', async () => {
+    const browser = new FakeBrowser();
+    browser.cdpFactory = () => new FakeCdpClient();
+    const session = new PuppeteerCdpSession({
+      browserFactory: async () => browser,
+      platform: 'linux',
+    });
+    const handle = await session.mount(mkPlan(), mkConfig());
+    await session.close(handle);
+    expect(browser.pages[0]?.lastCdp?.detached).toBe(true);
+    expect(browser.pages[0]?.calls.some((c) => c.op === 'close')).toBe(true);
+  });
+});
+
+describe('probeBeginFrameSupport', () => {
+  it('returns true when enable + beginFrame both resolve', async () => {
+    const cdp = new FakeCdpClient();
+    expect(await probeBeginFrameSupport(cdp)).toBe(true);
+  });
+
+  it('returns false when beginFrame throws', async () => {
+    const cdp = new FakeCdpClient();
+    cdp.handlers.set('HeadlessExperimental.beginFrame', () => {
+      throw new Error('method not found');
+    });
+    expect(await probeBeginFrameSupport(cdp)).toBe(false);
+  });
+
+  it('returns false when enable throws', async () => {
+    const cdp = new FakeCdpClient();
+    cdp.handlers.set('HeadlessExperimental.enable', () => {
+      throw new Error('not supported');
+    });
+    expect(await probeBeginFrameSupport(cdp)).toBe(false);
+  });
+
+  it('returns false when beginFrame exceeds the timeout', async () => {
+    const cdp = new FakeCdpClient();
+    cdp.handlers.set(
+      'HeadlessExperimental.beginFrame',
+      () => new Promise(() => undefined), // never resolves
+    );
+    expect(await probeBeginFrameSupport(cdp, { timeoutMs: 25 })).toBe(false);
+  });
+});
+
+describe('BEGIN_FRAME_LAUNCH_ARGS', () => {
+  it('exposes the flags that are known to be BeginFrame-only', () => {
+    expect(BEGIN_FRAME_LAUNCH_ARGS).toContain('--deterministic-mode');
+    expect(BEGIN_FRAME_LAUNCH_ARGS).toContain('--enable-begin-frame-control');
+  });
+
+  it('is frozen — callers cannot mutate the canonical list', () => {
+    expect(Object.isFrozen(BEGIN_FRAME_LAUNCH_ARGS)).toBe(true);
   });
 });
 

@@ -116,19 +116,37 @@ interface CdpSession {
 }
 ```
 
-Concrete implementation in Phase 4: **`PuppeteerCdpSession`**
-(T-090). Uses `puppeteer-core` + a system Chrome/Chromium binary;
-`page.screenshot({ type: 'png' })` per frame. Deterministic seek is
+Concrete implementation: **`PuppeteerCdpSession`** (T-090 shipped
+the session; T-100b added BeginFrame). Uses `puppeteer-core` + a
+system Chrome / chrome-headless-shell binary. Deterministic seek is
 the host page's responsibility — it must expose
 `window.__sf.setFrame(n)` and `window.__sf.ready = true`.
 
-- BeginFrame-based capture stays vendored-engine territory (T-080
-  payload) and is a T-100 parity-harness deliverable; screenshot
-  capture is sufficient for Phase 4's "valid MP4" exit criterion.
-- Host HTML is **pluggable** via `HostHtmlBuilder`. The default
-  `canvasPlaceholderHostHtml` is a minimal canvas page — enough to
-  prove the pipeline end-to-end without a React bundle. Real
-  runtime-mounting host HTML lands with the parity harness.
+Two capture protocols, selected by `captureMode`:
+
+- `'beginframe'` — `HeadlessExperimental.beginFrame` drives the
+  compositor directly. Deterministic across runs. Requires
+  `chrome-headless-shell` on Linux plus the
+  {@link BEGIN_FRAME_LAUNCH_ARGS} flag set; a runtime probe confirms
+  the method is actually callable before the first capture.
+- `'screenshot'` — classic `Page.captureScreenshot`. Works on every
+  platform; NOT pixel-deterministic across runs (compositor cadence
+  leaks through). Fine for "does the pipeline work" checks, not for
+  parity harness goldens.
+- `'auto'` (default) — BeginFrame on Linux when the probe succeeds,
+  screenshot everywhere else. Auto never throws: an unsupported
+  environment silently downgrades, so a macOS dev machine gets
+  usable (if non-deterministic) captures without config.
+
+Per-frame virtual clock: `seek(frame)` both calls `__sf.setFrame(n)`
+and pins the handle's `beginFrameTimeTicks` to `frame * (1000 / fps)`
+— the next BeginFrame capture advances the compositor to exactly that
+virtual time. Screenshot mode ignores the tick state.
+
+Host HTML is **pluggable** via `HostHtmlBuilder`. The default
+`canvasPlaceholderHostHtml` is a minimal canvas page — enough to prove
+the pipeline end-to-end without a React bundle. Real runtime-mounting
+host HTML ships in T-100c.
 
 ## Asset preflight (T-084a)
 
@@ -226,10 +244,15 @@ Everything in the export pipeline is deterministic by construction:
 - Content-hash cache keys drive bake cache and asset cache (callers
   canonicalise before hashing).
 
-BeginFrame vs screenshot capture is the one deterministic-fidelity
-gap today: screenshot capture inherits Chrome's compositor cadence
-and is NOT pixel-perfect across runs. T-100 parity harness
-introduces the BeginFrame path via the vendored engine.
+BeginFrame vs screenshot capture: BeginFrame (T-100b) is the
+deterministic path — one atomic `HeadlessExperimental.beginFrame`
+CDP call runs layout-paint-composite with a caller-supplied virtual
+clock and emits the PNG. Screenshot inherits Chrome's real
+compositor cadence and is NOT pixel-perfect across runs. The active
+protocol is chosen per-session via `captureMode` (`'auto'` by
+default — BeginFrame on Linux + chrome-headless-shell, screenshot
+elsewhere). Consumers that need goldens-stable rendering must use
+BeginFrame.
 
 ## Module surface (what to import)
 
@@ -241,6 +264,7 @@ From `@stageflip/renderer-cdp`:
 | `preflight(doc)` | Pure preflight report | T-084 |
 | `LiveTierAdapter` + `CdpSession` | Session seam | T-083 |
 | `PuppeteerCdpSession`, `createPuppeteerBrowserFactory` | Concrete session | T-090 |
+| `CaptureMode`, `BEGIN_FRAME_LAUNCH_ARGS`, `probeBeginFrameSupport`, `PuppetCdpClient` | BeginFrame protocol selection + launch-arg + probe seam | T-100b |
 | `dispatchClips(doc)` | RIR → DispatchPlan | T-083 |
 | `collectAssetRefs`, `rewriteDocumentAssets`, `resolveAssets`, `InMemoryAssetResolver` | Asset preflight | T-084a |
 | `InMemoryFrameSink`, `FrameSink` | Frame output seam | T-084 |
@@ -257,8 +281,7 @@ From `@stageflip/renderer-cdp`:
 
 | Item | Owner task / phase |
 |---|---|
-| BeginFrame-based deterministic capture (via vendored engine) | T-100 / Phase 5 |
-| Real React + runtime-mounting host HTML | T-100 / Phase 5 |
+| Real React + runtime-mounting host HTML | T-100c / Phase 5 |
 | Concrete bake runtime (Blender, heavy three) | Phase 12 |
 | Firebase Storage `ArtifactStore` adapter | Phase 10+ (mirrors Phase 1 Firebase deferrals) |
 | CDP font pre-embedding (`@fontsource` base64 + `document.fonts.check`) | Next touches to T-084a |
