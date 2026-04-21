@@ -1,3 +1,7 @@
+// Modified by StageFlip, 2026-04-21 — re-routed the `@hyperframes/core`
+// import to StageFlip's reimpl (../../../../src/vendor-core-helpers). See
+// packages/renderer-cdp/vendor/engine/src/index.ts header + NOTICE.
+
 /**
  * Screenshot Service
  *
@@ -6,7 +10,7 @@
 
 import { type Page } from "puppeteer-core";
 import { type CaptureOptions } from "../types.js";
-import { MEDIA_VISUAL_STYLE_PROPERTIES } from "@hyperframes/core";
+import { MEDIA_VISUAL_STYLE_PROPERTIES } from "../../../../src/vendor-core-helpers.js";
 
 export const cdpSessionCache = new WeakMap<Page, import("puppeteer-core").CDPSession>();
 

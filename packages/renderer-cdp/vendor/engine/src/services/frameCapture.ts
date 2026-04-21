@@ -1,3 +1,7 @@
+// Modified by StageFlip, 2026-04-21 — re-routed the `@hyperframes/core`
+// import to StageFlip's reimpl (../../../../src/vendor-core-helpers). See
+// packages/renderer-cdp/vendor/engine/src/index.ts header + NOTICE.
+
 /**
  * Frame Capture Service
  *
@@ -10,7 +14,7 @@
 import { type Browser, type Page, type Viewport, type ConsoleMessage } from "puppeteer-core";
 import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
-import { quantizeTimeToFrame } from "@hyperframes/core";
+import { quantizeTimeToFrame } from "../../../../src/vendor-core-helpers.js";
 
 // ── Extracted modules ───────────────────────────────────────────────────────
 import {
