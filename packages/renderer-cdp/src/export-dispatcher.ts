@@ -79,10 +79,16 @@ export async function exportDocument(
   const { session, sink } = opts;
 
   const report = preflight(document);
+  let sinkClosed = false;
   if (report.blockers.length > 0) {
     // Ownership contract: once exportDocument is called, the dispatcher
     // owns sink.close lifecycle on every exit path — success or failure.
-    await sink.close();
+    // Swallow any close error here: the caller's actual problem is the
+    // preflight blocker; a secondary close failure (e.g. FFmpegEncoder
+    // exiting with "no stream" because it received no writes) would mask
+    // the real diagnostic if allowed to propagate.
+    await sink.close().catch(() => {});
+    sinkClosed = true;
     throw new PreflightBlockedError(report.blockers);
   }
 
@@ -114,7 +120,11 @@ export async function exportDocument(
     }
   } finally {
     if (mounted !== null) await adapter.close(mounted);
-    await sink.close();
+    // Guard against double-close: the preflight-blocked early-return
+    // already closed the sink before re-throwing. Some sinks (notably
+    // FFmpegEncoder after its T-085 idempotency fix) are re-entrancy-
+    // safe, but the FrameSink contract doesn't require idempotency.
+    if (!sinkClosed) await sink.close();
   }
 
   return {

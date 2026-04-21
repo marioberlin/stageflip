@@ -286,6 +286,32 @@ future ADR work, same handling as other blocked-majors in §3.
 
 ---
 
+### Audit 7 addendum — 2026-04-21 (T-090 puppeteer-core install site)
+
+T-090 (reference render tests) needs a real headless browser.
+`puppeteer-core` (no bundled Chromium) is the right choice: it
+reuses the system Chrome/Chromium the user already has, and does
+NOT trigger a 150MB Chromium download at install time. Consumers
+point at their browser via `PUPPETEER_EXECUTABLE_PATH` or let
+`canRunReferenceRenders()` auto-detect.
+
+**Install site**:
+- `puppeteer-core` **23.11.1** (Apache-2.0) — installed in
+  `@stageflip/renderer-cdp` dependencies. Lazy-imported inside
+  `createPuppeteerBrowserFactory` so consumers that never
+  instantiate a PuppeteerCdpSession don't pay the module-init cost.
+
+Alignment: the §3 table entry for `puppeteer 23.11.1` was
+pre-pinned for this task. We did NOT install the full `puppeteer`
+package — `puppeteer-core` is the subset we need; major-version
+pinning still holds.
+
+Transitive growth: `pnpm check-licenses` went from 473 → ~485
+deps scanned (mostly puppeteer's own packaging — chromium-bidi,
+debug, devtools-protocol, ws all MIT/BSD/ISC/Apache). PASS.
+
+---
+
 ## 5. Vendored Code Pinning
 
 Vendored code (not via npm) is pinned by commit hash, not version number.

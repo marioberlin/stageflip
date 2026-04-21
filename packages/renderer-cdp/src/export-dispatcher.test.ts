@@ -176,6 +176,10 @@ describe('exportDocument — failure modes', () => {
     registerRuntime(stubRuntime('css', ['solid-background']));
     const session = new FakeCdpSession();
     const sink = new InMemoryFrameSink();
+    let closeCalls = 0;
+    const closeSpy = vi.spyOn(sink, 'close').mockImplementation(async () => {
+      closeCalls++;
+    });
 
     await expect(
       exportDocument(doc([clipElement('bad', 'gsap', 'no-such-clip')]), {
@@ -185,8 +189,11 @@ describe('exportDocument — failure modes', () => {
     ).rejects.toBeInstanceOf(PreflightBlockedError);
 
     expect(session.calls).toHaveLength(0);
-    // Sink should still be closed — the caller passed it in and we own its lifecycle.
-    expect(sink.isClosed).toBe(true);
+    // Sink was closed exactly once — the preflight-blocked path must not
+    // let the finally-block call it a second time (which would double-EOF
+    // a real FFmpegEncoder's ffmpeg stdin).
+    expect(closeCalls).toBe(1);
+    closeSpy.mockRestore();
   });
 
   it('rejects with PreflightBlockedError when bake-tier clips are present', async () => {
