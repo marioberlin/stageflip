@@ -196,6 +196,11 @@ export async function probeBeginFrameSupport(
       interval: 33,
       noDisplayUpdates: true,
     });
+    // Attach a no-op catch BEFORE the race so that if the timeout
+    // wins, `begin`'s eventual rejection (which may arrive after the
+    // caller has detached the CDP client) doesn't surface as an
+    // unhandled rejection.
+    begin.catch(() => undefined);
     const timeout = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error('probeBeginFrameSupport: timeout')), timeoutMs),
     );
@@ -329,9 +334,19 @@ export class PuppeteerCdpSession implements CdpSession {
       },
     );
     if (!result?.screenshotData) {
-      // No damage + no cached frame — re-request with a tiny clock
-      // advance to force the compositor. Matches the vendored engine's
-      // frame-0 fallback; happens once per mount at most.
+      // Intentional divergence from the vendored engine: upstream
+      // `screenshotService.ts:98–113` keeps a per-page `lastFrameCache`
+      // and returns the previous captured buffer when `hasDamage`
+      // comes back false. We skip the cache and always re-send with a
+      // 0.001-tick nudge. Rationale: parity harness captures
+      // intentionally-varied frames (goldens at t=0 / mid / end) where
+      // cache hits are rare, and the cache-free path is much easier
+      // to reason about under non-sequential seeks. If a future
+      // sequential-render consumer hits this hot (many static
+      // frames), add a `lastFrameBuffer` to `PuppetHandle` and
+      // short-circuit here. The 0.001-ms nudge permanently advances
+      // virtual time by a sub-millisecond amount, but the next
+      // `seek(frame)` pins ticks absolutely, so there's no drift.
       const forced = await h.cdp.send<{ screenshotData?: string }>(
         'HeadlessExperimental.beginFrame',
         {
@@ -440,17 +455,34 @@ function base64ToBytes(data: string): Uint8Array {
  * Production browser factory: lazy-loads puppeteer-core and launches a
  * headless browser. Call sites in tests replace this with a fake.
  *
- * BeginFrame support: pass `captureMode: 'beginframe'` to append the
- * {@link BEGIN_FRAME_LAUNCH_ARGS}. Leave at `'auto'` / `'screenshot'`
- * for the default flag set. The actual runtime mode negotiation still
- * happens inside `PuppeteerCdpSession` — launch args only enable
- * BeginFrame, they don't select it.
+ * BeginFrame launch-arg logic (matches the vendored engine's
+ * `buildChromeArgs` heuristic):
+ *
+ *   - `captureMode: 'beginframe'` — always append
+ *     {@link BEGIN_FRAME_LAUNCH_ARGS}. Caller asked explicitly;
+ *     appending the flags on a non-Linux Chrome that doesn't support
+ *     the BeginFrame API will either crash at launch or wedge the
+ *     compositor, and that's the caller's problem.
+ *   - `captureMode: 'auto'` (default) — append
+ *     {@link BEGIN_FRAME_LAUNCH_ARGS} only when running on Linux.
+ *     Without this, auto-mode sessions on Linux probe an un-enabled
+ *     compositor, the probe returns `false`, and they fall back to
+ *     screenshot — defeating the point of auto. On macOS / Windows,
+ *     `--enable-begin-frame-control` would wedge the compositor so
+ *     the flags are deliberately NOT added; the session falls back
+ *     to screenshot via the platform gate in `resolveCaptureMode`.
+ *   - `captureMode: 'screenshot'` — never append. Compositor stays in
+ *     its default mode.
+ *
+ * The `platform` option overrides `process.platform` so tests can
+ * exercise the Linux branch without running on Linux.
  */
 export function createPuppeteerBrowserFactory(opts: {
   readonly executablePath?: string;
   readonly args?: readonly string[];
   readonly headless?: boolean;
   readonly captureMode?: CaptureMode;
+  readonly platform?: NodeJS.Platform;
 }): BrowserFactory {
   return async () => {
     const puppeteer = (await import('puppeteer-core')) as unknown as {
@@ -462,10 +494,13 @@ export function createPuppeteerBrowserFactory(opts: {
         }): Promise<PuppetBrowser>;
       };
     };
-    const effectiveArgs =
-      opts.captureMode === 'beginframe'
-        ? [...(opts.args ?? []), ...BEGIN_FRAME_LAUNCH_ARGS]
-        : (opts.args ?? undefined);
+    const platform = opts.platform ?? process.platform;
+    const captureMode = opts.captureMode ?? 'auto';
+    const needsBeginFrameArgs =
+      captureMode === 'beginframe' || (captureMode === 'auto' && platform === 'linux');
+    const effectiveArgs = needsBeginFrameArgs
+      ? [...(opts.args ?? []), ...BEGIN_FRAME_LAUNCH_ARGS]
+      : (opts.args ?? undefined);
     const launchOpts: {
       executablePath?: string;
       args?: readonly string[];

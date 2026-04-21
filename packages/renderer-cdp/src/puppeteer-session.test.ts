@@ -473,17 +473,37 @@ describe('PuppeteerCdpSession — BeginFrame mode', () => {
     await expect(session.capture(handle)).rejects.toThrow(/BeginFrame produced no screenshot data/);
   });
 
-  it('close(handle) detaches the CDP session before closing the page', async () => {
+  it('close(handle) detaches the CDP session BEFORE closing the page', async () => {
+    // Shared log records the order of detach vs. page.close so a
+    // regression that swaps the two awaits inside session.close() is
+    // caught. Both the fake CDP client and the fake page push into
+    // this array when their respective terminators fire.
+    const orderLog: string[] = [];
     const browser = new FakeBrowser();
-    browser.cdpFactory = () => new FakeCdpClient();
+    browser.cdpFactory = () => {
+      const c = new FakeCdpClient();
+      const originalDetach = c.detach.bind(c);
+      c.detach = async () => {
+        orderLog.push('cdp.detach');
+        await originalDetach();
+      };
+      return c;
+    };
     const session = new PuppeteerCdpSession({
       browserFactory: async () => browser,
       platform: 'linux',
     });
     const handle = await session.mount(mkPlan(), mkConfig());
+    const page = browser.pages[0];
+    if (!page) throw new Error('expected page');
+    // Monkey-patch page.close to log.
+    const originalPageClose = page.close.bind(page);
+    page.close = async () => {
+      orderLog.push('page.close');
+      await originalPageClose();
+    };
     await session.close(handle);
-    expect(browser.pages[0]?.lastCdp?.detached).toBe(true);
-    expect(browser.pages[0]?.calls.some((c) => c.op === 'close')).toBe(true);
+    expect(orderLog).toEqual(['cdp.detach', 'page.close']);
   });
 });
 
