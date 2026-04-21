@@ -68,13 +68,19 @@ describe('bundleDoctor', () => {
     expect(report.path).toBe('/tmp/stageflip-cdp-host-bundle-does-not-exist.js');
   });
 
-  it('honours a custom path when provided', async () => {
-    // Pointing at a real file different from bundlePath() should still
-    // report exists:true with that file's size.
-    const realPath = await bundlePath();
-    const report = await bundleDoctor({ path: realPath, warnAtBytes: 1 });
+  it('honours a custom path pointing at a file that is NOT the default bundle', async () => {
+    // Point bundleDoctor at `package.json` (guaranteed to exist +
+    // guaranteed to differ from bundlePath()'s `dist/browser/bundle.js`).
+    // If the implementation silently ignored `opts.path` and fell
+    // through to `bundlePath()`, `report.path` would come back as
+    // the bundle path instead and this assertion would fail.
+    const pkgRoot = await bundlePath(); // ends in .../dist/browser/bundle.js
+    const packageJsonPath = pkgRoot.replace(/\/dist\/browser\/bundle\.js$/, '/package.json');
+    expect(packageJsonPath).not.toBe(pkgRoot);
+    const report = await bundleDoctor({ path: packageJsonPath, warnAtBytes: 1 });
     expect(report.exists).toBe(true);
-    expect(report.path).toBe(realPath);
+    expect(report.path).toBe(packageJsonPath);
+    expect(report.path).not.toBe(pkgRoot);
     expect(report.sizeBytes).toBeGreaterThan(0);
   });
 });

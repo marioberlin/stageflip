@@ -105,12 +105,20 @@ export interface BundleDoctorReport {
   readonly message: string;
 }
 
-/** Format a byte count as `"X.Y MB"` at >=1 MB, else `"X.Y KB"`. */
+/**
+ * Format a byte count as `"X.YZ MB"` at >=1 MB, else `"X.Y KB"`.
+ *
+ * Uses SI (decimal) conversions throughout — 1 KB = 1000 bytes,
+ * 1 MB = 1_000_000 bytes — so the cutoff threshold, divisor, and
+ * label all agree. Matches `size-limit`'s convention for bundle
+ * reports. A 1.75 MB threshold thus formats as `"1.75 MB"`, not
+ * `"1.67 MB"` (the MiB value for 1_750_000 bytes).
+ */
 function formatBytes(bytes: number): string {
   if (bytes >= 1_000_000) {
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+    return `${(bytes / 1_000_000).toFixed(2)} MB`;
   }
-  return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1000).toFixed(1)} KB`;
 }
 
 /**
