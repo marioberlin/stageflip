@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { PNG } from 'pngjs';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { type CliIo, formatOutcome, formatSummary, parseArgs, runCli } from './cli';
 
@@ -69,6 +69,10 @@ describe('parseArgs', () => {
 
   it('throws on --fixtures-dir without argument', () => {
     expect(() => parseArgs(['--fixtures-dir'])).toThrow(/requires an argument/);
+  });
+
+  it('throws on --candidates without argument', () => {
+    expect(() => parseArgs(['--candidates'])).toThrow(/requires an argument/);
   });
 
   it('throws on unknown flag', () => {
@@ -191,6 +195,16 @@ describe('runCli', () => {
     const io = recorder();
     const exit = await runCli(['--fixtures-dir', '/nope/does/not/exist'], io);
     expect(exit).toBe(2);
+  });
+
+  it('exits 2 when an explicit fixture path does not exist', async () => {
+    // Covers the catch branch inside the for-each-fixture loop. A
+    // missing fixture JSON should abort scoring with exit 2 rather
+    // than silently becoming a skip.
+    const io = recorder();
+    const exit = await runCli(['/nope/does/not/exist.json'], io);
+    expect(exit).toBe(2);
+    expect(io.stderrLines.join('\n')).toMatch(/ENOENT|no such file/i);
   });
 });
 
