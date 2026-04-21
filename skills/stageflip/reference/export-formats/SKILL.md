@@ -249,7 +249,7 @@ From `@stageflip/renderer-cdp`:
 | `extractVideoFrames`, `buildExtractFramesArgs` | Video frame pre-extraction | T-086 |
 | `mixAudio`, `buildMixAudioArgs`, `AudioTrack` | Audio mixer + filter graph | T-087 |
 | `ArtifactStore`, `InMemoryArtifactStore`, `LocalFsArtifactStore` | Post-export storage | T-088 [rev] |
-| `BakeOrchestrator`, `BakeJob`, `BakeCache`, `InMemoryBakeOrchestrator` | Bake scaffolding (interfaces + ref impl) | T-089 [rev] |
+| `BakeOrchestrator`, `BakeJob`, `BakeCache`, `InMemoryBakeCache`, `InMemoryBakeOrchestrator` | Bake scaffolding (interfaces + ref impls) | T-089 [rev] |
 | `ffprobe()`, `FfprobeReport` | MP4 verification | T-090 |
 | `REFERENCE_FIXTURES`, `renderReferenceFixture`, `canRunReferenceRenders` | Reference render harness | T-090 |
 
