@@ -80,6 +80,10 @@ export async function ffprobe(opts: FfprobeOptions): Promise<FfprobeReport> {
   const { code, stderr } = await proc.wait();
   if (code !== 0) throw new FfprobeError(code, stderr);
 
+  // `stderr` on `SpawnedProcess.wait()` is a combined stdout+stderr
+  // buffer (see child-runner.ts — the field name is historical, kept
+  // for contract compatibility with the encoder path). ffprobe writes
+  // its `-print_format json` output to stdout; that arrives here.
   return parseFfprobeJson(stderr);
 }
 

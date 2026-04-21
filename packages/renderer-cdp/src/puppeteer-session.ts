@@ -115,7 +115,13 @@ export class PuppeteerCdpSession implements CdpSession {
   private readonly browserFactory: BrowserFactory;
   private readonly hostHtmlBuilder: HostHtmlBuilder;
   private readonly readyTimeoutMs: number;
-  private browser: PuppetBrowser | null = null;
+  /**
+   * Cached in-flight browser promise. Caching the promise (not the
+   * resolved value) is what makes `ensureBrowser` safe under concurrent
+   * `mount()` calls — two callers in the same microtask tick both share
+   * the same promise and both receive the same browser instance.
+   */
+  private browserPromise: Promise<PuppetBrowser> | null = null;
   private readonly handlesByPage = new WeakMap<PuppetPage, PuppetHandle>();
 
   constructor(opts: PuppeteerCdpSessionOptions) {
@@ -164,18 +170,38 @@ export class PuppeteerCdpSession implements CdpSession {
     this.handlesByPage.delete(page);
   }
 
-  /** Close the underlying browser. Call once after every mount is closed. */
+  /**
+   * Close the underlying browser. Callers MUST invoke this exactly once
+   * per session lifetime — e.g. in a `finally` alongside final
+   * `close(handle)` calls — or the browser process leaks. Idempotent:
+   * subsequent calls are no-ops.
+   */
   async closeSession(): Promise<void> {
-    if (this.browser !== null) {
-      const b = this.browser;
-      this.browser = null;
-      await b.close();
+    const pending = this.browserPromise;
+    if (pending === null) return;
+    this.browserPromise = null;
+    // Await the factory resolving (if still in flight) so we don't leak
+    // a browser that was mid-launch when close was requested.
+    try {
+      const browser = await pending;
+      await browser.close();
+    } catch {
+      // Factory failed; nothing to close.
     }
   }
 
-  private async ensureBrowser(): Promise<PuppetBrowser> {
-    if (this.browser === null) this.browser = await this.browserFactory();
-    return this.browser;
+  private ensureBrowser(): Promise<PuppetBrowser> {
+    if (this.browserPromise === null) {
+      const launching = this.browserFactory();
+      this.browserPromise = launching;
+      // If the factory rejects, clear the cache so a subsequent mount
+      // can retry. Without this, one transient launch failure would
+      // permanently wedge the session.
+      launching.catch(() => {
+        if (this.browserPromise === launching) this.browserPromise = null;
+      });
+    }
+    return this.browserPromise;
   }
 
   private extract(handle: SessionHandle): PuppetHandle {

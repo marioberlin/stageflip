@@ -129,7 +129,7 @@ describe('PuppeteerCdpSession', () => {
     expect(vp?.value).toMatchObject({ width: 1280, height: 720 });
   });
 
-  it('reuses one browser across multiple concurrent mounts', async () => {
+  it('reuses one browser across multiple sequential mounts', async () => {
     let spawnCount = 0;
     const session = new PuppeteerCdpSession({
       browserFactory: async () => {
@@ -142,6 +142,45 @@ describe('PuppeteerCdpSession', () => {
     await session.mount(mkPlan(), mkConfig());
 
     expect(spawnCount).toBe(1);
+  });
+
+  it('reuses one browser across concurrent mounts (no race)', async () => {
+    // Reviewer-flagged race: two concurrent mount() calls both entering
+    // ensureBrowser before either finished launching. The fix caches
+    // the in-flight Promise instead of the resolved Browser.
+    let spawnCount = 0;
+    const session = new PuppeteerCdpSession({
+      browserFactory: async () => {
+        spawnCount++;
+        // Simulate any async delay in the factory.
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return new FakeBrowser();
+      },
+    });
+
+    await Promise.all([
+      session.mount(mkPlan(), mkConfig()),
+      session.mount(mkPlan(), mkConfig()),
+      session.mount(mkPlan(), mkConfig()),
+    ]);
+
+    expect(spawnCount).toBe(1);
+  });
+
+  it('clears the cached browser promise when the factory rejects', async () => {
+    let attempts = 0;
+    const session = new PuppeteerCdpSession({
+      browserFactory: async () => {
+        attempts++;
+        if (attempts === 1) throw new Error('transient launch failure');
+        return new FakeBrowser();
+      },
+    });
+    await expect(session.mount(mkPlan(), mkConfig())).rejects.toThrow(/transient/);
+    // A second mount should retry the factory rather than returning
+    // the failed promise forever.
+    await expect(session.mount(mkPlan(), mkConfig())).resolves.toBeDefined();
+    expect(attempts).toBe(2);
   });
 
   it('closeSession closes the underlying browser exactly once', async () => {
