@@ -4,7 +4,12 @@
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { ClipRenderContext } from '@stageflip/runtimes-contract';
+import {
+  type ClipRenderContext,
+  __clearRuntimeRegistry,
+  findClip,
+  registerRuntime,
+} from '@stageflip/runtimes-contract';
 
 import {
   type MotionTextGsapProps,
@@ -13,7 +18,10 @@ import {
   motionTextGsap,
 } from './index.js';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  __clearRuntimeRegistry();
+});
 
 function makeCtx<P>(overrides: Partial<ClipRenderContext<P>> & { props: P }): ClipRenderContext<P> {
   return {
@@ -158,5 +166,15 @@ describe('motionTextGsap — demo clip', () => {
     expect(span.style.fontSize).toBe('96px');
     expect(span.style.fontWeight).toBe('700');
     expect(span.style.color).toBe('#fff');
+  });
+});
+
+describe('gsap runtime — contract-registry round-trip', () => {
+  it('registers cleanly and findClip resolves its demo kind', () => {
+    const rt = createGsapRuntime([motionTextGsap]);
+    registerRuntime(rt);
+    const found = findClip('motion-text-gsap');
+    expect(found?.runtime).toBe(rt);
+    expect(found?.clip).toBe(motionTextGsap);
   });
 });

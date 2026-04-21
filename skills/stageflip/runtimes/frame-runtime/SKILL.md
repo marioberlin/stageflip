@@ -9,6 +9,7 @@ related:
   - skills/stageflip/concepts/determinism/SKILL.md
   - skills/stageflip/concepts/rir/SKILL.md
   - skills/stageflip/runtimes/contract/SKILL.md
+  - skills/stageflip/runtimes/frame-runtime-bridge/SKILL.md
 ---
 
 # Frame Runtime

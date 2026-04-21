@@ -7,7 +7,12 @@
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { ClipRenderContext } from '@stageflip/runtimes-contract';
+import {
+  type ClipRenderContext,
+  __clearRuntimeRegistry,
+  findClip,
+  registerRuntime,
+} from '@stageflip/runtimes-contract';
 
 import {
   type ThreeClipHandle,
@@ -18,7 +23,10 @@ import {
   threeProductReveal,
 } from './index.js';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  __clearRuntimeRegistry();
+});
 
 interface TestProps {
   tag: string;
@@ -248,5 +256,15 @@ describe('threeProductReveal — demo clip', () => {
     // Module import was the only concern — if THREE touched WebGL at
     // import time this assertion would never run.
     expect(threeProductReveal).toBeDefined();
+  });
+});
+
+describe('three runtime — contract-registry round-trip', () => {
+  it('registers cleanly and findClip resolves its demo kind', () => {
+    const rt = createThreeRuntime([threeProductReveal]);
+    registerRuntime(rt);
+    const found = findClip('three-product-reveal');
+    expect(found?.runtime).toBe(rt);
+    expect(found?.clip).toBe(threeProductReveal);
   });
 });

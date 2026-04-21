@@ -8,6 +8,12 @@ owner_task: T-061
 related:
   - skills/stageflip/runtimes/contract/SKILL.md
   - skills/stageflip/runtimes/frame-runtime/SKILL.md
+  - skills/stageflip/runtimes/css/SKILL.md
+  - skills/stageflip/runtimes/gsap/SKILL.md
+  - skills/stageflip/runtimes/lottie/SKILL.md
+  - skills/stageflip/runtimes/shader/SKILL.md
+  - skills/stageflip/runtimes/three/SKILL.md
+  - skills/stageflip/clips/authoring/SKILL.md
 ---
 
 # Frame Runtime Bridge

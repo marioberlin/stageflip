@@ -6,7 +6,12 @@
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { ClipRenderContext } from '@stageflip/runtimes-contract';
+import {
+  type ClipRenderContext,
+  __clearRuntimeRegistry,
+  findClip,
+  registerRuntime,
+} from '@stageflip/runtimes-contract';
 
 import {
   type GlContextFactory,
@@ -19,7 +24,10 @@ import {
   validateFragmentShader,
 } from './index.js';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  __clearRuntimeRegistry();
+});
 
 // ---------------------------------------------------------------------------
 // Minimal GL stub — each method records its calls so tests can assert on
@@ -373,5 +381,21 @@ describe('demo clips', () => {
     expect(flashThroughWhite).toBeDefined();
     expect(swirlVortex).toBeDefined();
     expect(glitch).toBeDefined();
+  });
+});
+
+describe('shader runtime — contract-registry round-trip', () => {
+  it('registers cleanly and findClip resolves each demo kind', () => {
+    const rt = createShaderRuntime([flashThroughWhite, swirlVortex, glitch]);
+    registerRuntime(rt);
+    for (const [kind, clip] of [
+      ['flash-through-white', flashThroughWhite] as const,
+      ['swirl-vortex', swirlVortex] as const,
+      ['glitch', glitch] as const,
+    ]) {
+      const found = findClip(kind);
+      expect(found?.runtime).toBe(rt);
+      expect(found?.clip).toBe(clip);
+    }
   });
 });

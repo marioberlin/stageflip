@@ -12,7 +12,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 // default import is never actually exercised.
 vi.mock('lottie-web', () => ({ default: {} }));
 
-import type { ClipRenderContext } from '@stageflip/runtimes-contract';
+import {
+  type ClipRenderContext,
+  __clearRuntimeRegistry,
+  findClip,
+  registerRuntime,
+} from '@stageflip/runtimes-contract';
 
 import {
   type LottieAnimationItem,
@@ -21,7 +26,10 @@ import {
   defineLottieClip,
 } from './index.js';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  __clearRuntimeRegistry();
+});
 
 interface FakeAnim extends LottieAnimationItem {
   _calls: { goToAndStop: Array<[number, boolean]>; destroy: number };
@@ -229,5 +237,21 @@ describe('defineLottieClip — fontRequirements', () => {
       lottieFactory: makeFakePlayer,
     });
     expect(clip.fontRequirements).toBeUndefined();
+  });
+});
+
+describe('lottie runtime — contract-registry round-trip', () => {
+  it('registers cleanly and findClip resolves its demo kind', () => {
+    const fakePlayer = makeFakePlayer();
+    const clip = defineLottieClip({
+      kind: 'lottie-logo',
+      animationData: { v: '5.7.0', fr: 30, ip: 0, op: 30, w: 10, h: 10, layers: [] },
+      lottieFactory: () => fakePlayer,
+    });
+    const rt = createLottieRuntime([clip]);
+    registerRuntime(rt);
+    const found = findClip('lottie-logo');
+    expect(found?.runtime).toBe(rt);
+    expect(found?.clip).toBe(clip);
   });
 });

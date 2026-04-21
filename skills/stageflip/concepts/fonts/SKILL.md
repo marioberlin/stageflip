@@ -8,6 +8,7 @@ owner_task: T-072
 related:
   - skills/stageflip/concepts/rir/SKILL.md
   - skills/stageflip/runtimes/contract/SKILL.md
+  - skills/stageflip/clips/authoring/SKILL.md
 ---
 
 # FontManager
@@ -81,8 +82,21 @@ export const fonts: FontRequirement[] = [
   (T-084a asset preflight). The Chromium `--font-render-hinting=none`
   flag lands with the CDP renderer vendor integration (T-080+).
 
+## Implementation map
+
+| File | Task | Purpose |
+|---|---|---|
+| `packages/runtimes/contract/src/index.ts` → `FontRequirement` | T-060 + T-072 | Shared type. T-072 added `subsets` + `features`. |
+| `packages/rir/src/compile/passes.ts::aggregateFonts` | T-031 | Walks RIR elements, emits deduplicated `FontRequirement[]` per document. |
+| `packages/fonts/src/aggregate.ts` | T-072 | `aggregateFontRequirements` + `formatFontShorthand`. |
+| `packages/fonts/src/use-font-load.ts` | T-072 | `useFontLoad` React hook — editor / preview blocking. |
+| CDP preflight (`T-084a`) | _Phase 4, pending_ | `@fontsource` base64 embedding + `document.fonts.check` verification. |
+
 ## Related
 
-- Runtime contract: `runtimes/contract/SKILL.md`
+- Runtime contract (the `FontRequirement` shape): `runtimes/contract/SKILL.md`
 - RIR font aggregation pass: `concepts/rir/SKILL.md`
-- Task: T-072 (runtime implementation, pending)
+- Clip-authoring guide (how to declare `fontRequirements`):
+  `clips/authoring/SKILL.md`
+- Owning tasks: T-072 (editor runtime, done), T-084a (CDP preflight,
+  Phase 4), T-080+ (Chromium `--font-render-hinting=none` flag).
