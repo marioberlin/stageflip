@@ -151,6 +151,7 @@ export {
   type BrowserFactory,
   canvasPlaceholderHostHtml,
   type CaptureMode,
+  richPlaceholderControllerScript,
   richPlaceholderHostHtml,
   createPuppeteerBrowserFactory,
   type HostHtmlBuilder,

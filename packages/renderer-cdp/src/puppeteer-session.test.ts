@@ -767,7 +767,7 @@ describe('richPlaceholderHostHtml', () => {
     });
     expect(html).toContain('window.__sf');
     expect(html).toContain('ready: true');
-    expect(html).toContain('setFrame: setFrame');
+    expect(html).toContain('setFrame: controller.setFrame');
   });
 
   it('escapes U+2028 and U+2029 line separators', () => {

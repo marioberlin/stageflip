@@ -109,12 +109,16 @@ browser) and the dispatcher. One interface, swappable implementations:
 
 ```ts
 interface CdpSession {
-  mount(plan, config): Promise<SessionHandle>;
+  mount(plan, config, document): Promise<SessionHandle>;
   seek(handle, frame): Promise<void>;
   capture(handle): Promise<Uint8Array>; // PNG bytes
   close(handle): Promise<void>;
 }
 ```
+
+`document` is the full `RIRDocument` — host builders that render the
+real element tree (text, shape, clip positions) need it. Builders that
+only care about viewport + fps + duration can ignore it.
 
 Concrete implementation: **`PuppeteerCdpSession`** (T-090 shipped
 the session; T-100b added BeginFrame). Uses `puppeteer-core` + a
@@ -143,7 +147,8 @@ and pins the handle's `beginFrameTimeTicks` to `frame * (1000 / fps)`
 — the next BeginFrame capture advances the compositor to exactly that
 virtual time. Screenshot mode ignores the tick state.
 
-Host HTML is **pluggable** via `HostHtmlBuilder`. Three builders ship today:
+Host HTML is **pluggable** via `HostHtmlBuilder`. Two builders ship
+today; a third is planned for T-100d:
 
 - `canvasPlaceholderHostHtml` (T-090, default) — a single canvas page
   that paints a deterministic frame-number gradient. Ignores the
@@ -154,8 +159,8 @@ Host HTML is **pluggable** via `HostHtmlBuilder`. Three builders ship today:
   runtime registration. Clip elements render as labelled placeholder
   boxes. Captures reflect the real element tree (positions, text
   content, shape fills) but not clip output.
-- Runtime-bundle host (T-100d, not yet shipped) — a Vite-bundled IIFE
-  with React + all 6 live runtimes. Replaces `richPlaceholderHostHtml`
+- Runtime-bundle host (T-100d, pending) — a Vite-bundled IIFE
+  with React + all 6 live runtimes. Will replace `richPlaceholderHostHtml`
   for fixtures that need clip-accurate captures.
 
 The `HostHtmlBuilder` signature changed in T-100c to carry the full
