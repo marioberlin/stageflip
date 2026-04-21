@@ -144,4 +144,21 @@ describe('preflight', () => {
     expect(report.bakeTasks).toHaveLength(0);
     expect(report.fonts).toHaveLength(0);
   });
+
+  it('blocks when frameRate <= 0', () => {
+    const d = doc([]);
+    const badFps: RIRDocument = { ...d, frameRate: 0 };
+    const report = preflight(badFps);
+    expect(report.blockers.some((b) => b.kind === 'empty-fps')).toBe(true);
+  });
+
+  it('blocks when durationFrames <= 0', () => {
+    // The schema refuses this construction, but the runtime preflight
+    // must still guard: a document that slipped past validation with a
+    // zero or negative duration can't sensibly be exported.
+    const d = doc([]);
+    const badDuration: RIRDocument = { ...d, durationFrames: -1 };
+    const report = preflight(badDuration);
+    expect(report.blockers.some((b) => b.kind === 'empty-duration')).toBe(true);
+  });
 });

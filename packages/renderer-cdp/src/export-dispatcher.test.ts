@@ -221,17 +221,31 @@ describe('exportDocument — failure modes', () => {
     registerRuntime(stubRuntime('css', ['solid-background']));
     const session = new FakeCdpSession();
 
-    const build = (range: { start: number; end: number }) =>
-      exportDocument(doc([clipElement('a', 'css', 'solid-background')], 10), {
+    const build = (range: { start: number; end: number }) => {
+      const sink = new InMemoryFrameSink();
+      const p = exportDocument(doc([clipElement('a', 'css', 'solid-background')], 10), {
         session,
-        sink: new InMemoryFrameSink(),
+        sink,
         frameRange: range,
       });
+      return { p, sink };
+    };
 
-    await expect(build({ start: -1, end: 5 })).rejects.toThrow(/frameRange/);
-    await expect(build({ start: 0, end: 0 })).rejects.toThrow(/frameRange/);
-    await expect(build({ start: 5, end: 4 })).rejects.toThrow(/frameRange/);
-    await expect(build({ start: 0, end: 11 })).rejects.toThrow(/frameRange/);
+    for (const range of [
+      { start: -1, end: 5 },
+      { start: 0, end: 0 },
+      { start: 5, end: 4 },
+      { start: 0, end: 11 },
+    ]) {
+      const { p, sink } = build(range);
+      await expect(p).rejects.toThrow(/frameRange/);
+      // Ownership contract: dispatcher closes the sink even when the range
+      // validator throws synchronously before the session opens.
+      expect(sink.isClosed).toBe(true);
+    }
+
+    // And the session itself was never opened for any of these.
+    expect(session.calls).toHaveLength(0);
   });
 
   it('frames are delivered to the sink in strictly ascending order', async () => {

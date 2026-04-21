@@ -18,7 +18,7 @@
 
 import type { RIRDocument } from '@stageflip/rir';
 
-import { type CdpSession, LiveTierAdapter } from './adapter';
+import { type CdpSession, LiveTierAdapter, type MountedComposition } from './adapter';
 import type { FrameSink } from './frame-sink';
 import { type PreflightBlocker, type PreflightReport, preflight } from './preflight';
 
@@ -63,26 +63,29 @@ export async function exportDocument(
 
   const report = preflight(document);
   if (report.blockers.length > 0) {
-    // Ensure the sink is still closed — the caller relinquished ownership.
+    // Ownership contract: once exportDocument is called, the dispatcher
+    // owns sink.close lifecycle on every exit path — success or failure.
     await sink.close();
     throw new PreflightBlockedError(report.blockers);
   }
 
-  const range = opts.frameRange ?? { start: 0, end: document.durationFrames };
-  validateFrameRange(range, document.durationFrames);
-
   const adapter = new LiveTierAdapter(session);
-  const mounted = await adapter.mount(document);
-
+  const range = opts.frameRange ?? { start: 0, end: document.durationFrames };
+  let mounted: MountedComposition | null = null;
   let framesRendered = 0;
+
   try {
+    // Range validation lives inside try so its RangeError throws through
+    // finally — sink is still closed on invalid input (owned since entry).
+    validateFrameRange(range, document.durationFrames);
+    mounted = await adapter.mount(document);
     for (let frame = range.start; frame < range.end; frame++) {
       const buffer = await adapter.renderFrame(mounted, frame);
       await sink.onFrame(frame, buffer);
       framesRendered++;
     }
   } finally {
-    await adapter.close(mounted);
+    if (mounted !== null) await adapter.close(mounted);
     await sink.close();
   }
 
