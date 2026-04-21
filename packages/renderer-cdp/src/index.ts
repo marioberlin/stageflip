@@ -145,3 +145,39 @@ export {
   InMemoryBakeOrchestrator,
   type InMemoryBakeOrchestratorOptions,
 } from './bake';
+
+export {
+  type BrowserFactory,
+  canvasPlaceholderHostHtml,
+  createPuppeteerBrowserFactory,
+  type HostHtmlBuilder,
+  PuppeteerCdpSession,
+  type PuppeteerCdpSessionOptions,
+  type PuppetBrowser,
+  type PuppetPage,
+} from './puppeteer-session';
+
+export {
+  ffprobe,
+  type FfprobeFormat,
+  type FfprobeOptions,
+  type FfprobeReport,
+  type FfprobeStream,
+  FfprobeError,
+  parseFfprobeJson,
+} from './ffprobe';
+
+export {
+  REFERENCE_FIXTURES,
+  type ReferenceFixtureName,
+  multiElementFixture,
+  solidBackgroundFixture,
+  videoClipFixture,
+} from './reference-fixtures';
+
+export {
+  canRunReferenceRenders,
+  renderReferenceFixture,
+  type RenderReferenceFixtureOptions,
+  type RenderReferenceFixtureResult,
+} from './reference-render';

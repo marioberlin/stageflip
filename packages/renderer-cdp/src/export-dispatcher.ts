@@ -82,7 +82,11 @@ export async function exportDocument(
   if (report.blockers.length > 0) {
     // Ownership contract: once exportDocument is called, the dispatcher
     // owns sink.close lifecycle on every exit path — success or failure.
-    await sink.close();
+    // Swallow any close error here: the caller's actual problem is the
+    // preflight blocker; a secondary close failure (e.g. FFmpegEncoder
+    // exiting with "no stream" because it received no writes) would mask
+    // the real diagnostic if allowed to propagate.
+    await sink.close().catch(() => {});
     throw new PreflightBlockedError(report.blockers);
   }
 

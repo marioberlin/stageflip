@@ -26,7 +26,8 @@
   "dependencies": {
     "@stageflip/fonts": "workspace:*",
     "@stageflip/rir": "workspace:*",
-    "@stageflip/runtimes-contract": "workspace:*"
+    "@stageflip/runtimes-contract": "workspace:*",
+    "puppeteer-core": "23.11.1"
   },
   "peerDependencies": {
     "react": "^19.0.0"
