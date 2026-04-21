@@ -1,0 +1,62 @@
+StageFlip renderer-cdp vendor directory
+=========================================
+
+This directory contains third-party code vendored into the StageFlip
+source tree. Each vendored payload keeps its upstream LICENSE file
+adjacent to its sources. This NOTICE file satisfies the attribution
+requirement of Apache License 2.0 §4(d) for every payload below.
+
+See also:
+  - THIRD_PARTY.md §2  — vendoring obligations and trademark posture.
+  - docs/dependencies.md §5 — pinned-commit audit table.
+
+
+@hyperframes/engine
+-------------------
+
+Copyright (c) HeyGen Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you
+may not use this file except in compliance with the License. You may
+obtain a copy of the License at:
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing
+permissions and limitations under the License.
+
+Upstream:    https://github.com/heygen-com/hyperframes
+Package:     @hyperframes/engine (packages/engine)
+Commit:      d1f992570a2a2d7cb4fa0b4a7e31687a0791803d
+Vendored:    2026-04-21 (task T-080)
+
+License:     packages/renderer-cdp/vendor/engine/LICENSE
+Pin record:  packages/renderer-cdp/vendor/engine/PIN.json
+
+Upstream NOTICE: none. The upstream repository does not ship a
+NOTICE file, so there is nothing from upstream to preserve here —
+only StageFlip's own attribution, recorded above.
+
+
+Modifications by StageFlip
+--------------------------
+
+None to date. Any StageFlip-side modification to a vendored file
+must begin with a header comment of the form
+
+    // Modified by StageFlip, YYYY-MM-DD — <reason>
+
+on the changed file, per THIRD_PARTY.md §2. A running list of
+modifications should be appended to this section as they land.
+
+
+Trademarks
+----------
+
+"Hyperframes" is a trademark of HeyGen Inc. StageFlip uses it only
+in attribution contexts (this file, THIRD_PARTY.md, vendored
+LICENSE/PIN records). StageFlip does not use the "Hyperframes"
+trademark in product marketing.
