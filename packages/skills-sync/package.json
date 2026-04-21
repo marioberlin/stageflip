@@ -26,6 +26,7 @@
   "dependencies": {
     "@stageflip/schema": "workspace:^",
     "@stageflip/skills-core": "workspace:^",
+    "@stageflip/validation": "workspace:^",
     "zod": "3.25.76"
   }
 }

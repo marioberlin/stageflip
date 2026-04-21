@@ -8,16 +8,18 @@ owner_task: T-107
 related:
   - skills/stageflip/concepts/determinism
   - skills/stageflip/reference/export-formats
+  - skills/stageflip/reference/validation-rules
 ---
 
 # Workflow — Parity Testing
 
-**Status**: module surface is substantive (T-100); workflow guidance
-is still thin. T-100 ships the comparator + scoring surface described
-below. T-101 ships the CLI wrapper. T-102 formalises fixture format.
-T-103 wires CI. T-107 replaces the "What comes later" section with
-substantive workflow material (when-to-score, how-to-debug-a-failure,
-threshold tuning).
+The parity harness is the quantitative enforcement layer for "every
+backend renders the same document the same way". T-100 shipped the
+comparators + scoring aggregator; T-101 shipped the CLI; T-102
+formalised the fixture format with optional thresholds + goldens;
+T-103 wired the path-filtered CI gate; T-107 (this pass) hardens the
+workflow guidance below and points the validation-rules reference at
+the auto-generated catalogue generator.
 
 ## What parity-testing proves
 
@@ -212,5 +214,90 @@ their thresholds in the manifest.
 
 - **T-105** — visual-diff viewer (side-by-side / slider / overlay)
   consuming the `ScoreReport`.
-- **T-107** — substantive workflow doc: when to update a golden, how
-  to triage a tanked SSIM, codec-specific threshold tables.
+
+## Workflow guidance (T-107)
+
+### When to update a golden
+
+- **Never casually.** A golden is the ground truth for a fixture;
+  replacing it silently accepts whatever pixel shift produced the
+  mismatch. Only bump goldens when the rendered output is
+  **intentionally** different: a runtime bug fix, a schema change
+  with downstream rendering semantics, a new asset resolution.
+- **Always include a rationale** in the PR description. The changeset
+  should name the commit that caused the intended shift and — when
+  relevant — the upstream issue / ADR.
+- **Re-run locally first** before committing. Run
+  `pnpm parity --fixtures-dir packages/testing/fixtures` to confirm
+  only the fixtures you expect to shift are showing PSNR/SSIM
+  changes. An unintended drift in a fixture you didn't mean to touch
+  is almost always a regression in a shared runtime / host.
+- **Bump thresholds instead** when the drift is codec noise (video
+  fixtures) and the visible output is indistinguishable. Bumping is
+  safer than replacing goldens because the same goldens keep
+  catching regressions elsewhere. If you find yourself repeatedly
+  bumping one fixture's thresholds, that's a signal to isolate the
+  non-determinism source (probably a font-hinting, GPU-driver, or
+  BeginFrame-vs-screenshot mode issue).
+
+### Triage playbook for a tanked SSIM score
+
+When CI flags a fixture's SSIM below threshold:
+
+1. **Open the fixture's region bounds** in the manifest. If
+   `thresholds.region` is set, the mismatch is inside that
+   rectangle (text-heavy area). If unset, it's anywhere in the frame.
+2. **Open side-by-side** goldens vs candidates for the failing
+   frames. T-105's visual diff viewer will automate this once it
+   ships; today, use any side-by-side image tool.
+3. **Check which frames failed** via `ScoreReport.frames[*]`. If
+   only one frame failed while the rest passed, the drift is
+   temporally localised — likely an animation easing, frame
+   interpolation, or seek-state bug. If all frames failed, the
+   drift is global — likely a font-loading, GPU-context, or
+   composition-level issue.
+4. **Run the specific fixture locally** via `pnpm parity
+   <fixture.json>` to confirm CI reproduction. If it passes locally,
+   the issue is environmental (Linux-vs-macOS Chrome, CI font
+   availability, BeginFrame-vs-screenshot-mode disparity).
+5. **Never silence by raising `maxFailingFrames`** beyond what the
+   fixture genuinely tolerates. If a fixture consistently has one
+   flaky frame, isolate the flakiness source — don't normalise it
+   away.
+
+### Threshold tuning guidance
+
+Per-fixture thresholds are per-runtime:
+
+| Runtime class | Typical PSNR floor | Typical SSIM floor | Why |
+|---|---|---|---|
+| CSS (lossless) | 40 dB | 0.99 | Pure CSS fills/text are codec-free; near-identical expected. |
+| Lottie | 32 dB | 0.97 | Vector rasterisation + anti-aliasing; small drift per GPU. |
+| Shader | 34 dB | 0.97 | Fragment-shader output is stable but GPU-quantisation adds noise. |
+| GSAP text | 30 dB | 0.97 (on text region) | Text layout drift between CI platforms; use region-scoped SSIM. |
+| Three (3D) | 30 dB | 0.95 | Lighting + anti-aliasing + depth; tolerate more. |
+| Video (h264) | 28 dB | 0.95 | Codec noise dominates; SSIM is the load-bearing metric. |
+| Video (prores) | 40 dB | 0.99 | Near-lossless codec; tighten accordingly. |
+
+Tune these per-fixture via the `thresholds` block. Global defaults
+(`DEFAULT_THRESHOLDS` in `@stageflip/parity`) are 30 dB / 0.97 / 0
+— appropriate for most mid-quality runtimes but too generous for
+lossless and too strict for some codec paths.
+
+**When in doubt, start strict.** A too-strict threshold fails fast
+and prompts analysis; a too-loose threshold hides regressions
+forever. The parity harness is defence-in-depth on top of
+per-runtime unit tests, not a replacement.
+
+### Priming goldens (first-time)
+
+1. Render the fixture via the renderer-cdp pipeline (headless Chrome
+   + ffmpeg doctor-check green). Generate PNGs at each reference
+   frame.
+2. Visually verify the output looks correct. This is the ONLY
+   non-automated step; goldens are the ground truth.
+3. Copy the PNGs into `<fixture-dir>/<goldens.dir>/frame-<n>.png`.
+4. Run `pnpm parity <fixture.json>` locally. It should report PASS.
+5. Commit goldens + any threshold adjustments as a single PR. Use
+   the fixture's parity fields (`thresholds`, `goldens.dir`) to
+   document the baseline.
