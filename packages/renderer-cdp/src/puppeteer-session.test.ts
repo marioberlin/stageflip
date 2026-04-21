@@ -894,8 +894,12 @@ describe('createRuntimeBundleHostHtml', () => {
     });
     const builder = createRuntimeBundleHostHtml(fakeBundle);
     const html = builder({ plan: mkPlan(), config: mkConfig(), document: docWithInjection });
-    // Exactly two <script> tags: the __sf_doc data tag + the bundle
-    // script. If the escape failed there would be more.
+    // Direct asserts on the escape: the raw `</script> world`
+    // substring from the text element must NOT appear in the HTML,
+    // and the escaped `<\/script> world` form MUST. The tag-count
+    // check stays as a secondary invariant.
+    expect(html).not.toContain('</script> world');
+    expect(html).toContain('<\\/script> world');
     expect((html.match(/<script\b/gi) ?? []).length).toBe(2);
     expect((html.match(/<\/script>/gi) ?? []).length).toBe(2);
   });
