@@ -9,6 +9,7 @@ related:
   - skills/stageflip/concepts/rir/SKILL.md
   - skills/stageflip/runtimes/contract/SKILL.md
   - skills/stageflip/clips/authoring/SKILL.md
+  - skills/stageflip/reference/export-formats/SKILL.md
 ---
 
 # FontManager

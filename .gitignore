@@ -38,7 +38,9 @@ Thumbs.db
 
 # StageFlip-specific
 # Reference code is local-only; never committed. This is deliberate — see docs/architecture.md § 14.
-reference/
+# Anchored to repo root so `skills/**/reference/` (the skill-tier dir for
+# auto-generated + hand-authored reference skills) is NOT matched.
+/reference/
 
 # Render artifacts (local dev)
 .stageflip-cache/
