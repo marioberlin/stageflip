@@ -1,4 +1,106 @@
 // packages/runtimes/frame-runtime-bridge/src/index.ts
-// runtimes-frame-runtime-bridge — stub entry. Populated by later tasks in docs/implementation-plan.md.
+// @stageflip/runtimes-frame-runtime-bridge — wraps @stageflip/frame-runtime
+// as a ClipRuntime (T-061) so frame-runtime-based clips (React components
+// using useCurrentFrame / useVideoConfig / Sequence / etc.) are addressable
+// uniformly through the T-060 runtime contract alongside CSS, GSAP, Lottie,
+// shader, three, and blender runtimes.
+//
+// Two entry points:
+//
+//   defineFrameClip({ kind, component, fontRequirements? })
+//     Adapts a React component that expects FrameProvider context into a
+//     ClipDefinition. The clip's render:
+//       1. Gates on the clip window ([clipFrom, clipFrom + duration)) —
+//          returns null outside, which the renderer-core dispatcher
+//          interprets as "not mounted".
+//       2. Mounts a FrameProvider with frame = ctx.frame - ctx.clipFrom
+//          (clip-local time starting at 0) and config mirroring the
+//          composition's width/height/fps with durationInFrames =
+//          clipDurationInFrames (so useVideoConfig().durationInFrames
+//          reports the clip's own length, not the composition's).
+//       3. Renders the component with ctx.props.
+//
+//   createFrameRuntimeBridge(clips?)
+//     Produces the ClipRuntime for the bridge. id = 'frame-runtime',
+//     tier = 'live'. Pass the clips you want this bridge to expose at
+//     construction time; duplicate kinds throw. Register with
+//     registerRuntime() when the app boots.
 
-export {};
+import { type ComponentType, type ReactElement, createElement } from 'react';
+
+import { FrameProvider, type VideoConfig } from '@stageflip/frame-runtime';
+import type {
+  ClipDefinition,
+  ClipRenderContext,
+  ClipRuntime,
+  FontRequirement,
+} from '@stageflip/runtimes-contract';
+
+export interface DefineFrameClipInput<P> {
+  /** Globally unique clip kind identifier. */
+  kind: string;
+  /** React component rendered every frame inside the bridge's FrameProvider. */
+  component: ComponentType<P>;
+  /** Optional: declare the fonts this clip needs (consumed by T-072 FontManager). */
+  fontRequirements?(props: P): FontRequirement[];
+}
+
+/**
+ * Adapt a frame-runtime React component into a ClipDefinition.
+ *
+ * The P generic is erased at the return site so the resulting definition
+ * can be dropped into a `ClipRuntime.clips: ReadonlyMap<string,
+ * ClipDefinition<unknown>>` without variance gymnastics.
+ */
+export function defineFrameClip<P>(input: DefineFrameClipInput<P>): ClipDefinition<unknown> {
+  // Widen the component's prop generic at the createElement boundary so the
+  // returned ClipDefinition can sit in a ClipDefinition<unknown>-typed map
+  // without triggering covariance errors on GetDerivedStateFromProps.
+  const Component = input.component as ComponentType<unknown>;
+  const def: ClipDefinition<P> = {
+    kind: input.kind,
+    render(ctx: ClipRenderContext<P>): ReactElement | null {
+      const localFrame = ctx.frame - ctx.clipFrom;
+      if (localFrame < 0 || localFrame >= ctx.clipDurationInFrames) {
+        return null;
+      }
+      const config: VideoConfig = {
+        width: ctx.width,
+        height: ctx.height,
+        fps: ctx.fps,
+        durationInFrames: ctx.clipDurationInFrames,
+      };
+      const children = createElement(Component, ctx.props as Record<string, unknown>);
+      return createElement(FrameProvider, { frame: localFrame, config, children });
+    },
+  };
+  if (input.fontRequirements !== undefined) {
+    def.fontRequirements = input.fontRequirements;
+  }
+  return def as unknown as ClipDefinition<unknown>;
+}
+
+/**
+ * Build the frame-runtime bridge ClipRuntime with the given set of clips.
+ * Pass the clips (via `defineFrameClip`) you want this bridge to expose.
+ *
+ * @throws If two clips share the same kind.
+ */
+export function createFrameRuntimeBridge(
+  clips: Iterable<ClipDefinition<unknown>> = [],
+): ClipRuntime {
+  const clipMap = new Map<string, ClipDefinition<unknown>>();
+  for (const clip of clips) {
+    if (clipMap.has(clip.kind)) {
+      throw new Error(
+        `createFrameRuntimeBridge: duplicate clip kind '${clip.kind}' — each kind must be unique within the bridge`,
+      );
+    }
+    clipMap.set(clip.kind, clip);
+  }
+  return {
+    id: 'frame-runtime',
+    tier: 'live',
+    clips: clipMap,
+  };
+}
