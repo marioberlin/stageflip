@@ -144,6 +144,24 @@ describe('lintDocument — runner', () => {
     expect(report.findings[0]?.message).toMatch(/boom/);
   });
 
+  it('a rule that throws a non-Error value still produces a readable message', () => {
+    // Regression guard for the `(err as Error).message` → `undefined`
+    // footgun: if a rule does `throw 'oops'` or throws an object, the
+    // synthetic finding must still be actionable rather than say
+    // "rule threw: undefined".
+    const stringThrower: LintRule = {
+      id: 'string-thrower',
+      severity: 'error',
+      description: 'throws a string',
+      run() {
+        throw 'oops';
+      },
+    };
+    const report = lintDocument(baseDoc(), { rules: [stringThrower] });
+    expect(report.findings[0]?.message).toBe('rule threw: oops');
+    expect(report.findings[0]?.message).not.toContain('undefined');
+  });
+
   it('ALL_RULES contains at least 30 rules (T-104 target)', () => {
     expect(ALL_RULES.length).toBeGreaterThanOrEqual(30);
   });

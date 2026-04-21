@@ -41,10 +41,15 @@ export function lintDocument(document: RIRDocument, opts?: LintOptions): LintRep
       const out = rule.run(document, context);
       for (const finding of out) findings.push(finding);
     } catch (err) {
+      // Rules CAN throw strings / objects / other non-Error values
+      // via `throw 'oops'`. Coerce to a readable message so the
+      // synthetic finding is actionable rather than
+      // `"rule threw: undefined"`.
+      const message = err instanceof Error ? err.message : String(err);
       findings.push({
         rule: rule.id,
         severity: 'error',
-        message: `rule threw: ${(err as Error).message}`,
+        message: `rule threw: ${message}`,
       });
     }
   }

@@ -9,7 +9,11 @@ import type { LintFinding, LintRule } from '../types.js';
 export const elementTimingWithinComposition: LintRule = {
   id: 'element-timing-within-composition',
   severity: 'error',
-  description: 'every element.timing window must fit inside [0, document.durationFrames)',
+  description:
+    // endFrame is exclusive (element renders on frames [startFrame, endFrame)), so
+    // endFrame === durationFrames is legal — the element renders through the
+    // last frame. Only startFrame < 0 or endFrame > durationFrames violate.
+    'every element.timing must satisfy startFrame >= 0 and endFrame <= document.durationFrames (endFrame is exclusive, so equality is legal)',
   run(doc) {
     const out: LintFinding[] = [];
     for (const el of doc.elements) {

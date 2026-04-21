@@ -2,7 +2,7 @@
 "@stageflip/validation": minor
 ---
 
-Pre-render linter — 32 rules across 7 categories (T-104).
+Pre-render linter — 33 rules across 7 categories (T-104).
 
 **Fleshes out `@stageflip/validation`** from its placeholder stub
 (pre-existing) into the pre-render linter for `RIRDocument`. Catches
@@ -27,7 +27,7 @@ issues like empty text, off-canvas visible elements, and
   allowlist / denylist applied on top of `ALL_RULES` (or a
   caller-supplied `rules` array).
 
-**Rule catalogue (32 rules)**:
+**Rule catalogue (33 rules)**:
 
 - **Timing & identifiers (5)**: element-timing-within-composition,
   animation-timing-within-element, animation-ids-unique-within-

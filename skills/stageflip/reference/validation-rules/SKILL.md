@@ -18,7 +18,7 @@ windows vs composition duration, registry-dependent clip resolution)
 and quality issues that'd silently produce ugly output (empty text,
 off-canvas elements, missing font requirements).
 
-**T-104 scope**: 32 rules across 7 files. **T-107** replaces this
+**T-104 scope**: 33 rules across 7 files. **T-107** replaces this
 document with an auto-generated version sourced from the rule
 metadata directly; until then, this file is hand-maintained and MUST
 stay in sync with `packages/validation/src/rules/**`.
@@ -53,7 +53,7 @@ Severities:
 
 | Rule id | Severity | What |
 |---|---|---|
-| `element-timing-within-composition` | error | `element.timing` must fit in `[0, document.durationFrames)` |
+| `element-timing-within-composition` | error | `startFrame >= 0` AND `endFrame <= document.durationFrames` (endFrame is exclusive so equality is legal) |
 | `animation-timing-within-element` | error | animation window must fit inside its parent element's timing |
 | `animation-ids-unique-within-element` | error | animations on one element must have distinct ids |
 | `element-ids-unique` | error | every `element.id` in the document must be unique |
@@ -114,7 +114,7 @@ Severities:
 
 | Rule id | Severity | What |
 |---|---|---|
-| `clip-kind-resolvable` | error / info | every clip element must resolve to a registered runtime. When `LintContext.findClip` isn't wired, downgrades to `info` per rule — emit an advisory instead of a hard error |
+| `clip-kind-resolvable` | error / info | every clip element must resolve to a registered runtime. When `LintContext.findClip` isn't wired, emits a **single document-level `info`** finding (not one per clip element) so operators see the under-validation signal without silent-passing — wire `findClip` to upgrade to per-element errors |
 | `clip-runtime-matches-registered` | error | declared runtime must match the one that actually owns the kind |
 
 ## Customising the rule set
