@@ -1,9 +1,9 @@
-# StageFlip — Implementation Plan v1.2
+# StageFlip — Implementation Plan v1.3
 
 **Audience**: AI coding agents executing autonomously; human product owners ratifying at phase boundaries.
 **Scope**: 280+ tasks across 12 phases, from empty repo to first public beta.
 **Format**: Every task is self-contained with references, prompts, acceptance criteria, and verification commands.
-**Last updated**: 2026-04-21 — T-100 split into T-100/T-100b/T-100c (scope carve-out post-review on PR #13). See §C.10 changelog.
+**Last updated**: 2026-04-21 — T-100 split into T-100/T-100b/T-100c/T-100d. See §C.10 changelog.
 
 ---
 
@@ -326,7 +326,8 @@ When a task references these, treat as **API specs only**. Read docs; do not cop
 |---|---|---|
 | **T-100 [rev]** | **Parity harness** — **PSNR + SSIM** (via `ssim.js` MIT). Per-fixture thresholds: PSNR ≥ configured, SSIM ≥ 0.97 on text-heavy regions. Max frame-failure budget | M |
 | **T-100b** | **BeginFrame capture** — wire `HeadlessExperimental.beginFrame` into `PuppeteerCdpSession`. Closes the screenshot→non-determinism gap from handover §6.1. `captureMode: 'auto' \| 'beginframe' \| 'screenshot'`, auto selects BeginFrame on Linux + chrome-headless-shell + successful probe, falls back silently otherwise. Reimpl (not import) of the narrow BeginFrame call so the test-fake seam stays cheap; matches T-083 B3a pattern. Split out from T-100 post-review on PR #13 | M |
-| **T-100c** | **Real host HTML bundle** — replaces `canvasPlaceholderHostHtml` with a Vite/tsup-bundled IIFE that registers the 6 live runtimes + mounts a composition from a postMessage RIR payload. Enables pixel-faithful parity fixtures | L |
+| **T-100c** | **Host contract + smart placeholder** — extend `CdpSession.mount` to carry the `RIRDocument`; extend `HostHtmlBuilder` context with `document`; add `richPlaceholderHostHtml` that renders non-clip RIR elements (text, shape) with frame-reactive visibility via inline DOM. No React bundle, no runtime registration — clips still render as labelled placeholders. Foundation for T-100d | M |
+| **T-100d** | **Runtime bundle host** — new `@stageflip/cdp-host-bundle` package: Vite-emitted browser IIFE bundling React + all 6 live runtimes + a composition renderer. Consumed by `PuppeteerCdpSession` via a new builder that injects the IIFE into the host HTML. Replaces `richPlaceholderHostHtml` for consumers that need clip-accurate captures | L |
 | T-101 | Parity CLI: `pnpm parity [<fixture>]` | M |
 | T-102 | Define fixture format + 5 starter fixtures (one per runtime tier) | M |
 | T-103 | Parity CI integration (runs on PRs touching rendering code) | M |
@@ -674,10 +675,11 @@ Phase 0 ──► Phase 1 ──► Phase 2 ──► Phase 3 ──┬──►
 
 ## C.10 Changelog
 
+- **v1.3** (2026-04-21): T-100c narrowed to contract + smart placeholder (M); T-100d added for the actual runtime-bundle host (L). Split keeps each PR reviewable and defers the Vite-bundled runtime-registration work to its own task rather than trying to land it alongside the contract change.
 - **v1.2** (2026-04-21): T-100 split into three rows post-scope-review on PR #13. T-100 stays comparators-only; T-100b adds BeginFrame capture; T-100c adds the real host HTML bundle. Prevents T-100 from silently bundling three tasks and gives reviewers independent pass-fail targets.
 - **v1.1**: review feedback integrated. New: T-001a, T-055, T-072, T-084a, T-151a, T-241a, I-9. Revised: T-021, T-025, T-027, T-031, T-043, T-065, T-100, T-120–T-129, T-153. Phase 6 strategy changed to greenfield-shell + port.
 - **v1.0**: initial plan covering 12 phases, ~270 tasks.
 
 ---
 
-**End of plan v1.2.** Start at T-001.
+**End of plan v1.3.** Start at T-001.

@@ -43,9 +43,20 @@ export interface SessionHandle {
  * engine's browserManager / frameCapture services; test implementations
  * are plain objects that record calls. The adapter never invokes anything
  * outside this interface.
+ *
+ * `mount` receives the full `RIRDocument` (T-100c) in addition to the
+ * dispatch plan and composition config. Host implementations that just
+ * want dimensions/fps/duration can read `config`; host implementations
+ * that need the element tree (text, shape, clip positions, animations)
+ * read `document`. The plan is strictly the clip-dispatch result —
+ * non-clip elements live only on the document.
  */
 export interface CdpSession {
-  mount(plan: DispatchPlan, config: CompositionConfig): Promise<SessionHandle>;
+  mount(
+    plan: DispatchPlan,
+    config: CompositionConfig,
+    document: RIRDocument,
+  ): Promise<SessionHandle>;
   seek(handle: SessionHandle, frame: number): Promise<void>;
   capture(handle: SessionHandle): Promise<Uint8Array>;
   close(handle: SessionHandle): Promise<void>;
@@ -97,7 +108,7 @@ export class LiveTierAdapter {
       fps: document.frameRate,
       durationFrames: document.durationFrames,
     };
-    const handle = await this.session.mount(plan, config);
+    const handle = await this.session.mount(plan, config, document);
     return { plan, config, handle };
   }
 

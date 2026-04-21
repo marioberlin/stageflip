@@ -23,6 +23,8 @@
 // capture is non-deterministic across runs; BeginFrame is what the
 // parity harness ultimately wants.
 
+import type { RIRDocument } from '@stageflip/rir';
+
 import type { CdpSession, CompositionConfig, SessionHandle } from './adapter';
 import type { DispatchPlan } from './dispatch';
 
@@ -64,10 +66,20 @@ export interface PuppetPage {
 /** Factory returning a ready-to-use browser. Tests inject fakes. */
 export type BrowserFactory = () => Promise<PuppetBrowser>;
 
-/** HTML renderer for a composition. Pure string-in-string-out. */
+/**
+ * HTML renderer for a composition. Pure string-in-string-out.
+ *
+ * `document` is the full `RIRDocument` — host implementations that
+ * need the element tree (text, shape, clip positions, timing) read
+ * this. Host implementations that only need viewport + fps + duration
+ * can read `config` alone. The plan gates which clip kinds can be
+ * rendered; elements whose kind is in `plan.unresolved` should NOT
+ * reach a host builder because the adapter refuses at mount time.
+ */
 export type HostHtmlBuilder = (ctx: {
   readonly plan: DispatchPlan;
   readonly config: CompositionConfig;
+  readonly document: RIRDocument;
 }) => string;
 
 /**
@@ -120,8 +132,9 @@ interface PuppetHandle {
 /**
  * Placeholder host HTML: a single canvas filled with a deterministic
  * colour derived from `frame`. Enough to exercise the full pipeline
- * (launch → mount → seek → capture → encode) without a React bundler.
- * Real runtime mounting ships in T-100c.
+ * (launch → mount → seek → capture → encode) without any DOM element
+ * rendering. Ignores the RIR document. Used pre-T-100c and still the
+ * default for callers that only care about pipeline smoke.
  */
 export const canvasPlaceholderHostHtml: HostHtmlBuilder = ({ config }) => `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>stageflip-cdp</title>
@@ -151,6 +164,109 @@ export const canvasPlaceholderHostHtml: HostHtmlBuilder = ({ config }) => `<!DOC
   };
 })();
 </script></body></html>`;
+
+/**
+ * Rich placeholder host (T-100c): renders non-clip RIR elements (text,
+ * shape, video, image) as inline DOM nodes with frame-reactive
+ * visibility and absolute positioning. No React, no bundled runtimes,
+ * no clip rendering — clip elements render as labelled placeholder
+ * boxes so parity fixtures over clip kinds are deliberately NOT
+ * deterministic here.
+ *
+ * When to use this host:
+ *   - You want captures that reflect the actual RIR element tree
+ *     (positions, text content, shape fills) rather than the canvas
+ *     gradient from `canvasPlaceholderHostHtml`.
+ *   - Your fixtures don't depend on any `clip` element — use T-100d's
+ *     runtime-bundle host once it lands.
+ *
+ * Rendering model:
+ *   - The composition is a single fixed-size div with `overflow:hidden`.
+ *   - Each element is an absolutely-positioned child. z-index honours
+ *     `element.zIndex`. `element.transform` drives size + position.
+ *   - On `setFrame(n)`, the host walks the element list and toggles
+ *     each element's `display` based on whether `n ∈ [startFrame,
+ *     endFrame)`. Animations are NOT applied — the element simply
+ *     appears / disappears. Full animation resolution lands with
+ *     T-100d.
+ *
+ * Determinism: safe under BeginFrame — the host page does zero
+ * network, zero timers, and zero random numbers. Every frame's DOM
+ * state is a pure function of `(document, frame)`.
+ */
+export const richPlaceholderHostHtml: HostHtmlBuilder = ({ config, document }) => {
+  // HTML's <script> content model terminates at the first `</script`
+  // sequence (any case, any attribute suffix). JSON.stringify happily
+  // emits text elements containing that substring, which would close
+  // the data-script tag prematurely. `\/` is a valid JSON escape for
+  // `/` and neutralises the HTML end-tag match without changing the
+  // decoded JSON. The `U+2028` / `U+2029` escapes are belt-and-braces
+  // for historical JavaScript-in-HTML quirks.
+  const serialised = JSON.stringify(document)
+    .replace(/<\/script/gi, '<\\/script')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>stageflip-cdp</title>
+<style>
+  html,body{margin:0;padding:0;background:#000;}
+  #__sf_root{position:relative;overflow:hidden;background:#fff;}
+  .__sf_el{position:absolute;box-sizing:border-box;}
+  .__sf_clip_placeholder{background:repeating-linear-gradient(45deg,#eee,#eee 8px,#ddd 8px,#ddd 16px);border:1px dashed #999;display:flex;align-items:center;justify-content:center;color:#555;font:12px monospace;}
+</style>
+</head><body>
+<div id="__sf_root" style="width:${config.width}px;height:${config.height}px;"></div>
+<script id="__sf_doc" type="application/json">${serialised}</script>
+<script>
+(() => {
+  const doc = JSON.parse(document.getElementById('__sf_doc').textContent);
+  const root = document.getElementById('__sf_root');
+  const nodes = [];
+  for (const el of doc.elements) {
+    const node = document.createElement('div');
+    node.className = '__sf_el';
+    const t = el.transform;
+    node.style.left = t.x + 'px';
+    node.style.top = t.y + 'px';
+    node.style.width = t.width + 'px';
+    node.style.height = t.height + 'px';
+    node.style.opacity = String(t.opacity);
+    node.style.zIndex = String(el.zIndex);
+    if (t.rotation) node.style.transform = 'rotate(' + t.rotation + 'deg)';
+    if (el.type === 'shape' && el.content.type === 'shape') {
+      node.style.background = el.content.fill;
+      if (el.content.shape === 'ellipse') node.style.borderRadius = '50%';
+    } else if (el.type === 'text' && el.content.type === 'text') {
+      node.style.font = el.content.fontWeight + ' ' + el.content.fontSize + 'px ' + el.content.fontFamily;
+      node.style.color = el.content.color;
+      node.style.textAlign = el.content.align;
+      node.style.lineHeight = String(el.content.lineHeight);
+      node.textContent = el.content.text;
+    } else if (el.type === 'video' || el.type === 'image') {
+      node.className += ' __sf_clip_placeholder';
+      node.textContent = el.type.toUpperCase() + ' ' + el.id;
+    } else {
+      // clip, unknown content — labelled placeholder.
+      node.className += ' __sf_clip_placeholder';
+      node.textContent = 'CLIP ' + el.id;
+    }
+    root.appendChild(node);
+    nodes.push({ node: node, timing: el.timing });
+  }
+  function setFrame(n) {
+    for (const entry of nodes) {
+      const visible = n >= entry.timing.startFrame && n < entry.timing.endFrame;
+      entry.node.style.display = visible ? '' : 'none';
+    }
+  }
+  setFrame(0);
+  window.__sf = {
+    setFrame: setFrame,
+    ready: true,
+  };
+})();
+</script></body></html>`;
+};
 
 /**
  * Chrome flags required when the compositor is driven by
@@ -243,11 +359,15 @@ export class PuppeteerCdpSession implements CdpSession {
     this.platform = opts.platform ?? process.platform;
   }
 
-  async mount(plan: DispatchPlan, config: CompositionConfig): Promise<SessionHandle> {
+  async mount(
+    plan: DispatchPlan,
+    config: CompositionConfig,
+    document: RIRDocument,
+  ): Promise<SessionHandle> {
     const browser = await this.ensureBrowser();
     const page = await browser.newPage();
     await page.setViewport({ width: config.width, height: config.height });
-    const html = this.hostHtmlBuilder({ plan, config });
+    const html = this.hostHtmlBuilder({ plan, config, document });
     await page.setContent(html, { waitUntil: 'load' });
     await this.waitForReady(page);
 

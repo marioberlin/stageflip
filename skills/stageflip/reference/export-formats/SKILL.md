@@ -143,10 +143,26 @@ and pins the handle's `beginFrameTimeTicks` to `frame * (1000 / fps)`
 — the next BeginFrame capture advances the compositor to exactly that
 virtual time. Screenshot mode ignores the tick state.
 
-Host HTML is **pluggable** via `HostHtmlBuilder`. The default
-`canvasPlaceholderHostHtml` is a minimal canvas page — enough to prove
-the pipeline end-to-end without a React bundle. Real runtime-mounting
-host HTML ships in T-100c.
+Host HTML is **pluggable** via `HostHtmlBuilder`. Three builders ship today:
+
+- `canvasPlaceholderHostHtml` (T-090, default) — a single canvas page
+  that paints a deterministic frame-number gradient. Ignores the
+  RIR document. Pipeline-smoke only.
+- `richPlaceholderHostHtml` (T-100c) — renders non-clip RIR elements
+  (text, shape, video/image placeholders) as absolutely-positioned
+  inline DOM nodes with frame-reactive visibility. No React, no
+  runtime registration. Clip elements render as labelled placeholder
+  boxes. Captures reflect the real element tree (positions, text
+  content, shape fills) but not clip output.
+- Runtime-bundle host (T-100d, not yet shipped) — a Vite-bundled IIFE
+  with React + all 6 live runtimes. Replaces `richPlaceholderHostHtml`
+  for fixtures that need clip-accurate captures.
+
+The `HostHtmlBuilder` signature changed in T-100c to carry the full
+`RIRDocument` alongside `plan` + `config`. Existing builders that
+don't need the document keep working — the field is just ignored.
+The `CdpSession.mount(plan, config, document)` contract was updated
+in lockstep; the adapter threads the document through at mount time.
 
 ## Asset preflight (T-084a)
 
@@ -265,6 +281,7 @@ From `@stageflip/renderer-cdp`:
 | `LiveTierAdapter` + `CdpSession` | Session seam | T-083 |
 | `PuppeteerCdpSession`, `createPuppeteerBrowserFactory` | Concrete session | T-090 |
 | `CaptureMode`, `BEGIN_FRAME_LAUNCH_ARGS`, `probeBeginFrameSupport`, `PuppetCdpClient` | BeginFrame protocol selection + launch-arg + probe seam | T-100b |
+| `richPlaceholderHostHtml`, `HostHtmlBuilder` (now receives `document`) | Rich placeholder host + extended builder contract | T-100c |
 | `dispatchClips(doc)` | RIR → DispatchPlan | T-083 |
 | `collectAssetRefs`, `rewriteDocumentAssets`, `resolveAssets`, `InMemoryAssetResolver` | Asset preflight | T-084a |
 | `InMemoryFrameSink`, `FrameSink` | Frame output seam | T-084 |
@@ -281,7 +298,7 @@ From `@stageflip/renderer-cdp`:
 
 | Item | Owner task / phase |
 |---|---|
-| Real React + runtime-mounting host HTML | T-100c / Phase 5 |
+| Real React + runtime-mounting host HTML (Vite-bundled IIFE) | T-100d / Phase 5 |
 | Concrete bake runtime (Blender, heavy three) | Phase 12 |
 | Firebase Storage `ArtifactStore` adapter | Phase 10+ (mirrors Phase 1 Firebase deferrals) |
 | CDP font pre-embedding (`@fontsource` base64 + `document.fonts.check`) | Next touches to T-084a |
