@@ -8,6 +8,7 @@ owner_task: T-248
 related:
   - skills/stageflip/workflows/import-pptx/SKILL.md
   - skills/stageflip/workflows/import-google-slides/SKILL.md
+  - skills/stageflip/reference/export-formats/SKILL.md
 ---
 
 # Loss Flags

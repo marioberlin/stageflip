@@ -9,6 +9,7 @@ related:
   - skills/stageflip/concepts/schema/SKILL.md
   - skills/stageflip/concepts/fonts/SKILL.md
   - skills/stageflip/concepts/determinism/SKILL.md
+  - skills/stageflip/reference/export-formats/SKILL.md
 ---
 
 # RIR — Renderable Intermediate Representation

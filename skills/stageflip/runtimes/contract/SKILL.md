@@ -15,6 +15,7 @@ related:
   - skills/stageflip/runtimes/shader/SKILL.md
   - skills/stageflip/runtimes/three/SKILL.md
   - skills/stageflip/clips/authoring/SKILL.md
+  - skills/stageflip/reference/export-formats/SKILL.md
 ---
 
 # Runtime Contract

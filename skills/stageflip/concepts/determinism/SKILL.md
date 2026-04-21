@@ -9,6 +9,7 @@ related:
   - skills/stageflip/concepts/rir/SKILL.md
   - skills/stageflip/runtimes/contract/SKILL.md
   - skills/stageflip/runtimes/frame-runtime/SKILL.md
+  - skills/stageflip/reference/export-formats/SKILL.md
 ---
 
 # Determinism

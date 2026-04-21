@@ -5,7 +5,8 @@ tier: runtime
 status: placeholder
 last_updated: 2026-04-20
 owner_task: T-265
-related: []
+related:
+  - skills/stageflip/reference/export-formats/SKILL.md
 ---
 
 # Blender Bake Runtime
