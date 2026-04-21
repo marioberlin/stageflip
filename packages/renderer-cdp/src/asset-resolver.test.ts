@@ -171,6 +171,19 @@ describe('resolveAssets', () => {
     expect(out.document).toBe(d); // identity — no rewrite needed
   });
 
+  it('preserves document identity when every ref resolves as loss-flag', async () => {
+    // Refs exist, but none fetch successfully — resolutionMap stays empty,
+    // rewriter is skipped, input document comes back by identity.
+    const d = doc([image('i', 'https://cdn/nope.png')]);
+    const resolver = new InMemoryAssetResolver({}); // every URL misses
+
+    const out = await resolveAssets(d, resolver);
+
+    expect(out.resolutions).toHaveLength(0);
+    expect(out.lossFlags).toHaveLength(1);
+    expect(out.document).toBe(d);
+  });
+
   it('resolver errors propagate up (the resolver contract is fail-loud)', async () => {
     const d = doc([image('i', 'https://cdn/a.png')]);
     const throwing = {

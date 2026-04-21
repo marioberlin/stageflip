@@ -1,12 +1,13 @@
 // packages/renderer-cdp/src/preflight.ts
 // Pre-capture analysis of an RIRDocument. Everything the dispatcher needs to
 // know before the browser starts up: which clips are live vs bake, what
-// fonts need to load, which assets need fetching, and any blocking
+// fonts need to load, which asset URLs are present, and any blocking
 // diagnostics that should fail the export before spinning up Puppeteer.
 //
-// Preflight is pure (no IO). Real asset fetching lives in T-084a; bake
-// orchestration lives in T-089 [rev]. This file produces the report; the
-// consuming dispatcher decides what to do with it.
+// Preflight is pure (no IO). Asset URL fetching + rewrite is the separate
+// async phase in asset-resolver.ts (T-084a) that consumes this report's
+// `assetRefs`. Bake orchestration is T-089 [rev]. This file produces the
+// report; the consuming dispatcher decides what to do with it.
 
 import { aggregateFontRequirements } from '@stageflip/fonts';
 import type { RIRDocument } from '@stageflip/rir';

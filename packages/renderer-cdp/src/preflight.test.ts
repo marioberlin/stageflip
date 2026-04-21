@@ -140,6 +140,25 @@ describe('preflight', () => {
     expect(report.assetRefs).toHaveLength(0);
   });
 
+  it('populates assetRefs from URL-bearing content elements', () => {
+    const imageEl: RIRElement = {
+      id: 'img-1',
+      type: 'image',
+      transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, opacity: 1 },
+      timing: { startFrame: 0, endFrame: 30, durationFrames: 30 },
+      zIndex: 0,
+      visible: true,
+      locked: false,
+      stacking: 'auto',
+      animations: [],
+      content: { type: 'image', srcUrl: 'https://cdn/asset.png', fit: 'cover' },
+    };
+    const report = preflight(doc([imageEl]));
+    expect(report.assetRefs).toHaveLength(1);
+    expect(report.assetRefs[0]?.url).toBe('https://cdn/asset.png');
+    expect(report.assetRefs[0]?.kind).toBe('image');
+  });
+
   it('empty document produces an empty, non-blocking report', () => {
     const report = preflight(doc([]));
     expect(report.blockers).toHaveLength(0);
