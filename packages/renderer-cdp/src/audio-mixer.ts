@@ -12,7 +12,7 @@
 // Per-track filter chain (applied in order):
 //   atrim[=start=Ts:end=Te]          — respect trimStartMs / trimEndMs
 //   asetpts=PTS-STARTPTS              — reset timestamps after trim
-//   aloop=loop=-1:size=2e9            — when `loop` true
+//   aloop=loop=-1:size=2147483647     — when `loop` true (INT32_MAX samples)
 //   volume=<gain>                      — linear gain
 //   pan=stereo|c0=...|c1=...           — stereo pan (-1..1)
 //   adelay=<D>|<D>                     — comp-timing delay in ms

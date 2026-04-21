@@ -25,7 +25,7 @@ Per-track filter chain, applied in order:
 ```
 atrim=start=Ts:end=Te,
 asetpts=PTS-STARTPTS,
-aloop=loop=-1:size=2e9      # when loop=true
+aloop=loop=-1:size=2147483647  # when loop=true (INT32_MAX samples)
 volume=G                    # when G != 1
 pan=stereo|c0=...|c1=...    # stereo matrix from pan ∈ [-1,1]
 adelay=Dms|Dms              # comp-timing delay
