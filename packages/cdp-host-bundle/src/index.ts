@@ -5,11 +5,16 @@
 // re-exported so renderer-cdp tests can drive the component directly
 // without going through the bundle.
 
-import { access, readFile } from 'node:fs/promises';
+import { access, readFile, stat } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export { Composition, BootedComposition, type CompositionProps } from './composition.js';
+export {
+  LIVE_RUNTIME_IDS,
+  type LiveRuntimeId,
+  registerAllLiveRuntimes,
+} from './runtimes.js';
 
 /**
  * Walk up from `start` until a directory containing `package.json`
@@ -74,4 +79,55 @@ export async function bundlePath(): Promise<string> {
   const here = dirname(fileURLToPath(import.meta.url));
   const root = await findPackageRoot(here);
   return join(root, 'dist', 'browser', 'bundle.js');
+}
+
+/**
+ * Report on the compiled bundle: its size in bytes, plus a comparison
+ * against a caller-supplied warning threshold. Intended as a
+ * diagnostic hook for the parity CLI (T-101) and any operator-facing
+ * doctor utility — flags a bundle that has ballooned without
+ * requiring a CI gate failure (size-limit handles the hard bound).
+ *
+ * Default threshold is 1.75 MB raw; T-100e ships at ~1.59 MB after
+ * registering all 6 runtimes, giving ~160 KB headroom. Callers
+ * targeting tighter budgets should pass their own `warnAtBytes`.
+ */
+export interface BundleDoctorReport {
+  readonly path: string;
+  readonly exists: boolean;
+  /** Raw byte size of the bundle (0 if `exists === false`). */
+  readonly sizeBytes: number;
+  /** Byte threshold above which `warn === true`. */
+  readonly warnAtBytes: number;
+  /** True when `sizeBytes > warnAtBytes`. */
+  readonly warn: boolean;
+  /** Human-readable summary: one line. */
+  readonly message: string;
+}
+
+export async function bundleDoctor(opts?: {
+  readonly warnAtBytes?: number;
+}): Promise<BundleDoctorReport> {
+  const warnAtBytes = opts?.warnAtBytes ?? 1_750_000; // 1.75 MB raw
+  const path = await bundlePath();
+  try {
+    const st = await stat(path);
+    const sizeBytes = st.size;
+    const warn = sizeBytes > warnAtBytes;
+    const kb = (sizeBytes / 1024).toFixed(1);
+    const limitKb = (warnAtBytes / 1024).toFixed(0);
+    const message = warn
+      ? `cdp-host-bundle: ${kb} KB exceeds ${limitKb} KB warning threshold`
+      : `cdp-host-bundle: ${kb} KB (within ${limitKb} KB threshold)`;
+    return { path, exists: true, sizeBytes, warnAtBytes, warn, message };
+  } catch {
+    return {
+      path,
+      exists: false,
+      sizeBytes: 0,
+      warnAtBytes,
+      warn: false,
+      message: `cdp-host-bundle: bundle not found at ${path} — run \`pnpm --filter @stageflip/cdp-host-bundle build\``,
+    };
+  }
 }

@@ -99,6 +99,21 @@ importers:
       '@stageflip/runtimes-css':
         specifier: workspace:*
         version: link:../runtimes/css
+      '@stageflip/runtimes-frame-runtime-bridge':
+        specifier: workspace:*
+        version: link:../runtimes/frame-runtime-bridge
+      '@stageflip/runtimes-gsap':
+        specifier: workspace:*
+        version: link:../runtimes/gsap
+      '@stageflip/runtimes-lottie':
+        specifier: workspace:*
+        version: link:../runtimes/lottie
+      '@stageflip/runtimes-shader':
+        specifier: workspace:*
+        version: link:../runtimes/shader
+      '@stageflip/runtimes-three':
+        specifier: workspace:*
+        version: link:../runtimes/three
       react:
         specifier: 19.2.5
         version: 19.2.5

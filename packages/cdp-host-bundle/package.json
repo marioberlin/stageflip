@@ -29,6 +29,11 @@
     "@stageflip/rir": "workspace:*",
     "@stageflip/runtimes-contract": "workspace:*",
     "@stageflip/runtimes-css": "workspace:*",
+    "@stageflip/runtimes-frame-runtime-bridge": "workspace:*",
+    "@stageflip/runtimes-gsap": "workspace:*",
+    "@stageflip/runtimes-lottie": "workspace:*",
+    "@stageflip/runtimes-shader": "workspace:*",
+    "@stageflip/runtimes-three": "workspace:*",
     "react": "19.2.5",
     "react-dom": "19.2.5"
   },
