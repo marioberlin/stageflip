@@ -5,10 +5,13 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { RIRDocument } from '@stageflip/rir';
+
 import type { CompositionConfig } from './adapter';
 import type { DispatchPlan } from './dispatch';
 import {
   BEGIN_FRAME_LAUNCH_ARGS,
+  type HostHtmlBuilder,
   type PuppetBrowser,
   type PuppetCdpClient,
   type PuppetPage,
@@ -16,6 +19,7 @@ import {
   canvasPlaceholderHostHtml,
   createPuppeteerBrowserFactory,
   probeBeginFrameSupport,
+  richPlaceholderHostHtml,
 } from './puppeteer-session';
 
 // Stub puppeteer-core at module level so createPuppeteerBrowserFactory's
@@ -157,6 +161,27 @@ function mkConfig(overrides: Partial<CompositionConfig> = {}): CompositionConfig
   return { width: 320, height: 240, fps: 30, durationFrames: 30, ...overrides };
 }
 
+function mkDoc(overrides: Partial<RIRDocument> = {}): RIRDocument {
+  return {
+    id: 'test-doc',
+    width: 320,
+    height: 240,
+    frameRate: 30,
+    durationFrames: 30,
+    mode: 'slide',
+    elements: [],
+    stackingMap: {},
+    fontRequirements: [],
+    meta: {
+      sourceDocId: 'src',
+      sourceVersion: 1,
+      compilerVersion: '0.0.0-test',
+      digest: 'test',
+    },
+    ...overrides,
+  };
+}
+
 // --- tests ------------------------------------------------------------------
 
 describe('PuppeteerCdpSession', () => {
@@ -173,7 +198,7 @@ describe('PuppeteerCdpSession', () => {
       browserFactory: async () => browser,
     });
 
-    const handle = await session.mount(mkPlan(), mkConfig());
+    const handle = await session.mount(mkPlan(), mkConfig(), mkDoc());
     await session.seek(handle, 5);
     const buf = await session.capture(handle);
     await session.close(handle);
@@ -198,7 +223,11 @@ describe('PuppeteerCdpSession', () => {
     const session = new PuppeteerCdpSession({
       browserFactory: async () => browser,
     });
-    await session.mount(mkPlan(), mkConfig({ width: 1280, height: 720 }));
+    await session.mount(
+      mkPlan(),
+      mkConfig({ width: 1280, height: 720 }),
+      mkDoc({ width: 1280, height: 720 }),
+    );
     const vp = browser.pages[0]?.calls.find((c) => c.op === 'setViewport');
     expect(vp?.value).toMatchObject({ width: 1280, height: 720 });
   });
@@ -212,8 +241,8 @@ describe('PuppeteerCdpSession', () => {
       },
     });
 
-    await session.mount(mkPlan(), mkConfig());
-    await session.mount(mkPlan(), mkConfig());
+    await session.mount(mkPlan(), mkConfig(), mkDoc());
+    await session.mount(mkPlan(), mkConfig(), mkDoc());
 
     expect(spawnCount).toBe(1);
   });
@@ -233,9 +262,9 @@ describe('PuppeteerCdpSession', () => {
     });
 
     await Promise.all([
-      session.mount(mkPlan(), mkConfig()),
-      session.mount(mkPlan(), mkConfig()),
-      session.mount(mkPlan(), mkConfig()),
+      session.mount(mkPlan(), mkConfig(), mkDoc()),
+      session.mount(mkPlan(), mkConfig(), mkDoc()),
+      session.mount(mkPlan(), mkConfig(), mkDoc()),
     ]);
 
     expect(spawnCount).toBe(1);
@@ -250,10 +279,10 @@ describe('PuppeteerCdpSession', () => {
         return new FakeBrowser();
       },
     });
-    await expect(session.mount(mkPlan(), mkConfig())).rejects.toThrow(/transient/);
+    await expect(session.mount(mkPlan(), mkConfig(), mkDoc())).rejects.toThrow(/transient/);
     // A second mount should retry the factory rather than returning
     // the failed promise forever.
-    await expect(session.mount(mkPlan(), mkConfig())).resolves.toBeDefined();
+    await expect(session.mount(mkPlan(), mkConfig(), mkDoc())).resolves.toBeDefined();
     expect(attempts).toBe(2);
   });
 
@@ -262,7 +291,7 @@ describe('PuppeteerCdpSession', () => {
     const session = new PuppeteerCdpSession({
       browserFactory: async () => browser,
     });
-    await session.mount(mkPlan(), mkConfig());
+    await session.mount(mkPlan(), mkConfig(), mkDoc());
     await session.closeSession();
     expect(browser.closed).toBe(true);
 
@@ -276,7 +305,7 @@ describe('PuppeteerCdpSession', () => {
     const session = new PuppeteerCdpSession({
       browserFactory: async () => browser,
     });
-    const handle = await session.mount(mkPlan(), mkConfig());
+    const handle = await session.mount(mkPlan(), mkConfig(), mkDoc());
     await session.close(handle);
     expect(browser.closed).toBe(false);
     const closeCalls = browser.pages[0]?.calls.filter((c) => c.op === 'close') ?? [];
@@ -309,7 +338,7 @@ describe('PuppeteerCdpSession', () => {
       browserFactory: async () => new NeverReadyBrowser(),
       readyTimeoutMs: 50,
     });
-    await expect(session.mount(mkPlan(), mkConfig())).rejects.toThrow(
+    await expect(session.mount(mkPlan(), mkConfig(), mkDoc())).rejects.toThrow(
       /did not set window\.__sf\.ready/,
     );
   });
@@ -323,7 +352,7 @@ describe('PuppeteerCdpSession — BeginFrame mode', () => {
       browserFactory: async () => browser,
       platform: 'darwin',
     });
-    const handle = await session.mount(mkPlan(), mkConfig());
+    const handle = await session.mount(mkPlan(), mkConfig(), mkDoc());
     await session.capture(handle);
     // No CDP session created because auto skipped the probe.
     expect(browser.pages[0]?.lastCdp).toBeNull();
@@ -337,7 +366,7 @@ describe('PuppeteerCdpSession — BeginFrame mode', () => {
       browserFactory: async () => browser,
       platform: 'linux',
     });
-    const handle = await session.mount(mkPlan(), mkConfig());
+    const handle = await session.mount(mkPlan(), mkConfig(), mkDoc());
     const buf = await session.capture(handle);
     const page = browser.pages[0];
     if (!page) throw new Error('expected page');
@@ -367,7 +396,7 @@ describe('PuppeteerCdpSession — BeginFrame mode', () => {
       browserFactory: async () => browser,
       platform: 'linux',
     });
-    const handle = await session.mount(mkPlan(), mkConfig());
+    const handle = await session.mount(mkPlan(), mkConfig(), mkDoc());
     await session.capture(handle);
     // CDP session was created (probe attempted) and then detached
     // after the failed probe; captures took the screenshot path.
@@ -382,7 +411,7 @@ describe('PuppeteerCdpSession — BeginFrame mode', () => {
       captureMode: 'beginframe',
       platform: 'linux',
     });
-    await expect(session.mount(mkPlan(), mkConfig())).rejects.toThrow(/createCDPSession/);
+    await expect(session.mount(mkPlan(), mkConfig(), mkDoc())).rejects.toThrow(/createCDPSession/);
   });
 
   it('captureMode="beginframe" throws when the probe fails', async () => {
@@ -399,7 +428,9 @@ describe('PuppeteerCdpSession — BeginFrame mode', () => {
       captureMode: 'beginframe',
       platform: 'linux',
     });
-    await expect(session.mount(mkPlan(), mkConfig())).rejects.toThrow(/beginFrame is unavailable/);
+    await expect(session.mount(mkPlan(), mkConfig(), mkDoc())).rejects.toThrow(
+      /beginFrame is unavailable/,
+    );
     // The probe-failing CDP client should still have been detached to
     // avoid leaking the session.
     expect(browser.pages[0]?.lastCdp?.detached).toBe(true);
@@ -412,7 +443,7 @@ describe('PuppeteerCdpSession — BeginFrame mode', () => {
       browserFactory: async () => browser,
       platform: 'linux',
     });
-    const handle = await session.mount(mkPlan(), mkConfig({ fps: 30 }));
+    const handle = await session.mount(mkPlan(), mkConfig({ fps: 30 }), mkDoc({ frameRate: 30 }));
 
     await session.seek(handle, 0);
     await session.capture(handle);
@@ -457,7 +488,7 @@ describe('PuppeteerCdpSession — BeginFrame mode', () => {
       browserFactory: async () => browser,
       platform: 'linux',
     });
-    const handle = await session.mount(mkPlan(), mkConfig());
+    const handle = await session.mount(mkPlan(), mkConfig(), mkDoc());
     const buf = await session.capture(handle);
     expect(Buffer.from(buf).toString('utf8')).toBe('forced');
   });
@@ -479,7 +510,7 @@ describe('PuppeteerCdpSession — BeginFrame mode', () => {
       browserFactory: async () => browser,
       platform: 'linux',
     });
-    const handle = await session.mount(mkPlan(), mkConfig());
+    const handle = await session.mount(mkPlan(), mkConfig(), mkDoc());
     await expect(session.capture(handle)).rejects.toThrow(/BeginFrame produced no screenshot data/);
   });
 
@@ -503,7 +534,7 @@ describe('PuppeteerCdpSession — BeginFrame mode', () => {
       browserFactory: async () => browser,
       platform: 'linux',
     });
-    const handle = await session.mount(mkPlan(), mkConfig());
+    const handle = await session.mount(mkPlan(), mkConfig(), mkDoc());
     const page = browser.pages[0];
     if (!page) throw new Error('expected page');
     // Monkey-patch page.close to log.
@@ -625,11 +656,171 @@ describe('createPuppeteerBrowserFactory', () => {
   });
 });
 
+describe('PuppeteerCdpSession — document threading (T-100c)', () => {
+  it('passes the RIRDocument to the host HTML builder at mount time', async () => {
+    let received: Parameters<HostHtmlBuilder>[0] | null = null;
+    const customBuilder: HostHtmlBuilder = (ctx) => {
+      received = ctx;
+      return '<!DOCTYPE html><html><body><script>window.__sf={setFrame(){},ready:true};</script></body></html>';
+    };
+    const browser = new FakeBrowser();
+    const session = new PuppeteerCdpSession({
+      browserFactory: async () => browser,
+      hostHtmlBuilder: customBuilder,
+    });
+    const doc = mkDoc({ id: 'doc-under-test', width: 1024, height: 768 });
+    await session.mount(mkPlan(), mkConfig({ width: 1024, height: 768 }), doc);
+    expect(received).not.toBeNull();
+    expect(received?.document.id).toBe('doc-under-test');
+    expect(received?.document.width).toBe(1024);
+    expect(received?.config.width).toBe(1024);
+  });
+});
+
+describe('richPlaceholderHostHtml', () => {
+  const sampleDoc: RIRDocument = {
+    id: 'rich-doc',
+    width: 320,
+    height: 240,
+    frameRate: 30,
+    durationFrames: 30,
+    mode: 'slide',
+    stackingMap: {},
+    fontRequirements: [],
+    meta: {
+      sourceDocId: 'src',
+      sourceVersion: 1,
+      compilerVersion: '0.0.0-test',
+      digest: 'test',
+    },
+    elements: [
+      {
+        id: 'bg',
+        type: 'shape',
+        transform: { x: 0, y: 0, width: 320, height: 240, rotation: 0, opacity: 1 },
+        timing: { startFrame: 0, endFrame: 30, durationFrames: 30 },
+        zIndex: 0,
+        visible: true,
+        locked: false,
+        stacking: 'auto',
+        animations: [],
+        content: { type: 'shape', shape: 'rect', fill: '#123456' },
+      },
+      {
+        id: 'title',
+        type: 'text',
+        transform: { x: 24, y: 24, width: 272, height: 40, rotation: 0, opacity: 1 },
+        timing: { startFrame: 5, endFrame: 20, durationFrames: 15 },
+        zIndex: 10,
+        visible: true,
+        locked: false,
+        stacking: 'auto',
+        animations: [],
+        content: {
+          type: 'text',
+          text: 'Hello </script> world', // injection probe
+          fontFamily: 'Inter',
+          fontSize: 24,
+          fontWeight: 600,
+          color: '#ffffff',
+          align: 'left',
+          lineHeight: 1.2,
+        },
+      },
+    ],
+  };
+
+  it('embeds composition dimensions and the document JSON', () => {
+    const html = richPlaceholderHostHtml({
+      plan: { resolved: [], unresolved: [] },
+      config: { width: 320, height: 240, fps: 30, durationFrames: 30 },
+      document: sampleDoc,
+    });
+    expect(html).toContain('width:320px');
+    expect(html).toContain('height:240px');
+    expect(html).toContain('"id":"rich-doc"');
+    expect(html).toContain('"id":"bg"');
+    expect(html).toContain('"id":"title"');
+  });
+
+  it('escapes `</script` so injected text cannot break out of the data-script tag', () => {
+    const html = richPlaceholderHostHtml({
+      plan: { resolved: [], unresolved: [] },
+      config: { width: 320, height: 240, fps: 30, durationFrames: 30 },
+      document: sampleDoc,
+    });
+    // The document embeds `Hello </script> world` in a text element; the
+    // serialiser must rewrite `</script` to `<\/script` so the HTML parser
+    // doesn't terminate __sf_doc prematurely.
+    const scriptTagCount = (html.match(/<script\b/gi) ?? []).length;
+    const scriptEndCount = (html.match(/<\/script>/gi) ?? []).length;
+    // Exactly two <script> tags: the data tag + the bootstrap tag.
+    expect(scriptTagCount).toBe(2);
+    expect(scriptEndCount).toBe(2);
+  });
+
+  it('sets window.__sf.setFrame and window.__sf.ready on boot', () => {
+    const html = richPlaceholderHostHtml({
+      plan: { resolved: [], unresolved: [] },
+      config: { width: 320, height: 240, fps: 30, durationFrames: 30 },
+      document: sampleDoc,
+    });
+    expect(html).toContain('window.__sf');
+    expect(html).toContain('ready: true');
+    expect(html).toContain('setFrame: controller.setFrame');
+  });
+
+  it('escapes U+2028 and U+2029 line separators', () => {
+    const docWithLineSep: RIRDocument = {
+      ...sampleDoc,
+      elements: [
+        {
+          ...(sampleDoc.elements[0] as (typeof sampleDoc.elements)[number]),
+          id: 'bg2',
+        },
+        {
+          id: 'text-weird',
+          type: 'text',
+          transform: { x: 0, y: 0, width: 320, height: 240, rotation: 0, opacity: 1 },
+          timing: { startFrame: 0, endFrame: 30, durationFrames: 30 },
+          zIndex: 1,
+          visible: true,
+          locked: false,
+          stacking: 'auto',
+          animations: [],
+          content: {
+            type: 'text',
+            text: 'line\u2028separator\u2029',
+            fontFamily: 'Inter',
+            fontSize: 24,
+            fontWeight: 400,
+            color: '#000000',
+            align: 'left',
+            lineHeight: 1.2,
+          },
+        },
+      ],
+    };
+    const html = richPlaceholderHostHtml({
+      plan: { resolved: [], unresolved: [] },
+      config: { width: 320, height: 240, fps: 30, durationFrames: 30 },
+      document: docWithLineSep,
+    });
+    // Raw U+2028 / U+2029 must NOT appear in the HTML; they should be
+    // replaced with \u2028 / \u2029 escape sequences.
+    expect(html.includes('\u2028')).toBe(false);
+    expect(html.includes('\u2029')).toBe(false);
+    expect(html).toContain('\\u2028');
+    expect(html).toContain('\\u2029');
+  });
+});
+
 describe('canvasPlaceholderHostHtml', () => {
   it('embeds width/height/fps/durationFrames and the window.__sf API', () => {
     const html = canvasPlaceholderHostHtml({
       plan: mkPlan(),
       config: { width: 640, height: 480, fps: 24, durationFrames: 48 },
+      document: mkDoc({ width: 640, height: 480, frameRate: 24, durationFrames: 48 }),
     });
     expect(html).toContain('width="640"');
     expect(html).toContain('height="480"');

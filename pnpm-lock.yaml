@@ -228,6 +228,9 @@ importers:
       '@types/react':
         specifier: 19.2.14
         version: 19.2.14
+      happy-dom:
+        specifier: 20.9.0
+        version: 20.9.0
       react:
         specifier: 19.2.5
         version: 19.2.5

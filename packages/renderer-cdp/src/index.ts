@@ -159,6 +159,8 @@ export {
   type PuppetBrowser,
   type PuppetCdpClient,
   type PuppetPage,
+  richPlaceholderControllerScript,
+  richPlaceholderHostHtml,
 } from './puppeteer-session';
 
 export {

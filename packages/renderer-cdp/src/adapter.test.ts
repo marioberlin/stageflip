@@ -26,14 +26,25 @@ class FakeCdpSession implements CdpSession {
   public readonly calls: RecordedCall[] = [];
   private nextHandleId = 1;
 
-  async mount(plan: DispatchPlan, config: CompositionConfig): Promise<SessionHandle> {
+  async mount(
+    plan: DispatchPlan,
+    config: CompositionConfig,
+    document: RIRDocument,
+  ): Promise<SessionHandle> {
     const id = this.nextHandleId++;
     this.calls.push({ op: 'mount', handleId: id });
-    // Stash plan + config on the handle so assertions can read them back.
-    return { _handle: Symbol.for(`fake-session-${id}`), id, plan, config } as SessionHandle & {
+    // Stash plan + config + document on the handle so assertions can read them back.
+    return {
+      _handle: Symbol.for(`fake-session-${id}`),
+      id,
+      plan,
+      config,
+      document,
+    } as SessionHandle & {
       id: number;
       plan: DispatchPlan;
       config: CompositionConfig;
+      document: RIRDocument;
     };
   }
 
