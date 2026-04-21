@@ -36,3 +36,20 @@ export {
   type MountedComposition,
   type SessionHandle,
 } from './adapter';
+
+export { type FrameSink, InMemoryFrameSink } from './frame-sink';
+
+export {
+  type AssetRef,
+  preflight,
+  type PreflightBlocker,
+  type PreflightBlockerKind,
+  type PreflightReport,
+} from './preflight';
+
+export {
+  type ExportOptions,
+  type ExportResult,
+  exportDocument,
+  PreflightBlockedError,
+} from './export-dispatcher';

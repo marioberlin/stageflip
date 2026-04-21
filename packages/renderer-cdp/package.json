@@ -24,6 +24,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@stageflip/fonts": "workspace:*",
     "@stageflip/rir": "workspace:*",
     "@stageflip/runtimes-contract": "workspace:*"
   },
