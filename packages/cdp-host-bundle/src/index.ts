@@ -18,9 +18,12 @@ export { Composition, BootedComposition, type CompositionProps } from './composi
  * (tests against source) or `dist/node/` (production). Throws if the
  * walk runs out of parents.
  */
+const FIND_PACKAGE_ROOT_MAX_LEVELS = 10;
+
 async function findPackageRoot(start: string): Promise<string> {
   let dir = start;
-  for (let i = 0; i < 10; i++) {
+  let levels = 0;
+  for (; levels < FIND_PACKAGE_ROOT_MAX_LEVELS; levels++) {
     try {
       const raw = await readFile(join(dir, 'package.json'), 'utf8');
       const parsed = JSON.parse(raw) as { name?: string };
@@ -33,7 +36,7 @@ async function findPackageRoot(start: string): Promise<string> {
     dir = parent;
   }
   throw new Error(
-    `cdp-host-bundle: could not locate @stageflip/cdp-host-bundle package root starting from ${start}`,
+    `cdp-host-bundle: could not locate @stageflip/cdp-host-bundle package root starting from ${start} (walked ${levels} levels, stopped at ${dir}; cap is ${FIND_PACKAGE_ROOT_MAX_LEVELS})`,
   );
 }
 

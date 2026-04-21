@@ -35,6 +35,12 @@ export interface CompositionProps {
  * externally OR let the boot code do it via `<BootedComposition>`.
  */
 export function Composition({ document, frame }: CompositionProps): ReactElement {
+  // NOTE: this div is the React tree root rendered INTO the host
+  // HTML's `<div id="__sf_root">` mount point via `createRoot`.
+  // It must NOT carry `id="__sf_root"` itself or the live page
+  // ends up with two elements sharing that ID — `getElementById`
+  // would return the outer wrapper and consumers reading
+  // `data-sf-frame` would see nothing.
   const rootStyle: CSSProperties = {
     position: 'relative',
     overflow: 'hidden',
@@ -43,7 +49,7 @@ export function Composition({ document, frame }: CompositionProps): ReactElement
     background: '#ffffff',
   };
   return (
-    <div id="__sf_root" style={rootStyle} data-sf-frame={frame}>
+    <div data-sf-composition="" style={rootStyle} data-sf-frame={frame}>
       {document.elements.map((el) => (
         <ElementNode key={el.id} element={el} frame={frame} document={document} />
       ))}

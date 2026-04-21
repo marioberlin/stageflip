@@ -226,7 +226,7 @@ describe('Composition', () => {
   it('sets root container dimensions from the document', () => {
     const doc = mkDoc([], { width: 1280, height: 720 });
     const { container } = render(<Composition document={doc} frame={0} />);
-    const root = container.querySelector<HTMLElement>('#__sf_root');
+    const root = container.querySelector<HTMLElement>('[data-sf-composition]');
     expect(root?.style.width).toBe('1280px');
     expect(root?.style.height).toBe('720px');
   });
@@ -234,9 +234,24 @@ describe('Composition', () => {
   it('stamps the current frame onto the root via data-sf-frame', () => {
     const doc = mkDoc([]);
     const { container, rerender } = render(<Composition document={doc} frame={0} />);
-    expect(container.querySelector('#__sf_root')?.getAttribute('data-sf-frame')).toBe('0');
+    expect(container.querySelector('[data-sf-composition]')?.getAttribute('data-sf-frame')).toBe(
+      '0',
+    );
     rerender(<Composition document={doc} frame={15} />);
-    expect(container.querySelector('#__sf_root')?.getAttribute('data-sf-frame')).toBe('15');
+    expect(container.querySelector('[data-sf-composition]')?.getAttribute('data-sf-frame')).toBe(
+      '15',
+    );
+  });
+
+  it('does NOT emit id="__sf_root" on its rendered root (host HTML owns that ID)', () => {
+    // Regression guard for the duplicate-ID bug caught on PR #16:
+    // Composition is mounted INTO a `<div id="__sf_root">` from the
+    // host HTML, so its own output must not carry the same ID or
+    // the live page would have two elements with it.
+    const doc = mkDoc([]);
+    const { container } = render(<Composition document={doc} frame={0} />);
+    expect(container.querySelectorAll('#__sf_root')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-sf-composition]')).toHaveLength(1);
   });
 });
 
@@ -256,7 +271,7 @@ describe('BootedComposition', () => {
     // DOM shape as Composition for a plain shape doc.
     const doc = mkDoc([shapeEl('bg', { startFrame: 0, endFrame: 30 })]);
     const { container } = render(<BootedComposition document={doc} frame={0} />);
-    expect(container.querySelector('#__sf_root')).toBeTruthy();
+    expect(container.querySelector('[data-sf-composition]')).toBeTruthy();
     expect(container.querySelector('[data-sf-el="bg"]')).toBeTruthy();
   });
 });
