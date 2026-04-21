@@ -237,6 +237,31 @@ these ship to consumers.
 Transitive growth: `pnpm check-licenses` went from 436 → 463 deps
 scanned; all additions MIT/Apache-2.0/BSD — PASS unchanged.
 
+### Audit 5 addendum — 2026-04-21 (T-063 gsap install site)
+
+Backfill-only pass. T-063 (`@stageflip/runtimes-gsap`) installs GSAP
+into its host package. GSAP's npm `license` field is a URL
+("Standard 'no charge' license: https://gsap.com/standard-license")
+rather than an SPDX identifier, so it's added to the `REVIEWED_OK`
+allowlist in `scripts/check-licenses.ts` with the existing Business
+Green procurement (docs/dependencies.md §3 Media/rendering row) as
+the reviewed rationale.
+
+**Install sites for §3 entries**:
+- `gsap` **3.15.0** — installed in `@stageflip/runtimes-gsap`
+  dependencies; consumed by `defineGsapClip` + `GsapClipHost`.
+  Zero runtime transitive deps.
+
+`pnpm check-licenses` went from 463 → 464 deps scanned; the new row
+matches REVIEWED_OK — PASS unchanged.
+
+**License follow-up flagged for Phase 10**: publishing
+`@stageflip/runtimes-gsap` to npm means consumers pull GSAP through
+us. Whether that's covered by our Business Green license or requires
+consumers to hold their own needs legal review before
+`private: false`. Do not un-gate publish on this package without
+that review.
+
 **Not a policy change**: Vite + plugin-react stay pinned to their
 current stable versions; majors (Vite 6.x, plugin-react 5.x) are
 future ADR work, same handling as other blocked-majors in §3.
