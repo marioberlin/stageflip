@@ -181,7 +181,14 @@ importers:
 
   packages/runtimes/blender: {}
 
-  packages/runtimes/contract: {}
+  packages/runtimes/contract:
+    devDependencies:
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      react:
+        specifier: 19.2.5
+        version: 19.2.5
 
   packages/runtimes/css: {}
 
