@@ -1,3 +1,11 @@
+// Modified by StageFlip, 2026-04-21 — replaced the `@hyperframes/core`
+// re-export on line ~144 with a relative import from StageFlip's in-repo
+// reimplementation (packages/renderer-cdp/src/vendor-core-helpers.ts). The
+// two symbols (`quantizeTimeToFrame`, `MEDIA_VISUAL_STYLE_PROPERTIES`) are
+// derivable from public CSS spec + standard frame-quantization math; see
+// THIRD_PARTY.md §2, docs/escalation-T-083.md §B3 option (a), and
+// packages/renderer-cdp/vendor/NOTICE "Modifications by StageFlip".
+
 /**
  * @hyperframes/engine
  *
@@ -141,7 +149,12 @@ export {
 } from "./services/fileServer.js";
 
 // ── Utilities ──────────────────────────────────────────────────────────────────
-export { quantizeTimeToFrame, MEDIA_VISUAL_STYLE_PROPERTIES } from "@hyperframes/core";
+// Modified by StageFlip, 2026-04-21 — was `from "@hyperframes/core"`; now a
+// relative import to StageFlip's reimpl. See file-header note for rationale.
+export {
+  quantizeTimeToFrame,
+  MEDIA_VISUAL_STYLE_PROPERTIES,
+} from "../../../src/vendor-core-helpers.js";
 
 export {
   extractVideoMetadata,

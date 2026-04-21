@@ -44,13 +44,33 @@ only StageFlip's own attribution, recorded above.
 Modifications by StageFlip
 --------------------------
 
-None to date. Any StageFlip-side modification to a vendored file
-must begin with a header comment of the form
+Any StageFlip-side modification to a vendored file begins with a
+header comment of the form
 
     // Modified by StageFlip, YYYY-MM-DD — <reason>
 
-on the changed file, per THIRD_PARTY.md §2. A running list of
-modifications should be appended to this section as they land.
+on the changed file, per THIRD_PARTY.md §2. The running list below
+records every modification as it lands.
+
+2026-04-21 (T-083) — @hyperframes/core substitution.
+    Replaced the @hyperframes/core import on three engine files
+    with a relative import to
+    packages/renderer-cdp/src/vendor-core-helpers.ts, a StageFlip
+    reimplementation of the two helpers the engine uses
+    (`quantizeTimeToFrame`, `MEDIA_VISUAL_STYLE_PROPERTIES`).
+    Upstream ships those symbols in @hyperframes/core; T-080
+    vendored only @hyperframes/engine, so the engine needed a
+    local substitute. Rationale + options: docs/escalation-T-083.md
+    §B3 option (a). Files touched:
+
+    - engine/src/index.ts                          (re-export site)
+    - engine/src/services/frameCapture.ts          (import site)
+    - engine/src/services/screenshotService.ts     (import site)
+
+    Engine behaviour is unchanged — the helpers are byte-identical
+    in algorithm (public CSS spec + standard floor-with-epsilon
+    frame quantization). See renderer-cdp/src/vendor-core-helpers.ts
+    header for the reimplementation provenance note.
 
 
 Trademarks

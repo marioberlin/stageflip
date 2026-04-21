@@ -22,5 +22,16 @@
     "typecheck": "tsc --noEmit",
     "lint": "biome check src",
     "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@stageflip/rir": "workspace:*",
+    "@stageflip/runtimes-contract": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.14",
+    "react": "19.2.5"
   }
 }

@@ -191,7 +191,21 @@ importers:
 
   packages/profiles/video: {}
 
-  packages/renderer-cdp: {}
+  packages/renderer-cdp:
+    dependencies:
+      '@stageflip/rir':
+        specifier: workspace:*
+        version: link:../rir
+      '@stageflip/runtimes-contract':
+        specifier: workspace:*
+        version: link:../runtimes/contract
+    devDependencies:
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      react:
+        specifier: 19.2.5
+        version: 19.2.5
 
   packages/renderer-core: {}
 
