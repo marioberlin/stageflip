@@ -292,7 +292,7 @@ Vendored code (not via npm) is pinned by commit hash, not version number.
 
 | Artifact | Commit | Date | ADR |
 |---|---|---|---|
-| `@hyperframes/engine` in `packages/renderer-cdp/vendor/` | _pending (T-080)_ | _pending_ | ADR-TBD |
+| `@hyperframes/engine` in `packages/renderer-cdp/vendor/engine/` | `d1f992570a2a2d7cb4fa0b4a7e31687a0791803d` | 2026-04-21 (T-080) | ADR-TBD |
 
 Upgrading vendored code is always an ADR.
 

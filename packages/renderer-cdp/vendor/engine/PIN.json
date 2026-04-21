@@ -1,0 +1,9 @@
+{
+  "upstream": "https://github.com/heygen-com/hyperframes",
+  "package": "@hyperframes/engine",
+  "packagePath": "packages/engine",
+  "commit": "d1f992570a2a2d7cb4fa0b4a7e31687a0791803d",
+  "vendoredAt": "2026-04-21",
+  "license": "Apache-2.0",
+  "task": "T-080"
+}
