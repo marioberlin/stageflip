@@ -122,3 +122,12 @@ export {
   type MixAudioResult,
   mixAudio,
 } from './audio-mixer';
+
+export {
+  type ArtifactStore,
+  InMemoryArtifactStore,
+  LocalFsArtifactStore,
+  type LocalFsArtifactStoreOptions,
+  sanitizeArtifactKey,
+  type StoredArtifact,
+} from './artifact-store';
