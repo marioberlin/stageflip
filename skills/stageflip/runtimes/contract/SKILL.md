@@ -44,6 +44,7 @@ export interface ClipDefinition<P = unknown> {
   readonly kind: string;                             // globally unique, e.g. 'motion-text-gsap'
   render(ctx: ClipRenderContext<P>): ReactElement | null;
   fontRequirements?(props: P): FontRequirement[];
+  readonly propsSchema?: ZodType<P>;                 // opt-in, consumed by ZodForm (T-125b)
 }
 
 export interface ClipRenderContext<P = unknown> {
@@ -143,16 +144,18 @@ Reserved but intentionally empty in T-060:
 - `RuntimePrepareContext` is `{ [key: string]: unknown }` — T-084a (asset
   preflight) will populate it with asset-resolution hooks.
 - `FontRequirement` consumed by T-072 (FontManager).
-- `propsSchema` NOT in the interface. When Zod schemas are wired through
-  the registry for agent tool calls (Phase 7), a `propsSchema?: ZodType<P>`
-  field gets added without breaking existing runtimes.
+- `propsSchema?: ZodType<P>` landed in T-125b so the editor's ZodForm
+  auto-inspector can render a form per clip. The field is still optional —
+  a clip that omits it surfaces a "no schema" notice in the inspector. The
+  Phase 7 agent tool-calling path will read from the same field without
+  further changes to the contract.
 
 ## Implementation map
 
 | File | Task | Purpose |
 |---|---|---|
-| `src/index.ts` | T-060 | Contract + registry + types |
-| `src/index.test.ts` | T-060 | Registry behaviour + validation |
+| `src/index.ts` | T-060, T-125b | Contract + registry + types; `propsSchema` added T-125b |
+| `src/index.test.ts` | T-060, T-125b | Registry behaviour + validation + `propsSchema` round-trip |
 
 ## Related
 

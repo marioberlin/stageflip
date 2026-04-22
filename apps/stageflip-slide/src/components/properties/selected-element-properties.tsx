@@ -32,6 +32,7 @@ import type { ChartElement, Document, Element, TableElement } from '@stageflip/s
 import { type ReactElement, useCallback, useEffect, useState } from 'react';
 import { AnimationPicker } from './animation-picker';
 import { ChartElementProperties } from './chart-element-properties';
+import { ClipElementProperties } from './clip-element-properties';
 import { PropField } from './prop-field';
 import { TableElementProperties } from './table-element-properties';
 
@@ -190,7 +191,9 @@ export function SelectedElementProperties({
       </Section>
 
       <Section label={t('properties.typeEditors')}>
-        {element.type === 'chart' ? (
+        {element.type === 'clip' ? (
+          <ClipElementProperties slideId={slideId} element={element} />
+        ) : element.type === 'chart' ? (
           <ChartElementProperties slideId={slideId} element={element as ChartElement} />
         ) : element.type === 'table' ? (
           <TableElementProperties slideId={slideId} element={element as TableElement} />

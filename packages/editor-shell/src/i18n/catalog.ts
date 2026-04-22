@@ -187,6 +187,19 @@ const EN_CATALOG = new Map<string, string>([
   ['singleInput.cancel', 'Cancel'],
   ['singleInput.save', 'Save'],
 
+  // ZodForm (T-125b)
+  ['zodform.empty', 'No fields to inspect.'],
+  ['zodform.optional', 'optional'],
+  ['zodform.unknownPlaceholder', 'Unsupported type — raw text'],
+  ['zodform.tagPlaceholder', 'Add tag + Enter'],
+  ['zodform.numberListPlaceholder', 'Comma-separated numbers'],
+  ['zodform.colorPickerLabel', 'Color picker'],
+
+  // Clip element properties (T-125b)
+  ['properties.clip.title', 'Clip Props'],
+  ['properties.clip.noSchema', 'This clip does not expose a prop schema.'],
+  ['properties.clip.unknownRuntime', 'Clip not found in any registered runtime.'],
+
   // Chart editor (T-125c)
   ['properties.chart.kind', 'Chart kind'],
   ['properties.chart.legend', 'Legend'],
