@@ -44,7 +44,7 @@ export {
   type PrimerFactory,
 } from './prime-cli.js';
 export {
+  createPrimeInputResolver,
   createPuppeteerPrimer,
-  createReferenceFixturesResolver,
   type PuppeteerPrimerOptions,
 } from './puppeteer-primer.js';

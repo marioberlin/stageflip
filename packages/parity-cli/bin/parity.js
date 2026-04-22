@@ -8,14 +8,10 @@
 // (createPrimer is only called when runPrime actually needs it), so
 // `stageflip-parity a.json` still never launches Chrome.
 
-import {
-  createPuppeteerPrimer,
-  createReferenceFixturesResolver,
-  runCli,
-} from '../dist/index.js';
+import { createPrimeInputResolver, createPuppeteerPrimer, runCli } from '../dist/index.js';
 
 const primeDeps = {
-  resolver: createReferenceFixturesResolver(),
+  resolver: createPrimeInputResolver(),
   createPrimer: () => createPuppeteerPrimer(),
 };
 

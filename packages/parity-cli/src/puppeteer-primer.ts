@@ -9,7 +9,10 @@
 // behaviour is exercised by the T-119 render-e2e CI job once the
 // goldens-priming CI step in T-119c invokes it.
 
-import { loadBundleSource } from '@stageflip/cdp-host-bundle';
+import { readFile, readdir } from 'node:fs/promises';
+import { extname, resolve as resolvePath } from 'node:path';
+
+import { loadBundleSource, registerAllLiveRuntimes } from '@stageflip/cdp-host-bundle';
 import {
   LiveTierAdapter,
   type MountedComposition,
@@ -20,8 +23,13 @@ import {
   createRuntimeBundleHostHtml,
 } from '@stageflip/renderer-cdp';
 import type { RIRDocument } from '@stageflip/rir';
+import { manifestToDocument, parseFixtureManifest } from '@stageflip/testing';
 
-import { type PrimeInputResolver, defaultReferenceFrames } from './prime-cli.js';
+import {
+  type PrimeCliOptions,
+  type PrimeInputResolver,
+  defaultReferenceFrames,
+} from './prime-cli.js';
 import type { PrimeFixtureInput, PrimeRenderFn } from './prime.js';
 
 export interface PuppeteerPrimerOptions {
@@ -63,6 +71,20 @@ export async function createPuppeteerPrimer(
     }
     chromePath = capability.chromePath;
   }
+  // Register the 6 live runtimes on the Node side so
+  // `LiveTierAdapter.mount`'s `dispatchClips(document)` can resolve
+  // parity-fixture clip elements (`{type: 'clip', runtime, clipName}`).
+  // The bundle IIFE registers the same set in the browser world; the
+  // two registries are module-globals in separate JS worlds and don't
+  // collide. Idempotent at the workspace-level: runtime-contract's
+  // registerRuntime throws on re-register, so we catch and ignore that
+  // specific case for tests / repeat primer creations.
+  try {
+    registerAllLiveRuntimes();
+  } catch (err) {
+    // Swallow "id already registered" — any other error surfaces.
+    if (!/already registered/i.test((err as Error).message)) throw err;
+  }
   const bundleSource = await loadBundleSource();
   const session = new PuppeteerCdpSession({
     browserFactory: createPuppeteerBrowserFactory({ executablePath: chromePath }),
@@ -93,22 +115,66 @@ export async function createPuppeteerPrimer(
 }
 
 /**
- * Resolver that exposes the 3 hand-coded `REFERENCE_FIXTURES` from
- * `@stageflip/renderer-cdp` as `PrimeFixtureInput`s. Each fixture
- * gets the default [0, mid, last] snapshot set.
+ * Resolver for the `stageflip-parity prime` subcommand. Picks the
+ * appropriate input set based on parsed CLI options:
+ *
+ *   - `--reference-fixtures` → the 3 hand-coded `RIRDocument` fixtures
+ *     from `@stageflip/renderer-cdp`'s `REFERENCE_FIXTURES`. Each
+ *     gets the default `[0, mid, last]` snapshot set (no `referenceFrames`
+ *     metadata on these; they're raw docs).
+ *   - `--parity <dir>` → every `*.json` under `<dir>` parsed via
+ *     `parseFixtureManifest`, converted via `manifestToDocument`
+ *     (T-119d), rendered at each manifest's `referenceFrames` positions.
+ *     Filename pattern comes from `manifest.goldens.pattern` when
+ *     present, otherwise `DEFAULT_PRIME_PATTERN`.
+ *
+ * `runPrime` in `prime-cli.ts` already validates that exactly one of
+ * the two flags is set, so `resolve` can trust the options. The
+ * "neither flag" branch throws defensively in case validation ever
+ * drifts.
  */
-export function createReferenceFixturesResolver(): PrimeInputResolver {
+export function createPrimeInputResolver(): PrimeInputResolver {
   return {
-    async resolveReferenceFixtures(): Promise<readonly PrimeFixtureInput[]> {
-      const out: PrimeFixtureInput[] = [];
-      for (const [name, document] of Object.entries(REFERENCE_FIXTURES)) {
-        out.push({
-          name,
-          document,
-          frames: defaultReferenceFrames(document),
-        });
+    async resolve(opts: PrimeCliOptions): Promise<readonly PrimeFixtureInput[]> {
+      if (opts.referenceFixtures) {
+        return resolveReferenceInputs();
       }
-      return out;
+      if (opts.parityFixturesDir !== undefined) {
+        return resolveParityInputs(opts.parityFixturesDir);
+      }
+      throw new Error('createPrimeInputResolver: neither --reference-fixtures nor --parity set');
     },
   };
+}
+
+function resolveReferenceInputs(): readonly PrimeFixtureInput[] {
+  const out: PrimeFixtureInput[] = [];
+  for (const [name, document] of Object.entries(REFERENCE_FIXTURES)) {
+    out.push({
+      name,
+      document,
+      frames: defaultReferenceFrames(document),
+    });
+  }
+  return out;
+}
+
+async function resolveParityInputs(fixturesDir: string): Promise<readonly PrimeFixtureInput[]> {
+  const absDir = resolvePath(fixturesDir);
+  const entries = await readdir(absDir);
+  const jsons = entries.filter((name) => extname(name) === '.json').sort();
+  const inputs: PrimeFixtureInput[] = [];
+  for (const jsonName of jsons) {
+    const path = resolvePath(absDir, jsonName);
+    const raw = await readFile(path, 'utf8');
+    const manifest = parseFixtureManifest(JSON.parse(raw) as unknown);
+    const document = manifestToDocument(manifest);
+    inputs.push({
+      name: manifest.name,
+      document,
+      frames: manifest.referenceFrames,
+      ...(manifest.goldens?.pattern !== undefined ? { pattern: manifest.goldens.pattern } : {}),
+    });
+  }
+  return inputs;
 }
