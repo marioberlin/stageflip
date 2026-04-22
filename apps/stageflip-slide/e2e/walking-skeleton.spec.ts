@@ -51,6 +51,25 @@ test('double-clicking a text element opens the inline editor + toolbar (T-123c)'
   await expect(page.getByTestId('text-toolbar-link-seed-title')).toBeVisible();
 });
 
+test('clicking the mode toggle swaps the canvas for the slide player (T-123d)', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const toggle = page.getByTestId('mode-toggle');
+  await expect(toggle).toHaveAttribute('data-mode', 'edit');
+  await expect(page.getByTestId('slide-canvas')).toBeVisible();
+
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('data-mode', 'preview');
+  await expect(page.getByTestId('slide-player')).toBeVisible();
+  // Canvas is unmounted while previewing.
+  await expect(page.getByTestId('slide-canvas')).toBeHidden();
+
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('data-mode', 'edit');
+  await expect(page.getByTestId('slide-canvas')).toBeVisible();
+});
+
 test('agent execute stub returns a structured 501', async ({ request }) => {
   const response = await request.post('/api/agent/execute', {
     data: { tool: 'noop', args: {} },
