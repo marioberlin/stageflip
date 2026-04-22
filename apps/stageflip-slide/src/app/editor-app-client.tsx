@@ -25,6 +25,8 @@ import { SlidePlayer } from '../components/canvas/slide-player';
 import { CommandPalette } from '../components/command-palette/command-palette';
 import { Filmstrip } from '../components/filmstrip/filmstrip';
 import { PropertiesPanel } from '../components/properties/properties-panel';
+import { ShortcutCheatSheet } from '../components/shortcuts/shortcut-cheat-sheet';
+import { StatusBar } from '../components/status-bar/status-bar';
 import { TimelinePanel } from '../components/timeline/timeline-panel';
 
 // Typed via `satisfies` rather than a blind `as Document` cast so TypeScript
@@ -145,10 +147,13 @@ const FPS = 30;
 const DURATION_IN_FRAMES = 60;
 
 /**
- * Returns true when focus is NOT inside a contenteditable node. Used to gate
- * `Mod+Z` / `Mod+Shift+Z` — contenteditable owns its own undo history, so
- * routing these combos to the document atom when a contenteditable has focus
- * would pop two undos at once.
+ * Returns true when focus is NOT inside a contenteditable node. Gates global
+ * shortcuts that would otherwise collide with the inline text editor:
+ *   - `Mod+Z` / `Mod+Shift+Z` — contenteditable owns its own undo history, so
+ *     routing these combos to the document atom while a contenteditable has
+ *     focus pops two undos per keystroke.
+ *   - `?` — typing "?" into the inline text editor must not open the cheat
+ *     sheet.
  *
  * Safe in SSR + Jest/happy-dom: guards every `document` / `window` read.
  */
@@ -165,6 +170,7 @@ function EditorFrame(): ReactElement {
   const [currentFrame, setCurrentFrame] = useState<number>(0);
   const [paletteOpen, setPaletteOpen] = useState<boolean>(false);
   const [copilotOpen, setCopilotOpen] = useState<boolean>(false);
+  const [cheatSheetOpen, setCheatSheetOpen] = useState<boolean>(false);
   const activeSlideId = useEditorShellAtomValue(activeSlideIdAtom);
   const slideAtom = useMemo(() => slideByIdAtom(activeSlideId), [activeSlideId]);
   const slide = useEditorShellAtomValue(slideAtom);
@@ -172,6 +178,8 @@ function EditorFrame(): ReactElement {
   const closePalette = useCallback(() => setPaletteOpen(false), []);
   const toggleCopilot = useCallback(() => setCopilotOpen((v) => !v), []);
   const closeCopilot = useCallback(() => setCopilotOpen(false), []);
+  const openCheatSheet = useCallback(() => setCheatSheetOpen(true), []);
+  const closeCheatSheet = useCallback(() => setCheatSheetOpen(false), []);
 
   const shortcuts = useMemo<Shortcut[]>(
     () => [
@@ -195,17 +203,23 @@ function EditorFrame(): ReactElement {
           return undefined;
         },
       },
-      // T-133 wired the undo / redo API; T-136 exposes it to the user as
-      // keyboard shortcuts. The `Mod+Shift+Z` variant is the de-facto cross-
-      // platform redo combo and is handled by our shortcut matcher ahead of
-      // the plain `Mod+Z` binding.
-      //
-      // Gated by `when: !isEditingText()` so the shortcut does NOT fire when
-      // focus is inside a contenteditable node (the inline text editor).
-      // Without this guard, pressing Mod+Z while mid-edit would pop the
-      // document's MicroUndo stack AND trigger the browser's native
-      // contenteditable undo — two undos per keystroke, document out of sync
-      // with DOM.
+      {
+        id: 'help.cheat-sheet',
+        combo: '?',
+        description: 'Open keyboard shortcut cheat sheet',
+        category: 'help',
+        when: isNotEditingText,
+        handler: () => {
+          openCheatSheet();
+          return undefined;
+        },
+      },
+      // T-133 wired the undo / redo API; T-136 exposes it as keyboard
+      // shortcuts. `Mod+Shift+Z` is the de-facto cross-platform redo combo
+      // and is matched ahead of the plain `Mod+Z` binding. Both are gated by
+      // `isNotEditingText` — without the guard, Mod+Z mid-edit pops our
+      // MicroUndo stack AND the browser's native contenteditable undo,
+      // desyncing document and DOM.
       {
         id: 'edit.redo',
         combo: 'Mod+Shift+Z',
@@ -229,7 +243,7 @@ function EditorFrame(): ReactElement {
         },
       },
     ],
-    [openPalette, toggleCopilot, undo, redo],
+    [openPalette, toggleCopilot, openCheatSheet, undo, redo],
   );
   useRegisterShortcuts(shortcuts);
 
@@ -299,8 +313,10 @@ function EditorFrame(): ReactElement {
           onCurrentFrameChange={setCurrentFrame}
         />
       ) : null}
+      <StatusBar />
       <CommandPalette open={paletteOpen} onClose={closePalette} />
       <AiCopilot open={copilotOpen} onClose={closeCopilot} />
+      <ShortcutCheatSheet open={cheatSheetOpen} onClose={closeCheatSheet} />
     </main>
   );
 }
