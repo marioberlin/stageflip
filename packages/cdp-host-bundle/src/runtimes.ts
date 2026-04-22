@@ -16,7 +16,10 @@ import {
   gradientBackgroundClip,
   solidBackgroundClip,
 } from '@stageflip/runtimes-css';
-import { createFrameRuntimeBridge } from '@stageflip/runtimes-frame-runtime-bridge';
+import {
+  ALL_BRIDGE_CLIPS,
+  createFrameRuntimeBridge,
+} from '@stageflip/runtimes-frame-runtime-bridge';
 import { createGsapRuntime, motionTextGsap } from '@stageflip/runtimes-gsap';
 import { createLottieRuntime, lottieLogo } from '@stageflip/runtimes-lottie';
 import {
@@ -52,9 +55,10 @@ export function registerAllLiveRuntimes(): void {
   registerRuntime(createLottieRuntime([lottieLogo]));
   registerRuntime(createShaderRuntime([flashThroughWhite, swirlVortex, glitch]));
   registerRuntime(createThreeRuntime([threeProductReveal]));
-  // frame-runtime-bridge carries no demo clips of its own; it exists
-  // so user-defined React-based clips (that read `useCurrentFrame`
-  // etc.) can be bridged in at runtime. Register it empty so the
-  // id 'frame-runtime' resolves if a downstream fixture asks for it.
-  registerRuntime(createFrameRuntimeBridge([]));
+  // frame-runtime-bridge ships the T-131b.1 clip tranche (counter,
+  // kinetic-text, typewriter, logo-intro, chart-build) — see
+  // `@stageflip/runtimes-frame-runtime-bridge`'s `ALL_BRIDGE_CLIPS`.
+  // Subsequent T-131b tranches (b.2 / b.3) extend that constant; this
+  // call site does not need to change.
+  registerRuntime(createFrameRuntimeBridge(ALL_BRIDGE_CLIPS));
 }

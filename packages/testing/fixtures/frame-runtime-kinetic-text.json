@@ -1,0 +1,19 @@
+{
+  "name": "frame-runtime-kinetic-text",
+  "runtime": "frame-runtime",
+  "kind": "kinetic-text",
+  "description": "Frame-runtime port of SlideMotion's kinetic-text — staggered word fade-rise (T-131b.1).",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 60 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 60,
+    "props": { "text": "Frame perfect motion" }
+  },
+  "referenceFrames": [0, 20, 59],
+  "thresholds": {
+    "minPsnr": 32,
+    "minSsim": 0.95,
+    "maxFailingFrames": 0
+  },
+  "goldens": { "dir": "goldens/frame-runtime-kinetic-text" }
+}

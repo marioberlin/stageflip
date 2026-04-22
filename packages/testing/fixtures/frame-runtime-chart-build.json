@@ -1,0 +1,22 @@
+{
+  "name": "frame-runtime-chart-build",
+  "runtime": "frame-runtime",
+  "kind": "chart-build",
+  "description": "Frame-runtime port of SlideMotion's chart-build — bar chart with per-bar stagger reveal (T-131b.1).",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 60 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 60,
+    "props": {
+      "values": [10, 35, 22, 48, 30],
+      "labels": ["Q1", "Q2", "Q3", "Q4", "Q5"]
+    }
+  },
+  "referenceFrames": [0, 30, 59],
+  "thresholds": {
+    "minPsnr": 32,
+    "minSsim": 0.95,
+    "maxFailingFrames": 0
+  },
+  "goldens": { "dir": "goldens/frame-runtime-chart-build" }
+}

@@ -3,7 +3,7 @@ title: Frame Runtime Bridge
 id: skills/stageflip/runtimes/frame-runtime-bridge
 tier: runtime
 status: substantive
-last_updated: 2026-04-21
+last_updated: 2026-04-22
 owner_task: T-061
 related:
   - skills/stageflip/runtimes/contract/SKILL.md
@@ -113,16 +113,40 @@ closure.
   consumer wants to serialize the output, that's a renderer-core
   concern (Phase 4 CDP export).
 
+## Demo clips (T-131b.1+)
+
+The bridge ships demonstrator clips ported from the SlideMotion reference
+under `src/clips/`. The first tranche (T-131b.1) includes:
+
+| kind | file | notes |
+|---|---|---|
+| `counter` | `src/clips/counter.tsx` | 0 → target ramp with ease-out-expo + `tabular-nums` |
+| `kinetic-text` | `src/clips/kinetic-text.tsx` | per-word stagger fade + rise |
+| `typewriter` | `src/clips/typewriter-clip.tsx` | char-by-char reveal + 16-frame caret blink |
+| `logo-intro` | `src/clips/logo-intro.tsx` | fade + scale + accent textShadow glow that crests at fps×1.2 |
+| `chart-build` | `src/clips/chart-build.tsx` | bar chart with per-bar 5-frame stagger |
+
+Every demo clip declares a Zod `propsSchema` (auto-inspected by the
+editor's `<ZodForm>`) and a `themeSlots` map binding default colour props
+to `palette.*` roles (T-131a). The barrel `ALL_BRIDGE_CLIPS` is the
+canonical iterable that the cdp-host-bundle passes to
+`createFrameRuntimeBridge` — append new tranches there, not at every
+call site. Subsequent T-131b sub-tranches (b.2: medium clips; b.3: heavy
+clips) extend the same surface.
+
 ## Implementation map
 
 | File | Task | Purpose |
 |---|---|---|
-| `src/index.ts` | T-061 | `defineFrameClip` + `createFrameRuntimeBridge` |
-| `src/index.test.tsx` | T-061 | Runtime shape, render behaviour, window gating, props passthrough |
+| `src/index.ts` | T-061, T-131b.1 | `defineFrameClip` (+ `propsSchema` / `themeSlots` passthrough) + `createFrameRuntimeBridge` + clip re-exports |
+| `src/index.test.tsx` | T-061, T-131b.1 | Runtime shape, render behaviour, window gating, props passthrough, schema/themeSlots passthrough |
+| `src/clips/*.tsx` | T-131b.1 | Five reference-clip ports (counter / kinetic-text / typewriter / logo-intro / chart-build) |
+| `src/clips/index.ts` | T-131b.1 | Barrel + `ALL_BRIDGE_CLIPS` constant |
 
 ## Related
 
 - Contract types + registry: `runtimes/contract/SKILL.md`
 - Underlying React frame engine: `runtimes/frame-runtime/SKILL.md`
 - Owning tasks: T-061 (this), T-062..T-066 (concrete runtimes),
-  T-072 (FontManager), T-083 (CDP dispatcher consumer).
+  T-072 (FontManager), T-083 (CDP dispatcher consumer), T-131b.1
+  (light-tranche reference ports).
