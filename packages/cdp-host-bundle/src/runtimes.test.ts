@@ -36,6 +36,12 @@ describe('registerAllLiveRuntimes', () => {
     expect(resolved?.runtime.id).toBe('css');
   });
 
+  it('exposes CSS gradient-background clip via findClip (T-131a)', () => {
+    registerAllLiveRuntimes();
+    const resolved = findClip('gradient-background');
+    expect(resolved?.runtime.id).toBe('css');
+  });
+
   it('exposes GSAP motion-text-gsap clip via findClip', () => {
     registerAllLiveRuntimes();
     const resolved = findClip('motion-text-gsap');

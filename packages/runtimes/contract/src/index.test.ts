@@ -1,17 +1,20 @@
 // packages/runtimes/contract/src/index.test.ts
 // Unit tests for the ClipRuntime contract + registry.
 
+import type { Theme } from '@stageflip/schema';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
 import {
   type ClipDefinition,
   type ClipRuntime,
+  type ThemeSlot,
   __clearRuntimeRegistry,
   findClip,
   getRuntime,
   listRuntimes,
   registerRuntime,
+  resolveClipDefaultsForTheme,
   unregisterRuntime,
 } from './index.js';
 
@@ -174,5 +177,125 @@ describe('listRuntimes — snapshot, not live view', () => {
     const snap = listRuntimes();
     registerRuntime(makeRuntime('b'));
     expect(snap.map((r) => r.id)).toEqual(['a']);
+  });
+});
+
+describe('themeSlots — declaration round-trips through the registry (T-131a)', () => {
+  it('preserves themeSlots across registration + findClip', () => {
+    const slots: Record<string, ThemeSlot> = {
+      bg: { kind: 'palette', role: 'primary' },
+      fg: { kind: 'token', path: 'color.brand.lime' },
+    };
+    const clip: ClipDefinition<{ bg?: string; fg?: string }> = {
+      kind: 'themed',
+      render: () => null,
+      themeSlots: slots,
+    };
+    const runtime = makeRuntime('themed-rt', 'live', [clip as ClipDefinition<unknown>]);
+    registerRuntime(runtime);
+    expect(findClip('themed')?.clip.themeSlots).toBe(slots);
+  });
+
+  it('absent themeSlots leaves the field undefined', () => {
+    const clip = makeClip('no-slots');
+    expect(clip.themeSlots).toBeUndefined();
+  });
+});
+
+describe('resolveClipDefaultsForTheme (T-131a)', () => {
+  const theme: Theme = {
+    palette: {
+      primary: '#0a84ff',
+      secondary: '#34c759',
+      background: '#0c1116',
+    },
+    tokens: {
+      'color.brand.lime': '#c8ff00',
+      'spacing.gutter': '24',
+    },
+  };
+
+  it('fills an undefined prop from the palette role declared in themeSlots', () => {
+    const clip: ClipDefinition<{ bg?: string }> = {
+      kind: 'fill-bg',
+      render: () => null,
+      themeSlots: { bg: { kind: 'palette', role: 'primary' } },
+    };
+    const out = resolveClipDefaultsForTheme(clip, theme, {});
+    expect(out.bg).toBe('#0a84ff');
+  });
+
+  it('fills an undefined prop from a theme token path', () => {
+    const clip: ClipDefinition<{ accent?: string }> = {
+      kind: 'fill-accent',
+      render: () => null,
+      themeSlots: { accent: { kind: 'token', path: 'color.brand.lime' } },
+    };
+    const out = resolveClipDefaultsForTheme(clip, theme, {});
+    expect(out.accent).toBe('#c8ff00');
+  });
+
+  it('an explicit prop value always wins over the theme', () => {
+    const clip: ClipDefinition<{ bg?: string }> = {
+      kind: 'fill-bg-explicit',
+      render: () => null,
+      themeSlots: { bg: { kind: 'palette', role: 'primary' } },
+    };
+    const out = resolveClipDefaultsForTheme(clip, theme, { bg: '#ff00aa' });
+    expect(out.bg).toBe('#ff00aa');
+  });
+
+  it('a slot with no value in the theme leaves the prop undefined', () => {
+    const clip: ClipDefinition<{ accent?: string }> = {
+      kind: 'fill-missing',
+      render: () => null,
+      themeSlots: { accent: { kind: 'palette', role: 'accent' } },
+    };
+    const out = resolveClipDefaultsForTheme(clip, theme, {});
+    expect(out.accent).toBeUndefined();
+  });
+
+  it('returns the input unchanged (by reference) when themeSlots is absent', () => {
+    const clip: ClipDefinition<{ bg?: string }> = {
+      kind: 'no-slots',
+      render: () => null,
+    };
+    const props = { bg: '#000000' };
+    expect(resolveClipDefaultsForTheme(clip, theme, props)).toBe(props);
+  });
+
+  it('an empty themeSlots map returns a new object (not identity) — identity fast path is reserved for the absent case', () => {
+    const clip: ClipDefinition<{ bg?: string }> = {
+      kind: 'empty-slots',
+      render: () => null,
+      themeSlots: {},
+    };
+    const props = { bg: '#000000' };
+    const out = resolveClipDefaultsForTheme(clip, theme, props);
+    expect(out).not.toBe(props);
+    expect(out).toEqual(props);
+  });
+
+  it('returns a new object — does not mutate the input props', () => {
+    const clip: ClipDefinition<{ bg?: string }> = {
+      kind: 'fresh-out',
+      render: () => null,
+      themeSlots: { bg: { kind: 'palette', role: 'primary' } },
+    };
+    const input = {} as { bg?: string };
+    const out = resolveClipDefaultsForTheme(clip, theme, input);
+    expect(out).not.toBe(input);
+    expect(input.bg).toBeUndefined();
+  });
+
+  it('only fills the slots declared on the clip — leaves undeclared undefined props alone', () => {
+    const clip: ClipDefinition<{ bg?: string; fg?: string }> = {
+      kind: 'partial',
+      render: () => null,
+      themeSlots: { bg: { kind: 'palette', role: 'primary' } },
+    };
+    const out = resolveClipDefaultsForTheme(clip, theme, {});
+    expect(out.bg).toBe('#0a84ff');
+    expect(out.fg).toBeUndefined();
   });
 });

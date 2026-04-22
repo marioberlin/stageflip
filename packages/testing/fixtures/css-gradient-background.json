@@ -1,0 +1,19 @@
+{
+  "name": "css-gradient-background",
+  "runtime": "css",
+  "kind": "gradient-background",
+  "description": "Two-stop linear gradient — exercises the css runtime's themeSlots + propsSchema pipeline (T-131a).",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 30 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 30,
+    "props": { "from": "#0a84ff", "to": "#0c1116", "direction": "diagonal" }
+  },
+  "referenceFrames": [0, 15, 29],
+  "thresholds": {
+    "minPsnr": 40,
+    "minSsim": 0.99,
+    "maxFailingFrames": 0
+  },
+  "goldens": { "dir": "goldens/css-gradient-background" }
+}

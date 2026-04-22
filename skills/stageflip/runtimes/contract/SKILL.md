@@ -3,7 +3,7 @@ title: Runtime Contract
 id: skills/stageflip/runtimes/contract
 tier: runtime
 status: substantive
-last_updated: 2026-04-21
+last_updated: 2026-04-22
 owner_task: T-060
 related:
   - skills/stageflip/concepts/determinism/SKILL.md
@@ -45,7 +45,12 @@ export interface ClipDefinition<P = unknown> {
   render(ctx: ClipRenderContext<P>): ReactElement | null;
   fontRequirements?(props: P): FontRequirement[];
   readonly propsSchema?: ZodType<P>;                 // opt-in, consumed by ZodForm (T-125b)
+  readonly themeSlots?: Readonly<Record<string, ThemeSlot>>;  // opt-in, T-131a
 }
+
+export type ThemeSlot =
+  | { kind: 'palette'; role: keyof ThemePalette }   // 'primary' | 'secondary' | 'accent' | 'background' | 'foreground' | 'surface'
+  | { kind: 'token';   path: string };               // dotted path into Theme.tokens
 
 export interface ClipRenderContext<P = unknown> {
   frame: number;
@@ -149,13 +154,58 @@ Reserved but intentionally empty in T-060:
   a clip that omits it surfaces a "no schema" notice in the inspector. The
   Phase 7 agent tool-calling path will read from the same field without
   further changes to the contract.
+- `themeSlots?: Readonly<Record<string, ThemeSlot>>` landed in T-131a so
+  the document theme can re-flow palette / token values through clip props
+  on swap. See "Theme resolution" below.
+
+## Theme resolution
+
+A clip declares `themeSlots` so the document-level theme can fill any prop
+whose value is `undefined` with the theme's value for that slot. Hardcoded
+palette literals in the clip body miss the swap; declared slots survive it.
+
+```ts
+// Example: gradient-background (runtimes-css, T-131a)
+export const gradientBackgroundClip = defineCssClip<GradientBackgroundProps>({
+  kind: 'gradient-background',
+  themeSlots: {
+    from: { kind: 'palette', role: 'primary' },
+    to:   { kind: 'palette', role: 'background' },
+  },
+  render: ({ from, to, direction }) => /* ... */,
+});
+```
+
+Resolution is one helper:
+
+```ts
+resolveClipDefaultsForTheme(clip, theme, props): P
+```
+
+Semantics:
+- Clips without `themeSlots` get the input back **by reference** (cheap).
+- For each declared slot, if the prop is `undefined`, fill from
+  `theme.palette[role]` (palette slot) or `theme.tokens[path]` (token
+  slot). A slot whose lookup returns `undefined` leaves the prop
+  untouched — no fabricated defaults.
+- Explicit (non-undefined) prop values **always win**.
+- Returns a new object — input is never mutated.
+
+Where called from: the renderer-core dispatcher will invoke this per-clip
+between the document layer and the registered ClipDefinition's `render`.
+
+Theme shape is defined in `@stageflip/schema/theme.ts`:
+- `Theme.palette` carries the named roles (`primary`, `secondary`, `accent`,
+  `background`, `foreground`, `surface`).
+- `Theme.tokens` is a flat `Record<string, string | number>` keyed by dotted
+  path — used for richer learned themes (T-249).
 
 ## Implementation map
 
 | File | Task | Purpose |
 |---|---|---|
-| `src/index.ts` | T-060, T-125b | Contract + registry + types; `propsSchema` added T-125b |
-| `src/index.test.ts` | T-060, T-125b | Registry behaviour + validation + `propsSchema` round-trip |
+| `src/index.ts` | T-060, T-125b, T-131a | Contract + registry + types; `propsSchema` added T-125b; `ThemeSlot` + `themeSlots` + `resolveClipDefaultsForTheme` added T-131a |
+| `src/index.test.ts` | T-060, T-125b, T-131a | Registry behaviour + validation + `propsSchema` + theme-slot round-trip + resolver semantics |
 
 ## Related
 

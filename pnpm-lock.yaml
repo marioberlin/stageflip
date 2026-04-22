@@ -425,6 +425,9 @@ importers:
 
   packages/runtimes/contract:
     dependencies:
+      '@stageflip/schema':
+        specifier: workspace:*
+        version: link:../../schema
       zod:
         specifier: 3.25.76
         version: 3.25.76
@@ -441,6 +444,12 @@ importers:
       '@stageflip/runtimes-contract':
         specifier: workspace:*
         version: link:../contract
+      '@stageflip/schema':
+        specifier: workspace:*
+        version: link:../../schema
+      zod:
+        specifier: 3.25.76
+        version: 3.25.76
     devDependencies:
       '@testing-library/react':
         specifier: 16.3.2
