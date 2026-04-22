@@ -22,8 +22,8 @@ import {
 const FIXTURES_DIR = fileURLToPath(new URL('../fixtures', import.meta.url));
 
 /** Known clip kinds shipped by the in-tree runtimes (seed: T-067; extended
- *  per runtime port: `gradient-background` landed in T-131a; T-131b.1
- *  added the first 5 frame-runtime-bridge ports). */
+ *  per runtime port: `gradient-background` landed in T-131a; T-131b.1 added
+ *  the light frame-runtime-bridge tranche; T-131b.2 the medium tranche). */
 const KNOWN_KINDS: ReadonlyMap<string, string> = new Map([
   ['solid-background', 'css'],
   ['gradient-background', 'css'],
@@ -38,6 +38,11 @@ const KNOWN_KINDS: ReadonlyMap<string, string> = new Map([
   ['typewriter', 'frame-runtime'],
   ['logo-intro', 'frame-runtime'],
   ['chart-build', 'frame-runtime'],
+  ['subtitle-overlay', 'frame-runtime'],
+  ['light-leak', 'frame-runtime'],
+  ['pie-chart-build', 'frame-runtime'],
+  ['stock-ticker', 'frame-runtime'],
+  ['line-chart-draw', 'frame-runtime'],
 ]);
 
 function listFixtureFiles(): string[] {

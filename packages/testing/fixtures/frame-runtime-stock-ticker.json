@@ -1,0 +1,28 @@
+{
+  "name": "frame-runtime-stock-ticker",
+  "runtime": "frame-runtime",
+  "kind": "stock-ticker",
+  "description": "Frame-runtime port of SlideMotion's stock-ticker — candlestick chart with per-candle stagger reveal (T-131b.2).",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 60 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 60,
+    "props": {
+      "title": "ACME",
+      "candles": [
+        { "open": 100, "close": 105, "high": 108, "low": 99 },
+        { "open": 105, "close": 102, "high": 106, "low": 100 },
+        { "open": 102, "close": 110, "high": 112, "low": 101 },
+        { "open": 110, "close": 115, "high": 118, "low": 109 },
+        { "open": 115, "close": 113, "high": 117, "low": 110 }
+      ]
+    }
+  },
+  "referenceFrames": [0, 30, 59],
+  "thresholds": {
+    "minPsnr": 32,
+    "minSsim": 0.95,
+    "maxFailingFrames": 0
+  },
+  "goldens": { "dir": "goldens/frame-runtime-stock-ticker" }
+}

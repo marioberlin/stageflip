@@ -1,0 +1,19 @@
+{
+  "name": "frame-runtime-light-leak",
+  "runtime": "frame-runtime",
+  "kind": "light-leak",
+  "description": "Frame-runtime port of SlideMotion's light-leak — three blurred radial-gradient blobs animated by seeded sin/cos (T-131b.2).",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 60 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 60,
+    "props": { "intensity": 0.7, "seed": 42 }
+  },
+  "referenceFrames": [0, 30, 59],
+  "thresholds": {
+    "minPsnr": 30,
+    "minSsim": 0.92,
+    "maxFailingFrames": 1
+  },
+  "goldens": { "dir": "goldens/frame-runtime-light-leak" }
+}

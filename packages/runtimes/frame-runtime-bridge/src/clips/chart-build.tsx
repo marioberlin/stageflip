@@ -122,10 +122,12 @@ export const chartBuildClip: ClipDefinition<unknown> = defineFrameClip<ChartBuil
   themeSlots: {
     color: { kind: 'palette', role: 'primary' },
     background: { kind: 'palette', role: 'background' },
-    // Axis-label muted grey maps to `surface` — the closest "subdued
-    // foreground" role in our palette. Without this slot, axis labels
-    // would stay at the literal default after a theme swap.
-    labelColor: { kind: 'palette', role: 'surface' },
+    // labelColor is *text*. `surface` is reserved for panel/card
+    // backgrounds and would hide labels on most themes; `foreground` keeps
+    // them legible. The reference's muted grey (#666) is preserved as the
+    // hardcoded fallback below — themeSlot only kicks in when the document
+    // theme is applied.
+    labelColor: { kind: 'palette', role: 'foreground' },
   },
   fontRequirements: () => [{ family: 'Plus Jakarta Sans', weight: 400 }],
 });

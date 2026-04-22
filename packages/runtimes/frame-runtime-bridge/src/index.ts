@@ -125,9 +125,10 @@ export function createFrameRuntimeBridge(
   };
 }
 
-// Re-export the T-131b.1 demo-clip tranche (counter / kinetic-text /
-// typewriter / logo-intro / chart-build). Subsequent tranches (b.2, b.3)
-// extend the same barrel.
+// Re-export demo clips. T-131b.1 light tranche (counter / kinetic-text /
+// typewriter / logo-intro / chart-build) + T-131b.2 medium tranche
+// (subtitle-overlay / light-leak / pie-chart-build / stock-ticker /
+// line-chart-draw). T-131b.3 heavy tranche extends the same barrel.
 export {
   ALL_BRIDGE_CLIPS,
   ChartBuild,
@@ -142,10 +143,30 @@ export {
   type KineticTextProps,
   kineticTextClip,
   kineticTextPropsSchema,
+  LightLeak,
+  type LightLeakProps,
+  lightLeakClip,
+  lightLeakPropsSchema,
+  LineChartDraw,
+  type LineChartDrawProps,
+  lineChartDrawClip,
+  lineChartDrawPropsSchema,
   LogoIntro,
   type LogoIntroProps,
   logoIntroClip,
   logoIntroPropsSchema,
+  PieChartBuild,
+  type PieChartBuildProps,
+  pieChartBuildClip,
+  pieChartBuildPropsSchema,
+  StockTicker,
+  type StockTickerProps,
+  stockTickerClip,
+  stockTickerPropsSchema,
+  SubtitleOverlay,
+  type SubtitleOverlayProps,
+  subtitleOverlayClip,
+  subtitleOverlayPropsSchema,
   TypewriterClip,
   type TypewriterClipProps,
   typewriterClip,

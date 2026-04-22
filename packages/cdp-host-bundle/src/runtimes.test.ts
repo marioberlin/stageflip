@@ -68,11 +68,25 @@ describe('registerAllLiveRuntimes', () => {
     expect(resolved?.runtime.id).toBe('three');
   });
 
-  it('registers the T-131b.1 tranche on the frame-runtime bridge (counter / kinetic-text / typewriter / logo-intro / chart-build)', () => {
+  it('registers the T-131b.1 + T-131b.2 tranches on the frame-runtime bridge (10 clips)', () => {
     registerAllLiveRuntimes();
     const bridge = listRuntimes().find((r) => r.id === 'frame-runtime');
-    expect(bridge?.clips.size).toBe(5);
-    for (const kind of ['counter', 'kinetic-text', 'typewriter', 'logo-intro', 'chart-build']) {
+    expect(bridge?.clips.size).toBe(10);
+    const expectedKinds = [
+      // b.1 (light)
+      'counter',
+      'kinetic-text',
+      'typewriter',
+      'logo-intro',
+      'chart-build',
+      // b.2 (medium)
+      'subtitle-overlay',
+      'light-leak',
+      'pie-chart-build',
+      'stock-ticker',
+      'line-chart-draw',
+    ];
+    for (const kind of expectedKinds) {
       const resolved = findClip(kind);
       expect(resolved?.runtime.id, `${kind} should resolve via the bridge`).toBe('frame-runtime');
     }

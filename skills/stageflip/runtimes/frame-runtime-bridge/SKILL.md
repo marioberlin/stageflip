@@ -116,7 +116,9 @@ closure.
 ## Demo clips (T-131b.1+)
 
 The bridge ships demonstrator clips ported from the SlideMotion reference
-under `src/clips/`. The first tranche (T-131b.1) includes:
+under `src/clips/`. Tranches:
+
+**T-131b.1 (light)**
 
 | kind | file | notes |
 |---|---|---|
@@ -126,13 +128,26 @@ under `src/clips/`. The first tranche (T-131b.1) includes:
 | `logo-intro` | `src/clips/logo-intro.tsx` | fade + scale + accent textShadow glow that crests at fps×1.2 |
 | `chart-build` | `src/clips/chart-build.tsx` | bar chart with per-bar 5-frame stagger |
 
+**T-131b.2 (medium)**
+
+| kind | file | notes |
+|---|---|---|
+| `subtitle-overlay` | `src/clips/subtitle-overlay.tsx` | karaoke-style word-by-word reveal with active/past colouring; supports auto-timed text or explicit `WordTiming[]` |
+| `light-leak` | `src/clips/light-leak.tsx` | three blurred radial-gradient blobs animated by seeded sin/cos; off-palette by design (no themeSlots) |
+| `pie-chart-build` | `src/clips/pie-chart-build.tsx` | SVG segments revealed via stroke-dasharray; supports filled or donut mode |
+| `stock-ticker` | `src/clips/stock-ticker.tsx` | candlestick chart with per-candle stagger reveal; up/down colours stay literal (traffic-light convention) |
+| `line-chart-draw` | `src/clips/line-chart-draw.tsx` | SVG path stroke-dashoffset draw + staggered dots + axis labels |
+
 Every demo clip declares a Zod `propsSchema` (auto-inspected by the
-editor's `<ZodForm>`) and a `themeSlots` map binding default colour props
-to `palette.*` roles (T-131a). The barrel `ALL_BRIDGE_CLIPS` is the
-canonical iterable that the cdp-host-bundle passes to
-`createFrameRuntimeBridge` — append new tranches there, not at every
-call site. Subsequent T-131b sub-tranches (b.2: medium clips; b.3: heavy
-clips) extend the same surface.
+editor's `<ZodForm>`) and, where palette-driven, a `themeSlots` map
+binding default colour props to `palette.*` roles (T-131a).
+`light-leak` deliberately ships without `themeSlots` — it's a film-tone
+effect overlay whose colours are intentionally off-palette.
+
+The barrel `ALL_BRIDGE_CLIPS` is the canonical iterable that the
+cdp-host-bundle passes to `createFrameRuntimeBridge` — append new
+tranches there, not at every call site. The remaining T-131b.3 (heavy)
+tranche extends the same surface.
 
 ## Implementation map
 
@@ -140,8 +155,8 @@ clips) extend the same surface.
 |---|---|---|
 | `src/index.ts` | T-061, T-131b.1 | `defineFrameClip` (+ `propsSchema` / `themeSlots` passthrough) + `createFrameRuntimeBridge` + clip re-exports |
 | `src/index.test.tsx` | T-061, T-131b.1 | Runtime shape, render behaviour, window gating, props passthrough, schema/themeSlots passthrough |
-| `src/clips/*.tsx` | T-131b.1 | Five reference-clip ports (counter / kinetic-text / typewriter / logo-intro / chart-build) |
-| `src/clips/index.ts` | T-131b.1 | Barrel + `ALL_BRIDGE_CLIPS` constant |
+| `src/clips/*.tsx` | T-131b.1, T-131b.2 | Ten reference-clip ports — light tranche (counter / kinetic-text / typewriter / logo-intro / chart-build) + medium tranche (subtitle-overlay / light-leak / pie-chart-build / stock-ticker / line-chart-draw) |
+| `src/clips/index.ts` | T-131b.1, T-131b.2 | Barrel + `ALL_BRIDGE_CLIPS` constant |
 
 ## Related
 
@@ -149,4 +164,5 @@ clips) extend the same surface.
 - Underlying React frame engine: `runtimes/frame-runtime/SKILL.md`
 - Owning tasks: T-061 (this), T-062..T-066 (concrete runtimes),
   T-072 (FontManager), T-083 (CDP dispatcher consumer), T-131b.1
-  (light-tranche reference ports).
+  (light-tranche reference ports), T-131b.2 (medium-tranche reference
+  ports).
