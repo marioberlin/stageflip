@@ -60,7 +60,7 @@ describe('chartBuildClip definition (T-131b.1)', () => {
     expect(chartBuildClip.themeSlots).toEqual({
       color: { kind: 'palette', role: 'primary' },
       background: { kind: 'palette', role: 'background' },
-      labelColor: { kind: 'palette', role: 'surface' },
+      labelColor: { kind: 'palette', role: 'foreground' },
     });
   });
 

@@ -39,10 +39,50 @@ export {
   chartBuildPropsSchema,
 } from './chart-build.js';
 
+export {
+  SubtitleOverlay,
+  type SubtitleOverlayProps,
+  subtitleOverlayClip,
+  subtitleOverlayPropsSchema,
+} from './subtitle-overlay.js';
+
+export {
+  LightLeak,
+  type LightLeakProps,
+  lightLeakClip,
+  lightLeakPropsSchema,
+} from './light-leak.js';
+
+export {
+  PieChartBuild,
+  type PieChartBuildProps,
+  pieChartBuildClip,
+  pieChartBuildPropsSchema,
+} from './pie-chart-build.js';
+
+export {
+  StockTicker,
+  type StockTickerProps,
+  stockTickerClip,
+  stockTickerPropsSchema,
+} from './stock-ticker.js';
+
+export {
+  LineChartDraw,
+  type LineChartDrawProps,
+  lineChartDrawClip,
+  lineChartDrawPropsSchema,
+} from './line-chart-draw.js';
+
 import { chartBuildClip } from './chart-build.js';
 import { counterClip } from './counter.js';
 import { kineticTextClip } from './kinetic-text.js';
+import { lightLeakClip } from './light-leak.js';
+import { lineChartDrawClip } from './line-chart-draw.js';
 import { logoIntroClip } from './logo-intro.js';
+import { pieChartBuildClip } from './pie-chart-build.js';
+import { stockTickerClip } from './stock-ticker.js';
+import { subtitleOverlayClip } from './subtitle-overlay.js';
 import { typewriterClip } from './typewriter-clip.js';
 
 import type { ClipDefinition } from '@stageflip/runtimes-contract';
@@ -58,4 +98,9 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   typewriterClip,
   logoIntroClip,
   chartBuildClip,
+  subtitleOverlayClip,
+  lightLeakClip,
+  pieChartBuildClip,
+  stockTickerClip,
+  lineChartDrawClip,
 ];
