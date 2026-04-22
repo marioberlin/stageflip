@@ -58,8 +58,7 @@ export async function createPuppeteerPrimer(
     const capability = await canRunReferenceRenders();
     if (!capability.ok || capability.chromePath === null) {
       throw new Error(
-        `stageflip-parity prime: ${capability.reason ?? 'Chrome not found'}. ` +
-          'Set PUPPETEER_EXECUTABLE_PATH or install Chrome at a standard location.',
+        `stageflip-parity prime: ${capability.reason ?? 'Chrome not found'}. Set PUPPETEER_EXECUTABLE_PATH or install Chrome at a standard location.`,
       );
     }
     chromePath = capability.chromePath;
