@@ -36,6 +36,9 @@ Thumbs.db
 .idea/
 *.iml
 
+# Claude Code harness state
+.claude/
+
 # StageFlip-specific
 # Reference code is local-only; never committed. This is deliberate — see docs/architecture.md § 14.
 # Anchored to repo root so `skills/**/reference/` (the skill-tier dir for
