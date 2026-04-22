@@ -22,5 +22,17 @@
     "typecheck": "tsc --noEmit",
     "lint": "biome check src",
     "test": "vitest run --passWithNoTests"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.2",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "happy-dom": "20.9.0",
+    "react": "19.2.5",
+    "react-dom": "19.2.5"
   }
 }
