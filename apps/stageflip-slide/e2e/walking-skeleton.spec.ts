@@ -16,19 +16,21 @@ test('app renders the editor shell + slide canvas with seeded elements', async (
   await expect(canvas).toHaveAttribute('data-active-slide-id', 'slide-0');
 
   // Seeded elements are rendered into the canvas plane at canvas-space
-  // coordinates. Asserting visibility + text content is enough to prove
-  // the atom → canvas pipeline is wired.
-  await expect(page.getByTestId('element-seed-title')).toBeVisible();
-  await expect(page.getByTestId('element-seed-title')).toHaveText('StageFlip.Slide');
-  await expect(page.getByTestId('element-seed-subtitle')).toBeVisible();
-  await expect(page.getByTestId('element-seed-subtitle')).toHaveText('Walking skeleton');
+  // coordinates. Scope to the canvas plane so filmstrip thumbnails
+  // (which reuse the same element ids) don't trigger strict-mode
+  // multi-match errors.
+  const plane = page.getByTestId('slide-canvas-plane');
+  await expect(plane.getByTestId('element-seed-title')).toBeVisible();
+  await expect(plane.getByTestId('element-seed-title')).toHaveText('StageFlip.Slide');
+  await expect(plane.getByTestId('element-seed-subtitle')).toBeVisible();
+  await expect(plane.getByTestId('element-seed-subtitle')).toHaveText('Walking skeleton');
 });
 
 test('clicking a seeded element mounts the selection overlay + handles (T-123b)', async ({
   page,
 }) => {
   await page.goto('/');
-  await page.getByTestId('element-seed-title').click();
+  await page.getByTestId('slide-canvas-plane').getByTestId('element-seed-title').click();
 
   const overlay = page.getByTestId('selection-overlay-seed-title');
   await expect(overlay).toBeVisible();
@@ -41,7 +43,7 @@ test('double-clicking a text element opens the inline editor + toolbar (T-123c)'
   page,
 }) => {
   await page.goto('/');
-  await page.getByTestId('element-seed-title').dblclick();
+  await page.getByTestId('slide-canvas-plane').getByTestId('element-seed-title').dblclick();
 
   await expect(page.getByTestId('inline-text-editor-seed-title')).toBeVisible();
   await expect(page.getByTestId('text-toolbar-seed-title')).toBeVisible();
@@ -57,6 +59,23 @@ test('timeline panel renders with ruler + scrubber + readout (T-126)', async ({ 
   await expect(page.getByTestId('timeline-ruler')).toBeVisible();
   await expect(page.getByTestId('timeline-scrubber')).toBeVisible();
   await expect(page.getByTestId('timeline-readout')).toContainText('frame 0');
+});
+
+test('filmstrip renders a thumbnail per slide; clicking swaps active (T-124)', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.getByTestId('filmstrip')).toBeVisible();
+
+  await expect(page.getByTestId('filmstrip-slide-slide-0')).toBeVisible();
+  await expect(page.getByTestId('filmstrip-slide-slide-1')).toBeVisible();
+
+  await expect(page.getByTestId('filmstrip-slide-slide-0')).toHaveAttribute('data-active', 'true');
+  await expect(page.getByTestId('slide-canvas')).toHaveAttribute('data-active-slide-id', 'slide-0');
+
+  await page.getByTestId('filmstrip-slide-slide-1').click();
+  await expect(page.getByTestId('filmstrip-slide-slide-1')).toHaveAttribute('data-active', 'true');
+  await expect(page.getByTestId('slide-canvas')).toHaveAttribute('data-active-slide-id', 'slide-1');
 });
 
 test('clicking the mode toggle swaps the canvas for the slide player (T-123d)', async ({
