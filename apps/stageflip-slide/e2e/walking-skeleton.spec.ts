@@ -61,6 +61,22 @@ test('timeline panel renders with ruler + scrubber + readout (T-126)', async ({ 
   await expect(page.getByTestId('timeline-readout')).toContainText('frame 0');
 });
 
+test('command palette opens via toolbar button + runs New slide (T-127)', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByTestId('command-palette')).toHaveCount(0);
+  await page.getByTestId('palette-open').click();
+  await expect(page.getByTestId('command-palette')).toBeVisible();
+
+  // Filter + run "New slide" — doc gains a third slide.
+  await expect(page.getByTestId('filmstrip-slide-slide-1')).toBeVisible();
+  await page.getByTestId('command-palette-input').fill('new slide');
+  await expect(page.getByTestId('command-palette-item-slide.new')).toBeVisible();
+  await page.getByTestId('command-palette-item-slide.new').click();
+  await expect(page.getByTestId('command-palette')).toHaveCount(0);
+  // Third slide's id is generated; assert via rail item count.
+  await expect(page.locator('[data-testid^="filmstrip-slide-"]')).toHaveCount(3);
+});
+
 test('filmstrip renders a thumbnail per slide; clicking swaps active (T-124)', async ({
   page,
 }) => {
