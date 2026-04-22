@@ -30,6 +30,7 @@
 import { t, useDocument } from '@stageflip/editor-shell';
 import type { Document, Element } from '@stageflip/schema';
 import { type ReactElement, useCallback, useEffect, useState } from 'react';
+import { ClipElementProperties } from './clip-element-properties';
 import { PropField } from './prop-field';
 
 export interface SelectedElementPropertiesProps {
@@ -187,9 +188,13 @@ export function SelectedElementProperties({
       </Section>
 
       <Section label={t('properties.typeEditors')}>
-        <p data-testid="prop-type-placeholder" style={placeholderStyle}>
-          {t('properties.typeEditorsStub')}
-        </p>
+        {element.type === 'clip' ? (
+          <ClipElementProperties slideId={slideId} element={element} />
+        ) : (
+          <p data-testid="prop-type-placeholder" style={placeholderStyle}>
+            {t('properties.typeEditorsStub')}
+          </p>
+        )}
       </Section>
 
       <button

@@ -63,3 +63,13 @@ export {
   saveDocument,
   useAutosaveDocument,
 } from './persistence';
+
+// T-125b — ZodForm auto-inspector
+export {
+  type DiscriminatedBranch,
+  type FieldKind,
+  type FieldSpec,
+  introspectField,
+  introspectSchema,
+} from './zodform/introspect';
+export { ZodForm, type ZodFormProps } from './zodform/zod-form';

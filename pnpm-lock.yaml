@@ -87,6 +87,9 @@ importers:
       '@stageflip/frame-runtime':
         specifier: workspace:*
         version: link:../../packages/frame-runtime
+      '@stageflip/runtimes-contract':
+        specifier: workspace:*
+        version: link:../../packages/runtimes/contract
       '@stageflip/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -99,6 +102,9 @@ importers:
       react-dom:
         specifier: 19.2.5
         version: 19.2.5(react@19.2.5)
+      zod:
+        specifier: 3.25.76
+        version: 3.25.76
     devDependencies:
       '@playwright/test':
         specifier: 1.59.1
@@ -204,6 +210,9 @@ importers:
       jotai:
         specifier: 2.19.1
         version: 2.19.1(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@19.2.14)(react@19.2.5)
+      zod:
+        specifier: 3.25.76
+        version: 3.25.76
     devDependencies:
       '@testing-library/react':
         specifier: 16.3.2
@@ -415,6 +424,10 @@ importers:
   packages/runtimes/blender: {}
 
   packages/runtimes/contract:
+    dependencies:
+      zod:
+        specifier: 3.25.76
+        version: 3.25.76
     devDependencies:
       '@types/react':
         specifier: 19.2.14
@@ -4314,6 +4327,14 @@ snapshots:
     optionalDependencies:
       vite: 5.4.21(@types/node@22.19.17)(terser@5.46.1)
 
+  '@vitest/mocker@2.1.9(vite@5.4.21(@types/node@25.6.0)(terser@5.46.1))':
+    dependencies:
+      '@vitest/spy': 2.1.9
+      estree-walker: 3.0.3
+      magic-string: 0.30.21
+    optionalDependencies:
+      vite: 5.4.21(@types/node@25.6.0)(terser@5.46.1)
+
   '@vitest/pretty-format@2.1.9':
     dependencies:
       tinyrainbow: 1.2.0
@@ -6081,7 +6102,7 @@ snapshots:
   vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.1):
     dependencies:
       '@vitest/expect': 2.1.9
-      '@vitest/mocker': 2.1.9(vite@5.4.21(@types/node@22.19.17)(terser@5.46.1))
+      '@vitest/mocker': 2.1.9(vite@5.4.21(@types/node@25.6.0)(terser@5.46.1))
       '@vitest/pretty-format': 2.1.9
       '@vitest/runner': 2.1.9
       '@vitest/snapshot': 2.1.9
