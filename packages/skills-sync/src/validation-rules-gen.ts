@@ -14,7 +14,7 @@
 // pure-auto-gen rather than mixing hand-curated and generated
 // sections.
 
-import type { LintRule, LintSeverity } from '@stageflip/validation';
+import type { LintRule } from '@stageflip/validation';
 
 /**
  * Shape of the generator input. Callers pass the live
@@ -49,21 +49,18 @@ export function buildValidationRuleGroups(pkg: ValidationRulesPkg): readonly Rul
   ];
 }
 
-function severityLabel(severity: LintSeverity): string {
-  return severity;
-}
+/**
+ * Frozen date stamp used in the generated skill's `last_updated`
+ * frontmatter. Deliberately NOT derived from wall-clock so the
+ * generator is deterministic — the drift gate catches missed
+ * regenerations, so humans bump this by hand when the rule surface
+ * actually changes.
+ */
+const LAST_UPDATED = '2026-04-21';
 
 /** Escape a description for safe inclusion in a markdown table cell. */
 function escapeCell(text: string): string {
   return text.replace(/\|/g, '\\|').replace(/\n/g, ' ');
-}
-
-/** Current date as YYYY-MM-DD — deterministic per input, not per run. */
-function pickDateFromRules(rules: readonly LintRule[]): string {
-  // We want deterministic output so the skill doesn't churn on every
-  // regenerate. Use a fixed date stamp; humans bump this when the
-  // rule surface actually changes (the drift check catches that).
-  return rules.length > 0 ? '2026-04-21' : '2026-04-21';
 }
 
 /**
@@ -76,7 +73,6 @@ export function generateValidationRulesSkill(pkg: ValidationRulesPkg): string {
   const groups = buildValidationRuleGroups(pkg);
   const totalRules = pkg.ALL_RULES.length;
   const categoryCount = groups.length;
-  const lastUpdated = pickDateFromRules(pkg.ALL_RULES);
 
   const frontmatter = [
     '---',
@@ -84,7 +80,7 @@ export function generateValidationRulesSkill(pkg: ValidationRulesPkg): string {
     'id: skills/stageflip/reference/validation-rules',
     'tier: reference',
     'status: auto-generated',
-    `last_updated: ${lastUpdated}`,
+    `last_updated: ${LAST_UPDATED}`,
     'owner_task: T-107',
     'related:',
     '  - skills/stageflip/concepts/rir',
@@ -205,7 +201,7 @@ function renderCatalogue(groups: readonly RuleGroup[]): string {
     out.push('|---|---|---|');
     for (const rule of group.rules) {
       out.push(
-        `| \`${escapeCell(rule.id)}\` | ${severityLabel(rule.severity)} | ${escapeCell(rule.description)} |`,
+        `| \`${escapeCell(rule.id)}\` | ${rule.severity} | ${escapeCell(rule.description)} |`,
       );
     }
     out.push('');

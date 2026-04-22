@@ -276,8 +276,8 @@ Per-fixture thresholds are per-runtime:
 | Shader | 34 dB | 0.97 | Fragment-shader output is stable but GPU-quantisation adds noise. |
 | GSAP text | 30 dB | 0.97 (on text region) | Text layout drift between CI platforms; use region-scoped SSIM. |
 | Three (3D) | 30 dB | 0.95 | Lighting + anti-aliasing + depth; tolerate more. |
-| Video (h264) | 28 dB | 0.95 | Codec noise dominates; SSIM is the load-bearing metric. |
-| Video (prores) | 40 dB | 0.99 | Near-lossless codec; tighten accordingly. |
+| Video (h264) _(TBD)_ | 28 dB | 0.95 | Codec noise dominates; SSIM is the load-bearing metric. **No codec fixture exists yet — calibrate after the first codec parity fixture lands.** |
+| Video (prores) _(TBD)_ | 40 dB | 0.99 | Near-lossless codec; tighten accordingly. **No codec fixture exists yet — calibrate after the first codec parity fixture lands.** |
 
 Tune these per-fixture via the `thresholds` block. Global defaults
 (`DEFAULT_THRESHOLDS` in `@stageflip/parity`) are 30 dB / 0.97 / 0
