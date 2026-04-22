@@ -5,10 +5,14 @@
 //   - installing Chrome/Chromium at a standard path OR setting
 //     PUPPETEER_EXECUTABLE_PATH=/path/to/chromium;
 //   - having `ffmpeg` + `ffprobe` on PATH.
-// CI wires these via a dedicated e2e job; `pnpm test` on a bare host
-// runs only the unit + stub suites.
+// CI wires these via the `render-e2e` job (T-119); `pnpm test` on a
+// bare host runs only the unit + stub suites.
+//
+// When STAGEFLIP_E2E_ARTIFACT_DIR is set to a non-empty path, the
+// rendered MP4s land there instead of a tmpdir and the cleanup step
+// is skipped — CI uses this to upload the outputs as a build artifact.
 
-import { mkdtemp, rm, stat } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -18,6 +22,8 @@ import { REFERENCE_FIXTURES, type ReferenceFixtureName } from './reference-fixtu
 import { canRunReferenceRenders, renderReferenceFixture } from './reference-render';
 
 const capability = await canRunReferenceRenders();
+const artifactDir = process.env.STAGEFLIP_E2E_ARTIFACT_DIR;
+const keepArtifacts = artifactDir !== undefined && artifactDir.length > 0;
 
 // If we can't run the real thing, skip the whole suite with a clear
 // reason on the vitest output.
@@ -25,11 +31,18 @@ describe.skipIf(!capability.ok)(`reference render e2e (${capability.reason ?? 'r
   let workDir: string;
 
   beforeAll(async () => {
-    workDir = await mkdtemp(join(tmpdir(), 'stageflip-t090-e2e-'));
+    if (keepArtifacts) {
+      workDir = artifactDir as string;
+      await mkdir(workDir, { recursive: true });
+    } else {
+      workDir = await mkdtemp(join(tmpdir(), 'stageflip-t090-e2e-'));
+    }
   });
 
   afterAll(async () => {
-    await rm(workDir, { recursive: true, force: true });
+    if (!keepArtifacts) {
+      await rm(workDir, { recursive: true, force: true });
+    }
   });
 
   for (const name of Object.keys(REFERENCE_FIXTURES) as readonly ReferenceFixtureName[]) {
