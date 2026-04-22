@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "biome check src",
     "test": "vitest run --passWithNoTests",
-    "e2e": "next build && playwright test --config playwright.config.ts"
+    "e2e": "pnpm exec turbo run build --filter=@stageflip/app-slide && playwright test --config playwright.config.ts"
   },
   "dependencies": {
     "@stageflip/editor-shell": "workspace:*",
