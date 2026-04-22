@@ -14,6 +14,16 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [react()],
+  // Vite only substitutes `process.env.NODE_ENV` automatically in app
+  // mode; library mode (what we're in) leaves the reference raw. React
+  // + react-dom + a handful of transitive deps check `process.env.NODE_ENV`
+  // at runtime; with no substitution, the browser IIFE throws
+  // `ReferenceError: process is not defined` on first evaluation and
+  // `window.__sf.ready` never flips. Inline the constant here so the
+  // bundle is a pure browser artifact again.
+  define: {
+    'process.env.NODE_ENV': JSON.stringify('production'),
+  },
   build: {
     outDir: 'dist/browser',
     emptyOutDir: true,
