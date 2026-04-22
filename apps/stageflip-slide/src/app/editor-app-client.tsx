@@ -144,8 +144,22 @@ function ActiveSlideHydrator(): null {
 const FPS = 30;
 const DURATION_IN_FRAMES = 60;
 
+/**
+ * Returns true when focus is NOT inside a contenteditable node. Used to gate
+ * `Mod+Z` / `Mod+Shift+Z` — contenteditable owns its own undo history, so
+ * routing these combos to the document atom when a contenteditable has focus
+ * would pop two undos at once.
+ *
+ * Safe in SSR + Jest/happy-dom: guards every `document` / `window` read.
+ */
+function isNotEditingText(): boolean {
+  if (typeof document === 'undefined') return true;
+  const active = document.activeElement as HTMLElement | null;
+  return !(active?.isContentEditable ?? false);
+}
+
 function EditorFrame(): ReactElement {
-  const { document: doc } = useDocument();
+  const { document: doc, undo, redo } = useDocument();
   const slideCount = doc && doc.content.mode === 'slide' ? doc.content.slides.length : 0;
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const [currentFrame, setCurrentFrame] = useState<number>(0);
@@ -181,8 +195,41 @@ function EditorFrame(): ReactElement {
           return undefined;
         },
       },
+      // T-133 wired the undo / redo API; T-136 exposes it to the user as
+      // keyboard shortcuts. The `Mod+Shift+Z` variant is the de-facto cross-
+      // platform redo combo and is handled by our shortcut matcher ahead of
+      // the plain `Mod+Z` binding.
+      //
+      // Gated by `when: !isEditingText()` so the shortcut does NOT fire when
+      // focus is inside a contenteditable node (the inline text editor).
+      // Without this guard, pressing Mod+Z while mid-edit would pop the
+      // document's MicroUndo stack AND trigger the browser's native
+      // contenteditable undo — two undos per keystroke, document out of sync
+      // with DOM.
+      {
+        id: 'edit.redo',
+        combo: 'Mod+Shift+Z',
+        description: 'Redo',
+        category: 'essential',
+        when: isNotEditingText,
+        handler: () => {
+          redo();
+          return undefined;
+        },
+      },
+      {
+        id: 'edit.undo',
+        combo: 'Mod+Z',
+        description: 'Undo',
+        category: 'essential',
+        when: isNotEditingText,
+        handler: () => {
+          undo();
+          return undefined;
+        },
+      },
     ],
-    [openPalette, toggleCopilot],
+    [openPalette, toggleCopilot, undo, redo],
   );
   useRegisterShortcuts(shortcuts);
 
