@@ -1,0 +1,19 @@
+{
+  "name": "frame-runtime-animated-value",
+  "runtime": "frame-runtime",
+  "kind": "animated-value",
+  "description": "Frame-runtime port of SlideMotion's animated-value — spring-based count-up used standalone and as a building block for kpi-grid (T-131b.3).",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 60 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 60,
+    "props": { "value": 1000, "prefix": "$", "suffix": "k" }
+  },
+  "referenceFrames": [0, 30, 59],
+  "thresholds": {
+    "minPsnr": 34,
+    "minSsim": 0.97,
+    "maxFailingFrames": 0
+  },
+  "goldens": { "dir": "goldens/frame-runtime-animated-value" }
+}

@@ -138,6 +138,15 @@ under `src/clips/`. Tranches:
 | `stock-ticker` | `src/clips/stock-ticker.tsx` | candlestick chart with per-candle stagger reveal; up/down colours stay literal (traffic-light convention) |
 | `line-chart-draw` | `src/clips/line-chart-draw.tsx` | SVG path stroke-dashoffset draw + staggered dots + axis labels |
 
+**T-131b.3 (heavy)**
+
+| kind | file | notes |
+|---|---|---|
+| `animated-value` | `src/clips/animated-value.tsx` | reusable spring count-up primitive; also exports `AnimatedProgressBar` / `AnimatedProgressRing` as non-clip building blocks for dashboard compositions |
+| `kpi-grid` | `src/clips/kpi-grid.tsx` | dashboard KPI grid composed of `AnimatedValue` cards with per-card spring stagger + trend ▲/▼ markers |
+| `pull-quote` | `src/clips/pull-quote.tsx` | spring-scaled quote mark + typewriter quote body + attribution slide-in |
+| `comparison-table` | `src/clips/comparison-table.tsx` | two-column comparison with staggered row reveal — rows slide in from their respective sides |
+
 Every demo clip declares a Zod `propsSchema` (auto-inspected by the
 editor's `<ZodForm>`) and, where palette-driven, a `themeSlots` map
 binding default colour props to `palette.*` roles (T-131a).
@@ -145,9 +154,8 @@ binding default colour props to `palette.*` roles (T-131a).
 effect overlay whose colours are intentionally off-palette.
 
 The barrel `ALL_BRIDGE_CLIPS` is the canonical iterable that the
-cdp-host-bundle passes to `createFrameRuntimeBridge` — append new
-tranches there, not at every call site. The remaining T-131b.3 (heavy)
-tranche extends the same surface.
+cdp-host-bundle passes to `createFrameRuntimeBridge`. All 14 bridge
+clips (b.1 + b.2 + b.3) are now registered through it.
 
 ## Implementation map
 
@@ -155,8 +163,8 @@ tranche extends the same surface.
 |---|---|---|
 | `src/index.ts` | T-061, T-131b.1 | `defineFrameClip` (+ `propsSchema` / `themeSlots` passthrough) + `createFrameRuntimeBridge` + clip re-exports |
 | `src/index.test.tsx` | T-061, T-131b.1 | Runtime shape, render behaviour, window gating, props passthrough, schema/themeSlots passthrough |
-| `src/clips/*.tsx` | T-131b.1, T-131b.2 | Ten reference-clip ports — light tranche (counter / kinetic-text / typewriter / logo-intro / chart-build) + medium tranche (subtitle-overlay / light-leak / pie-chart-build / stock-ticker / line-chart-draw) |
-| `src/clips/index.ts` | T-131b.1, T-131b.2 | Barrel + `ALL_BRIDGE_CLIPS` constant |
+| `src/clips/*.tsx` | T-131b.1, T-131b.2, T-131b.3 | Fourteen reference-clip ports across three tranches (light / medium / heavy) |
+| `src/clips/index.ts` | T-131b.1, T-131b.2, T-131b.3 | Barrel + `ALL_BRIDGE_CLIPS` constant (14 clips) |
 
 ## Related
 
@@ -164,5 +172,5 @@ tranche extends the same surface.
 - Underlying React frame engine: `runtimes/frame-runtime/SKILL.md`
 - Owning tasks: T-061 (this), T-062..T-066 (concrete runtimes),
   T-072 (FontManager), T-083 (CDP dispatcher consumer), T-131b.1
-  (light-tranche reference ports), T-131b.2 (medium-tranche reference
-  ports).
+  / T-131b.2 / T-131b.3 (14 reference-clip ports across three
+  complexity tranches).

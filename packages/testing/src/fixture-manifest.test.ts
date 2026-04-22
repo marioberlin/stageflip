@@ -22,8 +22,8 @@ import {
 const FIXTURES_DIR = fileURLToPath(new URL('../fixtures', import.meta.url));
 
 /** Known clip kinds shipped by the in-tree runtimes (seed: T-067; extended
- *  per runtime port: `gradient-background` landed in T-131a; T-131b.1 added
- *  the light frame-runtime-bridge tranche; T-131b.2 the medium tranche). */
+ *  per runtime port: `gradient-background` landed in T-131a; T-131b.1/2/3
+ *  added the 14 frame-runtime-bridge ports). */
 const KNOWN_KINDS: ReadonlyMap<string, string> = new Map([
   ['solid-background', 'css'],
   ['gradient-background', 'css'],
@@ -33,16 +33,23 @@ const KNOWN_KINDS: ReadonlyMap<string, string> = new Map([
   ['swirl-vortex', 'shader'],
   ['glitch', 'shader'],
   ['three-product-reveal', 'three'],
+  // T-131b.1 light tranche
   ['counter', 'frame-runtime'],
   ['kinetic-text', 'frame-runtime'],
   ['typewriter', 'frame-runtime'],
   ['logo-intro', 'frame-runtime'],
   ['chart-build', 'frame-runtime'],
+  // T-131b.2 medium tranche
   ['subtitle-overlay', 'frame-runtime'],
   ['light-leak', 'frame-runtime'],
   ['pie-chart-build', 'frame-runtime'],
   ['stock-ticker', 'frame-runtime'],
   ['line-chart-draw', 'frame-runtime'],
+  // T-131b.3 heavy tranche
+  ['animated-value', 'frame-runtime'],
+  ['kpi-grid', 'frame-runtime'],
+  ['pull-quote', 'frame-runtime'],
+  ['comparison-table', 'frame-runtime'],
 ]);
 
 function listFixtureFiles(): string[] {

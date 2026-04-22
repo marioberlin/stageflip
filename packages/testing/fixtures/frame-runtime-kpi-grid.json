@@ -1,0 +1,28 @@
+{
+  "name": "frame-runtime-kpi-grid",
+  "runtime": "frame-runtime",
+  "kind": "kpi-grid",
+  "description": "Frame-runtime port of SlideMotion's kpi-grid — spring-staggered KPI cards built on animated-value (T-131b.3).",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 90 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 90,
+    "props": {
+      "cards": [
+        { "value": 1250, "label": "Revenue", "prefix": "$", "suffix": "k", "trend": 12.5 },
+        { "value": 42, "label": "Active users", "suffix": "k", "trend": 3.2 },
+        { "value": 99.95, "label": "Uptime", "suffix": "%", "decimals": 2, "trend": -0.3 }
+      ],
+      "columns": 3,
+      "rows": 2,
+      "title": "Q4 Snapshot"
+    }
+  },
+  "referenceFrames": [0, 45, 89],
+  "thresholds": {
+    "minPsnr": 32,
+    "minSsim": 0.95,
+    "maxFailingFrames": 0
+  },
+  "goldens": { "dir": "goldens/frame-runtime-kpi-grid" }
+}
