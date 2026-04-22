@@ -53,6 +53,11 @@ const KNOWN_KINDS: ReadonlyMap<string, string> = new Map([
   // T-131d (revised) — bridge-eligible portion of lottie/three/shader tier
   ['scene-3d', 'frame-runtime'],
   ['particles', 'frame-runtime'],
+  // T-131f.1 — bridge standalones not covered by b.1/b.2/b.3
+  ['code-block', 'frame-runtime'],
+  ['image-gallery', 'frame-runtime'],
+  ['timeline-milestones', 'frame-runtime'],
+  ['audio-visualizer', 'frame-runtime'],
 ]);
 
 function listFixtureFiles(): string[] {

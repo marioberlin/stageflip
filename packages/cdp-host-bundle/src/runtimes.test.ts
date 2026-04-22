@@ -68,10 +68,10 @@ describe('registerAllLiveRuntimes', () => {
     expect(resolved?.runtime.id).toBe('three');
   });
 
-  it('registers all T-131b/d tranches on the frame-runtime bridge (16 clips)', () => {
+  it('registers all T-131b/d/f.1 tranches on the frame-runtime bridge (20 clips)', () => {
     registerAllLiveRuntimes();
     const bridge = listRuntimes().find((r) => r.id === 'frame-runtime');
-    expect(bridge?.clips.size).toBe(16);
+    expect(bridge?.clips.size).toBe(20);
     const expectedKinds = [
       // b.1 (light)
       'counter',
@@ -93,6 +93,11 @@ describe('registerAllLiveRuntimes', () => {
       // d (revised) — bridge-eligible portion of lottie/three/shader tier
       'scene-3d',
       'particles',
+      // f.1 — bridge standalones
+      'code-block',
+      'image-gallery',
+      'timeline-milestones',
+      'audio-visualizer',
     ];
     for (const kind of expectedKinds) {
       const resolved = findClip(kind);

@@ -127,9 +127,11 @@ export function createFrameRuntimeBridge(
 
 // Re-export demo clips. T-131b.1 light tranche (5) + T-131b.2 medium
 // tranche (5) + T-131b.3 heavy tranche (4) + T-131d bridge-eligible
-// portion of the lottie/three/shader tier (scene-3d, particles).
-// `ALL_BRIDGE_CLIPS` exposes all 16. shader-bg / lottie-player /
-// animated-map are deferred — see plan-row T-131d.
+// portion of the lottie/three/shader tier (2: scene-3d, particles) +
+// T-131f.1 bridge standalones (4: code-block, image-gallery,
+// timeline-milestones, audio-visualizer). `ALL_BRIDGE_CLIPS` exposes
+// all 20. shader-bg / lottie-player / animated-map are deferred — see
+// plan-row T-131d. audio-visualizer's real-audio path is a follow-up.
 export {
   ALL_BRIDGE_CLIPS,
   AnimatedProgressBar,
@@ -140,10 +142,19 @@ export {
   type AnimatedValueProps,
   animatedValueClip,
   animatedValuePropsSchema,
+  AudioVisualizer,
+  type AudioVisualizerProps,
+  audioVisualizerClip,
+  audioVisualizerPropsSchema,
   ChartBuild,
   type ChartBuildProps,
   chartBuildClip,
   chartBuildPropsSchema,
+  CodeBlock,
+  type CodeBlockProps,
+  type CodeLanguage,
+  codeBlockClip,
+  codeBlockPropsSchema,
   ComparisonTable,
   type ComparisonTableProps,
   comparisonTableClip,
@@ -152,6 +163,11 @@ export {
   type CounterProps,
   counterClip,
   counterPropsSchema,
+  generateBars,
+  ImageGallery,
+  type ImageGalleryProps,
+  imageGalleryClip,
+  imageGalleryPropsSchema,
   KineticText,
   type KineticTextProps,
   kineticTextClip,
@@ -197,8 +213,14 @@ export {
   type SubtitleOverlayProps,
   subtitleOverlayClip,
   subtitleOverlayPropsSchema,
+  TimelineMilestones,
+  type TimelineMilestonesProps,
+  timelineMilestonesClip,
+  timelineMilestonesPropsSchema,
+  tokenizeLine,
   TypewriterClip,
   type TypewriterClipProps,
   typewriterClip,
   typewriterClipPropsSchema,
+  type VisualizerStyle,
 } from './clips/index.js';
