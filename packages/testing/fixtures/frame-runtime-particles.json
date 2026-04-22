@@ -1,0 +1,19 @@
+{
+  "name": "frame-runtime-particles",
+  "runtime": "frame-runtime",
+  "kind": "particles",
+  "description": "Frame-runtime port of SlideMotion's particles — confetti/sparkles/snow/rain/bokeh driven by a seeded LCG (no Math.random) (T-131d).",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 60 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 60,
+    "props": { "style": "confetti", "count": 40, "intensity": 0.7, "seed": 42 }
+  },
+  "referenceFrames": [0, 30, 59],
+  "thresholds": {
+    "minPsnr": 30,
+    "minSsim": 0.92,
+    "maxFailingFrames": 1
+  },
+  "goldens": { "dir": "goldens/frame-runtime-particles" }
+}

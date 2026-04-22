@@ -106,6 +106,21 @@ export {
   comparisonTablePropsSchema,
 } from './comparison-table.js';
 
+export {
+  Scene3D,
+  type Scene3DProps,
+  scene3dClip,
+  scene3dPropsSchema,
+} from './scene-3d.js';
+
+export {
+  type ParticleStyle,
+  Particles,
+  type ParticlesProps,
+  particlesClip,
+  particlesPropsSchema,
+} from './particles.js';
+
 import { animatedValueClip } from './animated-value.js';
 import { chartBuildClip } from './chart-build.js';
 import { comparisonTableClip } from './comparison-table.js';
@@ -115,8 +130,10 @@ import { kpiGridClip } from './kpi-grid.js';
 import { lightLeakClip } from './light-leak.js';
 import { lineChartDrawClip } from './line-chart-draw.js';
 import { logoIntroClip } from './logo-intro.js';
+import { particlesClip } from './particles.js';
 import { pieChartBuildClip } from './pie-chart-build.js';
 import { pullQuoteClip } from './pull-quote.js';
+import { scene3dClip } from './scene-3d.js';
 import { stockTickerClip } from './stock-ticker.js';
 import { subtitleOverlayClip } from './subtitle-overlay.js';
 import { typewriterClip } from './typewriter-clip.js';
@@ -146,4 +163,9 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   kpiGridClip,
   pullQuoteClip,
   comparisonTableClip,
+  // T-131d (revised) — bridge-eligible portion of the lottie/three/shader
+  // tier. shader-bg / lottie-player / animated-map deferred to follow-ups
+  // (see plan row).
+  scene3dClip,
+  particlesClip,
 ];

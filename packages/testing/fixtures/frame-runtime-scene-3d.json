@@ -1,0 +1,19 @@
+{
+  "name": "frame-runtime-scene-3d",
+  "runtime": "frame-runtime",
+  "kind": "scene-3d",
+  "description": "Frame-runtime port of SlideMotion's scene-3d — CSS-3D transformed cube/sphere/torus/pyramid (T-131d). Despite the name, this clip uses no three.js or WebGL.",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 90 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 90,
+    "props": { "shape": "cube", "title": "3D Demo", "rotationSpeed": 45 }
+  },
+  "referenceFrames": [0, 45, 89],
+  "thresholds": {
+    "minPsnr": 30,
+    "minSsim": 0.92,
+    "maxFailingFrames": 1
+  },
+  "goldens": { "dir": "goldens/frame-runtime-scene-3d" }
+}
