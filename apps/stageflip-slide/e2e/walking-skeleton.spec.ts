@@ -113,6 +113,34 @@ test('clicking the mode toggle swaps the canvas for the slide player (T-123d)', 
   await expect(page.getByTestId('slide-canvas')).toBeVisible();
 });
 
+test('PropertiesPanel routes between slide / selected element and edits round-trip (T-125a)', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const panel = page.getByTestId('properties-panel');
+  await expect(panel).toBeVisible();
+
+  // No selection → SlideProperties branch visible; element count == 2 for slide-0.
+  await expect(page.getByTestId('slide-properties')).toBeVisible();
+  await expect(page.getByTestId('slide-prop-element-count')).toContainText('2');
+
+  // Click a seeded text element on the canvas — selection flips to SelectedElementProperties.
+  await page.getByTestId('slide-canvas-plane').getByTestId('element-seed-title').click();
+  await expect(page.getByTestId('selected-element-properties')).toBeVisible();
+  await expect(page.getByTestId('properties-panel-subject')).toContainText('text');
+
+  // Commit an X change; the prop-x field round-trips the value back from
+  // the document atom on next render.
+  const x = page.getByTestId('prop-x');
+  await x.fill('250');
+  await x.blur();
+  await expect(page.getByTestId('prop-x')).toHaveValue('250');
+
+  // Mod+Z undoes the transform commit; panel snaps back.
+  await page.keyboard.press('ControlOrMeta+z');
+  await expect(page.getByTestId('prop-x')).toHaveValue('160');
+});
+
 test('AI copilot opens via header toggle, submits a prompt, renders the Phase 7 placeholder (T-128)', async ({
   page,
 }) => {
