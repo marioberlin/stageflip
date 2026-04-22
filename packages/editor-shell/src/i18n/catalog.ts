@@ -158,7 +158,7 @@ const EN_CATALOG = new Map<string, string>([
   ['properties.layer.bottom', 'Btm'],
   ['properties.delete', 'Delete element'],
   ['properties.typeEditors', 'Type editors'],
-  ['properties.typeEditorsStub', 'Chart / Table / Animation / ZodForm arrive in T-125b+c.'],
+  ['properties.typeEditorsStub', 'Chart / Table / Animation editors arrive in T-125c.'],
   ['properties.slide.id', 'ID'],
   ['properties.slide.title', 'Title'],
   ['properties.slide.untitled', 'Untitled'],
@@ -186,6 +186,19 @@ const EN_CATALOG = new Map<string, string>([
   // Single-input dialog
   ['singleInput.cancel', 'Cancel'],
   ['singleInput.save', 'Save'],
+
+  // ZodForm (T-125b)
+  ['zodform.empty', 'No fields to inspect.'],
+  ['zodform.optional', 'optional'],
+  ['zodform.unknownPlaceholder', 'Unsupported type — raw text'],
+  ['zodform.tagPlaceholder', 'Add tag + Enter'],
+  ['zodform.numberListPlaceholder', 'Comma-separated numbers'],
+  ['zodform.colorPickerLabel', 'Color picker'],
+
+  // Clip element properties (T-125b)
+  ['properties.clip.title', 'Clip Props'],
+  ['properties.clip.noSchema', 'This clip does not expose a prop schema.'],
+  ['properties.clip.unknownRuntime', 'Clip not found in any registered runtime.'],
 
   // Status bar
   ['status.elements', 'elements'],

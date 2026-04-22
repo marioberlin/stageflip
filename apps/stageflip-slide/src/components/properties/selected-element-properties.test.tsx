@@ -66,7 +66,7 @@ describe('<SelectedElementProperties> — render', () => {
         <SelectedElementProperties slideId="slide-0" element={element} />
       </Wrapper>,
     );
-    expect(screen.getByTestId('prop-type-placeholder').textContent).toMatch(/T-125b/);
+    expect(screen.getByTestId('prop-type-placeholder').textContent).toMatch(/T-125c/);
   });
 });
 

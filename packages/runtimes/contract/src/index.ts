@@ -17,6 +17,7 @@
 //             in the baked frames. Blender, heavy three compositions.
 
 import type { ReactElement } from 'react';
+import type { ZodType } from 'zod';
 
 /** Rendering tier. `live` runs every frame; `bake` runs once offline. */
 export type RuntimeTier = 'live' | 'bake';
@@ -68,6 +69,15 @@ export interface ClipDefinition<P = unknown> {
   render(ctx: ClipRenderContext<P>): ReactElement | null;
   /** Declare the fonts this clip needs. Optional — defaults to none. */
   fontRequirements?(props: P): FontRequirement[];
+  /**
+   * Optional Zod schema describing the clip's props. Consumed by the editor
+   * auto-inspector (T-125b `<ZodForm>`) and, later, by agent tool plumbing
+   * (Phase 7). When absent, the inspector falls back to a read-only notice
+   * explaining that the clip does not expose a schema. A runtime may ship
+   * some clips with schemas and others without — the field is independent
+   * per clip.
+   */
+  readonly propsSchema?: ZodType<P>;
 }
 
 export interface RuntimePrepareContext {
