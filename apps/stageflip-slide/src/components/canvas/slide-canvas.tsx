@@ -3,10 +3,18 @@
 
 'use client';
 
-import { activeSlideIdAtom, slideByIdAtom, useEditorShellAtomValue } from '@stageflip/editor-shell';
-import type { CSSProperties, ReactElement } from 'react';
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  activeSlideIdAtom,
+  selectedElementIdsAtom,
+  slideByIdAtom,
+  useDocument,
+  useEditorShellAtomValue,
+} from '@stageflip/editor-shell';
+import type { CSSProperties, ReactElement, PointerEvent as ReactPointerEvent } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { CanvasScaleProvider } from './canvas-scale-context';
 import { ElementView } from './element-view';
+import { SelectionOverlay } from './selection-overlay';
 
 /**
  * Slide canvas reference dimensions. Editor coordinates are expressed
@@ -59,23 +67,57 @@ export function SlideCanvas({ viewportSizeForTest }: SlideCanvasProps = {}): Rea
   }, [viewportSizeForTest]);
 
   const scale = computeScale(viewportSize);
+  const selectedIds = useEditorShellAtomValue(selectedElementIdsAtom);
+  const { selectElements, clearSelection } = useDocument();
+
+  const handleElementPointerDown = useCallback(
+    (id: string) => (event: ReactPointerEvent<HTMLElement>) => {
+      event.stopPropagation();
+      selectElements(new Set([id]));
+    },
+    [selectElements],
+  );
+
+  const handlePlanePointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLElement>) => {
+      // Click on the bare plane (not on an element/overlay) clears selection.
+      if (event.target !== event.currentTarget) return;
+      clearSelection();
+    },
+    [clearSelection],
+  );
 
   return (
-    <section
-      ref={viewportRef}
-      data-testid="slide-canvas"
-      data-active-slide-id={slide?.id ?? ''}
-      aria-label="Slide canvas"
-      style={viewportStyle}
-    >
-      <div data-testid="slide-canvas-plane" style={planeStyle(scale)}>
-        {slide ? (
-          slide.elements.map((el) => <ElementView key={el.id} element={el} />)
-        ) : (
-          <EmptyState />
-        )}
-      </div>
-    </section>
+    <CanvasScaleProvider scale={scale}>
+      <section
+        ref={viewportRef}
+        data-testid="slide-canvas"
+        data-active-slide-id={slide?.id ?? ''}
+        aria-label="Slide canvas"
+        style={viewportStyle}
+      >
+        <div
+          data-testid="slide-canvas-plane"
+          style={planeStyle(scale)}
+          onPointerDown={handlePlanePointerDown}
+        >
+          {slide ? (
+            <>
+              {slide.elements.map((el) => (
+                <ElementView
+                  key={el.id}
+                  element={el}
+                  onPointerDown={handleElementPointerDown(el.id)}
+                />
+              ))}
+              <SelectionOverlay selectedIds={selectedIds} />
+            </>
+          ) : (
+            <EmptyState />
+          )}
+        </div>
+      </section>
+    </CanvasScaleProvider>
   );
 }
 

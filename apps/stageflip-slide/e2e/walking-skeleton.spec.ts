@@ -24,6 +24,19 @@ test('app renders the editor shell + slide canvas with seeded elements', async (
   await expect(page.getByTestId('element-seed-subtitle')).toHaveText('Walking skeleton');
 });
 
+test('clicking a seeded element mounts the selection overlay + handles (T-123b)', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByTestId('element-seed-title').click();
+
+  const overlay = page.getByTestId('selection-overlay-seed-title');
+  await expect(overlay).toBeVisible();
+  await expect(page.getByTestId('selection-handle-top-left-seed-title')).toBeVisible();
+  await expect(page.getByTestId('selection-handle-bottom-right-seed-title')).toBeVisible();
+  await expect(page.getByTestId('selection-rotate-seed-title')).toBeVisible();
+});
+
 test('agent execute stub returns a structured 501', async ({ request }) => {
   const response = await request.post('/api/agent/execute', {
     data: { tool: 'noop', args: {} },
