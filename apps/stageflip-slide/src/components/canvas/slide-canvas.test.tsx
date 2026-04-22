@@ -3,7 +3,12 @@
 // when no slide is active, element rendering, and the scale-to-fit
 // computation (via the `viewportSizeForTest` seam).
 
-import { DocumentProvider, useDocument } from '@stageflip/editor-shell';
+import {
+  DocumentProvider,
+  __clearElementByIdCacheForTest,
+  __clearSlideByIdCacheForTest,
+  useDocument,
+} from '@stageflip/editor-shell';
 import type { Document } from '@stageflip/schema';
 import { cleanup, render, screen } from '@testing-library/react';
 import type React from 'react';
@@ -13,6 +18,10 @@ import { CANVAS_HEIGHT, CANVAS_WIDTH, SlideCanvas } from './slide-canvas';
 
 afterEach(() => {
   cleanup();
+  // Isolate the module-scoped atom caches — tests that differ on activate
+  // would otherwise leak cached atoms across cases.
+  __clearSlideByIdCacheForTest();
+  __clearElementByIdCacheForTest();
 });
 
 function makeDoc(): Document {

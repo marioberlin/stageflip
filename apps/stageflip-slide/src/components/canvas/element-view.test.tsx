@@ -146,8 +146,10 @@ describe('ElementView — per-type content', () => {
     expect(inner?.textContent).toMatch(/video/i);
   });
 
-  it('group elements render their children', () => {
-    const child = makeText({ id: 'child-1', text: 'grouped' });
+  it('group elements render every child (not just the first)', () => {
+    const a = makeText({ id: 'child-a', text: 'alpha' });
+    const b = makeText({ id: 'child-b', text: 'beta' });
+    const c = makeText({ id: 'child-c', text: 'gamma' });
     const group: Element = {
       id: 'el-group',
       type: 'group',
@@ -155,11 +157,13 @@ describe('ElementView — per-type content', () => {
       visible: true,
       locked: false,
       animations: [],
-      children: [child],
+      children: [a, b, c],
       clip: false,
     } as Element;
     render(<ElementView element={group} />);
-    expect(screen.getByText('grouped')).toBeTruthy();
+    expect(screen.getByText('alpha')).toBeTruthy();
+    expect(screen.getByText('beta')).toBeTruthy();
+    expect(screen.getByText('gamma')).toBeTruthy();
   });
 
   it('chart/table/clip/embed/code render a type-labelled placeholder', () => {
