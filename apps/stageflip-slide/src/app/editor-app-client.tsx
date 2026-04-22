@@ -5,11 +5,19 @@
 
 'use client';
 
-import { EditorShell, t, useDocument } from '@stageflip/editor-shell';
+import {
+  EditorShell,
+  activeSlideIdAtom,
+  slideByIdAtom,
+  t,
+  useDocument,
+  useEditorShellAtomValue,
+} from '@stageflip/editor-shell';
 import type { Document } from '@stageflip/schema';
 import type { ReactElement } from 'react';
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { SlideCanvas } from '../components/canvas/slide-canvas';
+import { SlidePlayer } from '../components/canvas/slide-player';
 
 // Typed via `satisfies` rather than a blind `as Document` cast so TypeScript
 // still validates the literal against the schema's inferred shape.
@@ -104,21 +112,75 @@ function ActiveSlideHydrator(): null {
 function EditorFrame(): ReactElement {
   const { document: doc } = useDocument();
   const slideCount = doc && doc.content.mode === 'slide' ? doc.content.slides.length : 0;
+  const [mode, setMode] = useState<'edit' | 'preview'>('edit');
 
   return (
     <main data-testid="editor-app" style={mainStyle}>
       <header data-testid="editor-header" style={headerStyle}>
         <span style={{ fontWeight: 600 }}>{doc?.meta.title ?? t('onboarding.welcome')}</span>
-        <span style={{ opacity: 0.6 }}>
-          {slideCount} {t('status.slides')}
-        </span>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <span style={{ opacity: 0.6 }}>
+            {slideCount} {t('status.slides')}
+          </span>
+          <button
+            type="button"
+            data-testid="mode-toggle"
+            data-mode={mode}
+            aria-pressed={mode === 'preview'}
+            onClick={() => setMode((m) => (m === 'edit' ? 'preview' : 'edit'))}
+            style={modeButtonStyle(mode === 'preview')}
+          >
+            {mode === 'edit' ? t('nav.present') : t('nav.edit')}
+          </button>
+        </div>
       </header>
       <section style={canvasFrameStyle} aria-label="Canvas workspace">
-        <SlideCanvas />
+        {mode === 'edit' ? <SlideCanvas /> : <PreviewFrame />}
       </section>
     </main>
   );
 }
+
+function PreviewFrame(): ReactElement | null {
+  const activeSlideId = useEditorShellAtomValue(activeSlideIdAtom);
+  const slideAtom = useMemo(() => slideByIdAtom(activeSlideId), [activeSlideId]);
+  const slide = useEditorShellAtomValue(slideAtom);
+  if (!slide) return null;
+  return (
+    <div style={previewCenterStyle}>
+      <SlidePlayer
+        slide={slide}
+        width={1920}
+        height={1080}
+        fps={30}
+        durationInFrames={60}
+        currentFrame={0}
+      />
+    </div>
+  );
+}
+
+function modeButtonStyle(active: boolean): React.CSSProperties {
+  return {
+    padding: '6px 12px',
+    background: active ? '#81aeff' : 'transparent',
+    color: active ? '#080f15' : '#ebf1fa',
+    border: `1px solid ${active ? '#81aeff' : 'rgba(129,174,255,0.4)'}`,
+    borderRadius: 6,
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: 'pointer',
+  };
+}
+
+const previewCenterStyle: React.CSSProperties = {
+  width: '100%',
+  height: '100%',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  overflow: 'hidden',
+};
 
 const mainStyle: React.CSSProperties = {
   display: 'flex',

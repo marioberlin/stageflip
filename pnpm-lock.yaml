@@ -84,6 +84,9 @@ importers:
       '@stageflip/editor-shell':
         specifier: workspace:*
         version: link:../../packages/editor-shell
+      '@stageflip/frame-runtime':
+        specifier: workspace:*
+        version: link:../../packages/frame-runtime
       '@stageflip/schema':
         specifier: workspace:*
         version: link:../../packages/schema
