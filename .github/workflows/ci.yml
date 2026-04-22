@@ -280,6 +280,14 @@ jobs:
         # path would auto-adapt instead of hard-failing on a stale hard-code.
         env:
           STAGEFLIP_E2E_ARTIFACT_DIR: ${{ runner.temp }}/render-e2e-artifacts
+          # Force screenshot capture on CI. Auto-mode on Linux appends
+          # `--enable-begin-frame-control` to Chrome's launch args;
+          # when the BeginFrame probe then falls back to screenshot,
+          # Chrome is left in a compositor-waiting state that
+          # `page.screenshot()` never satisfies — tests 2 + 3 hang at
+          # 120s. Forcing 'screenshot' skips the launch args AND the
+          # probe, taking the same code path macOS/Windows default to.
+          STAGEFLIP_E2E_CAPTURE_MODE: screenshot
         run: |
           set -euo pipefail
           mkdir -p "$STAGEFLIP_E2E_ARTIFACT_DIR"

@@ -11,6 +11,18 @@
 // When STAGEFLIP_E2E_ARTIFACT_DIR is set to a non-empty path, the
 // rendered MP4s land there instead of a tmpdir and the cleanup step
 // is skipped — CI uses this to upload the outputs as a build artifact.
+//
+// When STAGEFLIP_E2E_CAPTURE_MODE is set to 'screenshot' (valid:
+// 'auto' | 'beginframe' | 'screenshot'), the capture mode is forwarded
+// to the session + the browser factory. On Linux `auto` appends
+// `--enable-begin-frame-control` to Chrome's launch args; if the
+// BeginFrame probe later falls through to screenshot mode, Chrome is
+// left in a compositor-waiting state that `page.screenshot()` never
+// satisfies and subsequent tests hang at capture time. Forcing
+// `screenshot` skips both the launch args and the probe (same path
+// macOS/Windows default to) and restores the hang-free behaviour
+// observed locally. Unknown values are ignored (session falls back
+// to its own default).
 
 import { mkdir, mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -18,12 +30,19 @@ import { join } from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import type { CaptureMode } from './puppeteer-session';
 import { REFERENCE_FIXTURES, type ReferenceFixtureName } from './reference-fixtures';
 import { canRunReferenceRenders, renderReferenceFixture } from './reference-render';
 
 const capability = await canRunReferenceRenders();
 const artifactDir = process.env.STAGEFLIP_E2E_ARTIFACT_DIR;
 const keepArtifacts = artifactDir !== undefined && artifactDir.length > 0;
+
+const envCaptureMode = process.env.STAGEFLIP_E2E_CAPTURE_MODE;
+const captureModeOverride: CaptureMode | undefined =
+  envCaptureMode === 'auto' || envCaptureMode === 'beginframe' || envCaptureMode === 'screenshot'
+    ? envCaptureMode
+    : undefined;
 
 // If we can't run the real thing, skip the whole suite with a clear
 // reason on the vitest output.
@@ -56,6 +75,7 @@ describe.skipIf(!capability.ok)(`reference render e2e (${capability.reason ?? 'r
         ...(capability.chromePath !== null ? { chromePath: capability.chromePath } : {}),
         ...(capability.ffmpegPath !== null ? { ffmpegPath: capability.ffmpegPath } : {}),
         ...(capability.ffprobePath !== null ? { ffprobePath: capability.ffprobePath } : {}),
+        ...(captureModeOverride !== undefined ? { captureMode: captureModeOverride } : {}),
       });
 
       // Exit criterion 1: every frame was rendered.
