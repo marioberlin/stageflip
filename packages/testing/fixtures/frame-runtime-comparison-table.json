@@ -1,0 +1,25 @@
+{
+  "name": "frame-runtime-comparison-table",
+  "runtime": "frame-runtime",
+  "kind": "comparison-table",
+  "description": "Frame-runtime port of SlideMotion's comparison-table — two-column rows slide in from their respective sides (T-131b.3).",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 60 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 60,
+    "props": {
+      "title": "Plan comparison",
+      "leftHeading": "Starter",
+      "rightHeading": "Pro",
+      "leftRows": ["5 projects", "10 GB storage", "Email support"],
+      "rightRows": ["Unlimited projects", "1 TB storage", "Priority support"]
+    }
+  },
+  "referenceFrames": [0, 30, 59],
+  "thresholds": {
+    "minPsnr": 32,
+    "minSsim": 0.95,
+    "maxFailingFrames": 0
+  },
+  "goldens": { "dir": "goldens/frame-runtime-comparison-table" }
+}

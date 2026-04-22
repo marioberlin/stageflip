@@ -74,13 +74,49 @@ export {
   lineChartDrawPropsSchema,
 } from './line-chart-draw.js';
 
+export {
+  AnimatedProgressBar,
+  type AnimatedProgressBarProps,
+  AnimatedProgressRing,
+  type AnimatedProgressRingProps,
+  AnimatedValue,
+  type AnimatedValueProps,
+  animatedValueClip,
+  animatedValuePropsSchema,
+} from './animated-value.js';
+
+export {
+  KpiGrid,
+  type KpiGridProps,
+  kpiGridClip,
+  kpiGridPropsSchema,
+} from './kpi-grid.js';
+
+export {
+  PullQuote,
+  type PullQuoteProps,
+  pullQuoteClip,
+  pullQuotePropsSchema,
+} from './pull-quote.js';
+
+export {
+  ComparisonTable,
+  type ComparisonTableProps,
+  comparisonTableClip,
+  comparisonTablePropsSchema,
+} from './comparison-table.js';
+
+import { animatedValueClip } from './animated-value.js';
 import { chartBuildClip } from './chart-build.js';
+import { comparisonTableClip } from './comparison-table.js';
 import { counterClip } from './counter.js';
 import { kineticTextClip } from './kinetic-text.js';
+import { kpiGridClip } from './kpi-grid.js';
 import { lightLeakClip } from './light-leak.js';
 import { lineChartDrawClip } from './line-chart-draw.js';
 import { logoIntroClip } from './logo-intro.js';
 import { pieChartBuildClip } from './pie-chart-build.js';
+import { pullQuoteClip } from './pull-quote.js';
 import { stockTickerClip } from './stock-ticker.js';
 import { subtitleOverlayClip } from './subtitle-overlay.js';
 import { typewriterClip } from './typewriter-clip.js';
@@ -93,14 +129,21 @@ import type { ClipDefinition } from '@stageflip/runtimes-contract';
  * just means appending here.
  */
 export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
+  // T-131b.1 light tranche
   counterClip,
   kineticTextClip,
   typewriterClip,
   logoIntroClip,
   chartBuildClip,
+  // T-131b.2 medium tranche
   subtitleOverlayClip,
   lightLeakClip,
   pieChartBuildClip,
   stockTickerClip,
   lineChartDrawClip,
+  // T-131b.3 heavy tranche
+  animatedValueClip,
+  kpiGridClip,
+  pullQuoteClip,
+  comparisonTableClip,
 ];

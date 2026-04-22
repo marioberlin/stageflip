@@ -1,0 +1,23 @@
+{
+  "name": "frame-runtime-pull-quote",
+  "runtime": "frame-runtime",
+  "kind": "pull-quote",
+  "description": "Frame-runtime port of SlideMotion's pull-quote — spring-scaled quote mark + typewriter quote body + attribution slide-in (T-131b.3).",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 120 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 120,
+    "props": {
+      "quote": "This product changed the way our team works every single day.",
+      "attributionName": "Jane Doe",
+      "attributionTitle": "VP of Product, Acme Co."
+    }
+  },
+  "referenceFrames": [0, 60, 119],
+  "thresholds": {
+    "minPsnr": 32,
+    "minSsim": 0.95,
+    "maxFailingFrames": 0
+  },
+  "goldens": { "dir": "goldens/frame-runtime-pull-quote" }
+}

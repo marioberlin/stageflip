@@ -68,10 +68,10 @@ describe('registerAllLiveRuntimes', () => {
     expect(resolved?.runtime.id).toBe('three');
   });
 
-  it('registers the T-131b.1 + T-131b.2 tranches on the frame-runtime bridge (10 clips)', () => {
+  it('registers all T-131b tranches on the frame-runtime bridge (14 clips)', () => {
     registerAllLiveRuntimes();
     const bridge = listRuntimes().find((r) => r.id === 'frame-runtime');
-    expect(bridge?.clips.size).toBe(10);
+    expect(bridge?.clips.size).toBe(14);
     const expectedKinds = [
       // b.1 (light)
       'counter',
@@ -85,6 +85,11 @@ describe('registerAllLiveRuntimes', () => {
       'pie-chart-build',
       'stock-ticker',
       'line-chart-draw',
+      // b.3 (heavy)
+      'animated-value',
+      'kpi-grid',
+      'pull-quote',
+      'comparison-table',
     ];
     for (const kind of expectedKinds) {
       const resolved = findClip(kind);

@@ -128,13 +128,26 @@ export function createFrameRuntimeBridge(
 // Re-export demo clips. T-131b.1 light tranche (counter / kinetic-text /
 // typewriter / logo-intro / chart-build) + T-131b.2 medium tranche
 // (subtitle-overlay / light-leak / pie-chart-build / stock-ticker /
-// line-chart-draw). T-131b.3 heavy tranche extends the same barrel.
+// line-chart-draw) + T-131b.3 heavy tranche (animated-value / kpi-grid /
+// pull-quote / comparison-table). `ALL_BRIDGE_CLIPS` exposes all 14.
 export {
   ALL_BRIDGE_CLIPS,
+  AnimatedProgressBar,
+  type AnimatedProgressBarProps,
+  AnimatedProgressRing,
+  type AnimatedProgressRingProps,
+  AnimatedValue,
+  type AnimatedValueProps,
+  animatedValueClip,
+  animatedValuePropsSchema,
   ChartBuild,
   type ChartBuildProps,
   chartBuildClip,
   chartBuildPropsSchema,
+  ComparisonTable,
+  type ComparisonTableProps,
+  comparisonTableClip,
+  comparisonTablePropsSchema,
   Counter,
   type CounterProps,
   counterClip,
@@ -143,6 +156,10 @@ export {
   type KineticTextProps,
   kineticTextClip,
   kineticTextPropsSchema,
+  KpiGrid,
+  type KpiGridProps,
+  kpiGridClip,
+  kpiGridPropsSchema,
   LightLeak,
   type LightLeakProps,
   lightLeakClip,
@@ -159,6 +176,10 @@ export {
   type PieChartBuildProps,
   pieChartBuildClip,
   pieChartBuildPropsSchema,
+  PullQuote,
+  type PullQuoteProps,
+  pullQuoteClip,
+  pullQuotePropsSchema,
   StockTicker,
   type StockTickerProps,
   stockTickerClip,
