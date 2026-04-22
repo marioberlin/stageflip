@@ -12,3 +12,9 @@ export {
   type ParityGoldens,
   type ParityThresholds,
 } from './fixture-manifest.js';
+
+// T-119d — manifest → RIR document converter.
+export {
+  manifestToDocument,
+  type ManifestToDocumentOptions,
+} from './manifest-to-document.js';
