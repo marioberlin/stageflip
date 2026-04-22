@@ -13,11 +13,12 @@ import {
   useDocument,
   useEditorShellAtomValue,
 } from '@stageflip/editor-shell';
-import type { Document } from '@stageflip/schema';
+import type { Document, Slide } from '@stageflip/schema';
 import type { ReactElement } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { SlideCanvas } from '../components/canvas/slide-canvas';
 import { SlidePlayer } from '../components/canvas/slide-player';
+import { TimelinePanel } from '../components/timeline/timeline-panel';
 
 // Typed via `satisfies` rather than a blind `as Document` cast so TypeScript
 // still validates the literal against the schema's inferred shape.
@@ -109,10 +110,17 @@ function ActiveSlideHydrator(): null {
   return null;
 }
 
+const FPS = 30;
+const DURATION_IN_FRAMES = 60;
+
 function EditorFrame(): ReactElement {
   const { document: doc } = useDocument();
   const slideCount = doc && doc.content.mode === 'slide' ? doc.content.slides.length : 0;
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
+  const [currentFrame, setCurrentFrame] = useState<number>(0);
+  const activeSlideId = useEditorShellAtomValue(activeSlideIdAtom);
+  const slideAtom = useMemo(() => slideByIdAtom(activeSlideId), [activeSlideId]);
+  const slide = useEditorShellAtomValue(slideAtom);
 
   return (
     <main data-testid="editor-app" style={mainStyle}>
@@ -135,16 +143,38 @@ function EditorFrame(): ReactElement {
         </div>
       </header>
       <section style={canvasFrameStyle} aria-label="Canvas workspace">
-        {mode === 'edit' ? <SlideCanvas /> : <PreviewFrame />}
+        {mode === 'edit' ? (
+          <SlideCanvas />
+        ) : (
+          <PreviewFrame
+            slide={slide ?? null}
+            currentFrame={currentFrame}
+            onFrame={setCurrentFrame}
+          />
+        )}
       </section>
+      {slide ? (
+        <TimelinePanel
+          slide={slide}
+          fps={FPS}
+          durationInFrames={DURATION_IN_FRAMES}
+          currentFrame={currentFrame}
+          onCurrentFrameChange={setCurrentFrame}
+        />
+      ) : null}
     </main>
   );
 }
 
-function PreviewFrame(): ReactElement | null {
-  const activeSlideId = useEditorShellAtomValue(activeSlideIdAtom);
-  const slideAtom = useMemo(() => slideByIdAtom(activeSlideId), [activeSlideId]);
-  const slide = useEditorShellAtomValue(slideAtom);
+function PreviewFrame({
+  slide,
+  currentFrame,
+  onFrame,
+}: {
+  slide: Slide | null;
+  currentFrame: number;
+  onFrame: (frame: number) => void;
+}): ReactElement | null {
   if (!slide) return null;
   return (
     <div style={previewCenterStyle}>
@@ -152,9 +182,10 @@ function PreviewFrame(): ReactElement | null {
         slide={slide}
         width={1920}
         height={1080}
-        fps={30}
-        durationInFrames={60}
-        currentFrame={0}
+        fps={FPS}
+        durationInFrames={DURATION_IN_FRAMES}
+        currentFrame={currentFrame}
+        onFrameChange={onFrame}
       />
     </div>
   );
