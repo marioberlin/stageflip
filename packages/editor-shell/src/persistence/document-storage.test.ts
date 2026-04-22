@@ -87,6 +87,19 @@ describe('clearDocument', () => {
   });
 });
 
+describe('saveDocument return value', () => {
+  it('returns true on a successful write', () => {
+    expect(saveDocument('doc-1', 'A', { title: 'T', slideCount: 1 })).toBe(true);
+  });
+
+  it('returns false when localStorage.setItem throws (quota exceeded, etc.)', () => {
+    vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+      throw new Error('QuotaExceededError');
+    });
+    expect(saveDocument('doc-1', 'A', { title: 'T', slideCount: 1 })).toBe(false);
+  });
+});
+
 describe('graceful degradation', () => {
   beforeEach(() => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {

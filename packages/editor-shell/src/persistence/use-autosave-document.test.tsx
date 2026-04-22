@@ -137,6 +137,65 @@ describe('useAutosaveDocument', () => {
     expect(countDocWrites(setItem)).toBe(0);
   });
 
+  it('tolerates an unstable `serialize` reference without re-running the effect every render', () => {
+    // Regression guard: before the ref fix, including `serialize` in the
+    // effect deps would cause every render to cancel + reschedule the
+    // debounce timer. This test renders with an inline arrow (brand-new
+    // identity every render), then triggers extra renders via a state
+    // bump, then confirms the initial save fires exactly once on the
+    // first schedule — ignoring the churn.
+    const doc = makeSlideDoc({ slideCount: 1 });
+    function Bump({ tick }: { tick: number }): null {
+      useAutosaveDocument({
+        delayMs: 100,
+        // Unstable identity on every render.
+        serialize: (d) => `serialized-${tick}-${JSON.stringify(d)}`,
+      });
+      return null;
+    }
+    const { rerender } = render(
+      <DocumentProvider initialDocument={doc}>
+        <Bump tick={0} />
+      </DocumentProvider>,
+    );
+    // Three extra renders in the first 90ms; each supplies a new
+    // `serialize` identity. A naive impl re-schedules on each; the ref
+    // impl ignores identity.
+    act(() => {
+      vi.advanceTimersByTime(30);
+    });
+    rerender(
+      <DocumentProvider initialDocument={doc}>
+        <Bump tick={1} />
+      </DocumentProvider>,
+    );
+    act(() => {
+      vi.advanceTimersByTime(30);
+    });
+    rerender(
+      <DocumentProvider initialDocument={doc}>
+        <Bump tick={2} />
+      </DocumentProvider>,
+    );
+    act(() => {
+      vi.advanceTimersByTime(30);
+    });
+    rerender(
+      <DocumentProvider initialDocument={doc}>
+        <Bump tick={3} />
+      </DocumentProvider>,
+    );
+    // Elapsed 90ms since mount. The initial timer is ~10ms away.
+    act(() => {
+      vi.advanceTimersByTime(20);
+    });
+    // With the ref impl, the initial save has fired with the LATEST
+    // serialize identity seen (tick=3). With the old deps-based impl,
+    // the timer would have been reset three times; no save yet.
+    const stored = loadDocumentSerialized(doc.meta.id);
+    expect(stored).toBe(`serialized-3-${JSON.stringify(doc)}`);
+  });
+
   it('uses a custom serializer when provided', () => {
     const doc = makeSlideDoc({ slideCount: 1 });
     const serialize = vi.fn().mockReturnValue('custom-payload');

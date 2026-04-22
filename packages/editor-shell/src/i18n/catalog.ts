@@ -14,6 +14,17 @@
  * locale becomes a real product requirement, swap this module for a
  * proper i18n lib — the `t('key')` call sites don't change.
  *
+ * Concurrency
+ * -----------
+ * The active locale is a module-scoped `let` — process-global. Two
+ * `<EditorShell>` instances mounted concurrently share one locale:
+ * calling `setLocale('pseudo')` from either shell flips every
+ * consumer. The rare concurrent-shell case (main editor + preview
+ * modal) is not currently in scope for Phase 6 and this simpler shape
+ * keeps the surface thin. If concurrent locale isolation becomes a
+ * product requirement, migrate the active locale into a React
+ * context; the `t()` call sites do not change.
+ *
  * Pseudo-localization
  * -------------------
  * `setLocale('pseudo')` renders `⟦key⟧` at every call site so

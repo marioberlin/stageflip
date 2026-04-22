@@ -51,29 +51,39 @@ function storage(): Storage | undefined {
   return candidate;
 }
 
-/** Persist a document (pre-serialized — no schema validation here) under
- * its id, then refresh the recent-documents index. */
+/**
+ * Persist a document (pre-serialized — no schema validation here) under
+ * its id, then refresh the recent-documents index. Returns `true` iff
+ * the doc slot was written; `false` indicates a swallowed error (SSR,
+ * Safari private browsing, `QuotaExceededError`, etc.). The recent-
+ * index update is best-effort: its failure does NOT flip the return.
+ *
+ * Consumers that surface "Saved" UI (status bar, toast) should branch
+ * on the return value so users don't see stale success indicators
+ * after a quota-exceeded write.
+ */
 export function saveDocument(
   docId: string,
   serialized: string,
   recentMeta?: Omit<RecentDocumentEntry, 'id' | 'savedAtIso'> & { savedAtIso?: string },
-): void {
+): boolean {
   const store = storage();
-  if (!store) return;
+  if (!store) return false;
   try {
     store.setItem(docKeyFor(docId), serialized);
-    if (recentMeta) {
-      const iso = recentMeta.savedAtIso ?? new Date().toISOString();
-      touchRecentEntry({
-        id: docId,
-        title: recentMeta.title,
-        slideCount: recentMeta.slideCount,
-        savedAtIso: iso,
-      });
-    }
   } catch {
-    // localStorage full, unavailable, or SSR — degrade silently.
+    return false;
   }
+  if (recentMeta) {
+    const iso = recentMeta.savedAtIso ?? new Date().toISOString();
+    touchRecentEntry({
+      id: docId,
+      title: recentMeta.title,
+      slideCount: recentMeta.slideCount,
+      savedAtIso: iso,
+    });
+  }
+  return true;
 }
 
 /** Read the raw JSON string for a document, or `null` if absent /

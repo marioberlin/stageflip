@@ -34,7 +34,7 @@
  */
 
 import type { Document } from '@stageflip/schema';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useDocument } from '../context/document-context';
 import { saveDocument } from './document-storage';
 
@@ -53,12 +53,21 @@ export function useAutosaveDocument(options: AutosaveOptions = {}): void {
   const { document: doc } = useDocument();
   const { delayMs = DEFAULT_DELAY_MS, serialize = JSON.stringify, enabled = true } = options;
 
+  // Stabilize the serializer reference. Callers that pass an inline arrow
+  // function would otherwise produce a new identity every render, resetting
+  // the effect's debounce timer on every render and defeating the whole
+  // point of debouncing. Storing the latest function in a ref lets the
+  // scheduled callback call through to the current value without depending
+  // on its identity in the effect deps.
+  const serializeRef = useRef(serialize);
+  serializeRef.current = serialize;
+
   useEffect(() => {
     if (!enabled) return;
     if (!doc) return;
     const handle = setTimeout(() => {
       const slideCount = doc.content.mode === 'slide' ? doc.content.slides.length : 0;
-      saveDocument(doc.meta.id, serialize(doc), {
+      saveDocument(doc.meta.id, serializeRef.current(doc), {
         title: doc.meta.title ?? '',
         slideCount,
       });
@@ -66,5 +75,5 @@ export function useAutosaveDocument(options: AutosaveOptions = {}): void {
     return () => {
       clearTimeout(handle);
     };
-  }, [doc, delayMs, serialize, enabled]);
+  }, [doc, delayMs, enabled]);
 }
