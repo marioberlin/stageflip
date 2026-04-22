@@ -191,6 +191,121 @@ jobs:
           path: playwright-report
           retention-days: 7
 
+  render-e2e:
+    name: render-e2e (reference-render against real Chrome + ffmpeg)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Path-filtered the same way as `parity`: only runs when a
+    # rendering-adjacent file changed. On ubuntu-latest Google Chrome
+    # is pre-installed at /usr/bin/google-chrome (matches the first
+    # Linux candidate in reference-render.ts::findChrome). We add
+    # ffmpeg via apt, point PUPPETEER_EXECUTABLE_PATH at the system
+    # Chrome for belt-and-suspenders, and run ONLY the e2e file
+    # (unit suites already ran in `verify`). On success the 3 MP4s
+    # are uploaded as a build artifact so operators can inspect the
+    # real render output without re-running the job locally —
+    # resolves handover-phase5 §6.2 (no CI infra for Chrome + ffmpeg).
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Detect rendering-adjacent changes
+        id: changed
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            rendering:
+              - 'packages/parity/**'
+              - 'packages/parity-cli/**'
+              - 'packages/renderer-cdp/**'
+              - 'packages/cdp-host-bundle/**'
+              - 'packages/frame-runtime/**'
+              - 'packages/rir/**'
+              - 'packages/schema/**'
+              - 'packages/fonts/**'
+              - 'packages/runtimes/**'
+              - 'packages/testing/**'
+              - '.github/workflows/ci.yml'
+
+      - name: Setup pnpm
+        if: steps.changed.outputs.rendering == 'true'
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node ${{ env.NODE_VERSION }}
+        if: steps.changed.outputs.rendering == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install ffmpeg + ffprobe
+        if: steps.changed.outputs.rendering == 'true'
+        # ubuntu-latest ships Chrome at /usr/bin/google-chrome already;
+        # only ffmpeg (which also provides ffprobe) is missing.
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
+          /usr/bin/google-chrome --version
+
+      - name: Install dependencies (frozen lockfile)
+        if: steps.changed.outputs.rendering == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Build workspace (vitest resolves workspace deps via their dist/)
+        if: steps.changed.outputs.rendering == 'true'
+        # The e2e file imports renderer-cdp/src/dispatch.ts which imports
+        # @stageflip/runtimes-contract — a sibling workspace package whose
+        # package.json "exports" point at dist/*.js. When vitest runs
+        # outside turbo (as we do here to target a single file) those
+        # dist/ outputs don't exist yet, so vite's resolver fails with
+        # "Failed to resolve entry for package @stageflip/runtimes-contract".
+        # Building up-front is the minimal fix; turbo caches so repeat
+        # runs are cheap.
+        run: pnpm build
+
+      - name: Run reference-render e2e (real Chrome + real ffmpeg + real ffprobe)
+        if: steps.changed.outputs.rendering == 'true'
+        # STAGEFLIP_E2E_ARTIFACT_DIR tells the test to emit MP4s into a
+        # stable path and skip the tmpdir cleanup, so the upload step
+        # below can pick them up.
+        #
+        # We deliberately do NOT set PUPPETEER_EXECUTABLE_PATH — findChrome()
+        # in reference-render.ts already probes /usr/bin/google-chrome as
+        # its first Linux candidate, and letting it do its own detection
+        # means a future runner image flipping to Chromium at a different
+        # path would auto-adapt instead of hard-failing on a stale hard-code.
+        env:
+          STAGEFLIP_E2E_ARTIFACT_DIR: ${{ runner.temp }}/render-e2e-artifacts
+          # Force screenshot capture on CI. Auto-mode on Linux appends
+          # `--enable-begin-frame-control` to Chrome's launch args;
+          # when the BeginFrame probe then falls back to screenshot,
+          # Chrome is left in a compositor-waiting state that
+          # `page.screenshot()` never satisfies — tests 2 + 3 hang at
+          # 120s. Forcing 'screenshot' skips the launch args AND the
+          # probe, taking the same code path macOS/Windows default to.
+          STAGEFLIP_E2E_CAPTURE_MODE: screenshot
+        run: |
+          set -euo pipefail
+          mkdir -p "$STAGEFLIP_E2E_ARTIFACT_DIR"
+          pnpm --filter @stageflip/renderer-cdp exec vitest run src/reference-render.e2e.test.ts
+
+      - name: Upload rendered MP4 artifacts
+        if: steps.changed.outputs.rendering == 'true' && (success() || failure())
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-e2e-mp4s
+          path: ${{ runner.temp }}/render-e2e-artifacts/
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Skip reason
+        if: steps.changed.outputs.rendering != 'true'
+        run: echo "Skipped — no rendering-adjacent files changed in this PR."
+
   changesets:
     name: changeset present (on PR)
     if: github.event_name == 'pull_request'

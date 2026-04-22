@@ -23,6 +23,7 @@ import { FFmpegEncoder, type FFmpegEncoderOptions } from './ffmpeg-encoder';
 import { type FfprobeReport, ffprobe } from './ffprobe';
 import {
   type BrowserFactory,
+  type CaptureMode,
   PuppeteerCdpSession,
   createPuppeteerBrowserFactory,
 } from './puppeteer-session';
@@ -37,6 +38,16 @@ export interface RenderReferenceFixtureOptions {
   readonly ffprobePath?: string;
   /** Override the browser factory (tests). Default: launches real Chrome. */
   readonly browserFactory?: BrowserFactory;
+  /**
+   * CaptureMode override forwarded to BOTH the browser factory (decides
+   * launch args) AND the session (decides per-frame capture path).
+   * Defaults to session's own default (`'auto'`). Setting this to
+   * `'screenshot'` explicitly is how CI sidesteps the Linux+auto
+   * BeginFrame hang: Chrome launches without
+   * `--enable-begin-frame-control` and the session never probes for
+   * BeginFrame, keeping the compositor in its default state.
+   */
+  readonly captureMode?: CaptureMode;
 }
 
 export interface RenderReferenceFixtureResult {
@@ -55,10 +66,14 @@ export async function renderReferenceFixture(
 ): Promise<RenderReferenceFixtureResult> {
   const browserFactory =
     opts.browserFactory ??
-    createPuppeteerBrowserFactory(
-      opts.chromePath !== undefined ? { executablePath: opts.chromePath } : {},
-    );
-  const session = new PuppeteerCdpSession({ browserFactory });
+    createPuppeteerBrowserFactory({
+      ...(opts.chromePath !== undefined ? { executablePath: opts.chromePath } : {}),
+      ...(opts.captureMode !== undefined ? { captureMode: opts.captureMode } : {}),
+    });
+  const session = new PuppeteerCdpSession({
+    browserFactory,
+    ...(opts.captureMode !== undefined ? { captureMode: opts.captureMode } : {}),
+  });
   const encoder = FFmpegEncoder.create({
     outputPath: opts.outputPath,
     width: opts.document.width,

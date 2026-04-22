@@ -5,19 +5,44 @@
 //   - installing Chrome/Chromium at a standard path OR setting
 //     PUPPETEER_EXECUTABLE_PATH=/path/to/chromium;
 //   - having `ffmpeg` + `ffprobe` on PATH.
-// CI wires these via a dedicated e2e job; `pnpm test` on a bare host
-// runs only the unit + stub suites.
+// CI wires these via the `render-e2e` job (T-119); `pnpm test` on a
+// bare host runs only the unit + stub suites.
+//
+// When STAGEFLIP_E2E_ARTIFACT_DIR is set to a non-empty path, the
+// rendered MP4s land there instead of a tmpdir and the cleanup step
+// is skipped — CI uses this to upload the outputs as a build artifact.
+//
+// When STAGEFLIP_E2E_CAPTURE_MODE is set to 'screenshot' (valid:
+// 'auto' | 'beginframe' | 'screenshot'), the capture mode is forwarded
+// to the session + the browser factory. On Linux `auto` appends
+// `--enable-begin-frame-control` to Chrome's launch args; if the
+// BeginFrame probe later falls through to screenshot mode, Chrome is
+// left in a compositor-waiting state that `page.screenshot()` never
+// satisfies and subsequent tests hang at capture time. Forcing
+// `screenshot` skips both the launch args and the probe (same path
+// macOS/Windows default to) and restores the hang-free behaviour
+// observed locally. Unknown values are ignored (session falls back
+// to its own default).
 
-import { mkdtemp, rm, stat } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import type { CaptureMode } from './puppeteer-session';
 import { REFERENCE_FIXTURES, type ReferenceFixtureName } from './reference-fixtures';
 import { canRunReferenceRenders, renderReferenceFixture } from './reference-render';
 
 const capability = await canRunReferenceRenders();
+const artifactDir = process.env.STAGEFLIP_E2E_ARTIFACT_DIR;
+const keepArtifacts = artifactDir !== undefined && artifactDir.length > 0;
+
+const envCaptureMode = process.env.STAGEFLIP_E2E_CAPTURE_MODE;
+const captureModeOverride: CaptureMode | undefined =
+  envCaptureMode === 'auto' || envCaptureMode === 'beginframe' || envCaptureMode === 'screenshot'
+    ? envCaptureMode
+    : undefined;
 
 // If we can't run the real thing, skip the whole suite with a clear
 // reason on the vitest output.
@@ -25,11 +50,18 @@ describe.skipIf(!capability.ok)(`reference render e2e (${capability.reason ?? 'r
   let workDir: string;
 
   beforeAll(async () => {
-    workDir = await mkdtemp(join(tmpdir(), 'stageflip-t090-e2e-'));
+    if (keepArtifacts) {
+      workDir = artifactDir as string;
+      await mkdir(workDir, { recursive: true });
+    } else {
+      workDir = await mkdtemp(join(tmpdir(), 'stageflip-t090-e2e-'));
+    }
   });
 
   afterAll(async () => {
-    await rm(workDir, { recursive: true, force: true });
+    if (!keepArtifacts) {
+      await rm(workDir, { recursive: true, force: true });
+    }
   });
 
   for (const name of Object.keys(REFERENCE_FIXTURES) as readonly ReferenceFixtureName[]) {
@@ -43,6 +75,7 @@ describe.skipIf(!capability.ok)(`reference render e2e (${capability.reason ?? 'r
         ...(capability.chromePath !== null ? { chromePath: capability.chromePath } : {}),
         ...(capability.ffmpegPath !== null ? { ffmpegPath: capability.ffmpegPath } : {}),
         ...(capability.ffprobePath !== null ? { ffprobePath: capability.ffprobePath } : {}),
+        ...(captureModeOverride !== undefined ? { captureMode: captureModeOverride } : {}),
       });
 
       // Exit criterion 1: every frame was rendered.
@@ -68,6 +101,12 @@ describe.skipIf(!capability.ok)(`reference render e2e (${capability.reason ?? 'r
       const tolerance = 1 / doc.frameRate;
       expect(probe.format.durationSec ?? 0).toBeGreaterThan(expectedSec - tolerance);
       expect(probe.format.durationSec ?? 0).toBeLessThan(expectedSec + tolerance);
-    }, 60_000);
+    }, 120_000);
+    // 120s per test — each case launches its own puppeteer browser via
+    // renderReferenceFixture, and cold-start Chrome on GitHub-hosted
+    // ubuntu-latest (especially for the 2nd + 3rd tests, which don't
+    // benefit from the OS-level binary caching the 1st test warmed)
+    // comfortably exceeds the previous 60s budget. Laptop runs stay
+    // well under the new ceiling (~1s per test after warm-up).
   }
 });
