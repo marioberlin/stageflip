@@ -8,7 +8,7 @@ import {
   useDocument,
 } from '@stageflip/editor-shell';
 import type { Document, Element, Slide } from '@stageflip/schema';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type React from 'react';
 import { useEffect } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -258,5 +258,118 @@ describe('<SelectionOverlay> — rotation gesture', () => {
     const f = last(snapshots);
     expect(f.rotation).toBeGreaterThanOrEqual(0);
     expect(f.rotation).toBeLessThan(360);
+  });
+});
+
+// T-133a: each gesture coalesces its per-frame updates into one undo entry.
+
+function UndoProbe({
+  onSnapshot,
+}: {
+  onSnapshot: (snapshot: ReturnType<typeof useDocument>) => void;
+}): null {
+  const snapshot = useDocument();
+  onSnapshot(snapshot);
+  return null;
+}
+
+describe('<SelectionOverlay> — T-133a drag coalescing', () => {
+  it('a multi-move drag lands exactly one undo entry', () => {
+    const snapshots: TransformSnapshot[] = [];
+    let latest = null as ReturnType<typeof useDocument> | null;
+    render(
+      <DocumentProvider initialDocument={makeDoc()}>
+        <Selector ids={['target']} />
+        <Peek onSnapshot={(s) => snapshots.push(s)} targetId="target" />
+        <UndoProbe
+          onSnapshot={(s) => {
+            latest = s;
+          }}
+        />
+        <CanvasScaleProvider scale={1}>
+          <SelectionOverlay selectedIds={new Set(['target'])} />
+        </CanvasScaleProvider>
+      </DocumentProvider>,
+    );
+    const body = screen.getByTestId('selection-move-target');
+    fireEvent.pointerDown(body, { pointerId: 10, clientX: 100, clientY: 100 });
+    // Fire many intermediate pointermoves — without coalescing each would
+    // push a MicroUndo.
+    for (let i = 1; i <= 10; i += 1) {
+      fireEvent.pointerMove(body, { pointerId: 10, clientX: 100 + i * 5, clientY: 100 + i * 3 });
+    }
+    // In-flight: no undo entry yet (transaction open).
+    expect(latest?.canUndo).toBe(false);
+    expect(latest?.inTransaction).toBe(true);
+
+    fireEvent.pointerUp(body, { pointerId: 10, clientX: 150, clientY: 130 });
+
+    // One entry for the whole drag.
+    expect(latest?.inTransaction).toBe(false);
+    expect(latest?.canUndo).toBe(true);
+    let popped = 0;
+    while (latest?.popUndoEntry()) popped += 1;
+    expect(popped).toBe(1);
+  });
+
+  it('undoing a drag rolls back to the pre-gesture transform', () => {
+    const snapshots: TransformSnapshot[] = [];
+    let latest = null as ReturnType<typeof useDocument> | null;
+    render(
+      <DocumentProvider initialDocument={makeDoc()}>
+        <Selector ids={['target']} />
+        <Peek onSnapshot={(s) => snapshots.push(s)} targetId="target" />
+        <UndoProbe
+          onSnapshot={(s) => {
+            latest = s;
+          }}
+        />
+        <CanvasScaleProvider scale={1}>
+          <SelectionOverlay selectedIds={new Set(['target'])} />
+        </CanvasScaleProvider>
+      </DocumentProvider>,
+    );
+    const body = screen.getByTestId('selection-move-target');
+    fireEvent.pointerDown(body, { pointerId: 11, clientX: 0, clientY: 0 });
+    fireEvent.pointerMove(body, { pointerId: 11, clientX: 50, clientY: 50 });
+    fireEvent.pointerMove(body, { pointerId: 11, clientX: 300, clientY: 200 });
+    fireEvent.pointerUp(body, { pointerId: 11, clientX: 300, clientY: 200 });
+    expect(last(snapshots).x).toBe(400);
+    act(() => {
+      latest?.undo();
+    });
+    // After undo the element sits at its original transform (x=100).
+    const doc = latest?.document;
+    if (doc?.content.mode !== 'slide') throw new Error('expected slide');
+    const el = doc.content.slides[0]?.elements.find((e) => e.id === 'target');
+    expect(el?.transform.x).toBe(100);
+    expect(el?.transform.y).toBe(100);
+  });
+
+  it('pointercancel reverts the element to its pre-drag transform (no undo entry)', () => {
+    let latest = null as ReturnType<typeof useDocument> | null;
+    render(
+      <DocumentProvider initialDocument={makeDoc()}>
+        <Selector ids={['target']} />
+        <UndoProbe
+          onSnapshot={(s) => {
+            latest = s;
+          }}
+        />
+        <CanvasScaleProvider scale={1}>
+          <SelectionOverlay selectedIds={new Set(['target'])} />
+        </CanvasScaleProvider>
+      </DocumentProvider>,
+    );
+    const body = screen.getByTestId('selection-move-target');
+    fireEvent.pointerDown(body, { pointerId: 12, clientX: 0, clientY: 0 });
+    fireEvent.pointerMove(body, { pointerId: 12, clientX: 500, clientY: 500 });
+    fireEvent.pointerCancel(body, { pointerId: 12, clientX: 500, clientY: 500 });
+    const doc = latest?.document;
+    if (doc?.content.mode !== 'slide') throw new Error('expected slide');
+    const el = doc.content.slides[0]?.elements.find((e) => e.id === 'target');
+    expect(el?.transform.x).toBe(100);
+    expect(el?.transform.y).toBe(100);
+    expect(latest?.canUndo).toBe(false);
   });
 });

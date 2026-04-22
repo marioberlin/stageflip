@@ -23,8 +23,11 @@ import { useCanvasScale } from './canvas-scale-context';
  * straight copy of `transform`. Pointer-move deltas come in client-space
  * and are divided by the active canvas scale to re-enter canvas-space.
  *
- * Mutations: committed via `useDocument().updateDocument(...)`. History
- * capture (undo entries per gesture) lands with T-133.
+ * Mutations: committed via `useDocument().updateDocument(...)`. Each
+ * pointer gesture (move/resize/rotate) wraps its per-frame updates in a
+ * T-133a transaction so the history records one undo entry for the
+ * whole gesture rather than one per move event (~100+ without coalescing).
+ * Pointer cancel cancels the transaction and snaps the element back.
  */
 
 type Handle =
@@ -88,7 +91,7 @@ interface ElementOverlayProps {
 function ElementOverlay({ elementId, onDoubleClick }: ElementOverlayProps): ReactElement | null {
   const atom = useMemo(() => elementByIdAtom(elementId), [elementId]);
   const element = useEditorShellAtomValue(atom);
-  const { updateDocument } = useDocument();
+  const { updateDocument, beginTransaction, commitTransaction, cancelTransaction } = useDocument();
   const scale = useCanvasScale();
   const gestureRef = useRef<ActiveGesture | null>(null);
 
@@ -114,8 +117,11 @@ function ElementOverlay({ elementId, onDoubleClick }: ElementOverlayProps): Reac
         startTransform: { ...element.transform },
         rotateAnchorDeg: computePointerAngle(event, element.transform),
       };
+      // Open a coalescing transaction so every pointer-move below applies
+      // to the atom but feeds into a single undo entry at pointerup.
+      beginTransaction(`selection-${kind}`);
     },
-    [element, elementId],
+    [element, elementId, beginTransaction],
   );
 
   const handlePointerMove = useCallback(
@@ -130,16 +136,33 @@ function ElementOverlay({ elementId, onDoubleClick }: ElementOverlayProps): Reac
     [commit, scale],
   );
 
-  const handlePointerUp = useCallback((event: ReactPointerEvent<HTMLElement>) => {
-    const g = gestureRef.current;
-    // Only react to the pointer that owns the active gesture. A second
-    // concurrent pointer on a different handle (rare but possible on
-    // multitouch) would otherwise null the first gesture's state and
-    // leak its capture.
-    if (!g || g.pointerId !== event.pointerId) return;
-    event.currentTarget.releasePointerCapture(g.pointerId);
-    gestureRef.current = null;
-  }, []);
+  const handlePointerUp = useCallback(
+    (event: ReactPointerEvent<HTMLElement>) => {
+      const g = gestureRef.current;
+      // Only react to the pointer that owns the active gesture. A second
+      // concurrent pointer on a different handle (rare but possible on
+      // multitouch) would otherwise null the first gesture's state and
+      // leak its capture.
+      if (!g || g.pointerId !== event.pointerId) return;
+      event.currentTarget.releasePointerCapture(g.pointerId);
+      gestureRef.current = null;
+      commitTransaction();
+    },
+    [commitTransaction],
+  );
+
+  const handlePointerCancel = useCallback(
+    (event: ReactPointerEvent<HTMLElement>) => {
+      const g = gestureRef.current;
+      if (!g || g.pointerId !== event.pointerId) return;
+      event.currentTarget.releasePointerCapture(g.pointerId);
+      gestureRef.current = null;
+      // Cancel restores the element to its pre-drag transform and drops
+      // the in-flight patches — no undo entry recorded.
+      cancelTransaction();
+    },
+    [cancelTransaction],
+  );
 
   if (!element) return null;
 
@@ -171,7 +194,7 @@ function ElementOverlay({ elementId, onDoubleClick }: ElementOverlayProps): Reac
         onPointerDown={handlePointerDown('move')}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
         onDoubleClick={() => onDoubleClick?.(elementId)}
       />
 
@@ -221,7 +244,7 @@ function ElementOverlay({ elementId, onDoubleClick }: ElementOverlayProps): Reac
           onPointerDown={handlePointerDown(handle)}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
+          onPointerCancel={handlePointerCancel}
         />
       ))}
 
@@ -234,7 +257,7 @@ function ElementOverlay({ elementId, onDoubleClick }: ElementOverlayProps): Reac
         onPointerDown={handlePointerDown('rotate')}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
       />
     </div>
   );

@@ -31,10 +31,13 @@ export {
 } from './atoms/selection';
 export {
   MAX_MICRO_UNDO,
+  type ActiveTransaction,
   type MicroUndo,
   canRedoAtom,
   canUndoAtom,
+  inTransactionAtom,
   redoStackAtom,
+  transactionAtom,
   undoStackAtom,
 } from './atoms/undo';
 export { AuthProvider, useAuth } from './context/auth-context';
