@@ -7,17 +7,20 @@
 
 import {
   EditorShell,
+  type Shortcut,
   activeSlideIdAtom,
   slideByIdAtom,
   t,
   useDocument,
   useEditorShellAtomValue,
+  useRegisterShortcuts,
 } from '@stageflip/editor-shell';
 import type { Document, Slide } from '@stageflip/schema';
 import type { ReactElement } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SlideCanvas } from '../components/canvas/slide-canvas';
 import { SlidePlayer } from '../components/canvas/slide-player';
+import { CommandPalette } from '../components/command-palette/command-palette';
 import { Filmstrip } from '../components/filmstrip/filmstrip';
 import { TimelinePanel } from '../components/timeline/timeline-panel';
 
@@ -143,9 +146,29 @@ function EditorFrame(): ReactElement {
   const slideCount = doc && doc.content.mode === 'slide' ? doc.content.slides.length : 0;
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const [currentFrame, setCurrentFrame] = useState<number>(0);
+  const [paletteOpen, setPaletteOpen] = useState<boolean>(false);
   const activeSlideId = useEditorShellAtomValue(activeSlideIdAtom);
   const slideAtom = useMemo(() => slideByIdAtom(activeSlideId), [activeSlideId]);
   const slide = useEditorShellAtomValue(slideAtom);
+  const openPalette = useCallback(() => setPaletteOpen(true), []);
+  const closePalette = useCallback(() => setPaletteOpen(false), []);
+
+  const shortcuts = useMemo<Shortcut[]>(
+    () => [
+      {
+        id: 'help.command-palette',
+        combo: 'Mod+K',
+        description: 'Open command palette',
+        category: 'help',
+        handler: () => {
+          openPalette();
+          return undefined;
+        },
+      },
+    ],
+    [openPalette],
+  );
+  useRegisterShortcuts(shortcuts);
 
   return (
     <main data-testid="editor-app" style={mainStyle}>
@@ -155,6 +178,14 @@ function EditorFrame(): ReactElement {
           <span style={{ opacity: 0.6 }}>
             {slideCount} {t('status.slides')}
           </span>
+          <button
+            type="button"
+            data-testid="palette-open"
+            onClick={openPalette}
+            style={paletteButtonStyle}
+          >
+            {t('commandPalette.placeholder')}
+          </button>
           <button
             type="button"
             data-testid="mode-toggle"
@@ -190,9 +221,22 @@ function EditorFrame(): ReactElement {
           onCurrentFrameChange={setCurrentFrame}
         />
       ) : null}
+      <CommandPalette open={paletteOpen} onClose={closePalette} />
     </main>
   );
 }
+
+const paletteButtonStyle: React.CSSProperties = {
+  padding: '6px 12px',
+  background: 'transparent',
+  borderWidth: 1,
+  borderStyle: 'solid',
+  borderColor: 'rgba(129, 174, 255, 0.3)',
+  borderRadius: 6,
+  color: '#a5acb4',
+  fontSize: 12,
+  cursor: 'pointer',
+};
 
 function PreviewFrame({
   slide,
