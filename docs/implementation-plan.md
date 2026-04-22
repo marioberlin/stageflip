@@ -1,9 +1,9 @@
-# StageFlip — Implementation Plan v1.5
+# StageFlip — Implementation Plan v1.6
 
 **Audience**: AI coding agents executing autonomously; human product owners ratifying at phase boundaries.
 **Scope**: 280+ tasks across 12 phases, from empty repo to first public beta.
 **Format**: Every task is self-contained with references, prompts, acceptance criteria, and verification commands.
-**Last updated**: 2026-04-21 — Phase 5 closeout: T-105 + T-106 carried to Phase 6 as T-137 + T-138. See §C.10 changelog.
+**Last updated**: 2026-04-22 — Added T-119 / T-119b / T-119c to Phase 6 (CI render-e2e + golden-priming pipeline). See §C.10 changelog.
 
 ---
 
@@ -375,6 +375,9 @@ phase. Renumbered / carried as T-137 / T-138 in Phase 6.
 | T-136 | E2E Playwright regression: new deck, add slide, edit text, preview, export PNG | M |
 | **T-137** | **Visual diff viewer** (side-by-side / slider / overlay) — HTML artifact consuming `FixtureScoreOutcome` + `ScoreReport` from `@stageflip/parity-cli`. Carried from Phase 5 (was T-105); rule + score surface stable as of T-104/T-107 merges | M |
 | **T-138** | **Auto-fix passes (10) with iterative convergence** — builds on T-104's `LintRule` + `LintFinding` surface. Each rule declares an optional `fix(document)` that returns a mutated document; the orchestrator runs up to 10 passes until either no findings remain or no rule produced a change. Carried from Phase 5 (was T-106) | L |
+| **T-119 [new]** | **CI render-e2e job** — new `render-e2e` job on `ubuntu-latest` behind the existing `dorny/paths-filter` rendering scope. Installs `chrome-headless-shell` via Puppeteer's browser cache + `ffmpeg`/`ffprobe` via `apt-get`. Flips `@stageflip/renderer-cdp`'s `reference-render.e2e.test.ts` from silent-skip to green on CI (3 fixtures × real Puppeteer + real ffmpeg + real ffprobe, already passing locally). Uploads the 3 MP4s as artifacts for operator inspection. Structurally resolves handover-phase5 §6.2. No new package, no new CLI — just `.github/workflows/ci.yml` + minor docs | M |
+| **T-119b [new]** | **`pnpm parity:prime` CLI** — new subcommand in `@stageflip/parity-cli` that walks a fixtures directory, renders each fixture through `@stageflip/cdp-host-bundle` + `PuppeteerCdpSession`, and emits PNGs into the fixture's `goldens.dir`. Node-only; unit-tested against a fake session + fake host. Depends on T-119 for CI binaries but doesn't need to ship in the same PR. Enables programmatic golden generation | M |
+| **T-119c [new]** | **Wire `parity:prime` into CI as artifact step + operator workflow docs** — extends the T-119 job with a post-render step that invokes `pnpm parity:prime`, uploads the generated PNG set as a `parity-goldens-<sha>` artifact, and never commits. Operators download, inspect, and commit via a normal PR. Updates `parity-testing/SKILL.md` with the "priming in CI" section. Unblocks handover-phase5 §6.1 | S |
 
 ---
 
@@ -686,6 +689,7 @@ Phase 0 ──► Phase 1 ──► Phase 2 ──► Phase 3 ──┬──►
 
 ## C.10 Changelog
 
+- **v1.6** (2026-04-22): Added T-119 / T-119b / T-119c to Phase 6, resolving the two open follow-ups from Phase 5 ratification (handover-phase5 §6.1 goldens priming + §6.2 CI Chrome/ffmpeg infra). Split into three M/M/S rows rather than one L row per the Phase 5 convention (see T-100's split in v1.2–v1.4): T-119 ships the CI job + unlocks the e2e reference-render suite; T-119b ships the `parity:prime` CLI; T-119c wires them together + documents the operator priming flow. None block Phase 6's slide-migration critical path (T-120–T-136); schedulable in parallel as tooling infra.
 - **v1.5** (2026-04-21): Phase 5 closeout. T-105 (visual diff viewer) and T-106 (auto-fix passes) carried from Phase 5 to Phase 6 as T-137 + T-138. Both depend on surfaces that shipped this phase (T-104 linter rules, T-100 ScoreReport) but neither blocks Phase 6's slide-migration critical path, so they're scheduled as tooling follow-ups. Phase 5 exit criterion met on the core parity harness + linter + CI gate work.
 - **v1.4** (2026-04-21): T-100d narrowed to scaffold + CSS runtime (M); T-100e added for the remaining 5 live runtimes (M). Splits the L-sized T-100d into two reviewable pieces rather than landing React + 6 runtimes + their transitive deps in one PR.
 - **v1.3** (2026-04-21): T-100c narrowed to contract + smart placeholder (M); T-100d added for the actual runtime-bundle host (L). Split keeps each PR reviewable and defers the Vite-bundled runtime-registration work to its own task rather than trying to land it alongside the contract change.
@@ -695,4 +699,4 @@ Phase 0 ──► Phase 1 ──► Phase 2 ──► Phase 3 ──┬──►
 
 ---
 
-**End of plan v1.5.** Start at T-001.
+**End of plan v1.6.** Start at T-001.
