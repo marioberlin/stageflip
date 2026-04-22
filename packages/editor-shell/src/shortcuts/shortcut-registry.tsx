@@ -44,9 +44,14 @@ const RegistryContext = createContext<RegistryContextValue | null>(null);
 
 const MOD_TOKEN = /\bmod\b/i;
 
+// Elements whose native keyboard behavior we must not clobber with
+// bare-key shortcuts: text-input fields, textareas, selects (arrow-key
+// option navigation), and anything with `contenteditable`.
+const TYPING_TAGS = new Set<string>(['INPUT', 'TEXTAREA', 'SELECT']);
+
 function isTypingTarget(target: EventTarget | null): boolean {
-  if (!target || !(target instanceof HTMLElement)) return false;
-  if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return true;
+  if (!(target instanceof HTMLElement)) return false;
+  if (TYPING_TAGS.has(target.tagName)) return true;
   return target.isContentEditable;
 }
 

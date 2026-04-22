@@ -42,10 +42,15 @@ export interface Shortcut {
 /**
  * Handler return contract.
  *
- * `undefined` / returning nothing → handled; registry claims the event.
- * `false`                         → declined; registry tries the next match.
- * `Promise<…>`                    → handled; registry claims immediately
- *                                   (preventDefault must run synchronously).
+ * No return / `undefined`  → handled; registry claims the event.
+ * `false`                  → declined; registry tries the next match.
+ * `Promise<…>`             → handled; registry claims immediately
+ *                            (preventDefault must run synchronously, so
+ *                            post-hoc decline cannot survive).
+ *
+ * `void` (not `undefined`) is deliberate: `useCallback(() => { … })` in
+ * consumer components is inferred as `() => void`, and narrowing the
+ * union to `undefined` would reject those handlers under strict mode.
  */
 export type ShortcutHandler = (
   event: KeyboardEvent,

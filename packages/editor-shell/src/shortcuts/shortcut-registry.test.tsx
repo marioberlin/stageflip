@@ -162,6 +162,56 @@ describe('ShortcutRegistryProvider', () => {
     expect(handler).toHaveBeenCalledTimes(1);
   });
 
+  it('suppresses bare-key shortcuts when focus is inside a <select>', () => {
+    const handler = vi.fn();
+    render(
+      withProvider(
+        <Registrar
+          shortcuts={[
+            {
+              id: 'nudge.down',
+              combo: 'ArrowDown',
+              description: 'Nudge down',
+              category: 'object',
+              handler,
+            },
+          ]}
+        />,
+      ),
+    );
+    const select = document.createElement('select');
+    document.body.appendChild(select);
+    select.focus();
+    act(() => {
+      dispatchKey({ key: 'ArrowDown', target: select });
+    });
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('fires when the `when` predicate returns true', () => {
+    const handler = vi.fn();
+    render(
+      withProvider(
+        <Registrar
+          shortcuts={[
+            {
+              id: 'always',
+              combo: 'Mod+K',
+              description: 'Always',
+              category: 'essential',
+              when: () => true,
+              handler,
+            },
+          ]}
+        />,
+      ),
+    );
+    act(() => {
+      dispatchKey({ key: 'k', ctrl: true });
+    });
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
   it('respects the `when` predicate and tries the next shortcut when it fails', () => {
     const gated = vi.fn();
     const fallback = vi.fn();

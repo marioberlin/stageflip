@@ -115,6 +115,11 @@ describe('formatCombo', () => {
     expect(formatCombo('Mod+Alt+Shift+G')).toBe('⌥⇧⌘G');
   });
 
+  it('renders all-four-modifier combo in Apple HIG order (Ctrl, Alt, Shift, Cmd)', () => {
+    __setIsMacForTest(true);
+    expect(formatCombo('Ctrl+Mod+Alt+Shift+G')).toBe('⌃⌥⇧⌘G');
+  });
+
   it('emits Ctrl+ style on non-Mac', () => {
     __setIsMacForTest(false);
     expect(formatCombo('Mod+Shift+Z')).toBe('Shift+Ctrl+Z');
