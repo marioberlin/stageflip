@@ -255,6 +255,18 @@ jobs:
         if: steps.changed.outputs.rendering == 'true'
         run: pnpm install --frozen-lockfile
 
+      - name: Build workspace (vitest resolves workspace deps via their dist/)
+        if: steps.changed.outputs.rendering == 'true'
+        # The e2e file imports renderer-cdp/src/dispatch.ts which imports
+        # @stageflip/runtimes-contract — a sibling workspace package whose
+        # package.json "exports" point at dist/*.js. When vitest runs
+        # outside turbo (as we do here to target a single file) those
+        # dist/ outputs don't exist yet, so vite's resolver fails with
+        # "Failed to resolve entry for package @stageflip/runtimes-contract".
+        # Building up-front is the minimal fix; turbo caches so repeat
+        # runs are cheap.
+        run: pnpm build
+
       - name: Run reference-render e2e (real Chrome + real ffmpeg + real ffprobe)
         if: steps.changed.outputs.rendering == 'true'
         # STAGEFLIP_E2E_ARTIFACT_DIR tells the test to emit MP4s into a
