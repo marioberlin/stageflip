@@ -11,14 +11,15 @@ clean after merge. Every gate green.
 
 ## 1. Where we are
 
-- **Phase 0 (Bootstrap)** — ratified 2026-04-20. T-001..T-017 done.
-- **Phase 1 (Schema + RIR + Determinism)** — ratified 2026-04-20.
+- **Phase 0 (Bootstrap)** — implementation complete. T-001..T-017 done.
+- **Phase 1 (Schema + RIR + Determinism)** — ✅ **Ratified 2026-04-20**.
   T-020..T-034 done; T-035..T-039 (Firebase) deferred.
-- **Phase 2 (Frame Runtime)** — ratified-ready. T-040..T-055 done (16/16).
+- **Phase 2 (Frame Runtime)** — implementation complete. T-040..T-055 done (16/16).
 - **Phase 3 (Runtime Contract + Concrete Runtimes)** — ✅ **Ratified
   2026-04-21**. 11/11 done.
-- **Phase 4 (Vendored CDP Engine + Export Dispatcher)** — ratified-
-  ready per `handover-phase4-complete.md`. 13/13 done.
+- **Phase 4 (Vendored CDP Engine + Export Dispatcher)** — ✅ **Ratified
+  2026-04-21** (commit `d023b24`). 13/13 done. See
+  `handover-phase4-complete.md` for the full closeout.
 - **Phase 5 (Parity Harness + Pre-Render Linter)** —
   **implementation complete; awaiting human ratification** per
   CLAUDE.md §2. 6 of 8 original plan rows merged; 2 carried to
@@ -376,7 +377,7 @@ priming workflow is documented in
 ## 5. CI gates + dev-harness commands
 
 ```sh
-# All 10 gates (from repo root)
+# All 10 required gates (from repo root)
 pnpm typecheck
 pnpm lint
 pnpm test
@@ -387,7 +388,9 @@ pnpm skills-sync:check
 pnpm check-determinism
 pnpm size-limit
 pnpm parity --fixtures-dir packages/testing/fixtures
-pnpm e2e                              # optional browser install required
+
+# Optional (requires browser install)
+pnpm e2e
 
 # Phase 5 end-to-end smoke
 pnpm parity packages/testing/fixtures/css-solid-background.json
@@ -525,9 +528,10 @@ pnpm --filter @stageflip/app-dev-harness dev
 > Then `docs/implementation-plan.md` for Phase 6. Confirm your
 > understanding of the current state and the next task.
 
-Expected confirmation shape: "On `main` at `<hash>`. Phase 0+1+2+3
-ratified. Phase 4+5 implementation complete; awaiting ratification.
-Phase 6 starts at T-120 (Audit existing SlideMotion editor). Ready."
+Expected confirmation shape: "On `main` at `<hash>`. Phases 1+3+4
+ratified; Phases 0+2 implementation complete. Phase 5 implementation
+complete; awaiting ratification. Phase 6 starts at T-120 (Audit
+existing SlideMotion editor). Ready."
 
 ### 7.2 Orchestrator checklist for Phase 5 ratification
 
@@ -714,10 +718,11 @@ docs/
   (none contain clip / runtime code).
 - **10 CI gates** (+ optional e2e + the guarded e2e-reference
   suite from T-090) — 1 new gate this phase (`pnpm parity`).
-- **9 changesets** pending flush to Phase 10 publish (was 21 end
-  of Phase 4 — but 12 of those were Phase 4 renderer-cdp bumps;
-  Phase 5 added 9 new bumps across 7 packages including the 3 new
-  ones).
+- **9 changesets** added this phase across 7 packages (including
+  the 3 new ones — parity, cdp-host-bundle, parity-cli). All
+  `private: true` at this point; recorded for audit trail and will
+  flush at Phase 10 publish. Cumulative unreleased changeset count
+  on `main` unchanged from the Phase 4 handover baseline.
 - **0 ADRs** accepted this phase. ADR-001 + ADR-002 unchanged.
 - **33 lint rules** across 7 categories shipped in
   `@stageflip/validation`.
