@@ -63,4 +63,9 @@ describe('seed integrity', () => {
       expect(value).not.toMatch(/remotion/i);
     }
   });
+
+  it('T-134 branding keys resolve to the Slide product strings', () => {
+    expect(t('slide.tagline')).toBe('AI-native motion for presentations');
+    expect(t('slide.productName')).toBe('StageFlip.Slide');
+  });
 });
