@@ -9,7 +9,11 @@ import { EditorShell, t, useDocument } from '@stageflip/editor-shell';
 import type { Document } from '@stageflip/schema';
 import type { ReactElement } from 'react';
 
-const INITIAL_DOCUMENT: Document = {
+// Typed via `satisfies` rather than a blind `as Document` cast so TypeScript
+// still validates the literal against the schema's inferred shape — if a
+// future `Document` change adds a required field, this line goes red instead
+// of silently bypassing the check at runtime.
+const INITIAL_DOCUMENT = {
   meta: {
     id: 'walking-skeleton',
     version: 0,
@@ -26,7 +30,7 @@ const INITIAL_DOCUMENT: Document = {
     mode: 'slide',
     slides: [{ id: 'slide-0', elements: [] }],
   },
-} as Document;
+} satisfies Document;
 
 export function EditorAppClient(): ReactElement {
   return (

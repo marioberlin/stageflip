@@ -21,7 +21,7 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "e2e": "playwright test",
-    "e2e:slide": "turbo run build --filter=@stageflip/app-slide && pnpm --filter @stageflip/app-slide e2e",
+    "e2e:slide": "pnpm --filter @stageflip/app-slide e2e",
     "e2e:install": "playwright install --with-deps chromium",
     "check-licenses": "tsx scripts/check-licenses.ts",
     "check-remotion-imports": "tsx scripts/check-remotion-imports.ts",
