@@ -197,7 +197,14 @@ export function useDocument(): DocumentContextValue {
 
   const pushRedoEntry = useCallback<DocumentContextValue['pushRedoEntry']>(
     (entry) => {
-      setRedoStack((prev) => [...prev, entry]);
+      // Same cap as pushUndoEntry: external callers that push into redo
+      // (rare, but part of the public surface) must not grow the stack
+      // without bound. Mirror the trim so both stacks stay symmetrically
+      // sized.
+      setRedoStack((prev) => {
+        const trimmed = prev.length >= MAX_MICRO_UNDO ? prev.slice(-(MAX_MICRO_UNDO - 1)) : prev;
+        return [...trimmed, entry];
+      });
     },
     [setRedoStack],
   );
@@ -254,26 +261,42 @@ export function useDocument(): DocumentContextValue {
     if (current === null) return;
     const entry = popUndoEntry();
     if (!entry) return;
-    const patched = applyPatch(current, entry.inverse as Operation[], false, false);
-    setDocumentAtom(patched.newDocument);
-    pushRedoEntry(entry);
-  }, [store, setDocumentAtom, popUndoEntry, pushRedoEntry]);
+    // `applyPatch` throws on mis-addressed paths, which happens only if the
+    // document has drifted from the state the patch was recorded against
+    // (e.g. a consumer bypassed `updateDocument` and mutated the atom
+    // directly). Swallow the failure rather than crash the editor, but put
+    // the entry back on its stack so the user can keep trying.
+    try {
+      const patched = applyPatch(current, entry.inverse as Operation[], false, false);
+      setDocumentAtom(patched.newDocument);
+      pushRedoEntry(entry);
+    } catch (err) {
+      console.warn('[editor-shell:undo] patch apply failed; entry restored', err);
+      pushUndoEntry(entry);
+    }
+  }, [store, setDocumentAtom, popUndoEntry, pushRedoEntry, pushUndoEntry]);
 
   const redo = useCallback<DocumentContextValue['redo']>(() => {
     const current = store.get(documentAtom);
     if (current === null) return;
     const entry = popRedoEntry();
     if (!entry) return;
-    const patched = applyPatch(current, entry.forward as Operation[], false, false);
-    setDocumentAtom(patched.newDocument);
-    // Re-queue on the undo stack without clearing redo: we're walking the
-    // history, not starting a new branch.
-    setUndoStack((prevStack) => {
-      const trimmed =
-        prevStack.length >= MAX_MICRO_UNDO ? prevStack.slice(-(MAX_MICRO_UNDO - 1)) : prevStack;
-      return [...trimmed, entry];
-    });
-  }, [store, setDocumentAtom, popRedoEntry, setUndoStack]);
+    try {
+      const patched = applyPatch(current, entry.forward as Operation[], false, false);
+      setDocumentAtom(patched.newDocument);
+      // Re-queue on the undo stack without clearing redo: we're walking the
+      // history, not starting a new branch. Inline trim matches `pushUndoEntry`
+      // — the two must stay in sync if `MAX_MICRO_UNDO` semantics change.
+      setUndoStack((prevStack) => {
+        const trimmed =
+          prevStack.length >= MAX_MICRO_UNDO ? prevStack.slice(-(MAX_MICRO_UNDO - 1)) : prevStack;
+        return [...trimmed, entry];
+      });
+    } catch (err) {
+      console.warn('[editor-shell:redo] patch apply failed; entry restored', err);
+      pushRedoEntry(entry);
+    }
+  }, [store, setDocumentAtom, popRedoEntry, setUndoStack, pushRedoEntry]);
 
   const setActiveSlide = useCallback<DocumentContextValue['setActiveSlide']>(
     (id) => setActiveSlideAtom(id),

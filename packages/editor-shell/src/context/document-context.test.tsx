@@ -7,7 +7,7 @@
 import type { Document } from '@stageflip/schema';
 import { act, cleanup, render, renderHook } from '@testing-library/react';
 import type React from 'react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MAX_MICRO_UNDO, type MicroUndo } from '../atoms/undo';
 import { makeSlideDoc } from '../test-fixtures/document-fixture';
 import { DocumentProvider, useDocument } from './document-context';
@@ -216,6 +216,20 @@ describe('undo stacks', () => {
     expect(popped).toBe(e);
     expect(result.current.canRedo).toBe(false);
   });
+
+  it('pushRedoEntry caps the stack at MAX_MICRO_UNDO entries', () => {
+    const { result } = renderHook(() => useDocument(), { wrapper: wrap() });
+    act(() => {
+      for (let i = 0; i < MAX_MICRO_UNDO + 5; i += 1) {
+        result.current.pushRedoEntry(entry(`redo-${i}`));
+      }
+    });
+    let popped = 0;
+    act(() => {
+      while (result.current.popRedoEntry()) popped += 1;
+    });
+    expect(popped).toBe(MAX_MICRO_UNDO);
+  });
 });
 
 describe('T-133 updateDocument → patch-based undo/redo', () => {
@@ -387,6 +401,53 @@ describe('T-133 updateDocument → patch-based undo/redo', () => {
     // The orphan entry was pushed against a null doc; undo must not crash
     // and must not attempt to apply a patch. State is unchanged.
     expect(result.current.document).toBeNull();
+  });
+
+  it('undo() swallows apply errors and restores the entry on the undo stack', () => {
+    const doc = makeSlideDoc({ slideCount: 1 });
+    const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+    // Push a deliberately stale entry: the inverse patch targets an array
+    // index that doesn't exist on `doc.content.slides`, so applyPatch's
+    // `test` of the path fails with an Error.
+    const badEntry: MicroUndo = {
+      forward: [],
+      inverse: [{ op: 'replace', path: '/content/slides/99/id', value: 'nope' }],
+    };
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    act(() => {
+      result.current.pushUndoEntry(badEntry);
+    });
+    act(() => {
+      result.current.undo();
+    });
+    // Document is untouched, entry is restored to the undo stack so the user
+    // can keep trying (e.g. after a re-hydration).
+    expect(result.current.document).toBe(doc);
+    expect(result.current.canUndo).toBe(true);
+    expect(result.current.canRedo).toBe(false);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('redo() swallows apply errors and restores the entry on the redo stack', () => {
+    const doc = makeSlideDoc({ slideCount: 1 });
+    const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+    const badEntry: MicroUndo = {
+      forward: [{ op: 'replace', path: '/content/slides/99/id', value: 'nope' }],
+      inverse: [],
+    };
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    act(() => {
+      result.current.pushRedoEntry(badEntry);
+    });
+    act(() => {
+      result.current.redo();
+    });
+    expect(result.current.document).toBe(doc);
+    expect(result.current.canRedo).toBe(true);
+    expect(result.current.canUndo).toBe(false);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
   });
 
   it('round-trips nested element mutations', () => {
