@@ -14,7 +14,9 @@ import type { CSSProperties, ReactElement, PointerEvent as ReactPointerEvent } f
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { CanvasScaleProvider } from './canvas-scale-context';
 import { ElementView } from './element-view';
+import { InlineTextEditor } from './inline-text-editor';
 import { SelectionOverlay } from './selection-overlay';
+import { TextSelectionToolbar } from './text-selection-toolbar';
 
 /**
  * Slide canvas reference dimensions. Editor coordinates are expressed
@@ -69,23 +71,39 @@ export function SlideCanvas({ viewportSizeForTest }: SlideCanvasProps = {}): Rea
   const scale = computeScale(viewportSize);
   const selectedIds = useEditorShellAtomValue(selectedElementIdsAtom);
   const { selectElements, clearSelection } = useDocument();
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const handleElementPointerDown = useCallback(
     (id: string) => (event: ReactPointerEvent<HTMLElement>) => {
       event.stopPropagation();
+      if (editingId && editingId !== id) setEditingId(null);
       selectElements(new Set([id]));
     },
-    [selectElements],
+    [editingId, selectElements],
+  );
+
+  const handleElementDoubleClick = useCallback(
+    (id: string) => () => {
+      setEditingId(id);
+    },
+    [],
   );
 
   const handlePlanePointerDown = useCallback(
     (event: ReactPointerEvent<HTMLElement>) => {
       // Click on the bare plane (not on an element/overlay) clears selection.
       if (event.target !== event.currentTarget) return;
+      setEditingId(null);
       clearSelection();
     },
     [clearSelection],
   );
+
+  const editingElement = useMemo(() => {
+    if (!editingId || !slide) return null;
+    const found = slide.elements.find((el) => el.id === editingId);
+    return found && found.type === 'text' ? found : null;
+  }, [editingId, slide]);
 
   return (
     <CanvasScaleProvider scale={scale}>
@@ -103,14 +121,38 @@ export function SlideCanvas({ viewportSizeForTest }: SlideCanvasProps = {}): Rea
         >
           {slide ? (
             <>
-              {slide.elements.map((el) => (
-                <ElementView
-                  key={el.id}
-                  element={el}
-                  onPointerDown={handleElementPointerDown(el.id)}
+              {slide.elements.map((el) => {
+                if (editingElement && editingElement.id === el.id) {
+                  return (
+                    <ElementView
+                      key={el.id}
+                      element={el}
+                      onPointerDown={handleElementPointerDown(el.id)}
+                      onDoubleClick={handleElementDoubleClick(el.id)}
+                    >
+                      <InlineTextEditor
+                        element={editingElement}
+                        onClose={() => setEditingId(null)}
+                      />
+                      <TextSelectionToolbar element={editingElement} />
+                    </ElementView>
+                  );
+                }
+                return (
+                  <ElementView
+                    key={el.id}
+                    element={el}
+                    onPointerDown={handleElementPointerDown(el.id)}
+                    onDoubleClick={handleElementDoubleClick(el.id)}
+                  />
+                );
+              })}
+              {editingElement === null && (
+                <SelectionOverlay
+                  selectedIds={selectedIds}
+                  onElementDoubleClick={(id) => setEditingId(id)}
                 />
-              ))}
-              <SelectionOverlay selectedIds={selectedIds} />
+              )}
             </>
           ) : (
             <EmptyState />
