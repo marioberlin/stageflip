@@ -18,6 +18,7 @@ import type { ReactElement } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { SlideCanvas } from '../components/canvas/slide-canvas';
 import { SlidePlayer } from '../components/canvas/slide-player';
+import { Filmstrip } from '../components/filmstrip/filmstrip';
 import { TimelinePanel } from '../components/timeline/timeline-panel';
 
 // Typed via `satisfies` rather than a blind `as Document` cast so TypeScript
@@ -78,6 +79,30 @@ const INITIAL_DOCUMENT = {
             align: 'center' as const,
             fontSize: 32,
             color: '#a5acb4' as const,
+          },
+        ],
+      },
+      {
+        id: 'slide-1',
+        elements: [
+          {
+            id: 'seed-bullet',
+            type: 'text' as const,
+            transform: {
+              x: 160,
+              y: 460,
+              width: 1600,
+              height: 120,
+              rotation: 0,
+              opacity: 1,
+            },
+            visible: true,
+            locked: false,
+            animations: [],
+            text: 'Second slide',
+            align: 'center' as const,
+            fontSize: 64,
+            color: '#ebf1fa' as const,
           },
         ],
       },
@@ -142,16 +167,19 @@ function EditorFrame(): ReactElement {
           </button>
         </div>
       </header>
-      <section style={canvasFrameStyle} aria-label="Canvas workspace">
-        {mode === 'edit' ? (
-          <SlideCanvas />
-        ) : (
-          <PreviewFrame
-            slide={slide ?? null}
-            currentFrame={currentFrame}
-            onFrame={setCurrentFrame}
-          />
-        )}
+      <section style={workspaceStyle} aria-label="Canvas workspace">
+        <Filmstrip />
+        <div style={canvasFrameStyle}>
+          {mode === 'edit' ? (
+            <SlideCanvas />
+          ) : (
+            <PreviewFrame
+              slide={slide ?? null}
+              currentFrame={currentFrame}
+              onFrame={setCurrentFrame}
+            />
+          )}
+        </div>
       </section>
       {slide ? (
         <TimelinePanel
@@ -232,5 +260,13 @@ const canvasFrameStyle: React.CSSProperties = {
   flex: 1,
   minHeight: 0,
   borderRadius: 12,
+  overflow: 'hidden',
+};
+
+const workspaceStyle: React.CSSProperties = {
+  flex: 1,
+  minHeight: 0,
+  display: 'flex',
+  gap: 16,
   overflow: 'hidden',
 };
