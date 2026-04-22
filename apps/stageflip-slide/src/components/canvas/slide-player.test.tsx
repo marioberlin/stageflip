@@ -150,6 +150,24 @@ describe('<SlidePlayer> — scrub mode', () => {
     );
     expect(onFrameChange).toHaveBeenLastCalledWith(42);
   });
+
+  it('renders the correct opacity when scrubbed through <SlidePlayer> (not just the math function)', () => {
+    // Mid-window: fade 0→1 over 30 frames, asserted at frame 15 should
+    // give opacity 0.5. Covers the end-to-end path through SlidePlayer
+    // including the Math.round() the component applies before rendering.
+    const el = textEl({ animations: [fade({ start: 0, duration: 30, from: 0, to: 1 })] });
+    render(
+      <SlidePlayer
+        slide={slideWith(el)}
+        width={1920}
+        height={1080}
+        fps={30}
+        durationInFrames={60}
+        currentFrame={15}
+      />,
+    );
+    expect(screen.getByTestId('element-el').style.opacity).toBe('0.5');
+  });
 });
 
 describe('<SlidePlayer> — playback via rAF', () => {
@@ -193,6 +211,54 @@ describe('<SlidePlayer> — playback via rAF', () => {
     unmount();
     // The unmount clears the ref-scoped `cancelled` flag and removes the
     // pending rAF. Subsequent queue reads do not advance the component.
+  });
+
+  it('pause reports the rAF-advanced frame, not the stale currentFrame prop', () => {
+    // Regression: toggling `playing` ON → OFF should tell the parent
+    // (T-126 timeline) where the playhead ACTUALLY is, not the original
+    // paused prop value. Otherwise the scrubber snaps back on pause.
+    const el = textEl({ animations: [fade({ start: 0, duration: 30, from: 0, to: 1 })] });
+    const onFrameChange = vi.fn();
+    const { rerender } = render(
+      <SlidePlayer
+        slide={slideWith(el)}
+        width={1920}
+        height={1080}
+        fps={30}
+        durationInFrames={30}
+        currentFrame={0}
+        playing={true}
+        onFrameChange={onFrameChange}
+      />,
+    );
+    // Play: advance two rAF steps → ~15 frames.
+    act(() => {
+      queue.shift()?.cb(0);
+    });
+    act(() => {
+      queue.shift()?.cb(500);
+    });
+    const duringPlayback = onFrameChange.mock.calls.at(-1)?.[0] as number;
+    expect(duringPlayback).toBeGreaterThanOrEqual(14);
+
+    // Pause: toggle playing → false. The prop stays at 0. The callback
+    // must emit the rAF-advanced value, not 0.
+    onFrameChange.mockClear();
+    rerender(
+      <SlidePlayer
+        slide={slideWith(el)}
+        width={1920}
+        height={1080}
+        fps={30}
+        durationInFrames={30}
+        currentFrame={0}
+        playing={false}
+        onFrameChange={onFrameChange}
+      />,
+    );
+    const onPause = onFrameChange.mock.calls.at(-1)?.[0] as number;
+    expect(onPause).toBeGreaterThanOrEqual(14);
+    expect(onPause).not.toBe(0);
   });
 
   it('advances the rendered frame when the rAF step fires', () => {

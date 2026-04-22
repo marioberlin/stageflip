@@ -65,6 +65,7 @@ export function SlidePlayer({
   onFrameChange,
 }: SlidePlayerProps): ReactElement {
   const frameRef = useRef<number>(currentFrame);
+  const lastExternalFrameRef = useRef<number>(currentFrame);
   // A mirror `useState` triggers re-renders on frame change. We keep
   // the authoritative value in the ref so inline rAF steps read the
   // latest without stale-closure issues.
@@ -72,9 +73,18 @@ export function SlidePlayer({
 
   useEffect(() => {
     if (playing) return;
-    frameRef.current = currentFrame;
-    onFrameChange?.(currentFrame);
-    setTick((t) => (t + 1) & 0xfffffff);
+    // Two cases land here:
+    //   (a) External scrub: the parent changed `currentFrame` while the
+    //       player is paused. Sync the internal ref to it and re-render.
+    //   (b) Pause transition: `playing` just flipped false. The parent
+    //       didn't scrub, so preserve the rAF-advanced frame in the ref
+    //       and emit THAT via `onFrameChange` — not the stale prop.
+    if (currentFrame !== lastExternalFrameRef.current) {
+      lastExternalFrameRef.current = currentFrame;
+      frameRef.current = currentFrame;
+      setTick((t) => (t + 1) & 0xfffffff);
+    }
+    onFrameChange?.(frameRef.current);
   }, [currentFrame, onFrameChange, playing]);
 
   useEffect(() => {
