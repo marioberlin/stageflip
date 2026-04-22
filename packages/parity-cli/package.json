@@ -27,7 +27,10 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@stageflip/cdp-host-bundle": "workspace:*",
     "@stageflip/parity": "workspace:*",
+    "@stageflip/renderer-cdp": "workspace:*",
+    "@stageflip/rir": "workspace:*",
     "@stageflip/testing": "workspace:*"
   },
   "devDependencies": {

@@ -4,20 +4,21 @@
 // glue + operator ergonomics.
 //
 // Usage:
-//   stageflip-parity [fixture.json ...]
+//   stageflip-parity [fixture.json ...]                      (score — default)
 //   stageflip-parity --candidates <dir> [fixture.json]
 //   stageflip-parity --fixtures-dir <dir>
+//   stageflip-parity prime --reference-fixtures --out <dir>  (T-119b subcommand)
 //   stageflip-parity --help
 //
 // Exit codes:
-//   0 — every scored fixture passed (skipped fixtures don't count
-//       as failure; CI greens through until goldens are primed)
+//   0 — every scored fixture passed / every primed fixture succeeded
 //   1 — at least one fixture was scored and FAILED its thresholds
 //   2 — usage / argument error (no fixtures found, bad flag, ...)
 
 import { readdir } from 'node:fs/promises';
 import { extname, join, resolve } from 'node:path';
 
+import { type PrimeRunDeps, runPrime } from './prime-cli.js';
 import { type FixtureScoreOutcome, outcomeIsFailure, scoreFixture } from './score-fixture.js';
 
 export interface CliOptions {
@@ -33,16 +34,21 @@ export interface CliOptions {
 const HELP_TEXT = `stageflip-parity — score fixture candidates against goldens
 
 USAGE
-  stageflip-parity [fixture.json ...]
+  stageflip-parity [fixture.json ...]                      (score — default)
   stageflip-parity --fixtures-dir <dir>
   stageflip-parity --candidates <dir> [fixture.json]
+  stageflip-parity prime --reference-fixtures --out <dir>  (T-119b)
   stageflip-parity --help
 
-OPTIONS
+OPTIONS (score mode)
   --fixtures-dir <dir>   Score every *.json under <dir>.
   --candidates <dir>     Shared candidates directory. Defaults to
                          <fixture-dir>/candidates/<fixture-name>/.
   -h, --help             Print this message.
+
+SUBCOMMANDS
+  prime                  Render fixtures to golden PNGs. Run
+                         \`stageflip-parity prime --help\` for usage.
 
 EXIT CODES
   0  every scored fixture passed; skipped fixtures don't fail the run.
@@ -122,8 +128,27 @@ const NODE_IO: CliIo = {
 /**
  * Main entry. Returns a numeric exit code; never calls `process.exit`
  * so tests can drive it directly.
+ *
+ * When `argv[0] === 'prime'`, delegates to the prime subcommand. The
+ * `primeDeps` hook lets the CLI entrypoint wire a real Puppeteer-backed
+ * primer while tests inject a stub. If `primeDeps` is undefined and a
+ * prime invocation arrives, the CLI errors cleanly rather than launching
+ * Chrome from a unit test by accident.
  */
-export async function runCli(argv: readonly string[], io: CliIo = NODE_IO): Promise<number> {
+export async function runCli(
+  argv: readonly string[],
+  io: CliIo = NODE_IO,
+  primeDeps?: PrimeRunDeps,
+): Promise<number> {
+  if (argv[0] === 'prime') {
+    if (primeDeps === undefined) {
+      io.stderr(
+        'stageflip-parity: prime subcommand requires primeDeps (not wired; this is a programming error)',
+      );
+      return 2;
+    }
+    return runPrime(argv.slice(1), primeDeps, io);
+  }
   let opts: CliOptions;
   try {
     opts = parseArgs(argv);

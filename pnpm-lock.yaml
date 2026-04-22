@@ -263,9 +263,18 @@ importers:
 
   packages/parity-cli:
     dependencies:
+      '@stageflip/cdp-host-bundle':
+        specifier: workspace:*
+        version: link:../cdp-host-bundle
       '@stageflip/parity':
         specifier: workspace:*
         version: link:../parity
+      '@stageflip/renderer-cdp':
+        specifier: workspace:*
+        version: link:../renderer-cdp
+      '@stageflip/rir':
+        specifier: workspace:*
+        version: link:../rir
       '@stageflip/testing':
         specifier: workspace:*
         version: link:../testing

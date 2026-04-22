@@ -27,6 +27,7 @@
     "check-skill-drift": "tsx scripts/check-skill-drift.ts",
     "check-determinism": "tsx scripts/check-determinism.ts",
     "parity": "turbo run build --filter=@stageflip/parity-cli && node packages/parity-cli/bin/parity.js",
+    "parity:prime": "turbo run build --filter=@stageflip/parity-cli && node packages/parity-cli/bin/parity.js prime",
     "size-limit": "turbo run build --filter=@stageflip/frame-runtime --filter=@stageflip/cdp-host-bundle && size-limit",
     "skills-sync": "tsx scripts/sync-skills.ts",
     "skills-sync:check": "tsx scripts/sync-skills.ts --check",
