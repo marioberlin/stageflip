@@ -1,0 +1,24 @@
+/* apps/stageflip-slide/src/app/globals.css
+ * Walking-skeleton baseline styles. Abyssal Clarity branding arrives
+ * with T-134; everything below is placeholder. */
+
+:root {
+  color-scheme: light dark;
+  --editor-bg: #080f15;
+  --editor-canvas: #0f1620;
+  --editor-text: #ebf1fa;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--editor-bg);
+  color: var(--editor-text);
+  font-family: system-ui, -apple-system, "Plus Jakarta Sans", sans-serif;
+  min-height: 100vh;
+}

@@ -183,6 +183,9 @@ jobs:
       - name: Run Playwright smoke tests
         run: pnpm e2e
 
+      - name: Run StageFlip.Slide walking-skeleton e2e (T-122)
+        run: pnpm e2e:slide
+
       - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@v4
