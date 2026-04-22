@@ -306,7 +306,14 @@ importers:
 
   packages/import-pptx: {}
 
-  packages/import-slidemotion-legacy: {}
+  packages/import-slidemotion-legacy:
+    dependencies:
+      '@stageflip/schema':
+        specifier: workspace:*
+        version: link:../schema
+      zod:
+        specifier: 3.25.76
+        version: 3.25.76
 
   packages/llm-abstraction: {}
 
