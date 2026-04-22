@@ -51,6 +51,9 @@ must be rendered inside a `FrameProvider` (or a `<Composition>` mounted via
 | Hooks: `useCurrentFrame()`, `useVideoConfig()` | Read the current frame or config. Throw outside a FrameProvider. |
 | `useMediaSync(ref, { offsetMs?, durationMs? })` | Drives an `<video>` / `<audio>` `.currentTime` from the FrameClock; pauses when outside the active window. Skips seeks within half a frame of drift. |
 | `useAudioVisualizer(ref, options?)` | Returns `{ frequency, waveform, volume }` from a Web Audio `AnalyserNode`. Editor / preview only — not determinism-clean. |
+| `<FrameVideo src … offsetMs? durationMs?>` | `<video>` wrapper that calls `useMediaSync` internally. Extra props pass through to the underlying `<video>`. Element stays mounted outside the active window so the ref + network preload state are stable. |
+| `<FrameAudio src … offsetMs? durationMs?>` | `<audio>` counterpart to `FrameVideo`. Same contract. Typical use: voiceover / narration. |
+| `<FrameImage src alt … offsetMs? durationMs?>` | `<img>` wrapper gated by the same composition-time window. Returns `null` outside the window. No `.currentTime` sync — animated GIFs advance at browser pace; frame-accurate GIF seek belongs in the bake runtime. |
 
 Shared layout types:
 - `'absolute-fill'` (default on Sequence / Loop / Series.Sequence) → wraps in a
@@ -199,6 +202,7 @@ or Infinity across the envelope.
 | `src/path.ts` | chore/flubber-sub-entry | Sub-entry re-export so flubber stays out of base |
 | `src/use-media-sync.ts` | T-055 | `<video>` / `<audio>` sync hook |
 | `src/use-audio-visualizer.ts` | T-053 | Web Audio analyser hook (editor-only) |
+| `src/media-host.tsx` | T-131e.0 | `<FrameVideo>` / `<FrameAudio>` / `<FrameImage>` wrappers for media-backed clips |
 | `src/properties.test.ts` | T-048 | Cross-primitive property suite |
 
 ## Dev harness
