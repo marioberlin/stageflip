@@ -3,7 +3,7 @@ title: GSAP Runtime
 id: skills/stageflip/runtimes/gsap
 tier: runtime
 status: substantive
-last_updated: 2026-04-21
+last_updated: 2026-04-22
 owner_task: T-068
 related:
   - skills/stageflip/runtimes/contract/SKILL.md
@@ -120,6 +120,21 @@ npm package needs legal review before `private: false`. See
 GSAP is ~60 KB min+gz — consumed by any app that registers this
 runtime. No `size-limit` entry on this package yet; future budget
 work will add one alongside other non-tiny runtimes.
+
+## What ships today
+
+One demo clip: `motion-text-gsap` (T-067). The runtime is intentionally
+available for clips that benefit from GSAP's orchestration features, but
+**no SlideMotion reference clip imports `gsap`** — confirmed under
+T-131c, which scoped to zero after an exhaustive grep of
+`reference/slidemotion/`. All 32 reference clips port to other runtimes
+(mostly `runtimes-frame-runtime-bridge` via T-131b family).
+
+If you're authoring a new clip and considering this runtime: prefer
+the bridge unless you genuinely need a multi-stage GSAP timeline,
+SplitText, MotionPath, or a built-in ease that's painful to express via
+`cubicBezier`. The bridge keeps the bundle smaller (no GSAP) and
+composes more naturally with our other primitives.
 
 ## Implementation map
 
