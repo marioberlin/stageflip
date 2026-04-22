@@ -67,10 +67,26 @@ describe('document mutators', () => {
     expect(result.current.document?.meta.title).toBe('Renamed');
   });
 
-  it('updateDocument is a no-op when the document is null', () => {
+  it('updateDocument is a no-op when the document is null (never hydrated)', () => {
     const { result } = renderHook(() => useDocument(), { wrapper: wrap(null) });
     act(() => {
       result.current.updateDocument((d) => d);
+    });
+    expect(result.current.document).toBeNull();
+  });
+
+  it('updateDocument is a no-op after setDocument(null) (deliberate reset)', () => {
+    const doc = makeSlideDoc({ slideCount: 1 });
+    const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+    act(() => {
+      result.current.setDocument(null);
+    });
+    expect(result.current.document).toBeNull();
+    act(() => {
+      result.current.updateDocument((d) => ({
+        ...d,
+        meta: { ...d.meta, title: 'should not apply' },
+      }));
     });
     expect(result.current.document).toBeNull();
   });

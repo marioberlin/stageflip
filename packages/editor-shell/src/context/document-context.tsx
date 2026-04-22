@@ -216,13 +216,23 @@ export function useDocument(): DocumentContextValue {
     [setUndoStack, setRedoStack],
   );
 
+  // Pop helpers use a functional updater so the read-then-write against the
+  // stack is atomic under Jotai's write-batch model. Capturing the popped
+  // entry via a closure variable is safe because jotai executes the updater
+  // synchronously; reading `captured` after `setUndoStack` returns yields
+  // the value produced inside the updater.
   const popUndoEntry = useCallback<DocumentContextValue['popUndoEntry']>(() => {
-    const stack = store.get(undoStackAtom);
-    if (stack.length === 0) return undefined;
-    const top = stack[stack.length - 1];
-    setUndoStack(stack.slice(0, -1));
-    return top;
-  }, [store, setUndoStack]);
+    let captured: MicroUndo | undefined;
+    setUndoStack((prev) => {
+      if (prev.length === 0) {
+        captured = undefined;
+        return prev;
+      }
+      captured = prev[prev.length - 1];
+      return prev.slice(0, -1);
+    });
+    return captured;
+  }, [setUndoStack]);
 
   const pushRedoEntry = useCallback<DocumentContextValue['pushRedoEntry']>(
     (entry) => {
@@ -232,12 +242,17 @@ export function useDocument(): DocumentContextValue {
   );
 
   const popRedoEntry = useCallback<DocumentContextValue['popRedoEntry']>(() => {
-    const stack = store.get(redoStackAtom);
-    if (stack.length === 0) return undefined;
-    const top = stack[stack.length - 1];
-    setRedoStack(stack.slice(0, -1));
-    return top;
-  }, [store, setRedoStack]);
+    let captured: MicroUndo | undefined;
+    setRedoStack((prev) => {
+      if (prev.length === 0) {
+        captured = undefined;
+        return prev;
+      }
+      captured = prev[prev.length - 1];
+      return prev.slice(0, -1);
+    });
+    return captured;
+  }, [setRedoStack]);
 
   return useMemo<DocumentContextValue>(
     () => ({
