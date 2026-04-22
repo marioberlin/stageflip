@@ -51,6 +51,14 @@ test('double-clicking a text element opens the inline editor + toolbar (T-123c)'
   await expect(page.getByTestId('text-toolbar-link-seed-title')).toBeVisible();
 });
 
+test('timeline panel renders with ruler + scrubber + readout (T-126)', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByTestId('timeline-panel')).toBeVisible();
+  await expect(page.getByTestId('timeline-ruler')).toBeVisible();
+  await expect(page.getByTestId('timeline-scrubber')).toBeVisible();
+  await expect(page.getByTestId('timeline-readout')).toContainText('frame 0');
+});
+
 test('clicking the mode toggle swaps the canvas for the slide player (T-123d)', async ({
   page,
 }) => {
