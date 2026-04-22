@@ -81,6 +81,12 @@ describe.skipIf(!capability.ok)(`reference render e2e (${capability.reason ?? 'r
       const tolerance = 1 / doc.frameRate;
       expect(probe.format.durationSec ?? 0).toBeGreaterThan(expectedSec - tolerance);
       expect(probe.format.durationSec ?? 0).toBeLessThan(expectedSec + tolerance);
-    }, 60_000);
+    }, 120_000);
+    // 120s per test — each case launches its own puppeteer browser via
+    // renderReferenceFixture, and cold-start Chrome on GitHub-hosted
+    // ubuntu-latest (especially for the 2nd + 3rd tests, which don't
+    // benefit from the OS-level binary caching the 1st test warmed)
+    // comfortably exceeds the previous 60s budget. Laptop runs stay
+    // well under the new ceiling (~1s per test after warm-up).
   }
 });
