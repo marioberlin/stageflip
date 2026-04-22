@@ -372,7 +372,7 @@ phase. Renumbered / carried as T-137 / T-138 in Phase 6.
 | **T-126 [rev]** | Port UI component 4: TimelinePanel | M |
 | **T-127 [rev]** | Port UI component 5: Command palette + tool search | M |
 | **T-128 [rev]** | Port UI component 6: AI copilot sidebar + streaming | M |
-| **T-129 [rev]** | Port remaining components (shortcuts, asset browser, visual-diff modes, collaboration UI) | L |
+| **T-129 [rev]** | Port remaining components. **First tranche shipped**: searchable `<ShortcutCheatSheet>` (keyed on `useAllShortcuts`, `?` shortcut), `<StatusBar>` (slide + element counts). **Deferred tranches** (tracked as post-Phase-6 follow-ups): asset browser, context-menu framework, contextual/persistent toolbars, export dialog, import dialogs (Google / PPTX / image upload), find/replace, onboarding, cloud-save panel, presentation mode. Collaboration UI is a Phase 7+ concern once `@stageflip/collab` lands | L |
 | T-130 | `@stageflip/import-slidemotion-legacy` — one-way converter old schema → new schema with mode='slide' | M |
 | T-131 | 33 SlideMotion clips ported to new ClipRuntime (with themeSlots); each clip registered + parity fixture | L |
 | T-133 | Undo/redo via fast-json-patch | M |

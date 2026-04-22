@@ -24,6 +24,8 @@ import { SlidePlayer } from '../components/canvas/slide-player';
 import { CommandPalette } from '../components/command-palette/command-palette';
 import { Filmstrip } from '../components/filmstrip/filmstrip';
 import { PropertiesPanel } from '../components/properties/properties-panel';
+import { ShortcutCheatSheet } from '../components/shortcuts/shortcut-cheat-sheet';
+import { StatusBar } from '../components/status-bar/status-bar';
 import { TimelinePanel } from '../components/timeline/timeline-panel';
 
 // Typed via `satisfies` rather than a blind `as Document` cast so TypeScript
@@ -143,6 +145,19 @@ function ActiveSlideHydrator(): null {
 const FPS = 30;
 const DURATION_IN_FRAMES = 60;
 
+/**
+ * True unless focus is inside a contenteditable. Gates global `?` /
+ * keyboard shortcuts so typing "?" inside the inline text editor
+ * doesn't trigger the cheat sheet.
+ *
+ * Guarded for SSR + non-DOM test envs that don't expose `document`.
+ */
+function isNotEditingText(): boolean {
+  if (typeof document === 'undefined') return true;
+  const active = document.activeElement as HTMLElement | null;
+  return !(active?.isContentEditable ?? false);
+}
+
 function EditorFrame(): ReactElement {
   const { document: doc } = useDocument();
   const slideCount = doc && doc.content.mode === 'slide' ? doc.content.slides.length : 0;
@@ -150,6 +165,7 @@ function EditorFrame(): ReactElement {
   const [currentFrame, setCurrentFrame] = useState<number>(0);
   const [paletteOpen, setPaletteOpen] = useState<boolean>(false);
   const [copilotOpen, setCopilotOpen] = useState<boolean>(false);
+  const [cheatSheetOpen, setCheatSheetOpen] = useState<boolean>(false);
   const activeSlideId = useEditorShellAtomValue(activeSlideIdAtom);
   const slideAtom = useMemo(() => slideByIdAtom(activeSlideId), [activeSlideId]);
   const slide = useEditorShellAtomValue(slideAtom);
@@ -157,6 +173,8 @@ function EditorFrame(): ReactElement {
   const closePalette = useCallback(() => setPaletteOpen(false), []);
   const toggleCopilot = useCallback(() => setCopilotOpen((v) => !v), []);
   const closeCopilot = useCallback(() => setCopilotOpen(false), []);
+  const openCheatSheet = useCallback(() => setCheatSheetOpen(true), []);
+  const closeCheatSheet = useCallback(() => setCheatSheetOpen(false), []);
 
   const shortcuts = useMemo<Shortcut[]>(
     () => [
@@ -180,8 +198,19 @@ function EditorFrame(): ReactElement {
           return undefined;
         },
       },
+      {
+        id: 'help.cheat-sheet',
+        combo: '?',
+        description: 'Open keyboard shortcut cheat sheet',
+        category: 'help',
+        when: isNotEditingText,
+        handler: () => {
+          openCheatSheet();
+          return undefined;
+        },
+      },
     ],
-    [openPalette, toggleCopilot],
+    [openPalette, toggleCopilot, openCheatSheet],
   );
   useRegisterShortcuts(shortcuts);
 
@@ -246,8 +275,10 @@ function EditorFrame(): ReactElement {
           onCurrentFrameChange={setCurrentFrame}
         />
       ) : null}
+      <StatusBar />
       <CommandPalette open={paletteOpen} onClose={closePalette} />
       <AiCopilot open={copilotOpen} onClose={closeCopilot} />
+      <ShortcutCheatSheet open={cheatSheetOpen} onClose={closeCheatSheet} />
     </main>
   );
 }
