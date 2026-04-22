@@ -302,6 +302,52 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
+      # T-119c: goldens-priming audit + real-render attempt.
+      #
+      # The dry-run step is a hard gate — it exercises the full
+      # `stageflip-parity prime` subcommand plumbing (arg parsing,
+      # REFERENCE_FIXTURES resolver, default-frames, CLI output) on
+      # real CI-built code. If it regresses, fix before merge.
+      #
+      # The real-render step is behind `continue-on-error: true`
+      # because T-119b surfaced a known cross-package issue: the
+      # cdp-host-bundle IIFE doesn't reach `window.__sf.ready` when
+      # loaded in real Chrome (the unit suites use happy-dom; the
+      # canvas-placeholder e2e uses a trivial HTML host, neither
+      # exercises the real bundle boot). Once that's fixed, this
+      # step goes green and the `parity-goldens-reference-<sha>`
+      # artifact starts shipping the 9 PNGs (3 fixtures × 3 frames)
+      # operators need to inspect before committing goldens.
+      - name: Prime reference-set goldens (dry-run audit)
+        if: steps.changed.outputs.rendering == 'true'
+        env:
+          PRIME_OUT_DIR: ${{ runner.temp }}/parity-goldens-reference
+        run: |
+          set -euo pipefail
+          mkdir -p "$PRIME_OUT_DIR"
+          pnpm parity:prime --reference-fixtures --out "$PRIME_OUT_DIR" --dry-run
+
+      - name: Prime reference-set goldens (real render, best-effort)
+        if: steps.changed.outputs.rendering == 'true'
+        id: prime-real
+        continue-on-error: true
+        env:
+          PRIME_OUT_DIR: ${{ runner.temp }}/parity-goldens-reference
+        run: |
+          set -euo pipefail
+          rm -rf "$PRIME_OUT_DIR"
+          mkdir -p "$PRIME_OUT_DIR"
+          pnpm parity:prime --reference-fixtures --out "$PRIME_OUT_DIR"
+
+      - name: Upload reference-set goldens (when real render produced files)
+        if: steps.changed.outputs.rendering == 'true' && steps.prime-real.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-goldens-reference-${{ github.sha }}
+          path: ${{ runner.temp }}/parity-goldens-reference/
+          retention-days: 7
+          if-no-files-found: error
+
       - name: Skip reason
         if: steps.changed.outputs.rendering != 'true'
         run: echo "Skipped — no rendering-adjacent files changed in this PR."

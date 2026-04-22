@@ -301,3 +301,53 @@ per-runtime unit tests, not a replacement.
 5. Commit goldens + any threshold adjustments as a single PR. Use
    the fixture's parity fields (`thresholds`, `goldens.dir`) to
    document the baseline.
+
+### Priming in CI (T-119b / T-119c)
+
+The `render-e2e` CI job runs `pnpm parity:prime --reference-fixtures`
+on every rendering-adjacent PR:
+
+1. **Dry-run audit** (hard gate) — invokes the prime subcommand with
+   `--dry-run` to exercise arg parsing, the REFERENCE_FIXTURES
+   resolver, and default-frames computation. No Chrome, no PNGs.
+   Catches CLI regressions on every PR touching rendering code.
+2. **Real render** (best-effort, `continue-on-error: true`) — same
+   invocation without `--dry-run`. Launches Chrome via
+   `PuppeteerCdpSession` + `createRuntimeBundleHostHtml` and emits
+   PNGs to `$RUNNER_TEMP/parity-goldens-reference/`. Current
+   limitation: the cdp-host-bundle's browser IIFE doesn't reach
+   `window.__sf.ready` in real Chrome (unit suites use happy-dom;
+   the canvas-placeholder e2e doesn't exercise the real bundle).
+   Step fails today; job stays green because of the
+   `continue-on-error` guard.
+3. **Artifact upload** — gated on `steps.prime-real.outcome ==
+   'success'`. When the bundle-boot issue is fixed, the PR gets a
+   `parity-goldens-reference-<sha>` artifact with 9 PNGs (3 fixtures
+   × 3 frames: `[0, mid, last]`) available for 7 days.
+
+### Operator workflow for committing reference-set goldens
+
+Once the bundle-boot is fixed and artifacts start shipping:
+
+1. Open a PR that touches any rendering-adjacent path (or push
+   directly if operating on a dedicated priming branch).
+2. Wait for the `render-e2e` CI job to finish. On success, the PR's
+   checks page shows a `parity-goldens-reference-<sha>` artifact.
+3. Download the artifact and visually inspect the 9 PNGs (one
+   directory per fixture: `solidBackground/`, `multiElement/`,
+   `videoClip/`). Verify each frame looks correct.
+4. Commit the PNGs to the canonical location for each fixture. For
+   the T-090 reference set, destination depends on how consumers
+   want to wire them (the 3 reference fixtures in `@stageflip/renderer-cdp`
+   are hand-coded RIRDocuments with no `goldens.dir` today — a
+   follow-up can define one).
+5. For parity fixtures (`packages/testing/fixtures/*.json`), the
+   workflow extends naturally once T-119d's `--parity` flag lands:
+   drop the per-fixture PNGs into the directory each manifest's
+   `goldens.dir` already points to and open a PR; `pnpm parity`
+   flips from structural-skip to behavioural-gate.
+
+The **priming PR should be separate from any behaviour change**. If
+a PR both changes what gets rendered AND commits new goldens, there's
+no way for future reviewers to tell whether the golden change was
+intentional or a drive-by.
