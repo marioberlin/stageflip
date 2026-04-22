@@ -18,6 +18,7 @@ import {
 import type { Document, Slide } from '@stageflip/schema';
 import type { ReactElement } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AiCopilot } from '../components/ai-copilot/ai-copilot';
 import { SlideCanvas } from '../components/canvas/slide-canvas';
 import { SlidePlayer } from '../components/canvas/slide-player';
 import { CommandPalette } from '../components/command-palette/command-palette';
@@ -147,11 +148,14 @@ function EditorFrame(): ReactElement {
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const [currentFrame, setCurrentFrame] = useState<number>(0);
   const [paletteOpen, setPaletteOpen] = useState<boolean>(false);
+  const [copilotOpen, setCopilotOpen] = useState<boolean>(false);
   const activeSlideId = useEditorShellAtomValue(activeSlideIdAtom);
   const slideAtom = useMemo(() => slideByIdAtom(activeSlideId), [activeSlideId]);
   const slide = useEditorShellAtomValue(slideAtom);
   const openPalette = useCallback(() => setPaletteOpen(true), []);
   const closePalette = useCallback(() => setPaletteOpen(false), []);
+  const toggleCopilot = useCallback(() => setCopilotOpen((v) => !v), []);
+  const closeCopilot = useCallback(() => setCopilotOpen(false), []);
 
   const shortcuts = useMemo<Shortcut[]>(
     () => [
@@ -165,8 +169,18 @@ function EditorFrame(): ReactElement {
           return undefined;
         },
       },
+      {
+        id: 'ai.toggle',
+        combo: 'Mod+I',
+        description: 'Toggle AI copilot',
+        category: 'help',
+        handler: () => {
+          toggleCopilot();
+          return undefined;
+        },
+      },
     ],
-    [openPalette],
+    [openPalette, toggleCopilot],
   );
   useRegisterShortcuts(shortcuts);
 
@@ -185,6 +199,15 @@ function EditorFrame(): ReactElement {
             style={paletteButtonStyle}
           >
             {t('commandPalette.placeholder')}
+          </button>
+          <button
+            type="button"
+            data-testid="copilot-toggle"
+            aria-pressed={copilotOpen}
+            onClick={toggleCopilot}
+            style={copilotButtonStyle(copilotOpen)}
+          >
+            {t('nav.ai')}
           </button>
           <button
             type="button"
@@ -222,6 +245,7 @@ function EditorFrame(): ReactElement {
         />
       ) : null}
       <CommandPalette open={paletteOpen} onClose={closePalette} />
+      <AiCopilot open={copilotOpen} onClose={closeCopilot} />
     </main>
   );
 }
@@ -237,6 +261,19 @@ const paletteButtonStyle: React.CSSProperties = {
   fontSize: 12,
   cursor: 'pointer',
 };
+
+function copilotButtonStyle(active: boolean): React.CSSProperties {
+  return {
+    padding: '6px 12px',
+    background: active ? 'rgba(90, 248, 251, 0.15)' : 'transparent',
+    border: `1px solid ${active ? '#5af8fb' : 'rgba(129, 174, 255, 0.3)'}`,
+    borderRadius: 6,
+    color: active ? '#5af8fb' : '#a5acb4',
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: 'pointer',
+  };
+}
 
 function PreviewFrame({
   slide,

@@ -113,6 +113,32 @@ test('clicking the mode toggle swaps the canvas for the slide player (T-123d)', 
   await expect(page.getByTestId('slide-canvas')).toBeVisible();
 });
 
+test('AI copilot opens via header toggle, submits a prompt, renders the Phase 7 placeholder (T-128)', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.getByTestId('ai-copilot')).toHaveCount(0);
+  const toggle = page.getByTestId('copilot-toggle');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await toggle.click();
+  await expect(page.getByTestId('ai-copilot')).toBeVisible();
+  // Per-message testids are per-id (so strict-mode doesn't explode on
+  // multi-turn chats); role-level assertions scope via `data-role`.
+  const copilot = page.getByTestId('ai-copilot');
+  await expect(copilot.locator('[data-role="system"]').first()).toBeVisible();
+
+  const input = page.getByTestId('ai-copilot-input');
+  await input.fill('Add a title slide');
+  await page.getByTestId('ai-copilot-send').click();
+  await expect(copilot.locator('[data-role="user"]').last()).toHaveText('Add a title slide');
+  // Assistant reply references Phase 7 because the route returns 501.
+  await expect(copilot.locator('[data-role="assistant"]').last()).toContainText('Phase 7');
+
+  // Esc closes the sidebar.
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('ai-copilot')).toHaveCount(0);
+});
+
 test('agent execute stub returns a structured 501', async ({ request }) => {
   const response = await request.post('/api/agent/execute', {
     data: { tool: 'noop', args: {} },

@@ -117,6 +117,18 @@ const EN_CATALOG = new Map<string, string>([
   ['copilot.empty', 'No suggestions yet'],
   ['copilot.applyAll', 'Apply all'],
   ['copilot.dismiss', 'Dismiss'],
+  ['copilot.close', 'Close copilot'],
+  [
+    'copilot.welcome',
+    'Hi! Ask me to tweak slides — add a bullet, restyle a title, shorten a block of text.',
+  ],
+  ['copilot.notWired', 'AI execution is wired in Phase 7.'],
+  ['copilot.errorPrefix', 'Error:'],
+  ['copilot.status.idle', 'Idle'],
+  ['copilot.status.pending', 'Thinking…'],
+  ['copilot.status.error', 'Error'],
+  ['copilot.variants', 'Variants'],
+  ['copilot.variants.empty', 'No variants yet — ask for one.'],
 
   // Properties panel (selection-invariant)
   ['properties.fallback', 'Select an element'],
