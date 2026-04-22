@@ -119,7 +119,11 @@ function ElementOverlay({ elementId }: { elementId: string }): ReactElement | nu
 
   const handlePointerUp = useCallback((event: ReactPointerEvent<HTMLElement>) => {
     const g = gestureRef.current;
-    if (!g) return;
+    // Only react to the pointer that owns the active gesture. A second
+    // concurrent pointer on a different handle (rare but possible on
+    // multitouch) would otherwise null the first gesture's state and
+    // leak its capture.
+    if (!g || g.pointerId !== event.pointerId) return;
     event.currentTarget.releasePointerCapture(g.pointerId);
     gestureRef.current = null;
   }, []);

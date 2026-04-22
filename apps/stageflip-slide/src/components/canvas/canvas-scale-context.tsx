@@ -5,7 +5,7 @@
 
 'use client';
 
-import type { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { createContext, useContext } from 'react';
 
 /** Default scale when no provider is mounted (tests that render overlays
@@ -18,7 +18,7 @@ export function CanvasScaleProvider({
 }: {
   scale: number;
   children: ReactNode;
-}): React.ReactElement {
+}): ReactElement {
   return <CanvasScaleContext.Provider value={scale}>{children}</CanvasScaleContext.Provider>;
 }
 

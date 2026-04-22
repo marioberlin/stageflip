@@ -229,6 +229,21 @@ describe('<SelectionOverlay> — resize gestures', () => {
   });
 });
 
+describe('<SelectionOverlay> — multi-pointer guard', () => {
+  it('ignores pointerup from a pointer that does not own the gesture', () => {
+    const { snapshots } = renderWithSelection();
+    const body = screen.getByTestId('selection-move-target');
+    fireEvent.pointerDown(body, { pointerId: 1, clientX: 200, clientY: 200 });
+    fireEvent.pointerMove(body, { pointerId: 1, clientX: 230, clientY: 200 });
+    // Foreign pointer releases — must not tear down gesture #1.
+    fireEvent.pointerUp(body, { pointerId: 99, clientX: 0, clientY: 0 });
+    // Continue the owning gesture; it should still accumulate.
+    fireEvent.pointerMove(body, { pointerId: 1, clientX: 260, clientY: 200 });
+    fireEvent.pointerUp(body, { pointerId: 1, clientX: 260, clientY: 200 });
+    expect(last(snapshots).x).toBeCloseTo(160, 5);
+  });
+});
+
 describe('<SelectionOverlay> — rotation gesture', () => {
   it('writes a normalized rotation when the pointer sweeps around the center', () => {
     const { snapshots } = renderWithSelection();
