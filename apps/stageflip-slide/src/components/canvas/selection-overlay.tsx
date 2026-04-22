@@ -1,5 +1,7 @@
 // apps/stageflip-slide/src/components/canvas/selection-overlay.tsx
-// Bounding-box + transform-handle overlay for selected elements (T-123b).
+// Bounding-box + transform-handle overlay for selected elements (T-123b);
+// drag / resize / rotate gestures coalesce into one undo entry via the
+// T-133a transaction API.
 
 'use client';
 

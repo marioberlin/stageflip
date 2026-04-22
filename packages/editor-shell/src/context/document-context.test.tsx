@@ -586,7 +586,7 @@ describe('T-133 updateDocument → patch-based undo/redo', () => {
       expect(result.current.inTransaction).toBe(false);
     });
 
-    it('undo during a transaction is a no-op — gesture takes priority', () => {
+    it('undo during a transaction is a no-op — gesture takes priority, stack untouched', () => {
       const doc = makeSlideDoc({ slideCount: 1 });
       const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
       act(() => {
@@ -600,10 +600,21 @@ describe('T-133 updateDocument → patch-based undo/redo', () => {
         result.current.beginTransaction();
         result.current.undo();
       });
+      // Document is unchanged AND the historical entry is still on the
+      // stack — `undo` was a pure no-op, not a pop-without-apply.
       expect(result.current.document?.meta.title).toBe('historical');
+      expect(result.current.canUndo).toBe(true);
       act(() => {
         result.current.cancelTransaction();
       });
+      // Popping now surfaces the historical entry, proving it was never
+      // consumed by the blocked undo call.
+      let popped: MicroUndo | undefined;
+      act(() => {
+        popped = result.current.popUndoEntry();
+      });
+      expect(popped).toBeDefined();
+      expect(result.current.canUndo).toBe(false);
     });
 
     it('nested beginTransaction is ignored — outer snapshot wins', () => {

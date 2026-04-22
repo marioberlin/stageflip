@@ -288,6 +288,10 @@ export function useDocument(): DocumentContextValue {
 
   const beginTransaction = useCallback<DocumentContextValue['beginTransaction']>(
     (_label) => {
+      // The `_label` argument is forward-compat: a future telemetry / undo
+      // cheat-sheet task may record it alongside the MicroUndo. Today we
+      // drop it silently — callers can still pass a meaningful string so
+      // call sites read clearly at the gesture layer.
       const current = store.get(documentAtom);
       if (current === null) return;
       // Ignore nested begins rather than stack — Phase 6 has one gesture
@@ -301,8 +305,12 @@ export function useDocument(): DocumentContextValue {
   const commitTransaction = useCallback<DocumentContextValue['commitTransaction']>(() => {
     const txn = store.get(transactionAtom);
     if (txn === null) return;
-    setTransaction(null);
+    // Read the document BEFORE clearing the transaction atom so a subscribed
+    // consumer that reacts to `inTransaction` flipping to false can't observe
+    // a pre-commit document. Jotai's store.get is synchronous in practice,
+    // but the in-order read + single-write keeps the happens-before clear.
     const current = store.get(documentAtom);
+    setTransaction(null);
     if (current === null) return;
     const forward = compare(txn.snapshot, current);
     if (forward.length === 0) return; // net no-op gesture
