@@ -559,6 +559,9 @@ importers:
 
   packages/testing:
     dependencies:
+      '@stageflip/rir':
+        specifier: workspace:*
+        version: link:../rir
       zod:
         specifier: 3.25.76
         version: 3.25.76
