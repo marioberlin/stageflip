@@ -8,3 +8,8 @@
 
 export { describeInner, describeSchema, type SchemaDescriptor } from './introspect.js';
 export { buildSchemaEntries, generateSchemaSkill } from './schema-gen.js';
+export {
+  buildValidationRuleGroups,
+  generateValidationRulesSkill,
+  type ValidationRulesPkg,
+} from './validation-rules-gen.js';

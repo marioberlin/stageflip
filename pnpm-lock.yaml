@@ -531,6 +531,9 @@ importers:
       '@stageflip/skills-core':
         specifier: workspace:^
         version: link:../skills-core
+      '@stageflip/validation':
+        specifier: workspace:^
+        version: link:../validation
       zod:
         specifier: 3.25.76
         version: 3.25.76

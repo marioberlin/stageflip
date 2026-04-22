@@ -8,7 +8,11 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import * as schema from '../packages/schema/src/index.js';
-import { generateSchemaSkill } from '../packages/skills-sync/src/index.js';
+import {
+  generateSchemaSkill,
+  generateValidationRulesSkill,
+} from '../packages/skills-sync/src/index.js';
+import * as validation from '../packages/validation/src/index.js';
 
 interface SyncJob {
   name: string;
@@ -21,6 +25,11 @@ const JOBS: SyncJob[] = [
     name: 'reference/schema',
     target: resolve('skills/stageflip/reference/schema/SKILL.md'),
     generate: () => generateSchemaSkill(schema),
+  },
+  {
+    name: 'reference/validation-rules',
+    target: resolve('skills/stageflip/reference/validation-rules/SKILL.md'),
+    generate: () => generateValidationRulesSkill(validation),
   },
 ];
 
