@@ -1,9 +1,9 @@
-# StageFlip — Implementation Plan v1.4
+# StageFlip — Implementation Plan v1.5
 
 **Audience**: AI coding agents executing autonomously; human product owners ratifying at phase boundaries.
 **Scope**: 280+ tasks across 12 phases, from empty repo to first public beta.
 **Format**: Every task is self-contained with references, prompts, acceptance criteria, and verification commands.
-**Last updated**: 2026-04-21 — T-100 split into T-100/T-100b/T-100c/T-100d/T-100e. See §C.10 changelog.
+**Last updated**: 2026-04-21 — Phase 5 closeout: T-105 + T-106 carried to Phase 6 as T-137 + T-138. See §C.10 changelog.
 
 ---
 
@@ -319,6 +319,8 @@ When a task references these, treat as **API specs only**. Read docs; do not cop
 
 ## Phase 5 — Parity Harness + Pre-Render Linter (Week 23–25)
 
+**Status**: ✅ **Ratified 2026-04-22.** All 11 tasks merged (T-100 family × 5, T-101, T-102, T-103, T-104, T-107; T-105 + T-106 carried to Phase 6 as T-137 + T-138 per v1.5 changelog). Exit criteria met on the core harness + linter + CI gate work: `pnpm parity --fixtures-dir packages/testing/fixtures` exits 0 across all 5 fixtures (structural today — skipped `no-candidates` / `no-goldens`; priming deferred to a future tooling task); `@stageflip/validation` ships 33 lint rules across 7 categories with `ALL_RULES.length >= 30` asserted in the runner suite. All 10 gates green on `main` at `75defb4`: typecheck, lint, test (1047 cases across 21 test-active packages), check-licenses (482 deps), check-remotion-imports (281 files), check-skill-drift, skills-sync:check, check-determinism (21 files), size-limit (frame-runtime 19.52 kB, cdp-host-bundle 313.82 kB / 500 kB budget), parity. Zero escalations raised this phase. See `docs/handover-phase5-complete.md` for the full closeout.
+
 **Goal**: Quality enforced, not aspirational.
 **Exit criteria**: CI parity stage green on 5 fixtures × 2 backends; pre-render linter catches all 30+ test violations.
 
@@ -333,9 +335,15 @@ When a task references these, treat as **API specs only**. Read docs; do not cop
 | T-102 | Define fixture format + 5 starter fixtures (one per runtime tier) | M |
 | T-103 | Parity CI integration (runs on PRs touching rendering code) | M |
 | T-104 | Pre-render linter — 30+ rules (timing, duration, theme slots, raw hex, stale bindings, etc.) adapted from Hyperframes linter | L |
-| T-105 | Visual diff viewer (side-by-side / slider / overlay) | M |
-| T-106 | Auto-fix passes (10) with iterative convergence | L |
 | T-107 | `skills/stageflip/workflows/parity-testing/SKILL.md` + `reference/validation-rules/SKILL.md` (auto-gen) | M |
+
+**Carried over to Phase 6** (handover 2026-04-21): T-105 (visual-diff
+viewer) + T-106 (auto-fix passes). Both depend on T-104's rule
+surface + T-100's `ScoreReport` shape, both of which shipped this
+phase. They were deferred because Phase 5's core (parity harness,
+bundle host, linter, CI gate) was complete without them — shipping
+T-105/T-106 rounds out tooling but doesn't unblock any downstream
+phase. Renumbered / carried as T-137 / T-138 in Phase 6.
 
 ---
 
@@ -365,6 +373,8 @@ When a task references these, treat as **API specs only**. Read docs; do not cop
 | T-134 | Branding pass: StageFlip.Slide logo, copy, CSS vars. Abyssal Clarity preserved | M |
 | T-135 | `skills/stageflip/modes/stageflip-slide/SKILL.md` final | M |
 | T-136 | E2E Playwright regression: new deck, add slide, edit text, preview, export PNG | M |
+| **T-137** | **Visual diff viewer** (side-by-side / slider / overlay) — HTML artifact consuming `FixtureScoreOutcome` + `ScoreReport` from `@stageflip/parity-cli`. Carried from Phase 5 (was T-105); rule + score surface stable as of T-104/T-107 merges | M |
+| **T-138** | **Auto-fix passes (10) with iterative convergence** — builds on T-104's `LintRule` + `LintFinding` surface. Each rule declares an optional `fix(document)` that returns a mutated document; the orchestrator runs up to 10 passes until either no findings remain or no rule produced a change. Carried from Phase 5 (was T-106) | L |
 
 ---
 
@@ -676,6 +686,7 @@ Phase 0 ──► Phase 1 ──► Phase 2 ──► Phase 3 ──┬──►
 
 ## C.10 Changelog
 
+- **v1.5** (2026-04-21): Phase 5 closeout. T-105 (visual diff viewer) and T-106 (auto-fix passes) carried from Phase 5 to Phase 6 as T-137 + T-138. Both depend on surfaces that shipped this phase (T-104 linter rules, T-100 ScoreReport) but neither blocks Phase 6's slide-migration critical path, so they're scheduled as tooling follow-ups. Phase 5 exit criterion met on the core parity harness + linter + CI gate work.
 - **v1.4** (2026-04-21): T-100d narrowed to scaffold + CSS runtime (M); T-100e added for the remaining 5 live runtimes (M). Splits the L-sized T-100d into two reviewable pieces rather than landing React + 6 runtimes + their transitive deps in one PR.
 - **v1.3** (2026-04-21): T-100c narrowed to contract + smart placeholder (M); T-100d added for the actual runtime-bundle host (L). Split keeps each PR reviewable and defers the Vite-bundled runtime-registration work to its own task rather than trying to land it alongside the contract change.
 - **v1.2** (2026-04-21): T-100 split into three rows post-scope-review on PR #13. T-100 stays comparators-only; T-100b adds BeginFrame capture; T-100c adds the real host HTML bundle. Prevents T-100 from silently bundling three tasks and gives reviewers independent pass-fail targets.
@@ -684,4 +695,4 @@ Phase 0 ──► Phase 1 ──► Phase 2 ──► Phase 3 ──┬──►
 
 ---
 
-**End of plan v1.4.** Start at T-001.
+**End of plan v1.5.** Start at T-001.
