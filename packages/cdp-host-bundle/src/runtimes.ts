@@ -11,7 +11,11 @@
 // are possible across the shipped demo clips.
 
 import { registerRuntime } from '@stageflip/runtimes-contract';
-import { createCssRuntime, solidBackgroundClip } from '@stageflip/runtimes-css';
+import {
+  createCssRuntime,
+  gradientBackgroundClip,
+  solidBackgroundClip,
+} from '@stageflip/runtimes-css';
 import { createFrameRuntimeBridge } from '@stageflip/runtimes-frame-runtime-bridge';
 import { createGsapRuntime, motionTextGsap } from '@stageflip/runtimes-gsap';
 import { createLottieRuntime, lottieLogo } from '@stageflip/runtimes-lottie';
@@ -43,7 +47,7 @@ export type LiveRuntimeId = (typeof LIVE_RUNTIME_IDS)[number];
  * that need to re-register must clear first.
  */
 export function registerAllLiveRuntimes(): void {
-  registerRuntime(createCssRuntime([solidBackgroundClip]));
+  registerRuntime(createCssRuntime([solidBackgroundClip, gradientBackgroundClip]));
   registerRuntime(createGsapRuntime([motionTextGsap]));
   registerRuntime(createLottieRuntime([lottieLogo]));
   registerRuntime(createShaderRuntime([flashThroughWhite, swirlVortex, glitch]));
