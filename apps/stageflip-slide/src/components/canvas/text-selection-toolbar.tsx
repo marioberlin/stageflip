@@ -162,7 +162,7 @@ function mapTextElementRuns(
 ): Element[] {
   return elements.map((el) => {
     if (el.id === elementId && el.type === 'text') {
-      const weight = patch.weight ?? current.weight;
+      const weight = sanitizeWeight(patch.weight ?? current.weight);
       const italic = patch.italic ?? current.italic;
       const underline = patch.underline ?? current.underline;
       // Strip keys that are at their defaults so docs don't bloat.
@@ -183,6 +183,18 @@ function mapTextElementRuns(
     }
     return el;
   });
+}
+
+/**
+ * Schema requires weights to be integer multiples of 100 in [100, 900]
+ * (`z.number().int().min(100).max(900).multipleOf(100)`). Rounding +
+ * clamping protects documents that were imported from outside tools
+ * with non-canonical weight values from failing Zod parse downstream.
+ */
+function sanitizeWeight(raw: number): number {
+  if (!Number.isFinite(raw)) return 400;
+  const rounded = Math.round(raw / 100) * 100;
+  return Math.max(100, Math.min(900, rounded));
 }
 
 // ---------------------------------------------------------------------------

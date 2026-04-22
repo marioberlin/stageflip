@@ -6,7 +6,7 @@
 import { useDocument } from '@stageflip/editor-shell';
 import type { Document, Element, Slide, SlideContent, TextElement } from '@stageflip/schema';
 import type { CSSProperties, ReactElement, KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { useCallback, useLayoutEffect, useRef } from 'react';
 
 /**
  * Replaces a text element's static render with a contenteditable span
@@ -110,16 +110,6 @@ export function InlineTextEditor({
   const handleBlur = useCallback(() => {
     commit();
   }, [commit]);
-
-  // Safety: commit once on unmount if the document still has a stale
-  // reference. In practice `onClose` clears the owner's state; this
-  // covers tear-down from selection loss.
-  useEffect(() => {
-    return () => {
-      // Intentionally empty — mount effect writes initial text; commit
-      // goes through the blur/Enter path.
-    };
-  }, []);
 
   return (
     <span

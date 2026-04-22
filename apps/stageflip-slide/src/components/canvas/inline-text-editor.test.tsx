@@ -147,13 +147,27 @@ describe('<InlineTextEditor>', () => {
     expect(texts[texts.length - 1]).toBe('keep-me');
   });
 
-  it('does not commit when the text has not changed', () => {
+  it('does not commit when the text has not changed (document reference stays stable)', () => {
+    // Track the doc reference, not just its .text — if updateDocument
+    // were called with the same value, a new document object would be
+    // produced and we'd see a reference change here. The guard must
+    // short-circuit that call entirely.
     const element = baseTextElement({ text: 'same' });
+    const initialDoc = makeDocWith(element);
     const onClose = vi.fn();
-    const texts: Array<string | null> = [];
+    const docRefs: Array<Document | null> = [];
+
+    function DocRefProbe(): null {
+      const { document: doc } = useDocument();
+      useEffect(() => {
+        docRefs.push(doc);
+      }, [doc]);
+      return null;
+    }
+
     render(
-      <DocumentProvider initialDocument={makeDocWith(element)}>
-        <Probe elementId={element.id} onText={(t) => texts.push(t)} />
+      <DocumentProvider initialDocument={initialDoc}>
+        <DocRefProbe />
         <InlineTextEditor element={element} onClose={onClose} />
       </DocumentProvider>,
     );
@@ -162,8 +176,10 @@ describe('<InlineTextEditor>', () => {
       fireEvent.blur(editor);
     });
     expect(onClose).toHaveBeenCalledTimes(1);
-    // Probe observed only the initial value — no update fired.
-    expect(texts.every((t) => t === 'same')).toBe(true);
+    // Every observed doc reference is the same instance — no new
+    // updateDocument call happened.
+    expect(docRefs.length).toBeGreaterThan(0);
+    for (const d of docRefs) expect(d).toBe(initialDoc);
   });
 
   it('marks itself as contenteditable so the shortcut registry suppresses bare-key shortcuts', () => {

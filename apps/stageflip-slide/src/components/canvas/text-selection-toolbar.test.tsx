@@ -125,6 +125,31 @@ describe('<TextSelectionToolbar> — italic + underline', () => {
   });
 });
 
+describe('<TextSelectionToolbar> — weight sanitization', () => {
+  it('rounds non-multiple-of-100 weights to the nearest valid value on any write', () => {
+    // Imported docs can carry off-grid weight values (e.g. 350). Any
+    // subsequent write must clamp before persisting or Zod parse fails.
+    const el = baseText({ runs: [{ text: 'Hello', weight: 350, italic: true }] });
+    const { snapshots } = renderWith(el);
+    fireEvent.click(screen.getByTestId(`text-toolbar-underline-${el.id}`));
+    const last = snapshots[snapshots.length - 1];
+    // 350 rounds to 400 — the default — and is stripped from the run.
+    expect(last?.[0]?.weight).toBeUndefined();
+    expect(last?.[0]?.italic).toBe(true);
+    expect(last?.[0]?.underline).toBe(true);
+  });
+
+  it('clamps out-of-range weights into [100, 900]', () => {
+    // 900 is already at the upper bound — sanitization must not push
+    // it out. This is the regression guard against "rounded + 100".
+    const el = baseText({ runs: [{ text: 'Hello', weight: 900, italic: true }] });
+    const { snapshots } = renderWith(el);
+    fireEvent.click(screen.getByTestId(`text-toolbar-underline-${el.id}`));
+    const last = snapshots[snapshots.length - 1];
+    expect(last?.[0]?.weight).toBe(900);
+  });
+});
+
 describe('<TextSelectionToolbar> — aria state', () => {
   it('aria-pressed reflects bold state on the button', () => {
     const el = baseText({ runs: [{ text: 'Hello', weight: 700 }] });
