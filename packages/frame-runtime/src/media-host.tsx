@@ -23,6 +23,9 @@ export type FrameVideoProps = FrameMediaWindowProps & ComponentPropsWithoutRef<'
 export type FrameAudioProps = FrameMediaWindowProps & ComponentPropsWithoutRef<'audio'>;
 export type FrameImageProps = FrameMediaWindowProps & ComponentPropsWithoutRef<'img'>;
 
+// exactOptionalPropertyTypes: never assign undefined to an optional key.
+// Build the options object conditionally so absent props stay absent rather
+// than being written as { offsetMs: undefined }.
 function buildSyncOptions(
   offsetMs: number | undefined,
   durationMs: number | undefined,

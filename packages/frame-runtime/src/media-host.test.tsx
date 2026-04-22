@@ -63,6 +63,13 @@ describe('FrameVideo', () => {
     const container = wrap(<FrameVideo src="/a.mp4" offsetMs={1000} durationMs={500} />);
     expect(container.querySelector('video')).not.toBeNull();
   });
+
+  it('keeps the <video> mounted when durationMs=0 (sync hook holds it paused)', () => {
+    // Zero-length window means useMediaSync never matches `inWindow`; the
+    // element must still mount so the ref is stable for consumers.
+    const container = wrap(<FrameVideo src="/a.mp4" offsetMs={0} durationMs={0} />);
+    expect(container.querySelector('video')).not.toBeNull();
+  });
 });
 
 describe('FrameAudio', () => {
@@ -90,6 +97,11 @@ describe('FrameAudio', () => {
     expect(audio.hasAttribute('durationMs')).toBe(false);
     expect(audio.hasAttribute('offsetms')).toBe(false);
     expect(audio.hasAttribute('durationms')).toBe(false);
+  });
+
+  it('keeps the <audio> mounted when durationMs=0 (sync hook holds it paused)', () => {
+    const container = wrap(<FrameAudio src="/voice.mp3" offsetMs={0} durationMs={0} />);
+    expect(container.querySelector('audio')).not.toBeNull();
   });
 });
 
