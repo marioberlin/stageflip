@@ -450,6 +450,221 @@ describe('T-133 updateDocument → patch-based undo/redo', () => {
     warn.mockRestore();
   });
 
+  // T-133a coalescing transaction API.
+
+  describe('beginTransaction / commitTransaction / cancelTransaction', () => {
+    it('starts idle (inTransaction === false)', () => {
+      const doc = makeSlideDoc({ slideCount: 1 });
+      const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+      expect(result.current.inTransaction).toBe(false);
+    });
+
+    it('flips inTransaction true between begin + commit', () => {
+      const doc = makeSlideDoc({ slideCount: 1 });
+      const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+      act(() => {
+        result.current.beginTransaction();
+      });
+      expect(result.current.inTransaction).toBe(true);
+      act(() => {
+        result.current.commitTransaction();
+      });
+      expect(result.current.inTransaction).toBe(false);
+    });
+
+    it('updateDocument inside a transaction applies to the atom but does NOT push undo entries', () => {
+      const doc = makeSlideDoc({ slideCount: 1 });
+      const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+      act(() => {
+        result.current.beginTransaction('drag');
+        for (let i = 0; i < 5; i += 1) {
+          result.current.updateDocument((d) => ({
+            ...d,
+            meta: { ...d.meta, title: `step-${i}` },
+          }));
+        }
+      });
+      expect(result.current.canUndo).toBe(false);
+      expect(result.current.document?.meta.title).toBe('step-4');
+    });
+
+    it('commitTransaction pushes exactly one MicroUndo covering the whole gesture', () => {
+      const doc = makeSlideDoc({ slideCount: 1 });
+      const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+      act(() => {
+        result.current.beginTransaction();
+        result.current.updateDocument((d) => ({
+          ...d,
+          meta: { ...d.meta, title: 'mid-1' },
+        }));
+        result.current.updateDocument((d) => ({
+          ...d,
+          meta: { ...d.meta, title: 'final' },
+        }));
+        result.current.commitTransaction();
+      });
+      expect(result.current.canUndo).toBe(true);
+      expect(result.current.document?.meta.title).toBe('final');
+      let popped = 0;
+      act(() => {
+        while (result.current.popUndoEntry()) popped += 1;
+      });
+      expect(popped).toBe(1);
+    });
+
+    it('commitTransaction undo rolls back the whole gesture (not the last step)', () => {
+      const doc = makeSlideDoc({ slideCount: 1 });
+      const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+      const originalTitle = doc.meta.title;
+      act(() => {
+        result.current.beginTransaction();
+        result.current.updateDocument((d) => ({
+          ...d,
+          meta: { ...d.meta, title: 'mid' },
+        }));
+        result.current.updateDocument((d) => ({
+          ...d,
+          meta: { ...d.meta, title: 'final' },
+        }));
+        result.current.commitTransaction();
+      });
+      act(() => {
+        result.current.undo();
+      });
+      expect(result.current.document?.meta.title).toBe(originalTitle);
+    });
+
+    it('commitTransaction with a net-zero diff does not push an entry', () => {
+      const doc = makeSlideDoc({ slideCount: 1 });
+      // Fixture has no title; seed one outside the transaction so we have
+      // a definite starting string to restore to.
+      const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+      act(() => {
+        result.current.updateDocument((d) => ({
+          ...d,
+          meta: { ...d.meta, title: 'baseline' },
+        }));
+      });
+      // Clear the history so only the transaction's (non-)effect matters.
+      act(() => {
+        while (result.current.popUndoEntry()) {
+          /* drain */
+        }
+      });
+      expect(result.current.canUndo).toBe(false);
+      act(() => {
+        result.current.beginTransaction();
+        result.current.updateDocument((d) => ({
+          ...d,
+          meta: { ...d.meta, title: 'temporary' },
+        }));
+        result.current.updateDocument((d) => ({
+          ...d,
+          meta: { ...d.meta, title: 'baseline' },
+        }));
+        result.current.commitTransaction();
+      });
+      expect(result.current.canUndo).toBe(false);
+    });
+
+    it('cancelTransaction restores the document to the pre-begin snapshot', () => {
+      const doc = makeSlideDoc({ slideCount: 1 });
+      const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+      act(() => {
+        result.current.beginTransaction();
+        result.current.updateDocument((d) => ({
+          ...d,
+          meta: { ...d.meta, title: 'will-be-reverted' },
+        }));
+      });
+      expect(result.current.document?.meta.title).toBe('will-be-reverted');
+      act(() => {
+        result.current.cancelTransaction();
+      });
+      expect(result.current.document).toStrictEqual(doc);
+      expect(result.current.canUndo).toBe(false);
+      expect(result.current.inTransaction).toBe(false);
+    });
+
+    it('undo during a transaction is a no-op — gesture takes priority, stack untouched', () => {
+      const doc = makeSlideDoc({ slideCount: 1 });
+      const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+      act(() => {
+        result.current.updateDocument((d) => ({
+          ...d,
+          meta: { ...d.meta, title: 'historical' },
+        }));
+      });
+      expect(result.current.canUndo).toBe(true);
+      act(() => {
+        result.current.beginTransaction();
+        result.current.undo();
+      });
+      // Document is unchanged AND the historical entry is still on the
+      // stack — `undo` was a pure no-op, not a pop-without-apply.
+      expect(result.current.document?.meta.title).toBe('historical');
+      expect(result.current.canUndo).toBe(true);
+      act(() => {
+        result.current.cancelTransaction();
+      });
+      // Popping now surfaces the historical entry, proving it was never
+      // consumed by the blocked undo call.
+      let popped: MicroUndo | undefined;
+      act(() => {
+        popped = result.current.popUndoEntry();
+      });
+      expect(popped).toBeDefined();
+      expect(result.current.canUndo).toBe(false);
+    });
+
+    it('nested beginTransaction is ignored — outer snapshot wins', () => {
+      const doc = makeSlideDoc({ slideCount: 1 });
+      const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+      const originalTitle = doc.meta.title;
+      act(() => {
+        result.current.beginTransaction();
+        result.current.updateDocument((d) => ({
+          ...d,
+          meta: { ...d.meta, title: 'outer' },
+        }));
+        result.current.beginTransaction();
+        result.current.updateDocument((d) => ({
+          ...d,
+          meta: { ...d.meta, title: 'inner' },
+        }));
+        result.current.commitTransaction();
+      });
+      act(() => {
+        result.current.undo();
+      });
+      expect(result.current.document?.meta.title).toBe(originalTitle);
+    });
+
+    it('commitTransaction without an active transaction is a no-op', () => {
+      const doc = makeSlideDoc({ slideCount: 1 });
+      const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+      act(() => {
+        result.current.commitTransaction();
+      });
+      expect(result.current.canUndo).toBe(false);
+      expect(result.current.inTransaction).toBe(false);
+    });
+
+    it('setDocument clears a pending transaction (consistent with stack clear)', () => {
+      const doc = makeSlideDoc({ slideCount: 1 });
+      const replacement = makeSlideDoc({ slideCount: 2 });
+      const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+      act(() => {
+        result.current.beginTransaction();
+      });
+      expect(result.current.inTransaction).toBe(true);
+      act(() => {
+        result.current.setDocument(replacement);
+      });
+      expect(result.current.inTransaction).toBe(false);
+    });
+  });
+
   it('round-trips nested element mutations', () => {
     const doc = makeSlideDoc({ slideCount: 1, elementsPerSlide: 2 });
     const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });

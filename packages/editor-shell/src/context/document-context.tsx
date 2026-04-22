@@ -53,7 +53,9 @@ import {
   type MicroUndo,
   canRedoAtom,
   canUndoAtom,
+  inTransactionAtom,
   redoStackAtom,
+  transactionAtom,
   undoStackAtom,
 } from '../atoms/undo';
 
@@ -95,6 +97,24 @@ export interface DocumentContextValue {
   popUndoEntry: () => MicroUndo | undefined;
   pushRedoEntry: (entry: MicroUndo) => void;
   popRedoEntry: () => MicroUndo | undefined;
+
+  /** True while a transaction is active. Drags and other coalesced
+   *  gestures read this to know whether to schedule a commit. */
+  inTransaction: boolean;
+  /** Open a coalescing transaction. `updateDocument` calls between here
+   *  and `commitTransaction()` apply to the atom directly without pushing
+   *  undo entries; a single entry diffs snapshot-vs-final on commit.
+   *  No-op if the document is null or a transaction is already active. */
+  beginTransaction: (label?: string) => void;
+  /** Close the current transaction and push one `MicroUndo` covering
+   *  every `updateDocument` call that landed while it was active.
+   *  No-op if no transaction is active or the document is null. An empty
+   *  net diff (drag-and-cancel-style) emits no entry. */
+  commitTransaction: () => void;
+  /** Close the current transaction and restore the document to the
+   *  pre-transaction snapshot. Use when a gesture is aborted (pointer
+   *  cancel, Escape mid-drag). No-op if no transaction is active. */
+  cancelTransaction: () => void;
 }
 
 export interface DocumentProviderProps {
@@ -162,8 +182,10 @@ export function useDocument(): DocumentContextValue {
 
   const canUndo = useAtomValue(canUndoAtom);
   const canRedo = useAtomValue(canRedoAtom);
+  const inTransaction = useAtomValue(inTransactionAtom);
   const setUndoStack = useSetAtom(undoStackAtom);
   const setRedoStack = useSetAtom(redoStackAtom);
+  const setTransaction = useSetAtom(transactionAtom);
 
   const pushUndoEntry = useCallback<DocumentContextValue['pushUndoEntry']>(
     (entry) => {
@@ -226,13 +248,14 @@ export function useDocument(): DocumentContextValue {
     (doc) => {
       // Replacing the whole document invalidates the patch history: inverse
       // operations recorded against the old tree cannot apply cleanly to a
-      // different document. Clear both stacks rather than leave them armed
-      // with entries that would throw or silently corrupt state on undo.
+      // different document. Clear both stacks + any in-flight transaction
+      // so the next gesture starts from a clean slate.
       setDocumentAtom(doc);
       setUndoStack([]);
       setRedoStack([]);
+      setTransaction(null);
     },
-    [setDocumentAtom, setUndoStack, setRedoStack],
+    [setDocumentAtom, setUndoStack, setRedoStack, setTransaction],
   );
 
   const updateDocument = useCallback<DocumentContextValue['updateDocument']>(
@@ -241,6 +264,13 @@ export function useDocument(): DocumentContextValue {
       if (prev === null) return;
       const next = updater(prev);
       if (next === prev) return;
+      // Inside a transaction: apply directly and defer undo-entry creation
+      // to `commitTransaction()`. We still skip no-op diffs at the atom
+      // layer below via the quick `next === prev` check above.
+      if (store.get(transactionAtom) !== null) {
+        setDocumentAtom(next);
+        return;
+      }
       const forward = compare(prev, next);
       if (forward.length === 0) {
         // Updater produced a structurally equal doc (new reference, same
@@ -256,7 +286,50 @@ export function useDocument(): DocumentContextValue {
     [store, setDocumentAtom, pushUndoEntry],
   );
 
+  const beginTransaction = useCallback<DocumentContextValue['beginTransaction']>(
+    (_label) => {
+      // The `_label` argument is forward-compat: a future telemetry / undo
+      // cheat-sheet task may record it alongside the MicroUndo. Today we
+      // drop it silently — callers can still pass a meaningful string so
+      // call sites read clearly at the gesture layer.
+      const current = store.get(documentAtom);
+      if (current === null) return;
+      // Ignore nested begins rather than stack — Phase 6 has one gesture
+      // at a time; nested transactions only happen by programmer error.
+      if (store.get(transactionAtom) !== null) return;
+      setTransaction({ snapshot: current });
+    },
+    [store, setTransaction],
+  );
+
+  const commitTransaction = useCallback<DocumentContextValue['commitTransaction']>(() => {
+    const txn = store.get(transactionAtom);
+    if (txn === null) return;
+    // Read the document BEFORE clearing the transaction atom so a subscribed
+    // consumer that reacts to `inTransaction` flipping to false can't observe
+    // a pre-commit document. Jotai's store.get is synchronous in practice,
+    // but the in-order read + single-write keeps the happens-before clear.
+    const current = store.get(documentAtom);
+    setTransaction(null);
+    if (current === null) return;
+    const forward = compare(txn.snapshot, current);
+    if (forward.length === 0) return; // net no-op gesture
+    const inverse = compare(current, txn.snapshot);
+    pushUndoEntry({ forward, inverse });
+  }, [store, setTransaction, pushUndoEntry]);
+
+  const cancelTransaction = useCallback<DocumentContextValue['cancelTransaction']>(() => {
+    const txn = store.get(transactionAtom);
+    if (txn === null) return;
+    setTransaction(null);
+    setDocumentAtom(txn.snapshot);
+  }, [store, setTransaction, setDocumentAtom]);
+
   const undo = useCallback<DocumentContextValue['undo']>(() => {
+    // Do not rewrite history while a gesture is mid-flight. The commit
+    // path ends the transaction before any shortcut can fire in practice;
+    // this guard covers synthetic undo calls from tests / tools.
+    if (store.get(transactionAtom) !== null) return;
     const current = store.get(documentAtom);
     if (current === null) return;
     const entry = popUndoEntry();
@@ -277,6 +350,7 @@ export function useDocument(): DocumentContextValue {
   }, [store, setDocumentAtom, popUndoEntry, pushRedoEntry, pushUndoEntry]);
 
   const redo = useCallback<DocumentContextValue['redo']>(() => {
+    if (store.get(transactionAtom) !== null) return;
     const current = store.get(documentAtom);
     if (current === null) return;
     const entry = popRedoEntry();
@@ -365,6 +439,10 @@ export function useDocument(): DocumentContextValue {
       popUndoEntry,
       pushRedoEntry,
       popRedoEntry,
+      inTransaction,
+      beginTransaction,
+      commitTransaction,
+      cancelTransaction,
     }),
     [
       document,
@@ -388,6 +466,10 @@ export function useDocument(): DocumentContextValue {
       popUndoEntry,
       pushRedoEntry,
       popRedoEntry,
+      inTransaction,
+      beginTransaction,
+      commitTransaction,
+      cancelTransaction,
     ],
   );
 }
