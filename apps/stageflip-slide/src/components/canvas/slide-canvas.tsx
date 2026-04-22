@@ -1,0 +1,133 @@
+// apps/stageflip-slide/src/components/canvas/slide-canvas.tsx
+// Scale-to-fit viewport for the active slide (T-123a).
+
+'use client';
+
+import { activeSlideIdAtom, slideByIdAtom, useEditorShellAtomValue } from '@stageflip/editor-shell';
+import type { CSSProperties, ReactElement } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { ElementView } from './element-view';
+
+/**
+ * Slide canvas reference dimensions. Editor coordinates are expressed
+ * against this 1920×1080 box; `scale-to-fit` rescales the inner plane
+ * to the actual viewport via a CSS `transform: scale(...)` so element
+ * x/y/width/height can stay in canvas-space.
+ */
+export const CANVAS_WIDTH = 1920;
+export const CANVAS_HEIGHT = 1080;
+
+export interface SlideCanvasProps {
+  /**
+   * Test seam. When provided the scale-to-fit logic skips ResizeObserver
+   * and uses these dimensions directly. Production callers omit.
+   */
+  viewportSizeForTest?: { width: number; height: number };
+}
+
+/**
+ * Read-only slide canvas. Resolves the active slide via the editor-shell
+ * atoms (T-121b) and renders each element through `<ElementView>`.
+ * Interactions arrive with T-123b; text editing with T-123c; animated
+ * playback with T-123d.
+ */
+export function SlideCanvas({ viewportSizeForTest }: SlideCanvasProps = {}): ReactElement {
+  const activeSlideId = useEditorShellAtomValue(activeSlideIdAtom);
+  const slideAtom = useMemo(() => slideByIdAtom(activeSlideId), [activeSlideId]);
+  const slide = useEditorShellAtomValue(slideAtom);
+
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const [viewportSize, setViewportSize] = useState<{ width: number; height: number } | null>(
+    viewportSizeForTest ?? null,
+  );
+
+  useLayoutEffect(() => {
+    if (viewportSizeForTest) return;
+    const el = viewportRef.current;
+    if (!el) return;
+    const apply = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setViewportSize({ width: rect.width, height: rect.height });
+      }
+    };
+    apply();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(apply);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [viewportSizeForTest]);
+
+  const scale = computeScale(viewportSize);
+
+  return (
+    <section
+      ref={viewportRef}
+      data-testid="slide-canvas"
+      data-active-slide-id={slide?.id ?? ''}
+      aria-label="Slide canvas"
+      style={viewportStyle}
+    >
+      <div data-testid="slide-canvas-plane" style={planeStyle(scale)}>
+        {slide ? (
+          slide.elements.map((el) => <ElementView key={el.id} element={el} />)
+        ) : (
+          <EmptyState />
+        )}
+      </div>
+    </section>
+  );
+}
+
+function EmptyState(): ReactElement {
+  return (
+    <div
+      data-testid="slide-canvas-empty"
+      style={{
+        position: 'absolute',
+        inset: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#a5acb4',
+        fontSize: 18,
+        letterSpacing: '0.04em',
+      }}
+    >
+      No active slide
+    </div>
+  );
+}
+
+function computeScale(viewportSize: { width: number; height: number } | null): number {
+  if (!viewportSize) return 1;
+  const scaleX = viewportSize.width / CANVAS_WIDTH;
+  const scaleY = viewportSize.height / CANVAS_HEIGHT;
+  const scale = Math.min(scaleX, scaleY);
+  return scale > 0 ? scale : 1;
+}
+
+const viewportStyle: CSSProperties = {
+  position: 'relative',
+  width: '100%',
+  height: '100%',
+  overflow: 'hidden',
+  background: 'var(--editor-canvas, #0f1620)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  borderRadius: 12,
+};
+
+function planeStyle(scale: number): CSSProperties {
+  return {
+    position: 'relative',
+    width: CANVAS_WIDTH,
+    height: CANVAS_HEIGHT,
+    transform: `scale(${scale})`,
+    transformOrigin: 'center center',
+    flexShrink: 0,
+    background: '#0b1219',
+    boxShadow: '0 4px 24px rgba(0, 114, 229, 0.08)',
+  };
+}
