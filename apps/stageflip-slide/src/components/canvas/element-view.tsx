@@ -13,13 +13,24 @@ import type {
   TextElement,
   VideoElement,
 } from '@stageflip/schema';
-import type { CSSProperties, PointerEventHandler, ReactElement } from 'react';
+import type {
+  CSSProperties,
+  MouseEventHandler,
+  PointerEventHandler,
+  ReactElement,
+  ReactNode,
+} from 'react';
 
 export interface ElementViewProps {
   element: Element;
   /** Fires on any pointer-down on the element's frame. Used by the canvas
    * to drive selection; absence keeps the element fully inert. */
   onPointerDown?: PointerEventHandler<HTMLDivElement>;
+  /** Fires on double-click. The canvas uses this to enter text-edit mode. */
+  onDoubleClick?: MouseEventHandler<HTMLDivElement>;
+  /** Overrides the default per-type content render. T-123c passes an
+   * inline-text editor in place of the static text span. */
+  children?: ReactNode;
 }
 
 /**
@@ -28,7 +39,12 @@ export interface ElementViewProps {
  * layer on as CSS transforms. Invisible elements are skipped entirely;
  * locked is ignored here (T-123b wires it to interactions).
  */
-export function ElementView({ element, onPointerDown }: ElementViewProps): ReactElement | null {
+export function ElementView({
+  element,
+  onPointerDown,
+  onDoubleClick,
+  children,
+}: ElementViewProps): ReactElement | null {
   if (element.visible === false) return null;
   const style: CSSProperties = {
     position: 'absolute',
@@ -48,8 +64,9 @@ export function ElementView({ element, onPointerDown }: ElementViewProps): React
       data-element-type={element.type}
       style={style}
       onPointerDown={onPointerDown}
+      onDoubleClick={onDoubleClick}
     >
-      {renderContent(element)}
+      {children ?? renderContent(element)}
     </div>
   );
 }

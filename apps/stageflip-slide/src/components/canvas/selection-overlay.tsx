@@ -52,9 +52,15 @@ interface ActiveGesture {
 
 export interface SelectionOverlayProps {
   selectedIds: ReadonlySet<string>;
+  /** Double-click on the overlay body forwards here. The canvas uses it
+   * to promote a selected element to edit mode (T-123c). */
+  onElementDoubleClick?: (elementId: string) => void;
 }
 
-export function SelectionOverlay({ selectedIds }: SelectionOverlayProps): ReactElement | null {
+export function SelectionOverlay({
+  selectedIds,
+  onElementDoubleClick,
+}: SelectionOverlayProps): ReactElement | null {
   if (selectedIds.size === 0) return null;
   return (
     <div
@@ -65,14 +71,21 @@ export function SelectionOverlay({ selectedIds }: SelectionOverlayProps): ReactE
         pointerEvents: 'none',
       }}
     >
-      {Array.from(selectedIds).map((id) => (
-        <ElementOverlay key={id} elementId={id} />
-      ))}
+      {Array.from(selectedIds).map((id) => {
+        const props: ElementOverlayProps = { elementId: id };
+        if (onElementDoubleClick) props.onDoubleClick = onElementDoubleClick;
+        return <ElementOverlay key={id} {...props} />;
+      })}
     </div>
   );
 }
 
-function ElementOverlay({ elementId }: { elementId: string }): ReactElement | null {
+interface ElementOverlayProps {
+  elementId: string;
+  onDoubleClick?: (id: string) => void;
+}
+
+function ElementOverlay({ elementId, onDoubleClick }: ElementOverlayProps): ReactElement | null {
   const atom = useMemo(() => elementByIdAtom(elementId), [elementId]);
   const element = useEditorShellAtomValue(atom);
   const { updateDocument } = useDocument();
@@ -144,7 +157,9 @@ function ElementOverlay({ elementId }: { elementId: string }): ReactElement | nu
 
   return (
     <div data-testid={`selection-overlay-${elementId}`} style={commonBoxStyle}>
-      {/* Move-cursor body — the whole bounding box is the drag target. */}
+      {/* Move-cursor body — the whole bounding box is the drag target.
+          Double-click forwards up to the canvas so a selected text
+          element can promote to edit mode (T-123c). */}
       <button
         type="button"
         data-testid={`selection-move-${elementId}`}
@@ -157,6 +172,7 @@ function ElementOverlay({ elementId }: { elementId: string }): ReactElement | nu
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
+        onDoubleClick={() => onDoubleClick?.(elementId)}
       />
 
       {/* Eight resize handles. */}
