@@ -3,7 +3,7 @@ title: CSS Runtime
 id: skills/stageflip/runtimes/css
 tier: runtime
 status: substantive
-last_updated: 2026-04-21
+last_updated: 2026-04-22
 owner_task: T-068
 related:
   - skills/stageflip/runtimes/contract/SKILL.md
@@ -64,6 +64,9 @@ registerRuntime(runtime);
 - `kind` — globally unique clip identifier.
 - `render(props)` — pure `(P) => ReactElement`. No `ctx`, no frame.
 - `fontRequirements?(props)` — forwarded to T-072 FontManager.
+- `propsSchema?` — optional `z.ZodType<P>`; consumed by `<ZodForm>` (T-125b).
+- `themeSlots?` — optional `Record<string, ThemeSlot>`; consumed by
+  `resolveClipDefaultsForTheme` (T-131a).
 
 The produced `ClipDefinition<unknown>` gates on the clip window internally;
 outside `[clipFrom, clipFrom + duration)` it returns `null`.
@@ -78,6 +81,15 @@ throw with `createCssRuntime: duplicate clip kind '...'`.
 Canonical demo — absolutely-positioned `<div>` filling the clip area with
 a CSS colour. Props: `{ color: string }`. Used as the T-067 parity fixture
 seed (`css-solid-background`).
+
+### `gradientBackgroundClip`
+
+Two-stop linear gradient over the clip area. Props (Zod-validated):
+`{ from?: string; to?: string; direction: 'horizontal' | 'vertical' | 'diagonal' }`.
+Declares `themeSlots: { from → palette.primary, to → palette.background }`
+so a document theme swap re-flows the gradient when `from` / `to` are not
+explicitly set. Hard fallback colours apply only when both the prop and
+the theme value are absent. Parity fixture: `css-gradient-background`.
 
 ## Render-signature intent
 
@@ -97,16 +109,19 @@ the frame-runtime bridge — keeps this runtime single-purpose.
 
 ## Bundle + license
 
-- License: runtime package has no external runtime deps; react is
-  peer-dep only.
-- Bundle: tiny (sub-1 KB own code). No `size-limit` entry required.
+- License: direct runtime deps are `@stageflip/schema` (workspace) and
+  `zod` (MIT, added T-131a); `react` is peer-dep only. All within the
+  whitelist in `THIRD_PARTY.md`.
+- Bundle: sub-2 KB own code (runtime only; Zod is imported by callers
+  that consume the propsSchema, but the clip itself doesn't pull Zod
+  into the render path). No `size-limit` entry required.
 
 ## Implementation map
 
 | File | Purpose |
 |---|---|
-| `packages/runtimes/css/src/index.ts` | `defineCssClip`, `createCssRuntime`, `solidBackgroundClip` |
-| `packages/runtimes/css/src/index.test.tsx` | Runtime shape, window gating, static-render assertions, demo clip rendering |
+| `packages/runtimes/css/src/index.ts` | `defineCssClip`, `createCssRuntime`, `solidBackgroundClip`, `gradientBackgroundClip` (T-131a) |
+| `packages/runtimes/css/src/index.test.tsx` | Runtime shape, window gating, static-render assertions, demo clip rendering, themeSlots passthrough + gradient resolution |
 
 ## Related
 

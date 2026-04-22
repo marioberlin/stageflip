@@ -16,6 +16,7 @@
 // - 'bake'  — runtime produces image / video assets offline; export swaps
 //             in the baked frames. Blender, heavy three compositions.
 
+import type { Theme, ThemePalette } from '@stageflip/schema';
 import type { ReactElement } from 'react';
 import type { ZodType } from 'zod';
 
@@ -59,6 +60,23 @@ export interface FontRequirement {
 }
 
 /**
+ * One end of a themeable prop binding. A clip declares — via
+ * `ClipDefinition.themeSlots` — which of its props pull defaults from the
+ * document theme. Two flavors:
+ *  - `palette` references a named role on `Theme.palette` (`primary`,
+ *    `accent`, …). Lets document-level theme swaps re-propagate.
+ *  - `token` references a dotted path on `Theme.tokens` (e.g.
+ *    `'color.brand.lime'`). Lets richer learned themes (T-249) drive any
+ *    clip prop without expanding the named-palette surface.
+ *
+ * Hardcoded palette literals in a clip body miss theme swaps; declared
+ * slots survive them. See `resolveClipDefaultsForTheme`.
+ */
+export type ThemeSlot =
+  | { readonly kind: 'palette'; readonly role: keyof ThemePalette }
+  | { readonly kind: 'token'; readonly path: string };
+
+/**
  * One clip kind within a runtime. `kind` is globally unique across all
  * runtimes; the dispatcher resolves by this string.
  */
@@ -78,6 +96,14 @@ export interface ClipDefinition<P = unknown> {
    * per clip.
    */
   readonly propsSchema?: ZodType<P>;
+  /**
+   * Optional map: clip prop name → theme slot. `resolveClipDefaultsForTheme`
+   * fills any prop whose value is `undefined` with the theme's value for
+   * that slot. An explicit prop value always wins. The map is keyed loosely
+   * (`Record<string, ThemeSlot>`) because the registry erases `P` — type
+   * safety on prop names is the author's responsibility at definition site.
+   */
+  readonly themeSlots?: Readonly<Record<string, ThemeSlot>>;
 }
 
 export interface RuntimePrepareContext {
@@ -179,4 +205,48 @@ export function findClip(
  */
 export function __clearRuntimeRegistry(): void {
   registry.clear();
+}
+
+// ----------------------------------------------------------------------------
+// Theme resolution
+// ----------------------------------------------------------------------------
+
+/**
+ * Apply the document theme to a clip's props by filling any prop whose value
+ * is `undefined` with the theme's value for that prop's declared slot. An
+ * explicit (non-undefined) prop value always wins; a slot whose theme lookup
+ * returns `undefined` leaves the prop undefined. Returns a new object — the
+ * input is never mutated.
+ *
+ * Clips without `themeSlots` get the input back by reference (fast path).
+ * Clips with a present-but-empty `themeSlots: {}` map still get a fresh
+ * object — the identity return is reserved for the declaration-absent case.
+ *
+ * Use at the boundary between the document layer (which holds the theme) and
+ * the renderer (which dispatches per-clip props). The renderer-core
+ * dispatcher will call this once per clip render.
+ */
+export function resolveClipDefaultsForTheme<P extends Record<string, unknown>>(
+  clip: ClipDefinition<P>,
+  theme: Theme,
+  props: P,
+): P {
+  const slots = clip.themeSlots;
+  if (slots === undefined) return props;
+  const out: Record<string, unknown> = { ...props };
+  for (const propName of Object.keys(slots)) {
+    if (out[propName] !== undefined) continue;
+    const slot = slots[propName];
+    if (slot === undefined) continue;
+    const value = lookupThemeSlot(theme, slot);
+    if (value !== undefined) out[propName] = value;
+  }
+  return out as P;
+}
+
+function lookupThemeSlot(theme: Theme, slot: ThemeSlot): string | number | undefined {
+  if (slot.kind === 'palette') {
+    return theme.palette?.[slot.role];
+  }
+  return theme.tokens[slot.path];
 }

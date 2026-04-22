@@ -24,6 +24,7 @@
     "react": "^19.0.0"
   },
   "dependencies": {
+    "@stageflip/schema": "workspace:*",
     "zod": "3.25.76"
   },
   "devDependencies": {

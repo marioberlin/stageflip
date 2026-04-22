@@ -21,9 +21,11 @@ import {
 
 const FIXTURES_DIR = fileURLToPath(new URL('../fixtures', import.meta.url));
 
-/** Known clip kinds shipped by the in-tree runtimes as of T-067. */
+/** Known clip kinds shipped by the in-tree runtimes (seed: T-067; extended
+ *  per runtime port: `gradient-background` landed in T-131a). */
 const KNOWN_KINDS: ReadonlyMap<string, string> = new Map([
   ['solid-background', 'css'],
+  ['gradient-background', 'css'],
   ['motion-text-gsap', 'gsap'],
   ['lottie-logo', 'lottie'],
   ['flash-through-white', 'shader'],
@@ -173,15 +175,11 @@ describe('fixture-manifest — parity thresholds (T-102)', () => {
   });
 
   it('rejects minSsim > 1', () => {
-    expect(() =>
-      parseFixtureManifest({ ...baseFixture, thresholds: { minSsim: 1.5 } }),
-    ).toThrow();
+    expect(() => parseFixtureManifest({ ...baseFixture, thresholds: { minSsim: 1.5 } })).toThrow();
   });
 
   it('rejects negative minPsnr', () => {
-    expect(() =>
-      parseFixtureManifest({ ...baseFixture, thresholds: { minPsnr: -1 } }),
-    ).toThrow();
+    expect(() => parseFixtureManifest({ ...baseFixture, thresholds: { minPsnr: -1 } })).toThrow();
   });
 
   it('rejects a region with zero width', () => {
@@ -204,9 +202,7 @@ describe('fixture-manifest — parity thresholds (T-102)', () => {
   });
 
   it('rejects an empty goldens.dir', () => {
-    expect(() =>
-      parseFixtureManifest({ ...baseFixture, goldens: { dir: '' } }),
-    ).toThrow();
+    expect(() => parseFixtureManifest({ ...baseFixture, goldens: { dir: '' } })).toThrow();
   });
 
   it('accepts a custom goldens.pattern', () => {

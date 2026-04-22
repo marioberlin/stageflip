@@ -1,17 +1,27 @@
 // packages/runtimes/css/src/index.test.tsx
 // Unit tests for the css runtime.
 
+import type { Theme } from '@stageflip/schema';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
+import { z } from 'zod';
 
 import {
   type ClipRenderContext,
   __clearRuntimeRegistry,
   findClip,
   registerRuntime,
+  resolveClipDefaultsForTheme,
 } from '@stageflip/runtimes-contract';
 
-import { createCssRuntime, defineCssClip, solidBackgroundClip } from './index.js';
+import {
+  type GradientBackgroundProps,
+  createCssRuntime,
+  defineCssClip,
+  gradientBackgroundClip,
+  gradientBackgroundPropsSchema,
+  solidBackgroundClip,
+} from './index.js';
 
 afterEach(() => {
   cleanup();
@@ -165,5 +175,123 @@ describe('css runtime — contract-registry round-trip', () => {
     const found = findClip('solid-background');
     expect(found?.runtime).toBe(rt);
     expect(found?.clip).toBe(solidBackgroundClip);
+  });
+});
+
+describe('defineCssClip — propsSchema + themeSlots passthrough (T-131a)', () => {
+  it('forwards propsSchema onto the produced ClipDefinition', () => {
+    const schema = z.object({ label: z.string() }).strict();
+    const clip = defineCssClip<z.infer<typeof schema>>({
+      kind: 'with-schema',
+      render: () => <div />,
+      propsSchema: schema,
+    });
+    expect(clip.propsSchema).toBe(schema);
+  });
+
+  it('forwards themeSlots onto the produced ClipDefinition', () => {
+    const slots = { bg: { kind: 'palette' as const, role: 'primary' as const } };
+    const clip = defineCssClip<{ bg?: string }>({
+      kind: 'with-slots',
+      render: () => <div />,
+      themeSlots: slots,
+    });
+    expect(clip.themeSlots).toBe(slots);
+  });
+
+  it('omits both fields when not declared (no accidental keys)', () => {
+    const clip = defineCssClip<BgProps>({ kind: 'bare', render: () => <div /> });
+    expect(clip.propsSchema).toBeUndefined();
+    expect(clip.themeSlots).toBeUndefined();
+  });
+});
+
+describe('gradientBackgroundClip — demo clip (T-131a)', () => {
+  it("is a ClipDefinition with kind 'gradient-background' and a propsSchema", () => {
+    expect(gradientBackgroundClip.kind).toBe('gradient-background');
+    expect(gradientBackgroundClip.propsSchema).toBe(gradientBackgroundPropsSchema);
+  });
+
+  it('declares themeSlots that bind from→primary and to→background', () => {
+    expect(gradientBackgroundClip.themeSlots).toEqual({
+      from: { kind: 'palette', role: 'primary' },
+      to: { kind: 'palette', role: 'background' },
+    });
+  });
+
+  it('renders a linear-gradient with the supplied colors and direction', () => {
+    const props: GradientBackgroundProps = {
+      from: '#ff0000',
+      to: '#0000ff',
+      direction: 'vertical',
+    };
+    const el = gradientBackgroundClip.render({
+      frame: 0,
+      fps: 30,
+      width: 1920,
+      height: 1080,
+      clipFrom: 0,
+      clipDurationInFrames: 30,
+      props,
+    });
+    const { container } = render(el as React.ReactElement);
+    const div = container.querySelector('div') as HTMLElement;
+    expect(div.style.background).toContain('linear-gradient(to bottom');
+    expect(div.style.background).toContain('#ff0000');
+    expect(div.style.background).toContain('#0000ff');
+  });
+
+  it('falls back to deterministic colors when from/to are undefined and no theme is applied', () => {
+    const props: GradientBackgroundProps = {
+      from: undefined,
+      to: undefined,
+      direction: 'horizontal',
+    };
+    const el = gradientBackgroundClip.render({
+      frame: 0,
+      fps: 30,
+      width: 1920,
+      height: 1080,
+      clipFrom: 0,
+      clipDurationInFrames: 30,
+      props,
+    });
+    const { container } = render(el as React.ReactElement);
+    const div = container.querySelector('div') as HTMLElement;
+    expect(div.style.background).toContain('#0c1116');
+    expect(div.style.background).toContain('#ffffff');
+  });
+
+  it('requires an explicit direction — Zod default would widen the ZodType<P> input side', () => {
+    expect(
+      gradientBackgroundPropsSchema.safeParse({ from: '#abcdef', to: '#fedcba' }).success,
+    ).toBe(false);
+    const parsed = gradientBackgroundPropsSchema.parse({
+      from: '#abcdef',
+      to: '#fedcba',
+      direction: 'vertical',
+    });
+    expect(parsed.direction).toBe('vertical');
+  });
+
+  it('rejects unknown direction values via the propsSchema', () => {
+    expect(gradientBackgroundPropsSchema.safeParse({ direction: 'spiral' }).success).toBe(false);
+  });
+
+  it('integrates with resolveClipDefaultsForTheme — palette swap re-flows from/to', () => {
+    const theme: Theme = {
+      palette: { primary: '#0a84ff', background: '#0c1116' },
+      tokens: {},
+    };
+    const resolved = resolveClipDefaultsForTheme(
+      gradientBackgroundClip as unknown as Parameters<
+        typeof resolveClipDefaultsForTheme<GradientBackgroundProps>
+      >[0],
+      theme,
+      { direction: 'diagonal' } as GradientBackgroundProps,
+    );
+    expect(resolved.from).toBe('#0a84ff');
+    expect(resolved.to).toBe('#0c1116');
+    expect(resolved.direction).toBe('diagonal');
   });
 });
