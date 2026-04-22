@@ -20,9 +20,8 @@ clean after merge. Every gate green.
 - **Phase 4 (Vendored CDP Engine + Export Dispatcher)** — ✅ **Ratified
   2026-04-21** (commit `d023b24`). 13/13 done. See
   `handover-phase4-complete.md` for the full closeout.
-- **Phase 5 (Parity Harness + Pre-Render Linter)** —
-  **implementation complete; awaiting human ratification** per
-  CLAUDE.md §2. 6 of 8 original plan rows merged; 2 carried to
+- **Phase 5 (Parity Harness + Pre-Render Linter)** — ✅ **Ratified
+  2026-04-22**. 6 of 8 original plan rows merged; 2 carried to
   Phase 6 (T-105 / T-106 → T-137 / T-138).
 
 ### Phase 5 tasks as shipped
@@ -528,10 +527,9 @@ pnpm --filter @stageflip/app-dev-harness dev
 > Then `docs/implementation-plan.md` for Phase 6. Confirm your
 > understanding of the current state and the next task.
 
-Expected confirmation shape: "On `main` at `<hash>`. Phases 1+3+4
-ratified; Phases 0+2 implementation complete. Phase 5 implementation
-complete; awaiting ratification. Phase 6 starts at T-120 (Audit
-existing SlideMotion editor). Ready."
+Expected confirmation shape: "On `main` at `<hash>`. Phases 1+3+4+5
+ratified (Phase 5 on 2026-04-22); Phases 0+2 implementation complete.
+Phase 6 starts at T-120 (Audit existing SlideMotion editor). Ready."
 
 ### 7.2 Orchestrator checklist for Phase 5 ratification
 

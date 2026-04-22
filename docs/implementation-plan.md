@@ -319,6 +319,8 @@ When a task references these, treat as **API specs only**. Read docs; do not cop
 
 ## Phase 5 — Parity Harness + Pre-Render Linter (Week 23–25)
 
+**Status**: ✅ **Ratified 2026-04-22.** All 11 tasks merged (T-100 family × 5, T-101, T-102, T-103, T-104, T-107; T-105 + T-106 carried to Phase 6 as T-137 + T-138 per v1.5 changelog). Exit criteria met on the core harness + linter + CI gate work: `pnpm parity --fixtures-dir packages/testing/fixtures` exits 0 across all 5 fixtures (structural today — skipped `no-candidates` / `no-goldens`; priming deferred to a future tooling task); `@stageflip/validation` ships 33 lint rules across 7 categories with `ALL_RULES.length >= 30` asserted in the runner suite. All 10 gates green on `main` at `75defb4`: typecheck, lint, test (1047 cases across 21 test-active packages), check-licenses (482 deps), check-remotion-imports (281 files), check-skill-drift, skills-sync:check, check-determinism (21 files), size-limit (frame-runtime 19.52 kB, cdp-host-bundle 313.82 kB / 500 kB budget), parity. Zero escalations raised this phase. See `docs/handover-phase5-complete.md` for the full closeout.
+
 **Goal**: Quality enforced, not aspirational.
 **Exit criteria**: CI parity stage green on 5 fixtures × 2 backends; pre-render linter catches all 30+ test violations.
 
