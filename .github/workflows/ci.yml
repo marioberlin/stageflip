@@ -260,8 +260,13 @@ jobs:
         # STAGEFLIP_E2E_ARTIFACT_DIR tells the test to emit MP4s into a
         # stable path and skip the tmpdir cleanup, so the upload step
         # below can pick them up.
+        #
+        # We deliberately do NOT set PUPPETEER_EXECUTABLE_PATH — findChrome()
+        # in reference-render.ts already probes /usr/bin/google-chrome as
+        # its first Linux candidate, and letting it do its own detection
+        # means a future runner image flipping to Chromium at a different
+        # path would auto-adapt instead of hard-failing on a stale hard-code.
         env:
-          PUPPETEER_EXECUTABLE_PATH: /usr/bin/google-chrome
           STAGEFLIP_E2E_ARTIFACT_DIR: ${{ runner.temp }}/render-e2e-artifacts
         run: |
           set -euo pipefail
