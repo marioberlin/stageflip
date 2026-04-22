@@ -23,6 +23,13 @@ import { type PrimeFixtureInput, type PrimeRenderFn, primeFixture } from './prim
 export interface PrimeCliOptions {
   /** When true, render the 3 hand-coded REFERENCE_FIXTURES from @stageflip/renderer-cdp. */
   readonly referenceFixtures: boolean;
+  /**
+   * Fixtures directory to prime. Each *.json under the dir is parsed as
+   * a FixtureManifest, converted to RIRDocument via `manifestToDocument`,
+   * and rendered at the manifest's `referenceFrames` positions. Mutually
+   * exclusive with `--reference-fixtures`.
+   */
+  readonly parityFixturesDir?: string;
   /** Root output directory. One subdir per fixture. */
   readonly outDir?: string;
   /** When true, paths are computed + reported but no render / writeFile happens. */
@@ -34,26 +41,33 @@ export const PRIME_HELP_TEXT = `stageflip-parity prime — render fixtures to go
 
 USAGE
   stageflip-parity prime --reference-fixtures --out <dir>
-  stageflip-parity prime --reference-fixtures --out <dir> --dry-run
+  stageflip-parity prime --parity <fixtures-dir> --out <dir>
+  stageflip-parity prime [--reference-fixtures|--parity <dir>] --out <dir> --dry-run
   stageflip-parity prime --help
 
 OPTIONS
-  --reference-fixtures   Prime the 3 hand-coded RIRDocument fixtures from
-                         @stageflip/renderer-cdp (solidBackground,
-                         multiElement, videoClip). T-119b scope.
+  --reference-fixtures   Prime the 3 hand-coded RIRDocument fixtures
+                         from @stageflip/renderer-cdp (solidBackground,
+                         multiElement, videoClip).
+  --parity <dir>         Prime every *.json under <dir> as a parity
+                         fixture (FixtureManifest → RIRDocument via
+                         manifestToDocument); rendered at each
+                         manifest's referenceFrames positions.
   --out <dir>            Root output directory. One subdir per fixture.
-  --dry-run              Compute + report target paths; no render, no write.
+                         Operators copy PNGs from here into each
+                         fixture's goldens.dir.
+  --dry-run              Compute + report target paths; no render, no
+                         write.
   -h, --help             Print this message.
 
 NOTES
-  Priming the 5 parity fixtures under packages/testing/fixtures/ requires
-  a FixtureManifest → RIRDocument converter (T-119d, deferred). Until
-  that lands, --reference-fixtures is the only supported input.
+  Exactly one of --reference-fixtures or --parity must be set.
 `;
 
 /** Pure parser for the prime subcommand's argv (NOT including the leading "prime" token). */
 export function parsePrimeArgs(argv: readonly string[]): PrimeCliOptions {
   let referenceFixtures = false;
+  let parityFixturesDir: string | undefined;
   let outDir: string | undefined;
   let dryRun = false;
   let help = false;
@@ -78,6 +92,13 @@ export function parsePrimeArgs(argv: readonly string[]): PrimeCliOptions {
       i++;
       continue;
     }
+    if (arg === '--parity') {
+      const next = argv[i + 1];
+      if (next === undefined) throw new Error('--parity requires a fixtures-dir argument');
+      parityFixturesDir = next;
+      i++;
+      continue;
+    }
     if (arg?.startsWith('--')) {
       throw new Error(`unknown flag: ${arg}`);
     }
@@ -87,14 +108,21 @@ export function parsePrimeArgs(argv: readonly string[]): PrimeCliOptions {
     referenceFixtures,
     dryRun,
     help,
+    ...(parityFixturesDir !== undefined ? { parityFixturesDir } : {}),
     ...(outDir !== undefined ? { outDir } : {}),
   };
 }
 
-/** Resolve the input set implied by the parsed options. Throws with a usage error when nothing is selected. */
+/**
+ * Resolves the set of inputs implied by the parsed CLI options. The
+ * real implementation (`createPrimeInputResolver` in
+ * `puppeteer-primer.ts`) handles both `--reference-fixtures` (3 hand-
+ * coded docs from renderer-cdp) and `--parity <dir>` (*.json under
+ * <dir>, each converted via `manifestToDocument`). Tests inject a
+ * stub.
+ */
 export interface PrimeInputResolver {
-  /** Resolve the 3 REFERENCE_FIXTURES as PrimeFixtureInput[]. Real impl imports from @stageflip/renderer-cdp. */
-  resolveReferenceFixtures(): Promise<readonly PrimeFixtureInput[]>;
+  resolve(opts: PrimeCliOptions): Promise<readonly PrimeFixtureInput[]>;
 }
 
 /**
@@ -148,8 +176,15 @@ export async function runPrime(
     io.stdout(PRIME_HELP_TEXT);
     return 0;
   }
-  if (!opts.referenceFixtures) {
-    io.stderr('stageflip-parity prime: --reference-fixtures is required (T-119b scope)');
+  const hasReference = opts.referenceFixtures;
+  const hasParity = opts.parityFixturesDir !== undefined;
+  if (hasReference && hasParity) {
+    io.stderr('stageflip-parity prime: --reference-fixtures and --parity are mutually exclusive');
+    io.stderr(PRIME_HELP_TEXT);
+    return 2;
+  }
+  if (!hasReference && !hasParity) {
+    io.stderr('stageflip-parity prime: one of --reference-fixtures or --parity <dir> is required');
     io.stderr(PRIME_HELP_TEXT);
     return 2;
   }
@@ -159,7 +194,7 @@ export async function runPrime(
     return 2;
   }
 
-  const inputs = await deps.resolver.resolveReferenceFixtures();
+  const inputs = await deps.resolver.resolve(opts);
   if (inputs.length === 0) {
     io.stderr('stageflip-parity prime: resolver returned no fixtures');
     return 2;

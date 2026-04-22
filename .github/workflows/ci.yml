@@ -348,6 +348,31 @@ jobs:
           retention-days: 7
           if-no-files-found: error
 
+      # T-119f: parity-fixture priming via manifestToDocument (T-119d).
+      # Each *.json under packages/testing/fixtures/ is parsed as a
+      # FixtureManifest, converted to an RIRDocument, and rendered at
+      # the manifest's referenceFrames positions. Uploaded as a
+      # separate artifact so operators can inspect and commit goldens
+      # into each fixture's goldens.dir without conflating with the
+      # reference-set artifact above.
+      - name: Prime parity-fixture goldens (real render)
+        if: steps.changed.outputs.rendering == 'true'
+        env:
+          PARITY_PRIME_OUT_DIR: ${{ runner.temp }}/parity-goldens-fixtures
+        run: |
+          set -euo pipefail
+          mkdir -p "$PARITY_PRIME_OUT_DIR"
+          pnpm parity:prime --parity packages/testing/fixtures --out "$PARITY_PRIME_OUT_DIR"
+
+      - name: Upload parity-fixture goldens
+        if: steps.changed.outputs.rendering == 'true' && (success() || failure())
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-goldens-fixtures-${{ github.sha }}
+          path: ${{ runner.temp }}/parity-goldens-fixtures/
+          retention-days: 7
+          if-no-files-found: error
+
       - name: Skip reason
         if: steps.changed.outputs.rendering != 'true'
         run: echo "Skipped — no rendering-adjacent files changed in this PR."

@@ -302,43 +302,44 @@ per-runtime unit tests, not a replacement.
    the fixture's parity fields (`thresholds`, `goldens.dir`) to
    document the baseline.
 
-### Priming in CI (T-119b / T-119c / T-119e)
+### Priming in CI (T-119b / T-119c / T-119e / T-119f)
 
-The `render-e2e` CI job runs `pnpm parity:prime --reference-fixtures`
-on every rendering-adjacent PR:
+The `render-e2e` CI job primes BOTH goldens sets on every
+rendering-adjacent PR and uploads each as a separate artifact:
 
-1. **Dry-run audit** — invokes the prime subcommand with `--dry-run`
-   to exercise arg parsing, the REFERENCE_FIXTURES resolver, and
-   default-frames computation. No Chrome, no PNGs. Catches CLI
-   regressions on every PR touching rendering code.
-2. **Real render** — same invocation without `--dry-run`. Launches
-   Chrome via `PuppeteerCdpSession` + `createRuntimeBundleHostHtml`
-   and emits PNGs to `$RUNNER_TEMP/parity-goldens-reference/`.
-3. **Artifact upload** — the PR gets a `parity-goldens-reference-<sha>`
-   artifact with 9 PNGs (3 fixtures × 3 frames: `[0, mid, last]`)
-   available for 7 days.
+1. **Dry-run audit** — invokes `pnpm parity:prime --reference-fixtures
+   --dry-run` to exercise CLI plumbing without launching Chrome.
+2. **Reference-set real render** — `pnpm parity:prime
+   --reference-fixtures --out …`. Emits 9 PNGs (3 hand-coded
+   RIRDocuments × `[0, mid, last]`) to
+   `$RUNNER_TEMP/parity-goldens-reference/`. Uploaded as
+   `parity-goldens-reference-<sha>` (7-day retention).
+3. **Parity-fixture real render** — `pnpm parity:prime --parity
+   packages/testing/fixtures --out …`. Each `*.json` is parsed as a
+   FixtureManifest, converted to an RIRDocument via
+   `manifestToDocument` (T-119d), and rendered at the manifest's
+   declared `referenceFrames`. Emits one subdir per fixture
+   (`<manifest.name>/`) with PNGs named per `goldens.pattern` (or
+   `frame-${frame}.png` by default). Uploaded as
+   `parity-goldens-fixtures-<sha>` (7-day retention).
 
-### Operator workflow for committing reference-set goldens
+### Operator workflow for committing goldens
 
 1. Open a PR that touches any rendering-adjacent path (or push
    directly if operating on a dedicated priming branch).
 2. Wait for the `render-e2e` CI job to finish. The PR's checks page
-   shows a `parity-goldens-reference-<sha>` artifact.
-3. Download the artifact and visually inspect the 9 PNGs (one
-   directory per fixture: `solidBackground/`, `multiElement/`,
-   `videoClip/`). Verify each frame looks correct.
-4. Commit the PNGs to the canonical location for each fixture. For
-   the T-090 reference set, destination depends on how consumers
-   want to wire them (the 3 reference fixtures in `@stageflip/renderer-cdp`
-   are hand-coded RIRDocuments with no `goldens.dir` today — a
-   follow-up can define one).
-5. For parity fixtures (`packages/testing/fixtures/*.json`), the
-   workflow extends naturally once the prime CLI gains a `--parity`
-   flag (T-119d shipped the `manifestToDocument` converter; wiring
-   is a small follow-up): drop the per-fixture PNGs into the
-   directory each manifest's `goldens.dir` already points to and
-   open a PR; `pnpm parity` flips from structural-skip to
-   behavioural-gate.
+   shows both `parity-goldens-reference-<sha>` and
+   `parity-goldens-fixtures-<sha>` artifacts.
+3. Download the relevant artifact and visually inspect each PNG.
+4. Commit the PNGs to the canonical location for each fixture:
+   - **Reference set** — destination depends on how consumers want
+     to wire them (the 3 reference fixtures in
+     `@stageflip/renderer-cdp` are hand-coded RIRDocuments with no
+     `goldens.dir` today; a follow-up can define one).
+   - **Parity fixtures** — copy each fixture's PNGs into the
+     directory the manifest's `goldens.dir` already points to. The
+     parity harness (`pnpm parity`) flips from structural-skip to
+     behavioural-gate as soon as goldens land.
 
 The **priming PR should be separate from any behaviour change**. If
 a PR both changes what gets rendered AND commits new goldens, there's

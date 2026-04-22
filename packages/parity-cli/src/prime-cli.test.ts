@@ -85,6 +85,18 @@ describe('parsePrimeArgs', () => {
     expect(o.referenceFixtures).toBe(true);
     expect(o.outDir).toBe('/tmp/goldens');
     expect(o.dryRun).toBe(false);
+    expect(o.parityFixturesDir).toBeUndefined();
+  });
+
+  it('parses --parity <dir> + --out', () => {
+    const o = parsePrimeArgs(['--parity', 'packages/testing/fixtures', '--out', '/tmp/goldens']);
+    expect(o.referenceFixtures).toBe(false);
+    expect(o.parityFixturesDir).toBe('packages/testing/fixtures');
+    expect(o.outDir).toBe('/tmp/goldens');
+  });
+
+  it('throws on --parity without argument', () => {
+    expect(() => parsePrimeArgs(['--parity'])).toThrow(/requires a fixtures-dir argument/);
   });
 
   it('parses --dry-run', () => {
@@ -112,7 +124,7 @@ describe('parsePrimeArgs', () => {
 
 describe('runPrime', () => {
   const resolver = {
-    async resolveReferenceFixtures() {
+    async resolve() {
       return SYNTH_INPUTS;
     },
   };
@@ -132,7 +144,7 @@ describe('runPrime', () => {
     expect(PRIME_HELP_TEXT).toContain('--reference-fixtures');
   });
 
-  it('exits 2 when --reference-fixtures is missing', async () => {
+  it('exits 2 when neither --reference-fixtures nor --parity is set', async () => {
     const io = recorder();
     const exit = await runPrime(
       ['--out', '/o'],
@@ -143,7 +155,23 @@ describe('runPrime', () => {
       io,
     );
     expect(exit).toBe(2);
-    expect(io.err.join('\n')).toContain('--reference-fixtures is required');
+    expect(io.err.join('\n')).toContain(
+      'one of --reference-fixtures or --parity <dir> is required',
+    );
+  });
+
+  it('exits 2 when both --reference-fixtures AND --parity are passed', async () => {
+    const io = recorder();
+    const exit = await runPrime(
+      ['--reference-fixtures', '--parity', '/fx', '--out', '/o'],
+      {
+        resolver,
+        createPrimer: async () => ({ render: stubRender, close: async () => {} }),
+      },
+      io,
+    );
+    expect(exit).toBe(2);
+    expect(io.err.join('\n')).toContain('mutually exclusive');
   });
 
   it('exits 2 when --out is missing', async () => {
@@ -255,13 +283,38 @@ describe('runPrime', () => {
     const exit = await runPrime(
       ['--reference-fixtures', '--out', '/out'],
       {
-        resolver: { resolveReferenceFixtures: async () => [] },
+        resolver: { resolve: async () => [] },
         createPrimer: async () => ({ render: stubRender, close: async () => {} }),
       },
       io,
     );
     expect(exit).toBe(2);
     expect(io.err.join('\n')).toContain('resolver returned no fixtures');
+  });
+
+  it('forwards opts.parityFixturesDir to the resolver so --parity routes correctly', async () => {
+    const io = recorder();
+    const fs = fakeFs();
+    let receivedOpts: { referenceFixtures?: boolean; parityFixturesDir?: string } | null = null;
+    const exit = await runPrime(
+      ['--parity', '/fx', '--out', '/out'],
+      {
+        resolver: {
+          async resolve(opts) {
+            receivedOpts = opts;
+            return SYNTH_INPUTS;
+          },
+        },
+        createPrimer: async () => ({ render: stubRender, close: async () => {} }),
+        fs,
+      },
+      io,
+    );
+    expect(exit).toBe(0);
+    expect(receivedOpts).toMatchObject({
+      referenceFixtures: false,
+      parityFixturesDir: '/fx',
+    });
   });
 });
 
