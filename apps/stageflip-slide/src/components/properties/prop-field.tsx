@@ -42,6 +42,11 @@ export function PropField({
 }: PropFieldProps): React.ReactElement {
   const [draft, setDraft] = useState<string>(formatValue(value));
   const isFocused = useRef(false);
+  // Ref-based revert signal avoids a stale-closure hazard: setDraft +
+  // synchronous blur would otherwise commit the typed value before the
+  // draft state update applies. React 19's batching makes the window real
+  // even when jsdom hides it.
+  const isReverting = useRef(false);
 
   // Only sync the draft from the prop when the field is not focused — a
   // re-render during typing would otherwise clobber the user's
@@ -55,6 +60,10 @@ export function PropField({
   };
 
   const commit = (): void => {
+    if (isReverting.current) {
+      isReverting.current = false;
+      return;
+    }
     const parsed = Number.parseFloat(draft);
     if (!Number.isFinite(parsed)) {
       setDraft(formatValue(value));
@@ -69,6 +78,7 @@ export function PropField({
     if (event.key === 'Enter') {
       event.currentTarget.blur();
     } else if (event.key === 'Escape') {
+      isReverting.current = true;
       setDraft(formatValue(value));
       event.currentTarget.blur();
     }

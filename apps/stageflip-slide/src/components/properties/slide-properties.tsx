@@ -12,7 +12,7 @@
 
 import { t, useDocument } from '@stageflip/editor-shell';
 import type { Document, Slide } from '@stageflip/schema';
-import { type ReactElement, useCallback } from 'react';
+import { type ReactElement, useCallback, useEffect, useState } from 'react';
 
 export interface SlidePropertiesProps {
   slide: Slide;
@@ -21,12 +21,24 @@ export interface SlidePropertiesProps {
 export function SlideProperties({ slide }: SlidePropertiesProps): ReactElement {
   const { updateDocument } = useDocument();
 
-  const handleNotesChange = useCallback(
-    (notes: string) => {
-      updateDocument((doc) => applySlideNotes(doc, slide.id, notes));
-    },
-    [updateDocument, slide.id],
-  );
+  // Buffer notes locally so typing doesn't touch the document atom on
+  // every keystroke — one T-133 undo entry per edit session instead of
+  // one per character. Sync back when the slide reference changes
+  // (switching slides) or when an external mutation updates the field
+  // (e.g. paste from another collaborator in a future phase).
+  const [notesDraft, setNotesDraft] = useState<string>(slide.notes ?? '');
+  // `slide.id` is included to reset the draft when the user switches
+  // slides — without it, an un-committed draft from slide A would leak
+  // into slide B's textarea whenever B happens to have the same notes.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional reset-on-slide-switch
+  useEffect(() => {
+    setNotesDraft(slide.notes ?? '');
+  }, [slide.id, slide.notes]);
+
+  const commitNotes = useCallback(() => {
+    if (notesDraft === (slide.notes ?? '')) return;
+    updateDocument((doc) => applySlideNotes(doc, slide.id, notesDraft));
+  }, [notesDraft, slide.id, slide.notes, updateDocument]);
 
   return (
     <div data-testid="slide-properties" style={rootStyle}>
@@ -57,8 +69,9 @@ export function SlideProperties({ slide }: SlidePropertiesProps): ReactElement {
         <span style={notesLabelStyle}>{t('properties.slide.notes')}</span>
         <textarea
           data-testid="slide-prop-notes"
-          value={slide.notes ?? ''}
-          onChange={(e) => handleNotesChange(e.target.value)}
+          value={notesDraft}
+          onChange={(e) => setNotesDraft(e.target.value)}
+          onBlur={commitNotes}
           rows={4}
           placeholder={t('properties.slide.notesPlaceholder')}
           style={notesInputStyle}

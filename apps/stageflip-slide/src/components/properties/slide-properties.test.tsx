@@ -63,7 +63,7 @@ describe('<SlideProperties> — render', () => {
 });
 
 describe('<SlideProperties> — notes editing', () => {
-  it('commits notes to the slide via updateDocument', () => {
+  it('buffers notes locally during typing, commits on blur', () => {
     const doc = makeDoc();
     const slide = doc.content.mode === 'slide' ? doc.content.slides[0] : null;
     if (!slide) throw new Error('expected slide');
@@ -83,12 +83,48 @@ describe('<SlideProperties> — notes editing', () => {
     act(() => {
       fireEvent.change(notes, { target: { value: 'hello speaker' } });
     });
+    // During typing the document atom is untouched.
+    const midDoc = latest?.document;
+    if (midDoc?.content.mode !== 'slide') throw new Error('expected slide');
+    expect(midDoc.content.slides[0]?.notes).toBeUndefined();
+    expect(latest?.canUndo).toBe(false);
+    // Blur commits.
+    act(() => {
+      fireEvent.blur(notes);
+    });
     const doc2 = latest?.document;
     if (doc2?.content.mode !== 'slide') throw new Error('expected slide');
     expect(doc2.content.slides[0]?.notes).toBe('hello speaker');
+    expect(latest?.canUndo).toBe(true);
   });
 
-  it('clearing the textarea removes the notes field (so "no notes" stays unset)', () => {
+  it('clearing the textarea removes the notes field on blur', () => {
+    const doc = makeDoc({ notes: 'existing' });
+    const slide = doc.content.mode === 'slide' ? doc.content.slides[0] : null;
+    if (!slide) throw new Error('expected slide');
+    const Wrapper = withDoc(doc);
+    let latest = null as ReturnType<typeof import('@stageflip/editor-shell').useDocument> | null;
+    render(
+      <Wrapper>
+        <SlideProperties slide={slide} />
+        <DocProbe
+          onSnapshot={(s) => {
+            latest = s;
+          }}
+        />
+      </Wrapper>,
+    );
+    const notes = screen.getByTestId('slide-prop-notes') as HTMLTextAreaElement;
+    act(() => {
+      fireEvent.change(notes, { target: { value: '' } });
+      fireEvent.blur(notes);
+    });
+    const doc2 = latest?.document;
+    if (doc2?.content.mode !== 'slide') throw new Error('expected slide');
+    expect(doc2.content.slides[0]?.notes).toBeUndefined();
+  });
+
+  it('blur without changes is a no-op (no undo entry)', () => {
     const doc = makeDoc({ notes: 'existing' });
     const slide = doc.content.mode === 'slide' ? doc.content.slides[0] : null;
     if (!slide) throw new Error('expected slide');
@@ -105,11 +141,9 @@ describe('<SlideProperties> — notes editing', () => {
       </Wrapper>,
     );
     act(() => {
-      fireEvent.change(screen.getByTestId('slide-prop-notes'), { target: { value: '' } });
+      fireEvent.blur(screen.getByTestId('slide-prop-notes'));
     });
-    const doc2 = latest?.document;
-    if (doc2?.content.mode !== 'slide') throw new Error('expected slide');
-    expect(doc2.content.slides[0]?.notes).toBeUndefined();
+    expect(latest?.canUndo).toBe(false);
   });
 });
 

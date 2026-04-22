@@ -98,7 +98,7 @@ describe('<SelectedElementProperties> — mutations via updateDocument', () => {
     expect(el2?.transform.x).toBe(250);
   });
 
-  it('opacity slider writes transform.opacity in 0..1', () => {
+  it('opacity slider commits only on release — typing values during the drag do not hit the document atom', () => {
     const element = makeTextElement('el-1');
     const doc = makeDoc({ elements: [element] });
     const Wrapper = withDoc(doc);
@@ -114,13 +114,40 @@ describe('<SelectedElementProperties> — mutations via updateDocument', () => {
         />
       </Wrapper>,
     );
+    const slider = screen.getByTestId('prop-opacity');
     act(() => {
-      fireEvent.change(screen.getByTestId('prop-opacity'), { target: { value: '25' } });
+      fireEvent.change(slider, { target: { value: '60' } });
     });
-    const doc2 = latest?.document;
-    if (doc2?.content.mode !== 'slide') throw new Error('expected slide');
-    const el2 = doc2.content.slides[0]?.elements[0];
-    expect(el2?.transform.opacity).toBe(0.25);
+    // Document atom is still at the original opacity during the drag.
+    const midDoc = latest?.document;
+    if (midDoc?.content.mode !== 'slide') throw new Error('expected slide');
+    expect(midDoc.content.slides[0]?.elements[0]?.transform.opacity).toBe(1);
+    // Continue dragging — still no commit.
+    act(() => {
+      fireEvent.change(slider, { target: { value: '25' } });
+    });
+    expect(latest?.canUndo).toBe(false);
+    // Release — exactly one commit lands.
+    act(() => {
+      fireEvent.pointerUp(slider);
+    });
+    const finalDoc = latest?.document;
+    if (finalDoc?.content.mode !== 'slide') throw new Error('expected slide');
+    expect(finalDoc.content.slides[0]?.elements[0]?.transform.opacity).toBe(0.25);
+    expect(latest?.canUndo).toBe(true);
+  });
+
+  it('opacity slider exposes an aria-label for screen readers', () => {
+    const element = makeTextElement('el-1');
+    const doc = makeDoc({ elements: [element] });
+    const Wrapper = withDoc(doc);
+    render(
+      <Wrapper>
+        <Hydrate slideId="slide-0" elementId="el-1" />
+        <SelectedElementProperties slideId="slide-0" element={element} />
+      </Wrapper>,
+    );
+    expect(screen.getByTestId('prop-opacity').getAttribute('aria-label')).toBeTruthy();
   });
 
   it('visible / locked toggles flip the element flags', () => {
@@ -214,7 +241,10 @@ describe('<SelectedElementProperties> — mutations via updateDocument', () => {
 describe('pure mutations (applyElementPatch / removeElement / reorderElement)', () => {
   const slideId = 'slide-0';
   const el = (id: string) => makeTextElement(id);
-  const baseDoc = () => makeDoc({ elements: [el('a'), el('b'), el('c')] });
+  // 5 elements + target `c` at index 2 (middle) so each of the 4 directions
+  // produces a distinct result. Smaller / edgier fixtures collapse
+  // `forward` ≡ `front` and `back` ≡ `bottom` at the first/last gap.
+  const baseDoc = () => makeDoc({ elements: [el('a'), el('b'), el('c'), el('d'), el('e')] });
 
   it('applyElementPatch updates the matching element in the matching slide', () => {
     const next = applyElementPatch(baseDoc(), slideId, 'b', (e) => ({ ...e, visible: false }));
@@ -227,19 +257,19 @@ describe('pure mutations (applyElementPatch / removeElement / reorderElement)', 
   it('removeElement filters the matching element', () => {
     const next = removeElement(baseDoc(), slideId, 'b');
     if (next.content.mode !== 'slide') throw new Error('expected slide');
-    expect(next.content.slides[0]?.elements.map((e) => e.id)).toEqual(['a', 'c']);
+    expect(next.content.slides[0]?.elements.map((e) => e.id)).toEqual(['a', 'c', 'd', 'e']);
   });
 
   it.each([
-    { direction: 'front', expected: ['a', 'c', 'b'] },
-    { direction: 'forward', expected: ['a', 'c', 'b'] },
-    { direction: 'back', expected: ['b', 'a', 'c'] },
-    { direction: 'bottom', expected: ['b', 'a', 'c'] },
+    { direction: 'front', expected: ['a', 'b', 'd', 'e', 'c'] },
+    { direction: 'forward', expected: ['a', 'b', 'd', 'c', 'e'] },
+    { direction: 'back', expected: ['a', 'c', 'b', 'd', 'e'] },
+    { direction: 'bottom', expected: ['c', 'a', 'b', 'd', 'e'] },
   ])('reorderElement($direction) arranges z-order correctly', ({ direction, expected }) => {
     const next = reorderElement(
       baseDoc(),
       slideId,
-      'b',
+      'c',
       direction as 'front' | 'forward' | 'back' | 'bottom',
     );
     if (next.content.mode !== 'slide') throw new Error('expected slide');

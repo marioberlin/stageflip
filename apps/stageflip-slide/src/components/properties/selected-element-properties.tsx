@@ -29,7 +29,7 @@
 
 import { t, useDocument } from '@stageflip/editor-shell';
 import type { Document, Element } from '@stageflip/schema';
-import { type ReactElement, useCallback } from 'react';
+import { type ReactElement, useCallback, useEffect, useState } from 'react';
 import { PropField } from './prop-field';
 
 export interface SelectedElementPropertiesProps {
@@ -137,19 +137,11 @@ export function SelectedElementProperties({
       </Section>
 
       <Section label={t('properties.opacity')}>
-        <div style={opacityRowStyle}>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            value={Math.round(transform.opacity * 100)}
-            disabled={locked}
-            data-testid="prop-opacity"
-            onChange={(e) => mutateTransform({ opacity: Number(e.target.value) / 100 })}
-            style={opacityInputStyle}
-          />
-          <span style={opacityReadoutStyle}>{Math.round(transform.opacity * 100)}%</span>
-        </div>
+        <OpacitySlider
+          value={transform.opacity}
+          disabled={locked}
+          onCommit={(opacity) => mutateTransform({ opacity })}
+        />
       </Section>
 
       <Section label={t('properties.actions')}>
@@ -225,6 +217,50 @@ function Section({
       <h4 style={sectionLabelStyle}>{label}</h4>
       {children}
     </section>
+  );
+}
+
+/**
+ * Range-input wrapper that commits the opacity only on pointer/mouse
+ * release or final keyboard change. While the user drags, the slider
+ * previews in local state but does not touch the document atom — so
+ * T-133 records one undo entry per drag, not ~100.
+ */
+function OpacitySlider({
+  value,
+  disabled,
+  onCommit,
+}: {
+  value: number;
+  disabled: boolean;
+  onCommit: (next: number) => void;
+}): ReactElement {
+  const [draft, setDraft] = useState(value);
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+  const commit = useCallback(() => {
+    if (draft !== value) onCommit(draft);
+  }, [draft, value, onCommit]);
+  return (
+    <div style={opacityRowStyle}>
+      <input
+        type="range"
+        min={0}
+        max={100}
+        value={Math.round(draft * 100)}
+        disabled={disabled}
+        data-testid="prop-opacity"
+        aria-label={t('properties.opacity')}
+        onChange={(e) => setDraft(Number(e.target.value) / 100)}
+        onPointerUp={commit}
+        onMouseUp={commit}
+        onTouchEnd={commit}
+        onKeyUp={commit}
+        style={opacityInputStyle}
+      />
+      <span style={opacityReadoutStyle}>{Math.round(draft * 100)}%</span>
+    </div>
   );
 }
 
