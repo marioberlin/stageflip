@@ -1,0 +1,19 @@
+{
+  "name": "frame-runtime-typewriter",
+  "runtime": "frame-runtime",
+  "kind": "typewriter",
+  "description": "Frame-runtime port of SlideMotion's typewriter clip — char reveal + blinking caret (T-131b.1).",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 60 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 60,
+    "props": { "text": "Hello, StageFlip." }
+  },
+  "referenceFrames": [0, 30, 59],
+  "thresholds": {
+    "minPsnr": 32,
+    "minSsim": 0.95,
+    "maxFailingFrames": 0
+  },
+  "goldens": { "dir": "goldens/frame-runtime-typewriter" }
+}

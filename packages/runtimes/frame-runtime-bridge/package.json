@@ -22,7 +22,9 @@
   },
   "dependencies": {
     "@stageflip/frame-runtime": "workspace:*",
-    "@stageflip/runtimes-contract": "workspace:*"
+    "@stageflip/runtimes-contract": "workspace:*",
+    "@stageflip/schema": "workspace:*",
+    "zod": "3.25.76"
   },
   "peerDependencies": {
     "react": "^19.0.0"

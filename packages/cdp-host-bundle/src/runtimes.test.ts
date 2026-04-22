@@ -68,10 +68,14 @@ describe('registerAllLiveRuntimes', () => {
     expect(resolved?.runtime.id).toBe('three');
   });
 
-  it('registers frame-runtime-bridge with zero clips (meta-runtime)', () => {
+  it('registers the T-131b.1 tranche on the frame-runtime bridge (counter / kinetic-text / typewriter / logo-intro / chart-build)', () => {
     registerAllLiveRuntimes();
     const bridge = listRuntimes().find((r) => r.id === 'frame-runtime');
-    expect(bridge?.clips.size).toBe(0);
+    expect(bridge?.clips.size).toBe(5);
+    for (const kind of ['counter', 'kinetic-text', 'typewriter', 'logo-intro', 'chart-build']) {
+      const resolved = findClip(kind);
+      expect(resolved?.runtime.id, `${kind} should resolve via the bridge`).toBe('frame-runtime');
+    }
   });
 
   it('throws on a second call without clearing the registry (contract invariant)', () => {

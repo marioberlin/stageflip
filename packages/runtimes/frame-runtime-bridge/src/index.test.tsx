@@ -3,6 +3,7 @@
 
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
+import { z } from 'zod';
 
 import { useCurrentFrame, useVideoConfig } from '@stageflip/frame-runtime';
 import {
@@ -181,5 +182,33 @@ describe('defineFrameClip — fontRequirements passthrough', () => {
   it('omits the fontRequirements field when not declared', () => {
     const clip = defineFrameClip<TextProps>({ kind: 'text', component: Text });
     expect(clip.fontRequirements).toBeUndefined();
+  });
+});
+
+describe('defineFrameClip — propsSchema + themeSlots passthrough (T-131b.1)', () => {
+  it('forwards propsSchema onto the produced ClipDefinition', () => {
+    const schema = z.object({ label: z.string() }).strict();
+    const clip = defineFrameClip<z.infer<typeof schema>>({
+      kind: 'with-schema',
+      component: Text as unknown as React.ComponentType<z.infer<typeof schema>>,
+      propsSchema: schema,
+    });
+    expect(clip.propsSchema).toBe(schema);
+  });
+
+  it('forwards themeSlots onto the produced ClipDefinition', () => {
+    const slots = { label: { kind: 'palette' as const, role: 'primary' as const } };
+    const clip = defineFrameClip<TextProps>({
+      kind: 'with-slots',
+      component: Text,
+      themeSlots: slots,
+    });
+    expect(clip.themeSlots).toBe(slots);
+  });
+
+  it('omits both fields when not declared', () => {
+    const clip = defineFrameClip<TextProps>({ kind: 'bare', component: Text });
+    expect(clip.propsSchema).toBeUndefined();
+    expect(clip.themeSlots).toBeUndefined();
   });
 });

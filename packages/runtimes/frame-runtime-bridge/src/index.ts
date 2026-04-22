@@ -27,6 +27,7 @@
 //     registerRuntime() when the app boots.
 
 import { type ComponentType, type ReactElement, createElement } from 'react';
+import type { z } from 'zod';
 
 import { FrameProvider, type VideoConfig } from '@stageflip/frame-runtime';
 import type {
@@ -34,6 +35,7 @@ import type {
   ClipRenderContext,
   ClipRuntime,
   FontRequirement,
+  ThemeSlot,
 } from '@stageflip/runtimes-contract';
 
 export interface DefineFrameClipInput<P> {
@@ -43,6 +45,18 @@ export interface DefineFrameClipInput<P> {
   component: ComponentType<P>;
   /** Optional: declare the fonts this clip needs (consumed by T-072 FontManager). */
   fontRequirements?(props: P): FontRequirement[];
+  /**
+   * Optional Zod schema describing the clip's props (T-125b). When declared,
+   * the editor's `<ZodForm>` auto-inspects the clip's props.
+   */
+  propsSchema?: z.ZodType<P>;
+  /**
+   * Optional theme-slot map (T-131a). Keys are clip prop names; values
+   * declare which theme slot fills the prop when `undefined`. Resolved
+   * per-render via `resolveClipDefaultsForTheme` from
+   * `@stageflip/runtimes-contract`.
+   */
+  themeSlots?: Readonly<Record<string, ThemeSlot>>;
 }
 
 /**
@@ -77,6 +91,12 @@ export function defineFrameClip<P>(input: DefineFrameClipInput<P>): ClipDefiniti
   if (input.fontRequirements !== undefined) {
     def.fontRequirements = input.fontRequirements;
   }
+  if (input.propsSchema !== undefined) {
+    (def as { propsSchema?: z.ZodType<P> }).propsSchema = input.propsSchema;
+  }
+  if (input.themeSlots !== undefined) {
+    (def as { themeSlots?: Readonly<Record<string, ThemeSlot>> }).themeSlots = input.themeSlots;
+  }
   return def as unknown as ClipDefinition<unknown>;
 }
 
@@ -104,3 +124,30 @@ export function createFrameRuntimeBridge(
     clips: clipMap,
   };
 }
+
+// Re-export the T-131b.1 demo-clip tranche (counter / kinetic-text /
+// typewriter / logo-intro / chart-build). Subsequent tranches (b.2, b.3)
+// extend the same barrel.
+export {
+  ALL_BRIDGE_CLIPS,
+  ChartBuild,
+  type ChartBuildProps,
+  chartBuildClip,
+  chartBuildPropsSchema,
+  Counter,
+  type CounterProps,
+  counterClip,
+  counterPropsSchema,
+  KineticText,
+  type KineticTextProps,
+  kineticTextClip,
+  kineticTextPropsSchema,
+  LogoIntro,
+  type LogoIntroProps,
+  logoIntroClip,
+  logoIntroPropsSchema,
+  TypewriterClip,
+  type TypewriterClipProps,
+  typewriterClip,
+  typewriterClipPropsSchema,
+} from './clips/index.js';
