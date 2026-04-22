@@ -134,10 +134,13 @@ export function AiCopilot({ open, onClose, executor }: AiCopilotProps): ReactEle
       <AiVariantPanel variants={variants} onSelect={() => undefined} showEmptyState />
       <ol data-testid="ai-copilot-messages" style={messagesStyle}>
         {messages.map((m) => (
+          // Per-id testid prevents strict-mode multi-match on multi-turn
+          // conversations. Selectors that want role-level targeting should
+          // key off `data-role` (e.g. `[data-role="user"]`).
           <li
             key={m.id}
             data-role={m.role}
-            data-testid={`ai-message-${m.role}`}
+            data-testid={`ai-message-${m.id}`}
             style={messageStyle(m.role)}
           >
             {m.content}
@@ -159,6 +162,7 @@ export function AiCopilot({ open, onClose, executor }: AiCopilotProps): ReactEle
           type="submit"
           data-testid="ai-copilot-send"
           disabled={status === 'pending' || input.trim().length === 0}
+          aria-label={t('copilot.send')}
           style={sendButtonStyle}
         >
           {t('copilot.send')}

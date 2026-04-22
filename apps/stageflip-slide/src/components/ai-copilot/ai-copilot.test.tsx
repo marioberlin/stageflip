@@ -13,6 +13,13 @@ function withShell(ui: ReactElement): ReactElement {
   return <EditorShell>{ui}</EditorShell>;
 }
 
+function lastMessageOfRole(role: 'user' | 'assistant' | 'system'): HTMLElement | null {
+  const items = screen
+    .getAllByRole('listitem')
+    .filter((el) => el.getAttribute('data-role') === role);
+  return items[items.length - 1] ?? null;
+}
+
 describe('<AiCopilot>', () => {
   it('renders nothing when open=false', () => {
     const { container } = render(withShell(<AiCopilot open={false} onClose={() => undefined} />));
@@ -22,7 +29,9 @@ describe('<AiCopilot>', () => {
   it('renders the sidebar + welcome system message when open', () => {
     render(withShell(<AiCopilot open onClose={() => undefined} />));
     expect(screen.getByTestId('ai-copilot')).toBeTruthy();
-    const systemMsgs = screen.getAllByTestId('ai-message-system');
+    const systemMsgs = screen
+      .getAllByRole('listitem')
+      .filter((el) => el.getAttribute('data-role') === 'system');
     expect(systemMsgs.length).toBe(1);
     expect(systemMsgs[0]?.textContent).toMatch(/tweak slides/i);
   });
@@ -43,15 +52,39 @@ describe('<AiCopilot>', () => {
     fireEvent.change(input, { target: { value: 'Add a title slide' } });
     fireEvent.submit(screen.getByTestId('ai-copilot-form'));
     await waitFor(() => {
-      expect(screen.getByTestId('ai-message-user').textContent).toBe('Add a title slide');
+      expect(lastMessageOfRole('user')?.textContent).toBe('Add a title slide');
     });
     expect(input.value).toBe('');
     expect(executor).toHaveBeenCalledWith('Add a title slide');
     await waitFor(() => {
-      const assistant = screen.getByTestId('ai-message-assistant');
-      expect(assistant.textContent).toMatch(/Phase 7/i);
-      expect(assistant.textContent).toMatch(/phase-7/);
+      const assistant = lastMessageOfRole('assistant');
+      expect(assistant?.textContent).toMatch(/Phase 7/i);
+      expect(assistant?.textContent).toMatch(/phase-7/);
     });
+  });
+
+  it('renders per-id testids so multi-turn submits do not collide', async () => {
+    const executor = vi.fn().mockResolvedValue({
+      kind: 'pending',
+      message: 'x',
+      phase: 'phase-7',
+    } as AgentExecuteResult);
+    render(withShell(<AiCopilot open onClose={() => undefined} executor={executor} />));
+    const input = screen.getByTestId('ai-copilot-input') as HTMLTextAreaElement;
+    for (const prompt of ['first prompt', 'second prompt']) {
+      fireEvent.change(input, { target: { value: prompt } });
+      fireEvent.submit(screen.getByTestId('ai-copilot-form'));
+      await waitFor(() => {
+        expect(lastMessageOfRole('user')?.textContent).toBe(prompt);
+      });
+    }
+    const userMsgs = screen
+      .getAllByRole('listitem')
+      .filter((el) => el.getAttribute('data-role') === 'user');
+    expect(userMsgs.length).toBe(2);
+    // Per-id testids are unique; strict-mode queries do not throw.
+    const testIds = new Set(userMsgs.map((el) => el.getAttribute('data-testid')));
+    expect(testIds.size).toBe(2);
   });
 
   it('shows the error prefix on executor error and flips status to error', async () => {
@@ -64,7 +97,7 @@ describe('<AiCopilot>', () => {
     fireEvent.change(input, { target: { value: 'anything' } });
     fireEvent.submit(screen.getByTestId('ai-copilot-form'));
     await waitFor(() => {
-      expect(screen.getByTestId('ai-message-assistant').textContent).toMatch(/offline/);
+      expect(lastMessageOfRole('assistant')?.textContent).toMatch(/offline/);
     });
     expect(screen.getByTestId('ai-command-bar').getAttribute('data-status')).toBe('error');
   });
@@ -116,6 +149,12 @@ describe('<AiCopilot>', () => {
   });
 
   it('does not fire the Esc shortcut when closed (when-gate)', () => {
+    // `useRegisterShortcuts` runs before the `if (!open) return null`
+    // early-out in the component, so the shortcut IS registered even
+    // while the sidebar is hidden. This test verifies the `when: () => open`
+    // gate blocks the handler — not that the shortcut is absent. Moving
+    // the hook below the early return would break the test and the
+    // component's contract with consumers.
     const onClose = vi.fn();
     render(withShell(<AiCopilot open={false} onClose={onClose} />));
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));

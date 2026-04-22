@@ -47,13 +47,17 @@ export async function executeAgent({
   }
 
   let payload: { error?: string; message?: string; phase?: string } = {};
+  let payloadOk = true;
   try {
     payload = (await response.json()) as typeof payload;
   } catch {
-    // Non-JSON body (e.g. upstream crash). Fall through with empty payload.
+    // Non-JSON body (e.g. upstream gateway crash with 501 text). We can't
+    // trust the status alone — surface it as an error rather than letting
+    // a malformed 501 masquerade as the Phase 6 "not wired" placeholder.
+    payloadOk = false;
   }
 
-  if (response.status === 501) {
+  if (response.status === 501 && payloadOk) {
     return {
       kind: 'pending',
       message: payload.message ?? 'Agent is not wired yet.',
@@ -61,7 +65,7 @@ export async function executeAgent({
     };
   }
 
-  if (response.ok) {
+  if (response.ok && payloadOk) {
     return { kind: 'applied', message: payload.message ?? 'Applied.' };
   }
 

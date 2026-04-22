@@ -18,6 +18,14 @@ function jsonResponse(
 }
 
 describe('executeAgent', () => {
+  it('maps a 501 with a non-JSON body to { kind: "error" } so gateway crashes do not masquerade as pending', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(new Response('<html>gateway boom</html>', { status: 501 }));
+    const result = await executeAgent({ prompt: 'x', fetchImpl });
+    expect(result.kind).toBe('error');
+  });
+
   it('maps a 501 response to { kind: "pending" }', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(
       jsonResponse(501, {
