@@ -22,5 +22,9 @@
     "typecheck": "tsc --noEmit",
     "lint": "biome check src",
     "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@stageflip/schema": "workspace:*",
+    "zod": "3.25.76"
   }
 }
