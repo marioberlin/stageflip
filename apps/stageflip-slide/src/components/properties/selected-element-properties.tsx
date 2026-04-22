@@ -28,10 +28,13 @@
 'use client';
 
 import { t, useDocument } from '@stageflip/editor-shell';
-import type { Document, Element } from '@stageflip/schema';
+import type { ChartElement, Document, Element, TableElement } from '@stageflip/schema';
 import { type ReactElement, useCallback, useEffect, useState } from 'react';
+import { AnimationPicker } from './animation-picker';
+import { ChartElementProperties } from './chart-element-properties';
 import { ClipElementProperties } from './clip-element-properties';
 import { PropField } from './prop-field';
+import { TableElementProperties } from './table-element-properties';
 
 export interface SelectedElementPropertiesProps {
   slideId: string;
@@ -190,11 +193,19 @@ export function SelectedElementProperties({
       <Section label={t('properties.typeEditors')}>
         {element.type === 'clip' ? (
           <ClipElementProperties slideId={slideId} element={element} />
+        ) : element.type === 'chart' ? (
+          <ChartElementProperties slideId={slideId} element={element as ChartElement} />
+        ) : element.type === 'table' ? (
+          <TableElementProperties slideId={slideId} element={element as TableElement} />
         ) : (
           <p data-testid="prop-type-placeholder" style={placeholderStyle}>
             {t('properties.typeEditorsStub')}
           </p>
         )}
+      </Section>
+
+      <Section label={t('properties.animation.header')}>
+        <AnimationPicker slideId={slideId} element={element} />
       </Section>
 
       <button
