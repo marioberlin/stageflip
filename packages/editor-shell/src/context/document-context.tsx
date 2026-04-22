@@ -10,22 +10,32 @@
  *
  * Scope
  * -----
- * T-121b delivers the reactive plumbing, not the full mutation DSL.
  * Actions bundled here are the ones every subsequent Phase 6 port
  * needs to compile against:
  *
  *   - document read + coarse mutations (`setDocument`, `updateDocument`)
  *   - active slide read + set
  *   - selection sets (elements + slides) with replace / toggle / clear
- *   - undo stack push / pop + capacity enforcement
+ *   - undo / redo with MAX_MICRO_UNDO cap (T-133)
  *
  * Slide-level and element-level CRUD (addSlide, updateElement, etc.)
  * live closer to the ports that need them and are intentionally not in
- * this surface. T-133 (undo) and T-123..T-129 (component ports) layer
- * on top without touching this file.
+ * this surface.
+ *
+ * T-133 undo model
+ * ----------------
+ * `updateDocument` diffs the pre/post document via `fast-json-patch` and
+ * pushes a `MicroUndo` of forward + inverse `Operation[]` onto
+ * `undoStackAtom`. `undo()` / `redo()` pop and apply the patches against
+ * the current document; jotai owns the state transitions. `setDocument`
+ * clears both stacks because inverse patches recorded against a prior
+ * document cannot apply cleanly to a replaced one. Identity- and value-
+ * equal updaters do not push entries; a null document short-circuits
+ * `updateDocument` without touching the stack.
  */
 
 import type { Document } from '@stageflip/schema';
+import { type Operation, applyPatch, compare } from 'fast-json-patch';
 import type { Atom } from 'jotai';
 import { Provider as JotaiProvider, createStore, useAtomValue, useSetAtom } from 'jotai';
 import type React from 'react';
@@ -74,6 +84,13 @@ export interface DocumentContextValue {
 
   canUndo: boolean;
   canRedo: boolean;
+  /** Pop the top of the undo stack, apply its inverse patches to the
+   * current document, and push the entry onto the redo stack. No-op when
+   * the stack is empty or the document is null. */
+  undo: () => void;
+  /** Mirror of `undo()` for the redo stack: forward patches applied, entry
+   * restored on the undo stack. */
+  redo: () => void;
   pushUndoEntry: (entry: MicroUndo) => void;
   popUndoEntry: () => MicroUndo | undefined;
   pushRedoEntry: (entry: MicroUndo) => void;
@@ -148,17 +165,138 @@ export function useDocument(): DocumentContextValue {
   const setUndoStack = useSetAtom(undoStackAtom);
   const setRedoStack = useSetAtom(redoStackAtom);
 
+  const pushUndoEntry = useCallback<DocumentContextValue['pushUndoEntry']>(
+    (entry) => {
+      setUndoStack((prev) => {
+        const trimmed = prev.length >= MAX_MICRO_UNDO ? prev.slice(-(MAX_MICRO_UNDO - 1)) : prev;
+        return [...trimmed, entry];
+      });
+      // Any new forward mutation invalidates the redo history.
+      setRedoStack([]);
+    },
+    [setUndoStack, setRedoStack],
+  );
+
+  // Pop helpers use a functional updater so the read-then-write against the
+  // stack is atomic under Jotai's write-batch model. Capturing the popped
+  // entry via a closure variable is safe because jotai executes the updater
+  // synchronously; reading `captured` after `setUndoStack` returns yields
+  // the value produced inside the updater.
+  const popUndoEntry = useCallback<DocumentContextValue['popUndoEntry']>(() => {
+    let captured: MicroUndo | undefined;
+    setUndoStack((prev) => {
+      if (prev.length === 0) {
+        captured = undefined;
+        return prev;
+      }
+      captured = prev[prev.length - 1];
+      return prev.slice(0, -1);
+    });
+    return captured;
+  }, [setUndoStack]);
+
+  const pushRedoEntry = useCallback<DocumentContextValue['pushRedoEntry']>(
+    (entry) => {
+      // Same cap as pushUndoEntry: external callers that push into redo
+      // (rare, but part of the public surface) must not grow the stack
+      // without bound. Mirror the trim so both stacks stay symmetrically
+      // sized.
+      setRedoStack((prev) => {
+        const trimmed = prev.length >= MAX_MICRO_UNDO ? prev.slice(-(MAX_MICRO_UNDO - 1)) : prev;
+        return [...trimmed, entry];
+      });
+    },
+    [setRedoStack],
+  );
+
+  const popRedoEntry = useCallback<DocumentContextValue['popRedoEntry']>(() => {
+    let captured: MicroUndo | undefined;
+    setRedoStack((prev) => {
+      if (prev.length === 0) {
+        captured = undefined;
+        return prev;
+      }
+      captured = prev[prev.length - 1];
+      return prev.slice(0, -1);
+    });
+    return captured;
+  }, [setRedoStack]);
+
   const setDocument = useCallback<DocumentContextValue['setDocument']>(
-    (doc) => setDocumentAtom(doc),
-    [setDocumentAtom],
+    (doc) => {
+      // Replacing the whole document invalidates the patch history: inverse
+      // operations recorded against the old tree cannot apply cleanly to a
+      // different document. Clear both stacks rather than leave them armed
+      // with entries that would throw or silently corrupt state on undo.
+      setDocumentAtom(doc);
+      setUndoStack([]);
+      setRedoStack([]);
+    },
+    [setDocumentAtom, setUndoStack, setRedoStack],
   );
 
   const updateDocument = useCallback<DocumentContextValue['updateDocument']>(
     (updater) => {
-      setDocumentAtom((prev) => (prev === null ? prev : updater(prev)));
+      const prev = store.get(documentAtom);
+      if (prev === null) return;
+      const next = updater(prev);
+      if (next === prev) return;
+      const forward = compare(prev, next);
+      if (forward.length === 0) {
+        // Updater produced a structurally equal doc (new reference, same
+        // content). Keep the new reference so consumers that key on identity
+        // still see a fresh value, but don't clutter the stack with a no-op.
+        setDocumentAtom(next);
+        return;
+      }
+      const inverse = compare(next, prev);
+      setDocumentAtom(next);
+      pushUndoEntry({ forward, inverse });
     },
-    [setDocumentAtom],
+    [store, setDocumentAtom, pushUndoEntry],
   );
+
+  const undo = useCallback<DocumentContextValue['undo']>(() => {
+    const current = store.get(documentAtom);
+    if (current === null) return;
+    const entry = popUndoEntry();
+    if (!entry) return;
+    // `applyPatch` throws on mis-addressed paths, which happens only if the
+    // document has drifted from the state the patch was recorded against
+    // (e.g. a consumer bypassed `updateDocument` and mutated the atom
+    // directly). Swallow the failure rather than crash the editor, but put
+    // the entry back on its stack so the user can keep trying.
+    try {
+      const patched = applyPatch(current, entry.inverse as Operation[], false, false);
+      setDocumentAtom(patched.newDocument);
+      pushRedoEntry(entry);
+    } catch (err) {
+      console.warn('[editor-shell:undo] patch apply failed; entry restored', err);
+      pushUndoEntry(entry);
+    }
+  }, [store, setDocumentAtom, popUndoEntry, pushRedoEntry, pushUndoEntry]);
+
+  const redo = useCallback<DocumentContextValue['redo']>(() => {
+    const current = store.get(documentAtom);
+    if (current === null) return;
+    const entry = popRedoEntry();
+    if (!entry) return;
+    try {
+      const patched = applyPatch(current, entry.forward as Operation[], false, false);
+      setDocumentAtom(patched.newDocument);
+      // Re-queue on the undo stack without clearing redo: we're walking the
+      // history, not starting a new branch. Inline trim matches `pushUndoEntry`
+      // — the two must stay in sync if `MAX_MICRO_UNDO` semantics change.
+      setUndoStack((prevStack) => {
+        const trimmed =
+          prevStack.length >= MAX_MICRO_UNDO ? prevStack.slice(-(MAX_MICRO_UNDO - 1)) : prevStack;
+        return [...trimmed, entry];
+      });
+    } catch (err) {
+      console.warn('[editor-shell:redo] patch apply failed; entry restored', err);
+      pushRedoEntry(entry);
+    }
+  }, [store, setDocumentAtom, popRedoEntry, setUndoStack, pushRedoEntry]);
 
   const setActiveSlide = useCallback<DocumentContextValue['setActiveSlide']>(
     (id) => setActiveSlideAtom(id),
@@ -204,56 +342,6 @@ export function useDocument(): DocumentContextValue {
     setSelectedSlideIds(EMPTY_SELECTION);
   }, [setSelectedElementIds, setSelectedSlideIds]);
 
-  const pushUndoEntry = useCallback<DocumentContextValue['pushUndoEntry']>(
-    (entry) => {
-      setUndoStack((prev) => {
-        const trimmed = prev.length >= MAX_MICRO_UNDO ? prev.slice(-(MAX_MICRO_UNDO - 1)) : prev;
-        return [...trimmed, entry];
-      });
-      // Any new forward mutation invalidates the redo history.
-      setRedoStack([]);
-    },
-    [setUndoStack, setRedoStack],
-  );
-
-  // Pop helpers use a functional updater so the read-then-write against the
-  // stack is atomic under Jotai's write-batch model. Capturing the popped
-  // entry via a closure variable is safe because jotai executes the updater
-  // synchronously; reading `captured` after `setUndoStack` returns yields
-  // the value produced inside the updater.
-  const popUndoEntry = useCallback<DocumentContextValue['popUndoEntry']>(() => {
-    let captured: MicroUndo | undefined;
-    setUndoStack((prev) => {
-      if (prev.length === 0) {
-        captured = undefined;
-        return prev;
-      }
-      captured = prev[prev.length - 1];
-      return prev.slice(0, -1);
-    });
-    return captured;
-  }, [setUndoStack]);
-
-  const pushRedoEntry = useCallback<DocumentContextValue['pushRedoEntry']>(
-    (entry) => {
-      setRedoStack((prev) => [...prev, entry]);
-    },
-    [setRedoStack],
-  );
-
-  const popRedoEntry = useCallback<DocumentContextValue['popRedoEntry']>(() => {
-    let captured: MicroUndo | undefined;
-    setRedoStack((prev) => {
-      if (prev.length === 0) {
-        captured = undefined;
-        return prev;
-      }
-      captured = prev[prev.length - 1];
-      return prev.slice(0, -1);
-    });
-    return captured;
-  }, [setRedoStack]);
-
   return useMemo<DocumentContextValue>(
     () => ({
       document,
@@ -271,6 +359,8 @@ export function useDocument(): DocumentContextValue {
       clearSelection,
       canUndo,
       canRedo,
+      undo,
+      redo,
       pushUndoEntry,
       popUndoEntry,
       pushRedoEntry,
@@ -292,6 +382,8 @@ export function useDocument(): DocumentContextValue {
       clearSelection,
       canUndo,
       canRedo,
+      undo,
+      redo,
       pushUndoEntry,
       popUndoEntry,
       pushRedoEntry,

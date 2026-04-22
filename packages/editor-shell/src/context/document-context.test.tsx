@@ -7,7 +7,7 @@
 import type { Document } from '@stageflip/schema';
 import { act, cleanup, render, renderHook } from '@testing-library/react';
 import type React from 'react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MAX_MICRO_UNDO, type MicroUndo } from '../atoms/undo';
 import { makeSlideDoc } from '../test-fixtures/document-fixture';
 import { DocumentProvider, useDocument } from './document-context';
@@ -215,6 +215,283 @@ describe('undo stacks', () => {
     });
     expect(popped).toBe(e);
     expect(result.current.canRedo).toBe(false);
+  });
+
+  it('pushRedoEntry caps the stack at MAX_MICRO_UNDO entries', () => {
+    const { result } = renderHook(() => useDocument(), { wrapper: wrap() });
+    act(() => {
+      for (let i = 0; i < MAX_MICRO_UNDO + 5; i += 1) {
+        result.current.pushRedoEntry(entry(`redo-${i}`));
+      }
+    });
+    let popped = 0;
+    act(() => {
+      while (result.current.popRedoEntry()) popped += 1;
+    });
+    expect(popped).toBe(MAX_MICRO_UNDO);
+  });
+});
+
+describe('T-133 updateDocument → patch-based undo/redo', () => {
+  it('records a MicroUndo with non-empty forward+inverse when the doc changes', () => {
+    const doc = makeSlideDoc({ slideCount: 1 });
+    const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+    act(() => {
+      result.current.updateDocument((d) => ({
+        ...d,
+        meta: { ...d.meta, title: 'Renamed' },
+      }));
+    });
+    expect(result.current.canUndo).toBe(true);
+    let top: MicroUndo | undefined;
+    act(() => {
+      top = result.current.popUndoEntry();
+    });
+    expect(top).toBeDefined();
+    expect((top?.forward as unknown[]).length).toBeGreaterThan(0);
+    expect((top?.inverse as unknown[]).length).toBeGreaterThan(0);
+  });
+
+  it('skips recording when the updater returns the same reference', () => {
+    const doc = makeSlideDoc({ slideCount: 1 });
+    const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+    act(() => {
+      result.current.updateDocument((d) => d);
+    });
+    expect(result.current.canUndo).toBe(false);
+  });
+
+  it('skips recording when the updater produces a structurally equal doc', () => {
+    const doc = makeSlideDoc({ slideCount: 1 });
+    const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+    act(() => {
+      // New reference, same content → empty patch, no entry pushed.
+      result.current.updateDocument((d) => ({ ...d }));
+    });
+    expect(result.current.canUndo).toBe(false);
+  });
+
+  it('undo() restores the previous document state and moves the entry to the redo stack', () => {
+    const doc = makeSlideDoc({ slideCount: 1 });
+    const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+    act(() => {
+      result.current.updateDocument((d) => ({
+        ...d,
+        meta: { ...d.meta, title: 'Renamed' },
+      }));
+    });
+    expect(result.current.document?.meta.title).toBe('Renamed');
+    act(() => {
+      result.current.undo();
+    });
+    expect(result.current.document?.meta.title).toBe(doc.meta.title);
+    expect(result.current.canUndo).toBe(false);
+    expect(result.current.canRedo).toBe(true);
+  });
+
+  it('redo() re-applies the most recent undone entry', () => {
+    const doc = makeSlideDoc({ slideCount: 1 });
+    const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+    act(() => {
+      result.current.updateDocument((d) => ({
+        ...d,
+        meta: { ...d.meta, title: 'Renamed' },
+      }));
+    });
+    act(() => {
+      result.current.undo();
+    });
+    act(() => {
+      result.current.redo();
+    });
+    expect(result.current.document?.meta.title).toBe('Renamed');
+    expect(result.current.canUndo).toBe(true);
+    expect(result.current.canRedo).toBe(false);
+  });
+
+  it('undo() is a no-op when canUndo is false', () => {
+    const doc = makeSlideDoc({ slideCount: 1 });
+    const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+    act(() => {
+      result.current.undo();
+    });
+    expect(result.current.document).toBe(doc);
+    expect(result.current.canRedo).toBe(false);
+  });
+
+  it('redo() is a no-op when canRedo is false', () => {
+    const doc = makeSlideDoc({ slideCount: 1 });
+    const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+    act(() => {
+      result.current.redo();
+    });
+    expect(result.current.document).toBe(doc);
+    expect(result.current.canUndo).toBe(false);
+  });
+
+  it('a new updateDocument after undo truncates the redo stack', () => {
+    const doc = makeSlideDoc({ slideCount: 1 });
+    const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+    act(() => {
+      result.current.updateDocument((d) => ({
+        ...d,
+        meta: { ...d.meta, title: 'First' },
+      }));
+    });
+    act(() => {
+      result.current.undo();
+    });
+    expect(result.current.canRedo).toBe(true);
+    act(() => {
+      result.current.updateDocument((d) => ({
+        ...d,
+        meta: { ...d.meta, title: 'Second' },
+      }));
+    });
+    expect(result.current.canRedo).toBe(false);
+  });
+
+  it('updateDocument caps the undo stack at MAX_MICRO_UNDO entries', () => {
+    const doc = makeSlideDoc({ slideCount: 1 });
+    const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+    act(() => {
+      for (let i = 0; i < MAX_MICRO_UNDO + 5; i += 1) {
+        result.current.updateDocument((d) => ({
+          ...d,
+          meta: { ...d.meta, title: `edit-${i}` },
+        }));
+      }
+    });
+    let popped = 0;
+    act(() => {
+      while (result.current.popUndoEntry()) popped += 1;
+    });
+    expect(popped).toBe(MAX_MICRO_UNDO);
+  });
+
+  it('setDocument clears both undo and redo stacks', () => {
+    const doc = makeSlideDoc({ slideCount: 1 });
+    const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+    act(() => {
+      result.current.updateDocument((d) => ({
+        ...d,
+        meta: { ...d.meta, title: 'Renamed' },
+      }));
+    });
+    act(() => {
+      result.current.undo();
+    });
+    expect(result.current.canRedo).toBe(true);
+    const replacement = makeSlideDoc({ slideCount: 2 });
+    act(() => {
+      result.current.setDocument(replacement);
+    });
+    expect(result.current.canUndo).toBe(false);
+    expect(result.current.canRedo).toBe(false);
+  });
+
+  it('undo() on a null document is a no-op even if the undo stack has entries', () => {
+    const { result } = renderHook(() => useDocument(), { wrapper: wrap(null) });
+    act(() => {
+      result.current.pushUndoEntry(entry('orphan'));
+    });
+    act(() => {
+      result.current.undo();
+    });
+    // The orphan entry was pushed against a null doc; undo must not crash
+    // and must not attempt to apply a patch. State is unchanged.
+    expect(result.current.document).toBeNull();
+  });
+
+  it('undo() swallows apply errors and restores the entry on the undo stack', () => {
+    const doc = makeSlideDoc({ slideCount: 1 });
+    const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+    // Push a deliberately stale entry: the inverse patch targets an array
+    // index that doesn't exist on `doc.content.slides`, so applyPatch's
+    // `test` of the path fails with an Error.
+    const badEntry: MicroUndo = {
+      forward: [],
+      inverse: [{ op: 'replace', path: '/content/slides/99/id', value: 'nope' }],
+    };
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    act(() => {
+      result.current.pushUndoEntry(badEntry);
+    });
+    act(() => {
+      result.current.undo();
+    });
+    // Document is untouched, entry is restored to the undo stack so the user
+    // can keep trying (e.g. after a re-hydration).
+    expect(result.current.document).toBe(doc);
+    expect(result.current.canUndo).toBe(true);
+    expect(result.current.canRedo).toBe(false);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('redo() swallows apply errors and restores the entry on the redo stack', () => {
+    const doc = makeSlideDoc({ slideCount: 1 });
+    const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+    const badEntry: MicroUndo = {
+      forward: [{ op: 'replace', path: '/content/slides/99/id', value: 'nope' }],
+      inverse: [],
+    };
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    act(() => {
+      result.current.pushRedoEntry(badEntry);
+    });
+    act(() => {
+      result.current.redo();
+    });
+    expect(result.current.document).toBe(doc);
+    expect(result.current.canRedo).toBe(true);
+    expect(result.current.canUndo).toBe(false);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('round-trips nested element mutations', () => {
+    const doc = makeSlideDoc({ slideCount: 1, elementsPerSlide: 2 });
+    const { result } = renderHook(() => useDocument(), { wrapper: wrap(doc) });
+    const beforeX =
+      doc.content.mode === 'slide' ? doc.content.slides[0]?.elements[0]?.transform.x : undefined;
+    act(() => {
+      result.current.updateDocument((d) => {
+        if (d.content.mode !== 'slide') return d;
+        const [first, ...rest] = d.content.slides;
+        if (!first) return d;
+        return {
+          ...d,
+          content: {
+            ...d.content,
+            slides: [
+              {
+                ...first,
+                elements: first.elements.map((el, i) =>
+                  i === 0 ? { ...el, transform: { ...el.transform, x: 999 } } : el,
+                ),
+              },
+              ...rest,
+            ],
+          },
+        };
+      });
+    });
+    const afterUpdate = result.current.document;
+    const updatedX =
+      afterUpdate?.content.mode === 'slide'
+        ? afterUpdate.content.slides[0]?.elements[0]?.transform.x
+        : undefined;
+    expect(updatedX).toBe(999);
+    act(() => {
+      result.current.undo();
+    });
+    const afterUndo = result.current.document;
+    const restoredX =
+      afterUndo?.content.mode === 'slide'
+        ? afterUndo.content.slides[0]?.elements[0]?.transform.x
+        : undefined;
+    expect(restoredX).toBe(beforeX);
   });
 });
 
