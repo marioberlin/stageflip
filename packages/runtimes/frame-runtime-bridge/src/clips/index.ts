@@ -121,10 +121,45 @@ export {
   particlesPropsSchema,
 } from './particles.js';
 
+export {
+  CodeBlock,
+  type CodeBlockProps,
+  type CodeLanguage,
+  codeBlockClip,
+  codeBlockPropsSchema,
+  tokenizeLine,
+} from './code-block.js';
+
+export {
+  ImageGallery,
+  type ImageGalleryProps,
+  imageGalleryClip,
+  imageGalleryPropsSchema,
+} from './image-gallery.js';
+
+export {
+  TimelineMilestones,
+  type TimelineMilestonesProps,
+  timelineMilestonesClip,
+  timelineMilestonesPropsSchema,
+} from './timeline-milestones.js';
+
+export {
+  AudioVisualizer,
+  type AudioVisualizerProps,
+  type VisualizerStyle,
+  audioVisualizerClip,
+  audioVisualizerPropsSchema,
+  generateBars,
+} from './audio-visualizer.js';
+
 import { animatedValueClip } from './animated-value.js';
+import { audioVisualizerClip } from './audio-visualizer.js';
 import { chartBuildClip } from './chart-build.js';
+import { codeBlockClip } from './code-block.js';
 import { comparisonTableClip } from './comparison-table.js';
 import { counterClip } from './counter.js';
+import { imageGalleryClip } from './image-gallery.js';
 import { kineticTextClip } from './kinetic-text.js';
 import { kpiGridClip } from './kpi-grid.js';
 import { lightLeakClip } from './light-leak.js';
@@ -136,6 +171,7 @@ import { pullQuoteClip } from './pull-quote.js';
 import { scene3dClip } from './scene-3d.js';
 import { stockTickerClip } from './stock-ticker.js';
 import { subtitleOverlayClip } from './subtitle-overlay.js';
+import { timelineMilestonesClip } from './timeline-milestones.js';
 import { typewriterClip } from './typewriter-clip.js';
 
 import type { ClipDefinition } from '@stageflip/runtimes-contract';
@@ -168,4 +204,11 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // (see plan row).
   scene3dClip,
   particlesClip,
+  // T-131f.1 — bridge-eligible standalones not covered by b.1/b.2/b.3.
+  // audio-visualizer ships only the simulated-bar path (no real audio
+  // source); the reactive variant is a separate follow-up.
+  codeBlockClip,
+  imageGalleryClip,
+  timelineMilestonesClip,
+  audioVisualizerClip,
 ];

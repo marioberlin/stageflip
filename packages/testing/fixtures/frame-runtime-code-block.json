@@ -1,0 +1,23 @@
+{
+  "name": "frame-runtime-code-block",
+  "runtime": "frame-runtime",
+  "kind": "code-block",
+  "description": "Frame-runtime port of SlideMotion's code-block — syntax-highlighted code with line-by-line stagger reveal (T-131f.1).",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 90 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 90,
+    "props": {
+      "code": "const greet = (name) => {\n  return `Hello, ${name}!`;\n};",
+      "language": "typescript",
+      "filename": "greet.ts"
+    }
+  },
+  "referenceFrames": [0, 45, 89],
+  "thresholds": {
+    "minPsnr": 32,
+    "minSsim": 0.95,
+    "maxFailingFrames": 0
+  },
+  "goldens": { "dir": "goldens/frame-runtime-code-block" }
+}

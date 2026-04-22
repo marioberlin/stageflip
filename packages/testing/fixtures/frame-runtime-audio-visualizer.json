@@ -1,0 +1,19 @@
+{
+  "name": "frame-runtime-audio-visualizer",
+  "runtime": "frame-runtime",
+  "kind": "audio-visualizer",
+  "description": "Frame-runtime port of SlideMotion's audio-visualizer — simulated bar visualization driven by deterministic sin/cos. Real-audio path deferred (T-131f.1).",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 60 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 60,
+    "props": { "barCount": 32, "style": "bars", "title": "AUDIO" }
+  },
+  "referenceFrames": [0, 30, 59],
+  "thresholds": {
+    "minPsnr": 30,
+    "minSsim": 0.92,
+    "maxFailingFrames": 1
+  },
+  "goldens": { "dir": "goldens/frame-runtime-audio-visualizer" }
+}

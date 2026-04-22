@@ -159,15 +159,30 @@ T-131d.2 / .3 / .4).
 | `scene-3d` | `src/clips/scene-3d.tsx` | CSS-3D transformed cube/sphere/torus/pyramid — no three.js or WebGL despite the name |
 | `particles` | `src/clips/particles.tsx` | confetti/sparkles/snow/rain/bokeh driven by a seeded LCG; no `Math.random` |
 
+**T-131f.1 (bridge standalones not covered by b.1/b.2/b.3)**
+
+Audit-driven catch-up after T-131c confirmation discovered nine
+reference clips outside the b/d/e plans. These four are pure bridge
+ports; dashboards (T-131f.2) and the financial-statement composite
+(T-131f.3) follow.
+
+| kind | file | notes |
+|---|---|---|
+| `code-block` | `src/clips/code-block.tsx` | own minimal language tokeniser (typescript/javascript/python/bash/json) + line-by-line stagger; intentionally fixed editor look, no themeSlots |
+| `image-gallery` | `src/clips/image-gallery.tsx` | crossfade slideshow with optional captions; last image stays visible past end of cycle |
+| `timeline-milestones` | `src/clips/timeline-milestones.tsx` | horizontal axis with sweeping progress dot + per-milestone spring pop; labels alternate above / below for readability |
+| `audio-visualizer` | `src/clips/audio-visualizer.tsx` | simulated bar/wave/circular visualization driven by deterministic sin/cos; **no-audio path only** — real-audio reactive variant deferred to T-131f.4 (reference imports Remotion's `<Audio>`) |
+
 Every demo clip declares a Zod `propsSchema` (auto-inspected by the
 editor's `<ZodForm>`) and, where palette-driven, a `themeSlots` map
 binding default colour props to `palette.*` roles (T-131a).
-`light-leak` deliberately ships without `themeSlots` — it's a film-tone
-effect overlay whose colours are intentionally off-palette.
+`light-leak`, `particles`, `code-block` deliberately ship without
+`themeSlots` — film-tone overlay, style-driven palettes, and fixed
+editor look respectively.
 
 The barrel `ALL_BRIDGE_CLIPS` is the canonical iterable that the
-cdp-host-bundle passes to `createFrameRuntimeBridge`. All 16 bridge
-clips (b.1 + b.2 + b.3 + d.1) are now registered through it.
+cdp-host-bundle passes to `createFrameRuntimeBridge`. All 20 bridge
+clips (b.1 + b.2 + b.3 + d.1 + f.1) are now registered through it.
 
 ## Implementation map
 
@@ -175,8 +190,8 @@ clips (b.1 + b.2 + b.3 + d.1) are now registered through it.
 |---|---|---|
 | `src/index.ts` | T-061, T-131b.1 | `defineFrameClip` (+ `propsSchema` / `themeSlots` passthrough) + `createFrameRuntimeBridge` + clip re-exports |
 | `src/index.test.tsx` | T-061, T-131b.1 | Runtime shape, render behaviour, window gating, props passthrough, schema/themeSlots passthrough |
-| `src/clips/*.tsx` | T-131b.1, T-131b.2, T-131b.3, T-131d.1 | Sixteen reference-clip ports across four tranches (light / medium / heavy / bridge-eligible portion of the lottie-three-shader tier) |
-| `src/clips/index.ts` | T-131b.1, T-131b.2, T-131b.3, T-131d.1 | Barrel + `ALL_BRIDGE_CLIPS` constant (16 clips) |
+| `src/clips/*.tsx` | T-131b.1, T-131b.2, T-131b.3, T-131d.1, T-131f.1 | Twenty reference-clip ports across five tranches (light / medium / heavy / bridge-eligible portion of the lottie-three-shader tier / audit-driven standalones catch-up) |
+| `src/clips/index.ts` | T-131b.1, T-131b.2, T-131b.3, T-131d.1, T-131f.1 | Barrel + `ALL_BRIDGE_CLIPS` constant (20 clips) |
 
 ## Related
 
@@ -184,6 +199,8 @@ clips (b.1 + b.2 + b.3 + d.1) are now registered through it.
 - Underlying React frame engine: `runtimes/frame-runtime/SKILL.md`
 - Owning tasks: T-061 (this), T-062..T-066 (concrete runtimes),
   T-072 (FontManager), T-083 (CDP dispatcher consumer), T-131b.1
-  / T-131b.2 / T-131b.3 / T-131d.1 (16 reference-clip ports;
-  T-131d.2 / .3 / .4 are deferred shader-bg / lottie-player /
-  animated-map follow-ups).
+  / T-131b.2 / T-131b.3 / T-131d.1 / T-131f.1 (20 reference-clip
+  ports; T-131d.2 / .3 / .4 are deferred shader-bg / lottie-player /
+  animated-map follow-ups; T-131f.2 / .3 / .4 are dashboard composites,
+  the financial-statement family, and the audio-visualizer real-audio
+  variant).

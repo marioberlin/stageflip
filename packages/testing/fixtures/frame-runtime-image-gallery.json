@@ -1,0 +1,27 @@
+{
+  "name": "frame-runtime-image-gallery",
+  "runtime": "frame-runtime",
+  "kind": "image-gallery",
+  "description": "Frame-runtime port of SlideMotion's image-gallery — crossfade slideshow (T-131f.1). Fixture uses placeholder URLs; goldens are operator-rendered against real images at prime time.",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 240 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 240,
+    "props": {
+      "imageUrls": [
+        "https://picsum.photos/seed/sf-a/640/360",
+        "https://picsum.photos/seed/sf-b/640/360",
+        "https://picsum.photos/seed/sf-c/640/360"
+      ],
+      "captions": ["First", "Second", "Third"],
+      "title": "Gallery"
+    }
+  },
+  "referenceFrames": [0, 120, 239],
+  "thresholds": {
+    "minPsnr": 30,
+    "minSsim": 0.92,
+    "maxFailingFrames": 1
+  },
+  "goldens": { "dir": "goldens/frame-runtime-image-gallery" }
+}

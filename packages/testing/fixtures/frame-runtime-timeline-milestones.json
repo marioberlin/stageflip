@@ -1,0 +1,27 @@
+{
+  "name": "frame-runtime-timeline-milestones",
+  "runtime": "frame-runtime",
+  "kind": "timeline-milestones",
+  "description": "Frame-runtime port of SlideMotion's timeline-milestones — sweeping progress dot + per-milestone spring pop with alternating labels (T-131f.1).",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 120 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 120,
+    "props": {
+      "title": "Roadmap",
+      "milestones": [
+        { "date": "2026-Q1", "title": "Kickoff" },
+        { "date": "2026-Q2", "title": "MVP", "description": "Initial cut" },
+        { "date": "2026-Q3", "title": "Beta" },
+        { "date": "2026-Q4", "title": "GA" }
+      ]
+    }
+  },
+  "referenceFrames": [0, 60, 119],
+  "thresholds": {
+    "minPsnr": 32,
+    "minSsim": 0.95,
+    "maxFailingFrames": 0
+  },
+  "goldens": { "dir": "goldens/frame-runtime-timeline-milestones" }
+}
