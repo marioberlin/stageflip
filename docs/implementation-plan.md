@@ -1,9 +1,9 @@
-# StageFlip — Implementation Plan v1.7
+# StageFlip — Implementation Plan v1.8
 
 **Audience**: AI coding agents executing autonomously; human product owners ratifying at phase boundaries.
 **Scope**: 280+ tasks across 12 phases, from empty repo to first public beta.
 **Format**: Every task is self-contained with references, prompts, acceptance criteria, and verification commands.
-**Last updated**: 2026-04-22 — T-119b narrowed + T-119d added after mid-task discovery that no FixtureManifest→RIRDocument converter exists. See §C.10 changelog.
+**Last updated**: 2026-04-22 — T-121 pre-split into T-121a/b/c; T-132 folded into T-121b after editor audit (T-120) surfaced the overlap. See §C.10 changelog.
 
 ---
 
@@ -357,7 +357,9 @@ phase. Renumbered / carried as T-137 / T-138 in Phase 6.
 | ID | Task | Size |
 |---|---|---|
 | **T-120 [rev]** | **Audit existing SlideMotion editor** at `reference/slidemotion/apps/editor/` — inventory of components, hooks, atoms, shortcuts. Output: `docs/migration/editor-audit.md` listing every component + port priority | M |
-| **T-121 [rev]** | **Build greenfield `packages/editor-shell`** — canvas, properties panel, filmstrip, timeline, command palette, AI copilot sidebar, shortcut registry — written against new RIR + frame-runtime + storage contract. Zero dependency on current SlideMotion code | L |
+| **T-121a [new]** | **Shortcut registry + `ShortcutRegistryProvider`** in `packages/editor-shell`. `Shortcut` + `KeyCombo` types, `matchesKeyCombo(event, combo)` matcher (Mod→Cmd/Ctrl, platform detection, modifier parsing), `useRegisterShortcuts(list)` + `useAllShortcuts()` hooks, one global keydown listener with input-target suppression for bare-key combos. API-compatible port of the SlideMotion ShortcutRegistry (`reference/slidemotion/apps/editor/src/shortcuts/`, our IP). Tests-first. Zero UI; pure framework. Unblocks every port that registers shortcuts | M |
+| **T-121b [new]** | **Jotai atoms + DocumentContext/AuthContext shells** in `packages/editor-shell`. 11 atoms per T-120 audit §2 (`documentAtom`, `slideByIdAtom(id)`, `elementByIdAtom(id)`, `activeSlideIdAtom`, `selectedElementIdsAtom`, `selectedSlideIdsAtom`, `selectedElementIdAtom`, `undoStackAtom`, `redoStackAtom`, `canUndoAtom`, `canRedoAtom`) written against the new RIR document shape. Hand-rolled Map-cache memoized factories (no `atomFamily`). Thin `DocumentProvider`/`useDocument()` adapter (20+ actions) + `AuthProvider`/`useAuth()` shell (no Firebase yet; interface-only). **Subsumes T-132** — T-132 removed. Tests-first | M |
+| **T-121c [new]** | **Shell composition** in `packages/editor-shell` — `<EditorShell>` root composing ShortcutRegistryProvider + DocumentProvider + AuthProvider; `localStorage` persistence adapter (load/save document JSON by docId, autosave debounce hook); i18n catalog scaffold (`en` + `pseudo` locales, `t(key)` helper) seeded with the ~170 keys from `reference/slidemotion/apps/editor/src/i18n/catalog.ts`. No Next.js; consumable by any React 19 host. Zero UI beyond provider tree. Tests-first | M |
 | **T-122 [rev]** | **Walking skeleton `apps/stageflip-slide`** — Next.js 15 app that mounts editor-shell, renders blank canvas, wires agent. Minimal but end-to-end working | L |
 | **T-123 [rev]** | **Port UI component 1: CanvasWorkspace** — adapt SlideMotion's canvas code to new shell's APIs. Own PR with own acceptance | M |
 | **T-124 [rev]** | Port UI component 2: Filmstrip | M |
@@ -368,7 +370,6 @@ phase. Renumbered / carried as T-137 / T-138 in Phase 6.
 | **T-129 [rev]** | Port remaining components (shortcuts, asset browser, visual-diff modes, collaboration UI) | L |
 | T-130 | `@stageflip/import-slidemotion-legacy` — one-way converter old schema → new schema with mode='slide' | M |
 | T-131 | 33 SlideMotion clips ported to new ClipRuntime (with themeSlots); each clip registered + parity fixture | L |
-| T-132 | `apps/stageflip-slide` Jotai atoms | M |
 | T-133 | Undo/redo via fast-json-patch | M |
 | T-134 | Branding pass: StageFlip.Slide logo, copy, CSS vars. Abyssal Clarity preserved | M |
 | T-135 | `skills/stageflip/modes/stageflip-slide/SKILL.md` final | M |
@@ -690,6 +691,7 @@ Phase 0 ──► Phase 1 ──► Phase 2 ──► Phase 3 ──┬──►
 
 ## C.10 Changelog
 
+- **v1.8** (2026-04-22): T-121 pre-split into **T-121a / T-121b / T-121c** following the Phase 5 L-split convention. Editor audit (T-120, `docs/migration/editor-audit.md`) surfaced three independently-reviewable concerns inside the original L-sized "greenfield editor-shell" row: (1) shortcut registry framework (T-121a), (2) Jotai atoms + context shells (T-121b), (3) shell composition + persistence + i18n scaffold (T-121c). **T-132 is folded into T-121b** — the atoms port it described overlaps 1:1 with T-121b's atoms work. Component ports T-123..T-129 (which the original T-121 row also listed) were already their own tasks in the plan; the split clarifies that T-121 was the framework foundation, not the UI. Each new row is M-sized. Unblocks T-122 (walking skeleton) + T-123..T-129 (component ports) in parallel once T-121a+b+c land. Handover-phase6 §7.2 predicted this split; pre-empting it here rather than mid-implementation matches v1.4/v1.6/v1.7 pattern.
 - **v1.7** (2026-04-22): T-119b narrowed + T-119d added. Mid-task exploration on T-119b surfaced a gap: the 5 parity fixtures in `packages/testing/fixtures/` carry `FixtureManifest` metadata (composition + clip + {runtime, kind, props}) but `PuppeteerCdpSession.mount` requires a full `RIRDocument`, and no converter exists in the repo today. The v1.6 entry for T-119b implicitly assumed one. Corrections: T-119b narrows its render-target to the 3 hand-coded `REFERENCE_FIXTURES` in `@stageflip/renderer-cdp` (which ARE real `RIRDocument`s) so it proves the orchestrator + render-to-PNG pipeline end-to-end, and T-119d is added for the `manifestToDocument(manifest)` converter. §6.1 goldens-priming splits accordingly — reference set unblocked by T-119b + T-119c; parity fixtures unblocked by T-119d extending T-119b's CLI. Net: one extra PR, but each PR ships working behaviour rather than an ad-hoc converter under time pressure. Matches the Phase 5 "each PR delivers standalone value" pattern.
 - **v1.6** (2026-04-22): Added T-119 / T-119b / T-119c to Phase 6, resolving the two open follow-ups from Phase 5 ratification (handover-phase5 §6.1 goldens priming + §6.2 CI Chrome/ffmpeg infra). Split into three M/M/S rows rather than one L row per the Phase 5 convention (see T-100's split in v1.2–v1.4): T-119 ships the CI job + unlocks the e2e reference-render suite; T-119b ships the `parity:prime` CLI; T-119c wires them together + documents the operator priming flow. None block Phase 6's slide-migration critical path (T-120–T-136); schedulable in parallel as tooling infra.
 - **v1.5** (2026-04-21): Phase 5 closeout. T-105 (visual diff viewer) and T-106 (auto-fix passes) carried from Phase 5 to Phase 6 as T-137 + T-138. Both depend on surfaces that shipped this phase (T-104 linter rules, T-100 ScoreReport) but neither blocks Phase 6's slide-migration critical path, so they're scheduled as tooling follow-ups. Phase 5 exit criterion met on the core parity harness + linter + CI gate work.
@@ -701,4 +703,4 @@ Phase 0 ──► Phase 1 ──► Phase 2 ──► Phase 3 ──┬──►
 
 ---
 
-**End of plan v1.7.** Start at T-001.
+**End of plan v1.8.** Start at T-001.
