@@ -19,6 +19,7 @@ import type { Document, Slide } from '@stageflip/schema';
 import type { ReactElement } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AiCopilot } from '../components/ai-copilot/ai-copilot';
+import { Logo } from '../components/brand/logo';
 import { SlideCanvas } from '../components/canvas/slide-canvas';
 import { SlidePlayer } from '../components/canvas/slide-player';
 import { CommandPalette } from '../components/command-palette/command-palette';
@@ -188,7 +189,12 @@ function EditorFrame(): ReactElement {
   return (
     <main data-testid="editor-app" style={mainStyle}>
       <header data-testid="editor-header" style={headerStyle}>
-        <span style={{ fontWeight: 600 }}>{doc?.meta.title ?? t('onboarding.welcome')}</span>
+        <div style={brandingRowStyle}>
+          <Logo />
+          <span data-testid="editor-doc-title" style={docTitleStyle}>
+            {doc?.meta.title ?? t('slide.tagline')}
+          </span>
+        </div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <span style={{ opacity: 0.6 }}>
             {slideCount} {t('status.slides')}
@@ -335,8 +341,21 @@ const mainStyle: React.CSSProperties = {
 const headerStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
+  alignItems: 'center',
   fontSize: 14,
   letterSpacing: 0.02,
+};
+
+const brandingRowStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 12,
+};
+
+const docTitleStyle: React.CSSProperties = {
+  fontWeight: 500,
+  color: '#a5acb4',
+  fontSize: 13,
 };
 
 const canvasFrameStyle: React.CSSProperties = {

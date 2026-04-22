@@ -94,6 +94,10 @@ const EN_CATALOG = new Map<string, string>([
   ['onboarding.templates', 'Start from a template'],
   ['onboarding.slides', 'slides'],
 
+  // Slide-mode branding (T-134)
+  ['slide.tagline', 'AI-native motion for presentations'],
+  ['slide.productName', 'StageFlip.Slide'],
+
   // Cloud save panel
   ['cloud.authPrompt', 'Sign in to save presentations to the cloud'],
   ['cloud.delete', 'Del'],

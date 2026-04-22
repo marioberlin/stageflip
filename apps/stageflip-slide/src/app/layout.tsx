@@ -7,8 +7,9 @@ import type { ReactNode } from 'react';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'StageFlip.Slide',
-  description: 'AI-native motion for presentations',
+  title: 'StageFlip.Slide — AI-native motion for presentations',
+  description:
+    'StageFlip.Slide is the slide-deck editor in the StageFlip AI-native motion platform.',
 };
 
 // Next.js App Router requires a default export for layout components.

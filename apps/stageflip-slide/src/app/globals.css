@@ -1,12 +1,79 @@
 /* apps/stageflip-slide/src/app/globals.css
- * Walking-skeleton baseline styles. Abyssal Clarity branding arrives
- * with T-134; everything below is placeholder. */
+ * StageFlip.Slide baseline styles + Abyssal Clarity design tokens (T-134).
+ *
+ * Design tokens live as CSS custom properties so every component, inline
+ * style, and future Tailwind/CSS-in-JS layer references the same source of
+ * truth. Adding a new surface or state: extend this file rather than
+ * inlining a new hex; the parity harness + visual diff rely on every
+ * rendered pixel tracing back to this palette.
+ *
+ * Abyssal Clarity rules (from the design system):
+ *   - No pure white or pure black in UI chrome — `--ac-on-surface` tops
+ *     out at `#ebf1fa`.
+ *   - No 1px borders for sectioning; prefer tonal shifts via
+ *     `--ac-border-subtle`.
+ *   - Shadow tint is blue-biased, never grey/black.
+ *   - Corners: 4 / 8 / 12 / 9999 px scale — see `--ac-radius-*`.
+ *   - Typography: Plus Jakarta Sans only, system-ui fallback.
+ *
+ * Incremental adoption: existing inline styles across the slide app
+ * encode raw hex (e.g. `#ebf1fa`). They're intentionally left as-is so
+ * this PR stays scoped; future edits to those components should swap the
+ * literals for `var(--ac-*)` references.
+ */
 
 :root {
   color-scheme: light dark;
-  --editor-bg: #080f15;
-  --editor-canvas: #0f1620;
-  --editor-text: #ebf1fa;
+
+  /* Backgrounds + surfaces */
+  --ac-bg: #080f15; /* ocean floor — canvas / page */
+  --ac-bg-canvas: #0f1620; /* slide-canvas frame */
+  --ac-surface-low: #151c23; /* panels (properties, filmstrip) */
+  --ac-surface-glass: rgba(21, 28, 35, 0.6); /* glass panels w/ backdrop blur */
+
+  /* Text */
+  --ac-on-surface: #ebf1fa; /* primary */
+  --ac-on-surface-variant: #a5acb4; /* secondary */
+  --ac-on-surface-muted: #5a6068; /* tertiary / disabled */
+
+  /* Brand gradient + accent */
+  --ac-primary-from: #81aeff;
+  --ac-primary-to: #0072e5;
+  --ac-primary: var(--ac-primary-from);
+  --ac-primary-gradient: linear-gradient(135deg, var(--ac-primary-from), var(--ac-primary-to));
+  --ac-accent: #5af8fb; /* bioluminescent — AI / active states */
+
+  /* Semantic */
+  --ac-danger: #ff8a8a;
+  --ac-danger-surface: rgba(255, 138, 138, 0.08);
+  --ac-border-subtle: rgba(129, 174, 255, 0.12);
+  --ac-border-strong: rgba(129, 174, 255, 0.3);
+  --ac-shadow: 0 2px 8px rgba(0, 114, 229, 0.08);
+
+  /* Radii */
+  --ac-radius-badge: 4px;
+  --ac-radius-control: 8px;
+  --ac-radius-panel: 12px;
+  --ac-radius-pill: 9999px;
+
+  /* Spacing base unit (multiply for 4/8/12/16/20/24/32/48/64) */
+  --ac-space-unit: 4px;
+
+  /* Typography */
+  --ac-font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --ac-font-display-lg: 800 56px / 1.1 var(--ac-font-family);
+  --ac-font-heading-lg: 700 36px / 1.2 var(--ac-font-family);
+  --ac-font-heading-md: 700 28px / 1.3 var(--ac-font-family);
+  --ac-font-heading-sm: 600 20px / 1.4 var(--ac-font-family);
+  --ac-font-body-lg: 400 16px / 1.6 var(--ac-font-family);
+  --ac-font-body-sm: 400 14px / 1.5 var(--ac-font-family);
+  --ac-font-label: 600 12px / 1.4 var(--ac-font-family);
+  --ac-font-caption: 500 10px / 1.3 var(--ac-font-family);
+
+  /* Back-compat aliases — existing components consume these names. */
+  --editor-bg: var(--ac-bg);
+  --editor-canvas: var(--ac-bg-canvas);
+  --editor-text: var(--ac-on-surface);
 }
 
 * {
@@ -17,8 +84,8 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: var(--editor-bg);
-  color: var(--editor-text);
-  font-family: system-ui, -apple-system, "Plus Jakarta Sans", sans-serif;
+  background: var(--ac-bg);
+  color: var(--ac-on-surface);
+  font-family: var(--ac-font-family);
   min-height: 100vh;
 }
