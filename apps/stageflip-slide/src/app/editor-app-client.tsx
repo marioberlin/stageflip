@@ -23,6 +23,7 @@ import { SlideCanvas } from '../components/canvas/slide-canvas';
 import { SlidePlayer } from '../components/canvas/slide-player';
 import { CommandPalette } from '../components/command-palette/command-palette';
 import { Filmstrip } from '../components/filmstrip/filmstrip';
+import { PropertiesPanel } from '../components/properties/properties-panel';
 import { TimelinePanel } from '../components/timeline/timeline-panel';
 
 // Typed via `satisfies` rather than a blind `as Document` cast so TypeScript
@@ -234,6 +235,7 @@ function EditorFrame(): ReactElement {
             />
           )}
         </div>
+        <PropertiesPanel />
       </section>
       {slide ? (
         <TimelinePanel
