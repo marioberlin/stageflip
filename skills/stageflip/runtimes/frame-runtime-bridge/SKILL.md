@@ -147,6 +147,18 @@ under `src/clips/`. Tranches:
 | `pull-quote` | `src/clips/pull-quote.tsx` | spring-scaled quote mark + typewriter quote body + attribution slide-in |
 | `comparison-table` | `src/clips/comparison-table.tsx` | two-column comparison with staggered row reveal — rows slide in from their respective sides |
 
+**T-131d.1 (lottie/three/shader tier — bridge-eligible portion)**
+
+The clips originally tier-labelled "lottie/three/shader" turned out to
+be mostly bridge-tier on inspection. These two land here; `shader-bg` /
+`lottie-player` / `animated-map` are deferred (see plan rows
+T-131d.2 / .3 / .4).
+
+| kind | file | notes |
+|---|---|---|
+| `scene-3d` | `src/clips/scene-3d.tsx` | CSS-3D transformed cube/sphere/torus/pyramid — no three.js or WebGL despite the name |
+| `particles` | `src/clips/particles.tsx` | confetti/sparkles/snow/rain/bokeh driven by a seeded LCG; no `Math.random` |
+
 Every demo clip declares a Zod `propsSchema` (auto-inspected by the
 editor's `<ZodForm>`) and, where palette-driven, a `themeSlots` map
 binding default colour props to `palette.*` roles (T-131a).
@@ -154,8 +166,8 @@ binding default colour props to `palette.*` roles (T-131a).
 effect overlay whose colours are intentionally off-palette.
 
 The barrel `ALL_BRIDGE_CLIPS` is the canonical iterable that the
-cdp-host-bundle passes to `createFrameRuntimeBridge`. All 14 bridge
-clips (b.1 + b.2 + b.3) are now registered through it.
+cdp-host-bundle passes to `createFrameRuntimeBridge`. All 16 bridge
+clips (b.1 + b.2 + b.3 + d.1) are now registered through it.
 
 ## Implementation map
 
@@ -163,8 +175,8 @@ clips (b.1 + b.2 + b.3) are now registered through it.
 |---|---|---|
 | `src/index.ts` | T-061, T-131b.1 | `defineFrameClip` (+ `propsSchema` / `themeSlots` passthrough) + `createFrameRuntimeBridge` + clip re-exports |
 | `src/index.test.tsx` | T-061, T-131b.1 | Runtime shape, render behaviour, window gating, props passthrough, schema/themeSlots passthrough |
-| `src/clips/*.tsx` | T-131b.1, T-131b.2, T-131b.3 | Fourteen reference-clip ports across three tranches (light / medium / heavy) |
-| `src/clips/index.ts` | T-131b.1, T-131b.2, T-131b.3 | Barrel + `ALL_BRIDGE_CLIPS` constant (14 clips) |
+| `src/clips/*.tsx` | T-131b.1, T-131b.2, T-131b.3, T-131d.1 | Sixteen reference-clip ports across four tranches (light / medium / heavy / bridge-eligible portion of the lottie-three-shader tier) |
+| `src/clips/index.ts` | T-131b.1, T-131b.2, T-131b.3, T-131d.1 | Barrel + `ALL_BRIDGE_CLIPS` constant (16 clips) |
 
 ## Related
 
@@ -172,5 +184,6 @@ clips (b.1 + b.2 + b.3) are now registered through it.
 - Underlying React frame engine: `runtimes/frame-runtime/SKILL.md`
 - Owning tasks: T-061 (this), T-062..T-066 (concrete runtimes),
   T-072 (FontManager), T-083 (CDP dispatcher consumer), T-131b.1
-  / T-131b.2 / T-131b.3 (14 reference-clip ports across three
-  complexity tranches).
+  / T-131b.2 / T-131b.3 / T-131d.1 (16 reference-clip ports;
+  T-131d.2 / .3 / .4 are deferred shader-bg / lottie-player /
+  animated-map follow-ups).
