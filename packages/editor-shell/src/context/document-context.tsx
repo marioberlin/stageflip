@@ -10,22 +10,32 @@
  *
  * Scope
  * -----
- * T-121b delivers the reactive plumbing, not the full mutation DSL.
  * Actions bundled here are the ones every subsequent Phase 6 port
  * needs to compile against:
  *
  *   - document read + coarse mutations (`setDocument`, `updateDocument`)
  *   - active slide read + set
  *   - selection sets (elements + slides) with replace / toggle / clear
- *   - undo stack push / pop + capacity enforcement
+ *   - undo / redo with MAX_MICRO_UNDO cap (T-133)
  *
  * Slide-level and element-level CRUD (addSlide, updateElement, etc.)
  * live closer to the ports that need them and are intentionally not in
- * this surface. T-133 (undo) and T-123..T-129 (component ports) layer
- * on top without touching this file.
+ * this surface.
+ *
+ * T-133 undo model
+ * ----------------
+ * `updateDocument` diffs the pre/post document via `fast-json-patch` and
+ * pushes a `MicroUndo` of forward + inverse `Operation[]` onto
+ * `undoStackAtom`. `undo()` / `redo()` pop and apply the patches against
+ * the current document; jotai owns the state transitions. `setDocument`
+ * clears both stacks because inverse patches recorded against a prior
+ * document cannot apply cleanly to a replaced one. Identity- and value-
+ * equal updaters do not push entries; a null document short-circuits
+ * `updateDocument` without touching the stack.
  */
 
 import type { Document } from '@stageflip/schema';
+import { type Operation, applyPatch, compare } from 'fast-json-patch';
 import type { Atom } from 'jotai';
 import { Provider as JotaiProvider, createStore, useAtomValue, useSetAtom } from 'jotai';
 import type React from 'react';
@@ -74,6 +84,13 @@ export interface DocumentContextValue {
 
   canUndo: boolean;
   canRedo: boolean;
+  /** Pop the top of the undo stack, apply its inverse patches to the
+   * current document, and push the entry onto the redo stack. No-op when
+   * the stack is empty or the document is null. */
+  undo: () => void;
+  /** Mirror of `undo()` for the redo stack: forward patches applied, entry
+   * restored on the undo stack. */
+  redo: () => void;
   pushUndoEntry: (entry: MicroUndo) => void;
   popUndoEntry: () => MicroUndo | undefined;
   pushRedoEntry: (entry: MicroUndo) => void;
@@ -148,62 +165,6 @@ export function useDocument(): DocumentContextValue {
   const setUndoStack = useSetAtom(undoStackAtom);
   const setRedoStack = useSetAtom(redoStackAtom);
 
-  const setDocument = useCallback<DocumentContextValue['setDocument']>(
-    (doc) => setDocumentAtom(doc),
-    [setDocumentAtom],
-  );
-
-  const updateDocument = useCallback<DocumentContextValue['updateDocument']>(
-    (updater) => {
-      setDocumentAtom((prev) => (prev === null ? prev : updater(prev)));
-    },
-    [setDocumentAtom],
-  );
-
-  const setActiveSlide = useCallback<DocumentContextValue['setActiveSlide']>(
-    (id) => setActiveSlideAtom(id),
-    [setActiveSlideAtom],
-  );
-
-  const selectElements = useCallback<DocumentContextValue['selectElements']>(
-    (ids) => setSelectedElementIds(ids),
-    [setSelectedElementIds],
-  );
-
-  const toggleElement = useCallback<DocumentContextValue['toggleElement']>(
-    (id) => {
-      setSelectedElementIds((prev) => {
-        const next = new Set(prev);
-        if (next.has(id)) next.delete(id);
-        else next.add(id);
-        return next;
-      });
-    },
-    [setSelectedElementIds],
-  );
-
-  const selectSlides = useCallback<DocumentContextValue['selectSlides']>(
-    (ids) => setSelectedSlideIds(ids),
-    [setSelectedSlideIds],
-  );
-
-  const toggleSlide = useCallback<DocumentContextValue['toggleSlide']>(
-    (id) => {
-      setSelectedSlideIds((prev) => {
-        const next = new Set(prev);
-        if (next.has(id)) next.delete(id);
-        else next.add(id);
-        return next;
-      });
-    },
-    [setSelectedSlideIds],
-  );
-
-  const clearSelection = useCallback(() => {
-    setSelectedElementIds(EMPTY_SELECTION);
-    setSelectedSlideIds(EMPTY_SELECTION);
-  }, [setSelectedElementIds, setSelectedSlideIds]);
-
   const pushUndoEntry = useCallback<DocumentContextValue['pushUndoEntry']>(
     (entry) => {
       setUndoStack((prev) => {
@@ -254,6 +215,110 @@ export function useDocument(): DocumentContextValue {
     return captured;
   }, [setRedoStack]);
 
+  const setDocument = useCallback<DocumentContextValue['setDocument']>(
+    (doc) => {
+      // Replacing the whole document invalidates the patch history: inverse
+      // operations recorded against the old tree cannot apply cleanly to a
+      // different document. Clear both stacks rather than leave them armed
+      // with entries that would throw or silently corrupt state on undo.
+      setDocumentAtom(doc);
+      setUndoStack([]);
+      setRedoStack([]);
+    },
+    [setDocumentAtom, setUndoStack, setRedoStack],
+  );
+
+  const updateDocument = useCallback<DocumentContextValue['updateDocument']>(
+    (updater) => {
+      const prev = store.get(documentAtom);
+      if (prev === null) return;
+      const next = updater(prev);
+      if (next === prev) return;
+      const forward = compare(prev, next);
+      if (forward.length === 0) {
+        // Updater produced a structurally equal doc (new reference, same
+        // content). Keep the new reference so consumers that key on identity
+        // still see a fresh value, but don't clutter the stack with a no-op.
+        setDocumentAtom(next);
+        return;
+      }
+      const inverse = compare(next, prev);
+      setDocumentAtom(next);
+      pushUndoEntry({ forward, inverse });
+    },
+    [store, setDocumentAtom, pushUndoEntry],
+  );
+
+  const undo = useCallback<DocumentContextValue['undo']>(() => {
+    const current = store.get(documentAtom);
+    if (current === null) return;
+    const entry = popUndoEntry();
+    if (!entry) return;
+    const patched = applyPatch(current, entry.inverse as Operation[], false, false);
+    setDocumentAtom(patched.newDocument);
+    pushRedoEntry(entry);
+  }, [store, setDocumentAtom, popUndoEntry, pushRedoEntry]);
+
+  const redo = useCallback<DocumentContextValue['redo']>(() => {
+    const current = store.get(documentAtom);
+    if (current === null) return;
+    const entry = popRedoEntry();
+    if (!entry) return;
+    const patched = applyPatch(current, entry.forward as Operation[], false, false);
+    setDocumentAtom(patched.newDocument);
+    // Re-queue on the undo stack without clearing redo: we're walking the
+    // history, not starting a new branch.
+    setUndoStack((prevStack) => {
+      const trimmed =
+        prevStack.length >= MAX_MICRO_UNDO ? prevStack.slice(-(MAX_MICRO_UNDO - 1)) : prevStack;
+      return [...trimmed, entry];
+    });
+  }, [store, setDocumentAtom, popRedoEntry, setUndoStack]);
+
+  const setActiveSlide = useCallback<DocumentContextValue['setActiveSlide']>(
+    (id) => setActiveSlideAtom(id),
+    [setActiveSlideAtom],
+  );
+
+  const selectElements = useCallback<DocumentContextValue['selectElements']>(
+    (ids) => setSelectedElementIds(ids),
+    [setSelectedElementIds],
+  );
+
+  const toggleElement = useCallback<DocumentContextValue['toggleElement']>(
+    (id) => {
+      setSelectedElementIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+    },
+    [setSelectedElementIds],
+  );
+
+  const selectSlides = useCallback<DocumentContextValue['selectSlides']>(
+    (ids) => setSelectedSlideIds(ids),
+    [setSelectedSlideIds],
+  );
+
+  const toggleSlide = useCallback<DocumentContextValue['toggleSlide']>(
+    (id) => {
+      setSelectedSlideIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+    },
+    [setSelectedSlideIds],
+  );
+
+  const clearSelection = useCallback(() => {
+    setSelectedElementIds(EMPTY_SELECTION);
+    setSelectedSlideIds(EMPTY_SELECTION);
+  }, [setSelectedElementIds, setSelectedSlideIds]);
+
   return useMemo<DocumentContextValue>(
     () => ({
       document,
@@ -271,6 +336,8 @@ export function useDocument(): DocumentContextValue {
       clearSelection,
       canUndo,
       canRedo,
+      undo,
+      redo,
       pushUndoEntry,
       popUndoEntry,
       pushRedoEntry,
@@ -292,6 +359,8 @@ export function useDocument(): DocumentContextValue {
       clearSelection,
       canUndo,
       canRedo,
+      undo,
+      redo,
       pushUndoEntry,
       popUndoEntry,
       pushRedoEntry,

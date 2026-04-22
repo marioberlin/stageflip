@@ -114,6 +114,108 @@ describe('<EditorShell>', () => {
       vi.useRealTimers();
     }
   });
+
+  describe('T-133 default undo/redo shortcuts', () => {
+    function UndoProbe({
+      onSnapshot,
+    }: {
+      onSnapshot: (s: ReturnType<typeof useDocument>) => void;
+    }): null {
+      const snapshot = useDocument();
+      onSnapshot(snapshot);
+      return null;
+    }
+
+    function dispatchCombo(combo: {
+      key: string;
+      shift?: boolean;
+      meta?: boolean;
+      ctrl?: boolean;
+    }) {
+      const event = new KeyboardEvent('keydown', {
+        key: combo.key,
+        shiftKey: combo.shift ?? false,
+        metaKey: combo.meta ?? false,
+        ctrlKey: combo.ctrl ?? false,
+        bubbles: true,
+        cancelable: true,
+      });
+      window.dispatchEvent(event);
+    }
+
+    it('Mod+Z invokes undo() on the document context', () => {
+      const doc = makeSlideDoc({ slideCount: 1 });
+      let latest: ReturnType<typeof useDocument> | null = null;
+      render(
+        <EditorShell initialDocument={doc}>
+          <UndoProbe
+            onSnapshot={(s) => {
+              latest = s;
+            }}
+          />
+        </EditorShell>,
+      );
+      act(() => {
+        latest?.updateDocument((d) => ({
+          ...d,
+          meta: { ...d.meta, title: 'Renamed' },
+        }));
+      });
+      expect(latest?.document?.meta.title).toBe('Renamed');
+      act(() => {
+        dispatchCombo({ key: 'z', ctrl: true });
+      });
+      expect(latest?.document?.meta.title).toBe(doc.meta.title);
+      expect(latest?.canRedo).toBe(true);
+    });
+
+    it('Mod+Shift+Z invokes redo()', () => {
+      const doc = makeSlideDoc({ slideCount: 1 });
+      let latest: ReturnType<typeof useDocument> | null = null;
+      render(
+        <EditorShell initialDocument={doc}>
+          <UndoProbe
+            onSnapshot={(s) => {
+              latest = s;
+            }}
+          />
+        </EditorShell>,
+      );
+      act(() => {
+        latest?.updateDocument((d) => ({
+          ...d,
+          meta: { ...d.meta, title: 'Renamed' },
+        }));
+      });
+      act(() => {
+        dispatchCombo({ key: 'z', ctrl: true });
+      });
+      expect(latest?.document?.meta.title).toBe(doc.meta.title);
+      act(() => {
+        dispatchCombo({ key: 'z', ctrl: true, shift: true });
+      });
+      expect(latest?.document?.meta.title).toBe('Renamed');
+      expect(latest?.canUndo).toBe(true);
+    });
+
+    it('Mod+Z is inert when canUndo is false (stack empty)', () => {
+      const doc = makeSlideDoc({ slideCount: 1 });
+      let latest: ReturnType<typeof useDocument> | null = null;
+      render(
+        <EditorShell initialDocument={doc}>
+          <UndoProbe
+            onSnapshot={(s) => {
+              latest = s;
+            }}
+          />
+        </EditorShell>,
+      );
+      act(() => {
+        dispatchCombo({ key: 'z', ctrl: true });
+      });
+      expect(latest?.document).toBe(doc);
+    });
+  });
 });
 
 function _usedInternally(): React.ReactElement {

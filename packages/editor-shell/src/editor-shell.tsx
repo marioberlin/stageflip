@@ -31,12 +31,13 @@
 
 import type { Document } from '@stageflip/schema';
 import type React from 'react';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { AuthProvider } from './context/auth-context';
-import { DocumentProvider } from './context/document-context';
+import { DocumentProvider, useDocument } from './context/document-context';
 import { type Locale, setLocale } from './i18n/catalog';
 import { type AutosaveOptions, useAutosaveDocument } from './persistence/use-autosave-document';
-import { ShortcutRegistryProvider } from './shortcuts/shortcut-registry';
+import { ShortcutRegistryProvider, useRegisterShortcuts } from './shortcuts/shortcut-registry';
+import type { Shortcut } from './shortcuts/types';
 
 export interface EditorShellProps {
   children: React.ReactNode;
@@ -92,5 +93,45 @@ function EditorShellEffects({
   };
   useAutosaveDocument(autosaveOptions);
 
+  useUndoShortcuts();
+
   return null;
+}
+
+/**
+ * Register default `Mod+Z` / `Mod+Shift+Z` bindings against the document
+ * context's `undo` / `redo`. Mounted inside `<DocumentProvider>` so the
+ * handlers resolve to the correct store when multiple shells coexist
+ * (e.g. main canvas + preview modal). T-133.
+ */
+function useUndoShortcuts(): void {
+  const { undo, redo, canUndo, canRedo } = useDocument();
+  const shortcuts = useMemo<Shortcut[]>(
+    () => [
+      {
+        id: 'essential.undo',
+        combo: 'Mod+Z',
+        description: 'Undo',
+        category: 'essential',
+        when: () => canUndo,
+        handler: () => {
+          undo();
+          return undefined;
+        },
+      },
+      {
+        id: 'essential.redo',
+        combo: 'Mod+Shift+Z',
+        description: 'Redo',
+        category: 'essential',
+        when: () => canRedo,
+        handler: () => {
+          redo();
+          return undefined;
+        },
+      },
+    ],
+    [undo, redo, canUndo, canRedo],
+  );
+  useRegisterShortcuts(shortcuts);
 }
