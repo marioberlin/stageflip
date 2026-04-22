@@ -2,6 +2,8 @@
 // Barrel export for the editor-shell atom surface (T-121b).
 
 export {
+  __clearElementByIdCacheForTest,
+  __clearSlideByIdCacheForTest,
   documentAtom,
   elementByIdAtom,
   slideByIdAtom,

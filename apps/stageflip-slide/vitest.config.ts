@@ -1,14 +1,27 @@
 // apps/stageflip-slide/vitest.config.ts
-// Walking skeleton has no unit tests yet — everything runs through
-// Playwright (`e2e/*.spec.ts`). Tell vitest to ignore the e2e dir so
-// the package-level `test` script stays a no-op instead of trying to
-// execute Playwright specs as vitest files.
+// Unit + component tests run under happy-dom with @testing-library/react.
+// Playwright specs (`e2e/**`) are excluded — those run via the app's
+// `e2e` script, which builds the app and drives a real browser.
+//
+// `jsx: 'automatic'` in the esbuild override is required because the
+// app's tsconfig uses `jsx: 'preserve'` for Next.js; vitest/vite would
+// otherwise emit the preserved JSX AST into runtime files with no
+// React.createElement available.
 
-import { defineConfig } from 'vitest/config';
+import { defineConfig, mergeConfig } from 'vitest/config';
+import baseConfig from '../../vitest.config.base';
 
-export default defineConfig({
-  test: {
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
-    exclude: ['e2e/**', 'node_modules/**', '.next/**'],
-  },
-});
+export default mergeConfig(
+  baseConfig,
+  defineConfig({
+    esbuild: {
+      jsx: 'automatic',
+      jsxImportSource: 'react',
+    },
+    test: {
+      environment: 'happy-dom',
+      include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+      exclude: ['e2e/**', 'node_modules/**', '.next/**'],
+    },
+  }),
+);
