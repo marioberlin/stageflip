@@ -2,6 +2,7 @@
 // Unit tests for the ClipRuntime contract + registry.
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { z } from 'zod';
 
 import {
   type ClipDefinition,
@@ -132,6 +133,27 @@ describe('ClipDefinition — optional hooks', () => {
       fontRequirements: (props) => [{ family: props.family }],
     };
     expect(clip.fontRequirements?.({ family: 'Inter' })).toEqual([{ family: 'Inter' }]);
+  });
+
+  it('propsSchema is optional and carries a ZodType when declared (T-125b)', () => {
+    const schema = z.object({ label: z.string() });
+    const clip: ClipDefinition<z.infer<typeof schema>> = {
+      kind: 'text-label',
+      render: () => null,
+      propsSchema: schema,
+    };
+    const runtime = makeRuntime('t125b', 'live', [clip as ClipDefinition<unknown>]);
+    registerRuntime(runtime);
+    const found = findClip('text-label');
+    expect(found?.clip.propsSchema).toBe(schema);
+    expect(found?.clip.propsSchema?.safeParse({ label: 'ok' }).success).toBe(true);
+  });
+
+  it('propsSchema absent does not affect registration', () => {
+    const clip = makeClip('no-schema');
+    const runtime = makeRuntime('no-schema-runtime', 'live', [clip]);
+    expect(() => registerRuntime(runtime)).not.toThrow();
+    expect(findClip('no-schema')?.clip.propsSchema).toBeUndefined();
   });
 
   it('prepare / dispose are optional on ClipRuntime', () => {

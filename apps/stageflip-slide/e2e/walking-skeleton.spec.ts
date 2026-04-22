@@ -181,3 +181,107 @@ test('agent execute stub rejects GET with 405', async ({ request }) => {
   const response = await request.get('/api/agent/execute');
   expect(response.status()).toBe(405);
 });
+
+// ---------------------------------------------------------------------------
+// T-136 — Phase 6 regression coverage: round-trip flows across the editor's
+// critical path. These assertions are the ratification gate for slide mode.
+// ---------------------------------------------------------------------------
+
+test('inline text editor round-trip: edit commits through document and re-renders in canvas', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const plane = page.getByTestId('slide-canvas-plane');
+  const seed = plane.getByTestId('element-seed-title');
+  await expect(seed).toHaveText('StageFlip.Slide');
+
+  await seed.dblclick();
+  const editor = page.getByTestId('inline-text-editor-seed-title');
+  await expect(editor).toBeVisible();
+
+  // The editor is a contenteditable span. `fill()` handles triple-click +
+  // replace + `input` dispatch cleanly — same semantics a user sees when
+  // selecting existing text and typing over it.
+  await editor.fill('Edited title');
+  await editor.blur();
+
+  // After commit, the editor unmounts and the canonical <ElementView> picks
+  // up the new text from the document atom.
+  await expect(page.getByTestId('inline-text-editor-seed-title')).toHaveCount(0);
+  await expect(plane.getByTestId('element-seed-title')).toHaveText('Edited title');
+
+  // Filmstrip thumbnail re-renders from the same document — it should
+  // reflect the new title.
+  await expect(
+    page.getByTestId('filmstrip-slide-slide-0').getByTestId('element-seed-title'),
+  ).toHaveText('Edited title');
+});
+
+test('undo / redo chain: two transform edits undo in LIFO order, redo restores', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page
+    .getByTestId('slide-canvas-plane')
+    .getByTestId('element-seed-title')
+    .click();
+  const x = page.getByTestId('prop-x');
+  await expect(x).toHaveValue('160');
+
+  // Two distinct commits. Each flows through updateDocument → T-133 pushes
+  // two MicroUndo entries onto the stack.
+  await x.fill('250');
+  await x.blur();
+  await expect(x).toHaveValue('250');
+
+  await x.fill('400');
+  await x.blur();
+  await expect(x).toHaveValue('400');
+
+  // Undo twice — LIFO. Second commit comes off first, then first.
+  await page.keyboard.press('ControlOrMeta+z');
+  await expect(x).toHaveValue('250');
+  await page.keyboard.press('ControlOrMeta+z');
+  await expect(x).toHaveValue('160');
+
+  // Redo both — FIFO out of the redo stack.
+  await page.keyboard.press('ControlOrMeta+Shift+z');
+  await expect(x).toHaveValue('250');
+  await page.keyboard.press('ControlOrMeta+Shift+z');
+  await expect(x).toHaveValue('400');
+});
+
+test('properties panel delete button removes the element from the canvas + doc', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const plane = page.getByTestId('slide-canvas-plane');
+  // Slide-0 seeds two text elements. Deleting the title leaves the subtitle.
+  await expect(plane.getByTestId('element-seed-title')).toBeVisible();
+  await expect(plane.getByTestId('element-seed-subtitle')).toBeVisible();
+
+  await plane.getByTestId('element-seed-title').click();
+  await expect(page.getByTestId('selected-element-properties')).toBeVisible();
+  await page.getByTestId('prop-delete').click();
+
+  // Gone from the canvas, filmstrip re-renders without it.
+  await expect(plane.getByTestId('element-seed-title')).toHaveCount(0);
+  await expect(plane.getByTestId('element-seed-subtitle')).toBeVisible();
+  await expect(page.getByTestId('slide-prop-element-count')).toContainText('1');
+});
+
+// The opacity slider's commit-on-release contract is covered by the unit
+// test at `selected-element-properties.test.tsx` ("opacity slider commits
+// only on release — typing values during the drag do not hit the document
+// atom"). Playwright's `fill()` on a range input doesn't reproduce the
+// real-world pointerdown → pointermove → pointerup sequence cleanly, so
+// duplicating the assertion here is flakier than the unit-level coverage
+// already provides. The e2e suite covers the adjacent regression (undo
+// round-trips for discrete transform commits) via the Mod+Z chain above.
+
+// The `Mod+Z` / `Mod+Shift+Z` shortcuts are gated by `isNotEditingText()`
+// so they never pop the document undo stack while focus is inside a
+// contenteditable. That guard is covered by the unit test
+// `app-shortcuts.test.tsx`'s "contenteditable focus suppresses undo" case —
+// cheaper than the e2e equivalent and not subject to the overlay-vs-dblclick
+// timing that makes a Playwright reproduction flaky.

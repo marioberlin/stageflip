@@ -94,6 +94,10 @@ const EN_CATALOG = new Map<string, string>([
   ['onboarding.templates', 'Start from a template'],
   ['onboarding.slides', 'slides'],
 
+  // Slide-mode branding (T-134)
+  ['slide.tagline', 'AI-native motion for presentations'],
+  ['slide.productName', 'StageFlip.Slide'],
+
   // Cloud save panel
   ['cloud.authPrompt', 'Sign in to save presentations to the cloud'],
   ['cloud.delete', 'Del'],
@@ -158,7 +162,7 @@ const EN_CATALOG = new Map<string, string>([
   ['properties.layer.bottom', 'Btm'],
   ['properties.delete', 'Delete element'],
   ['properties.typeEditors', 'Type editors'],
-  ['properties.typeEditorsStub', 'Chart / Table / Animation / ZodForm arrive in T-125b+c.'],
+  ['properties.typeEditorsStub', 'No type-specific editor for this element.'],
   ['properties.slide.id', 'ID'],
   ['properties.slide.title', 'Title'],
   ['properties.slide.untitled', 'Untitled'],
@@ -186,6 +190,56 @@ const EN_CATALOG = new Map<string, string>([
   // Single-input dialog
   ['singleInput.cancel', 'Cancel'],
   ['singleInput.save', 'Save'],
+
+  // ZodForm (T-125b)
+  ['zodform.empty', 'No fields to inspect.'],
+  ['zodform.optional', 'optional'],
+  ['zodform.unknownPlaceholder', 'Unsupported type — raw text'],
+  ['zodform.tagPlaceholder', 'Add tag + Enter'],
+  ['zodform.numberListPlaceholder', 'Comma-separated numbers'],
+  ['zodform.colorPickerLabel', 'Color picker'],
+
+  // Clip element properties (T-125b)
+  ['properties.clip.title', 'Clip Props'],
+  ['properties.clip.noSchema', 'This clip does not expose a prop schema.'],
+  ['properties.clip.unknownRuntime', 'Clip not found in any registered runtime.'],
+
+  // Chart editor (T-125c)
+  ['properties.chart.kind', 'Chart kind'],
+  ['properties.chart.legend', 'Legend'],
+  ['properties.chart.axes', 'Axes'],
+  ['properties.chart.series', 'Series'],
+  ['properties.chart.addSeries', 'Add series'],
+  ['properties.chart.seriesNamePlaceholder', 'Series name'],
+  ['properties.chart.seriesValuesPlaceholder', 'Comma-separated numbers'],
+  ['properties.chart.boundRef', 'Bound to data source {ref} — edit in the data-source panel.'],
+
+  // Table editor (T-125c)
+  ['properties.table.rows', 'Rows'],
+  ['properties.table.columns', 'Columns'],
+  ['properties.table.headerRow', 'Header row'],
+  ['properties.table.addRow', 'Add row'],
+  ['properties.table.addColumn', 'Add column'],
+  ['properties.table.removeRow', 'Remove row'],
+  ['properties.table.removeColumn', 'Remove column'],
+  ['properties.table.cellContentPlaceholder', 'Cell content'],
+  ['properties.table.align', 'Align'],
+  ['properties.table.align.left', 'Left'],
+  ['properties.table.align.center', 'Center'],
+  ['properties.table.align.right', 'Right'],
+
+  // Animation picker (T-125c)
+  ['properties.animation.header', 'Animations'],
+  ['properties.animation.none', 'No animations on this element.'],
+  ['properties.animation.add', 'Add animation'],
+  ['properties.animation.remove', 'Remove'],
+  ['properties.animation.kind.fade', 'Fade'],
+  ['properties.animation.kind.slide', 'Slide'],
+  ['properties.animation.kind.scale', 'Scale'],
+  ['properties.animation.kind.rotate', 'Rotate'],
+  ['properties.animation.kind.color', 'Color'],
+  ['properties.animation.kind.keyframed', 'Keyframed'],
+  ['properties.animation.kind.runtime', 'Runtime'],
 
   // Status bar
   ['status.elements', 'elements'],

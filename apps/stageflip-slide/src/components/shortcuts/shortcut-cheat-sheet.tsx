@@ -69,7 +69,7 @@ export function ShortcutCheatSheet({
 
   const total = grouped.reduce((sum, g) => sum + g.items.length, 0);
 
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+  const onKeyDown = (event: KeyboardEvent<HTMLDialogElement>) => {
     if (event.key === 'Escape') {
       event.preventDefault();
       onClose();

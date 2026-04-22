@@ -23,6 +23,9 @@
   "peerDependencies": {
     "react": "^19.0.0"
   },
+  "dependencies": {
+    "zod": "3.25.76"
+  },
   "devDependencies": {
     "@types/react": "19.2.14",
     "react": "19.2.5"

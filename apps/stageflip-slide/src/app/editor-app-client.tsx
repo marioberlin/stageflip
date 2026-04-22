@@ -19,6 +19,7 @@ import type { Document, Slide } from '@stageflip/schema';
 import type { ReactElement } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AiCopilot } from '../components/ai-copilot/ai-copilot';
+import { Logo } from '../components/brand/logo';
 import { SlideCanvas } from '../components/canvas/slide-canvas';
 import { SlidePlayer } from '../components/canvas/slide-player';
 import { CommandPalette } from '../components/command-palette/command-palette';
@@ -146,11 +147,15 @@ const FPS = 30;
 const DURATION_IN_FRAMES = 60;
 
 /**
- * True unless focus is inside a contenteditable. Gates global `?` /
- * keyboard shortcuts so typing "?" inside the inline text editor
- * doesn't trigger the cheat sheet.
+ * Returns true when focus is NOT inside a contenteditable node. Gates global
+ * shortcuts that would otherwise collide with the inline text editor:
+ *   - `Mod+Z` / `Mod+Shift+Z` — contenteditable owns its own undo history, so
+ *     routing these combos to the document atom while a contenteditable has
+ *     focus pops two undos per keystroke.
+ *   - `?` — typing "?" into the inline text editor must not open the cheat
+ *     sheet.
  *
- * Guarded for SSR + non-DOM test envs that don't expose `document`.
+ * Safe in SSR + Jest/happy-dom: guards every `document` / `window` read.
  */
 function isNotEditingText(): boolean {
   if (typeof document === 'undefined') return true;
@@ -159,7 +164,7 @@ function isNotEditingText(): boolean {
 }
 
 function EditorFrame(): ReactElement {
-  const { document: doc } = useDocument();
+  const { document: doc, undo, redo } = useDocument();
   const slideCount = doc && doc.content.mode === 'slide' ? doc.content.slides.length : 0;
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const [currentFrame, setCurrentFrame] = useState<number>(0);
@@ -209,15 +214,48 @@ function EditorFrame(): ReactElement {
           return undefined;
         },
       },
+      // T-133 wired the undo / redo API; T-136 exposes it as keyboard
+      // shortcuts. `Mod+Shift+Z` is the de-facto cross-platform redo combo
+      // and is matched ahead of the plain `Mod+Z` binding. Both are gated by
+      // `isNotEditingText` — without the guard, Mod+Z mid-edit pops our
+      // MicroUndo stack AND the browser's native contenteditable undo,
+      // desyncing document and DOM.
+      {
+        id: 'edit.redo',
+        combo: 'Mod+Shift+Z',
+        description: 'Redo',
+        category: 'essential',
+        when: isNotEditingText,
+        handler: () => {
+          redo();
+          return undefined;
+        },
+      },
+      {
+        id: 'edit.undo',
+        combo: 'Mod+Z',
+        description: 'Undo',
+        category: 'essential',
+        when: isNotEditingText,
+        handler: () => {
+          undo();
+          return undefined;
+        },
+      },
     ],
-    [openPalette, toggleCopilot, openCheatSheet],
+    [openPalette, toggleCopilot, openCheatSheet, undo, redo],
   );
   useRegisterShortcuts(shortcuts);
 
   return (
     <main data-testid="editor-app" style={mainStyle}>
       <header data-testid="editor-header" style={headerStyle}>
-        <span style={{ fontWeight: 600 }}>{doc?.meta.title ?? t('onboarding.welcome')}</span>
+        <div style={brandingRowStyle}>
+          <Logo />
+          <span data-testid="editor-doc-title" style={docTitleStyle}>
+            {doc?.meta.title ?? t('slide.tagline')}
+          </span>
+        </div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <span style={{ opacity: 0.6 }}>
             {slideCount} {t('status.slides')}
@@ -366,8 +404,21 @@ const mainStyle: React.CSSProperties = {
 const headerStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
+  alignItems: 'center',
   fontSize: 14,
   letterSpacing: 0.02,
+};
+
+const brandingRowStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 12,
+};
+
+const docTitleStyle: React.CSSProperties = {
+  fontWeight: 500,
+  color: '#a5acb4',
+  fontSize: 13,
 };
 
 const canvasFrameStyle: React.CSSProperties = {

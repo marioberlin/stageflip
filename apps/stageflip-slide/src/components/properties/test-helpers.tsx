@@ -7,7 +7,14 @@ import {
   __clearSlideByIdCacheForTest,
   useDocument,
 } from '@stageflip/editor-shell';
-import type { Document, Element, Slide, TextElement } from '@stageflip/schema';
+import type {
+  ChartElement,
+  Document,
+  Element,
+  Slide,
+  TableElement,
+  TextElement,
+} from '@stageflip/schema';
 import type React from 'react';
 import { useEffect } from 'react';
 
@@ -30,6 +37,43 @@ export function makeTextElement(id: string, overrides: Partial<TextElement> = {}
     align: 'left',
     ...overrides,
   } satisfies TextElement;
+}
+
+export function makeChartElement(overrides: Partial<ChartElement> = {}): ChartElement {
+  return {
+    id: 'chart-1',
+    transform: { x: 0, y: 0, width: 400, height: 240, rotation: 0, opacity: 1 },
+    visible: true,
+    locked: false,
+    animations: [],
+    type: 'chart',
+    chartKind: 'bar',
+    data: { labels: ['A', 'B'], series: [{ name: 'S1', values: [1, 2] }] },
+    legend: true,
+    axes: true,
+    ...overrides,
+  } as ChartElement;
+}
+
+export function makeTableElement(overrides: Partial<TableElement> = {}): TableElement {
+  return {
+    id: 'table-1',
+    transform: { x: 0, y: 0, width: 400, height: 240, rotation: 0, opacity: 1 },
+    visible: true,
+    locked: false,
+    animations: [],
+    type: 'table',
+    rows: 2,
+    columns: 2,
+    headerRow: true,
+    cells: [
+      { row: 0, col: 0, content: 'H1', align: 'left', colspan: 1, rowspan: 1 },
+      { row: 0, col: 1, content: 'H2', align: 'left', colspan: 1, rowspan: 1 },
+      { row: 1, col: 0, content: 'a', align: 'left', colspan: 1, rowspan: 1 },
+      { row: 1, col: 1, content: 'b', align: 'left', colspan: 1, rowspan: 1 },
+    ],
+    ...overrides,
+  } as TableElement;
 }
 
 export function makeDoc({
