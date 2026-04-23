@@ -351,6 +351,8 @@ phase. Renumbered / carried as T-137 / T-138 in Phase 6.
 
 **[rev]** Approach changed from copy-and-rip to greenfield-shell-and-port. This is safer and more reviewable.
 
+**Status**: ⏳ **Awaiting ratification 2026-04-23.** Every plan row shipped (T-120–T-138 + spawned T-119 render-e2e family). Exit criterion 1 (import via `@stageflip/import-slidemotion-legacy`) ✅ met; exit criterion 2 (`apps/stageflip-slide` parity) ✅ met with caveat — the core shell, canvas+interactions, filmstrip, timeline, properties panel (+ ZodForm + domain editors), undo/redo, shortcut registry, command palette, AI copilot, and all 32 reference clips ship; the T-129 row explicitly deferred asset browser, context-menu framework, contextual/persistent toolbars, export dialog, import dialogs, find/replace, onboarding, cloud-save panel, presentation mode as post-Phase-6 tranches. 2059 test cases across 24 test-active packages. All 10 gates green on `main` at `89e8e3b`. Zero escalations raised this phase. See `docs/handover-phase6-complete.md` for the full closeout. Ratification pending orchestrator sign-off on the §1.2 caveat.
+
 **Goal**: Build new shell against new RIR/frame-runtime greenfield; port SlideMotion UI components one at a time.
 **Exit criteria**: `apps/stageflip-slide` achieves parity with current SlideMotion editor; existing SlideMotion documents migrate via `@stageflip/import-slidemotion-legacy`.
 
