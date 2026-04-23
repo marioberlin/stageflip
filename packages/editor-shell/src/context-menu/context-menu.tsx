@@ -106,9 +106,11 @@ function Menu({ items, x, y, onClose, testIdSuffix, submenu = false }: MenuProps
   const [clampedOrigin, setClampedOrigin] = useState<{ x: number; y: number }>({ x, y });
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    // Focus the container so keydown routes through it. happy-dom supports
-    // this; real browsers honor it via the `tabIndex={-1}` on the div.
+  useLayoutEffect(() => {
+    // Focus the container synchronously so the first keydown after
+    // opening (e.g. Escape) routes through the element-level handler.
+    // Required post-T-140 — the provider no longer carries a window-
+    // level Escape listener, so the menu root owns Escape dispatch.
     containerRef.current?.focus();
   }, []);
 

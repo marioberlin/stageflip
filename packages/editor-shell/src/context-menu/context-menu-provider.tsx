@@ -118,25 +118,19 @@ export function ContextMenuProvider({
     return () => window.removeEventListener('contextmenu', handler);
   }, []);
 
-  // Close on Escape / outside click. The menu's own button handlers close it
-  // too, but global listeners guarantee no stuck menu after an app re-render.
+  // Close on outside click. Escape is handled by `<Menu>`'s own
+  // element-level `onKeyDown` (it auto-focuses on open so the keydown
+  // routes through it) — T-140 removed the defensive window listener
+  // so the shortcut registry stays the singleton keydown owner.
   useEffect(() => {
     if (!openState) return;
-    const onKey = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        setOpenState(null);
-      }
-    };
     const onPointerDown = (event: MouseEvent): void => {
       const target = event.target instanceof HTMLElement ? event.target : null;
       if (target?.closest('[data-stageflip-context-menu]')) return;
       setOpenState(null);
     };
-    window.addEventListener('keydown', onKey);
     window.addEventListener('mousedown', onPointerDown);
     return () => {
-      window.removeEventListener('keydown', onKey);
       window.removeEventListener('mousedown', onPointerDown);
     };
   }, [openState]);
