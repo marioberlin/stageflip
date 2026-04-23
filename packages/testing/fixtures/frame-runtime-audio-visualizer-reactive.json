@@ -1,0 +1,24 @@
+{
+  "name": "frame-runtime-audio-visualizer-reactive",
+  "runtime": "frame-runtime",
+  "kind": "audio-visualizer-reactive",
+  "description": "Frame-runtime port of SlideMotion's real-audio audio-visualizer — reads live FFT via useAudioVisualizer on a FrameClock-synced <audio> element (T-131e.2). Editor/preview determinism only; bake path pre-decodes samples for deterministic export.",
+  "composition": { "width": 1920, "height": 1080, "fps": 30, "durationInFrames": 90 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 90,
+    "props": {
+      "audioUrl": "https://example.com/placeholder.mp3",
+      "barCount": 32,
+      "style": "bars",
+      "title": "Live"
+    }
+  },
+  "referenceFrames": [0, 30, 89],
+  "thresholds": {
+    "minPsnr": 30,
+    "minSsim": 0.92,
+    "maxFailingFrames": 1
+  },
+  "goldens": { "dir": "goldens/frame-runtime-audio-visualizer-reactive" }
+}
