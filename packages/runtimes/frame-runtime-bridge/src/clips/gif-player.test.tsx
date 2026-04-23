@@ -93,9 +93,11 @@ describe('gifPlayerClip definition (T-131e.1)', () => {
     });
   });
 
-  it('declares Plus Jakarta Sans 700 as a font requirement (title)', () => {
-    const fonts = gifPlayerClip.fontRequirements?.({}) ?? [];
-    expect(fonts).toContainEqual({ family: 'Plus Jakarta Sans', weight: 700 });
+  it('font requirements are conditional on the title prop (avoid preloading an unused font)', () => {
+    expect(gifPlayerClip.fontRequirements?.({}) ?? []).toEqual([]);
+    expect(gifPlayerClip.fontRequirements?.({ title: 'Demo' }) ?? []).toEqual([
+      { family: 'Plus Jakarta Sans', weight: 700 },
+    ]);
   });
 
   it('propsSchema accepts an empty-props payload (all optional)', () => {

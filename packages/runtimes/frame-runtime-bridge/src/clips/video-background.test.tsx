@@ -81,20 +81,28 @@ describe('videoBackgroundClip definition (T-131e.1)', () => {
     expect(videoBackgroundClip.propsSchema).toBe(videoBackgroundPropsSchema);
   });
 
-  it('declares themeSlots binding titleColor → foreground, subtitleColor → secondary', () => {
+  it('declares themeSlots binding titleColor → foreground, subtitleColor → secondary, background → background', () => {
     expect(videoBackgroundClip.themeSlots).toEqual({
       titleColor: { kind: 'palette', role: 'foreground' },
       subtitleColor: { kind: 'palette', role: 'secondary' },
+      background: { kind: 'palette', role: 'background' },
     });
   });
 
-  it('declares Plus Jakarta Sans 400 + 800 as font requirements', () => {
-    const fonts = videoBackgroundClip.fontRequirements?.({ videoUrl: '' }) ?? [];
-    expect(fonts).toContainEqual({ family: 'Plus Jakarta Sans', weight: 400 });
-    expect(fonts).toContainEqual({ family: 'Plus Jakarta Sans', weight: 800 });
+  it('font requirements are conditional on which text props are supplied', () => {
+    const noText = videoBackgroundClip.fontRequirements?.({ videoUrl: '' }) ?? [];
+    expect(noText).toEqual([]);
+
+    const titleOnly = videoBackgroundClip.fontRequirements?.({ videoUrl: '', title: 'Hi' }) ?? [];
+    expect(titleOnly).toEqual([{ family: 'Plus Jakarta Sans', weight: 800 }]);
+
+    const both =
+      videoBackgroundClip.fontRequirements?.({ videoUrl: '', title: 'Hi', subtitle: 'Yo' }) ?? [];
+    expect(both).toContainEqual({ family: 'Plus Jakarta Sans', weight: 400 });
+    expect(both).toContainEqual({ family: 'Plus Jakarta Sans', weight: 800 });
   });
 
-  it('propsSchema accepts an optional videoUrl (for empty-state placeholder)', () => {
+  it('propsSchema accepts an empty-string videoUrl (hasVideo=false placeholder path)', () => {
     expect(videoBackgroundPropsSchema.safeParse({ videoUrl: '' }).success).toBe(true);
     expect(videoBackgroundPropsSchema.safeParse({ videoUrl: 'https://x.test/a.mp4' }).success).toBe(
       true,

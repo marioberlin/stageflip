@@ -19,6 +19,7 @@ export const videoBackgroundPropsSchema = z
     subtitle: z.string().optional(),
     titleColor: z.string().optional(),
     subtitleColor: z.string().optional(),
+    background: z.string().optional(),
   })
   .strict();
 
@@ -32,6 +33,7 @@ export function VideoBackground({
   subtitle,
   titleColor = '#ebf1fa',
   subtitleColor = '#a5acb4',
+  background = '#080f15',
 }: VideoBackgroundProps): ReactElement {
   const frame = useCurrentFrame();
 
@@ -65,7 +67,7 @@ export function VideoBackground({
         height: '100%',
         position: 'relative',
         overflow: 'hidden',
-        backgroundColor: '#080f15',
+        backgroundColor: background,
       }}
     >
       {hasVideo ? (
@@ -162,9 +164,12 @@ export const videoBackgroundClip: ClipDefinition<unknown> = defineFrameClip<Vide
   themeSlots: {
     titleColor: { kind: 'palette', role: 'foreground' },
     subtitleColor: { kind: 'palette', role: 'secondary' },
+    background: { kind: 'palette', role: 'background' },
   },
-  fontRequirements: () => [
-    { family: 'Plus Jakarta Sans', weight: 400 },
-    { family: 'Plus Jakarta Sans', weight: 800 },
-  ],
+  fontRequirements: (props) => {
+    const fonts: { family: string; weight: number }[] = [];
+    if (props.title !== undefined) fonts.push({ family: 'Plus Jakarta Sans', weight: 800 });
+    if (props.subtitle !== undefined) fonts.push({ family: 'Plus Jakarta Sans', weight: 400 });
+    return fonts;
+  },
 });

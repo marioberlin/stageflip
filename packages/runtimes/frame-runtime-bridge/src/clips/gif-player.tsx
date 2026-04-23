@@ -138,5 +138,6 @@ export const gifPlayerClip: ClipDefinition<unknown> = defineFrameClip<GifPlayerP
     backgroundColor: { kind: 'palette', role: 'background' },
     titleColor: { kind: 'palette', role: 'foreground' },
   },
-  fontRequirements: () => [{ family: 'Plus Jakarta Sans', weight: 700 }],
+  fontRequirements: (props) =>
+    props.title !== undefined ? [{ family: 'Plus Jakarta Sans', weight: 700 }] : [],
 });
