@@ -1,0 +1,41 @@
+{
+  "name": "frame-runtime-sales-dashboard",
+  "runtime": "frame-runtime",
+  "kind": "sales-dashboard",
+  "description": "Sales pipeline composite (T-131f.2c) — closes the T-131f.2 dashboard tranche. Flat-prop interface over stages + deals + optional summary. Five pipelineType modes (funnel / forecast / deal_review / quarterly_review / win_loss). PipelineFunnel + ForecastChart + DealCard are inlined private sub-components.",
+  "composition": { "width": 1920, "height": 1080, "fps": 30, "durationInFrames": 60 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 60,
+    "props": {
+      "title": "Q2 Pipeline Review",
+      "subtitle": "FY26 Q2",
+      "period": "Q2 2026",
+      "pipelineType": "funnel",
+      "currency": "USD",
+      "stages": [
+        { "id": "qualify", "name": "Qualify", "color": "#81aeff", "order": 0, "probability": 20 },
+        { "id": "propose", "name": "Propose", "color": "#5af8fb", "order": 1, "probability": 50 },
+        { "id": "negotiate", "name": "Negotiate", "color": "#34d399", "order": 2, "probability": 80 }
+      ],
+      "deals": [
+        { "id": "d1", "name": "Acme Annual", "company": "Acme", "value": 240000, "status": "on_track", "stageId": "negotiate", "closeDate": "2026-06-30", "owner": "Ada", "probability": 80 },
+        { "id": "d2", "name": "Globex Pilot", "company": "Globex", "value": 80000, "status": "at_risk", "stageId": "propose", "closeDate": "2026-05-15", "owner": "Ben" },
+        { "id": "d3", "name": "Initech Expansion", "company": "Initech", "value": 120000, "status": "slipping", "stageId": "qualify", "closeDate": "2026-07-01" }
+      ],
+      "summary": {
+        "totalPipeline": 540000,
+        "weightedPipeline": 320000,
+        "closedWon": 60000,
+        "quota": 500000,
+        "winRate": 42,
+        "pipelineCoverage": 1.2,
+        "avgDealSize": 108000,
+        "avgCycleLength": 54
+      }
+    }
+  },
+  "referenceFrames": [0, 30, 59],
+  "thresholds": { "minPsnr": 30, "minSsim": 0.92, "maxFailingFrames": 1 },
+  "goldens": { "dir": "goldens/frame-runtime-sales-dashboard" }
+}

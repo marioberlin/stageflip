@@ -73,6 +73,7 @@ const KNOWN_KINDS: ReadonlyMap<string, string> = new Map([
   ['marketing-dashboard', 'frame-runtime'],
   ['product-dashboard', 'frame-runtime'],
   ['okr-dashboard', 'frame-runtime'],
+  ['sales-dashboard', 'frame-runtime'],
 ]);
 
 function listFixtureFiles(): string[] {
