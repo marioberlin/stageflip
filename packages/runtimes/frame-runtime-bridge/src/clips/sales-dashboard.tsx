@@ -158,11 +158,23 @@ function sortDeals(
 ): SalesDeal[] {
   const copy = [...deals];
   if (sortBy === 'close_date') {
-    copy.sort((a, b) => a.closeDate.localeCompare(b.closeDate));
+    // ISO YYYY-MM-DD strings compare correctly with ordinal <. Avoids
+    // `localeCompare` which is locale-sensitive and drifts between
+    // CI runners (same discipline as `_dashboard-utils.formatDashboardValue`
+    // calling out `toLocaleString`).
+    copy.sort((a, b) => (a.closeDate < b.closeDate ? -1 : a.closeDate > b.closeDate ? 1 : 0));
   } else if (sortBy === 'probability') {
     copy.sort((a, b) => (b.probability ?? 0) - (a.probability ?? 0));
   } else if (sortBy === 'status') {
-    copy.sort((a, _b) => (a.status === 'at_risk' ? -1 : 1));
+    // Spec-compliant comparator: map `at_risk` to 0, everything else to
+    // 1. `a - b` preserves stable ordering for equal keys (V8 Array.sort
+    // is stable since Node 11), so non-`at_risk` deals keep their
+    // original relative order.
+    copy.sort((a, b) => {
+      const ak = a.status === 'at_risk' ? 0 : 1;
+      const bk = b.status === 'at_risk' ? 0 : 1;
+      return ak - bk;
+    });
   } else {
     copy.sort((a, b) => b.value - a.value);
   }
@@ -802,75 +814,79 @@ export function SalesDashboard({
         </div>
       ) : null}
 
-      {pipelineType === 'win_loss' ? (
-        <div
-          data-testid="sales-dashboard-win-loss"
-          style={{
-            position: 'absolute',
-            left: 80,
-            top: 156,
-            width: 1760,
-            height: 860,
-            display: 'flex',
-            gap: 32,
-          }}
-        >
-          <div style={{ flex: 1 }}>
-            <div
-              style={{
-                fontSize: 14,
-                fontWeight: 700,
-                color: DASHBOARD_GOOD_COLOR,
-                marginBottom: 12,
-              }}
-            >
-              Won ({deals.filter((d) => d.status === 'won').length})
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {deals
-                .filter((d) => d.status === 'won')
-                .slice(0, 6)
-                .map((d) => (
-                  <DealCard
-                    key={d.id}
-                    deal={d}
-                    stage={stages.find((s) => s.id === d.stageId)}
-                    currency={currency}
-                    surface={surface}
-                    textColor={textColor}
-                  />
-                ))}
-            </div>
-          </div>
-          <div style={{ flex: 1 }}>
-            <div
-              style={{
-                fontSize: 14,
-                fontWeight: 700,
-                color: DASHBOARD_BAD_COLOR,
-                marginBottom: 12,
-              }}
-            >
-              Lost ({deals.filter((d) => d.status === 'lost').length})
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {deals
-                .filter((d) => d.status === 'lost')
-                .slice(0, 6)
-                .map((d) => (
-                  <DealCard
-                    key={d.id}
-                    deal={d}
-                    stage={stages.find((s) => s.id === d.stageId)}
-                    currency={currency}
-                    surface={surface}
-                    textColor={textColor}
-                  />
-                ))}
-            </div>
-          </div>
-        </div>
-      ) : null}
+      {pipelineType === 'win_loss'
+        ? (() => {
+            // Cap BEFORE counting so the heading ("Won (N)") agrees with
+            // the number of cards actually rendered. Previously the
+            // heading read the full deal count while the card list
+            // sliced to 6 — "Won (10)" with only 6 cards visible.
+            const wonDeals = deals.filter((d) => d.status === 'won').slice(0, 6);
+            const lostDeals = deals.filter((d) => d.status === 'lost').slice(0, 6);
+            return (
+              <div
+                data-testid="sales-dashboard-win-loss"
+                style={{
+                  position: 'absolute',
+                  left: 80,
+                  top: 156,
+                  width: 1760,
+                  height: 860,
+                  display: 'flex',
+                  gap: 32,
+                }}
+              >
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: DASHBOARD_GOOD_COLOR,
+                      marginBottom: 12,
+                    }}
+                  >
+                    Won ({wonDeals.length})
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {wonDeals.map((d) => (
+                      <DealCard
+                        key={d.id}
+                        deal={d}
+                        stage={stages.find((s) => s.id === d.stageId)}
+                        currency={currency}
+                        surface={surface}
+                        textColor={textColor}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: DASHBOARD_BAD_COLOR,
+                      marginBottom: 12,
+                    }}
+                  >
+                    Lost ({lostDeals.length})
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {lostDeals.map((d) => (
+                      <DealCard
+                        key={d.id}
+                        deal={d}
+                        stage={stages.find((s) => s.id === d.stageId)}
+                        currency={currency}
+                        surface={surface}
+                        textColor={textColor}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })()
+        : null}
 
       <div
         data-testid="sales-dashboard-footer"
