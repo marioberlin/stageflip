@@ -104,3 +104,19 @@ export function createLottieRuntime(clips: Iterable<ClipDefinition<unknown>> = [
 }
 
 export { lottieLogo } from './clips/lottie-logo.js';
+// `LottiePlayer` (the new clip component, T-131d.3) is re-exported as
+// `LottiePlayerComponent` because `LottiePlayer` is already the name of
+// the lottie-web player interface we imported above. Keep both names
+// available: `LottiePlayerComponent` for the React component,
+// `LottiePlayer` for the player interface.
+export {
+  LottiePlayer as LottiePlayerComponent,
+  type LottiePlayerComponentProps,
+  type LottiePlayerProps,
+  computePlaceholderRings,
+  lottiePlayer,
+  lottiePlayerPropsSchema,
+  normaliseAnimationData,
+  type PlaceholderRing,
+} from './clips/lottie-player.js';
+export { LottieClipHost } from './host.js';

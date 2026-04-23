@@ -29,6 +29,8 @@ const KNOWN_KINDS: ReadonlyMap<string, string> = new Map([
   ['gradient-background', 'css'],
   ['motion-text-gsap', 'gsap'],
   ['lottie-logo', 'lottie'],
+  // T-131d.3 — prop-driven Lottie JSON player (inline-only)
+  ['lottie-player', 'lottie'],
   ['flash-through-white', 'shader'],
   ['swirl-vortex', 'shader'],
   ['glitch', 'shader'],

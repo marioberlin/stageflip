@@ -48,10 +48,12 @@ describe('registerAllLiveRuntimes', () => {
     expect(resolved?.runtime.id).toBe('gsap');
   });
 
-  it('exposes Lottie lottie-logo clip via findClip', () => {
+  it('exposes Lottie lottie-logo + lottie-player clips via findClip', () => {
     registerAllLiveRuntimes();
-    const resolved = findClip('lottie-logo');
-    expect(resolved?.runtime.id).toBe('lottie');
+    for (const kind of ['lottie-logo', 'lottie-player']) {
+      const resolved = findClip(kind);
+      expect(resolved?.runtime.id).toBe('lottie');
+    }
   });
 
   it('exposes Shader flash-through-white + swirl-vortex + glitch + shader-bg clips via findClip', () => {

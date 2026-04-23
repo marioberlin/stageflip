@@ -21,7 +21,7 @@ import {
   createFrameRuntimeBridge,
 } from '@stageflip/runtimes-frame-runtime-bridge';
 import { createGsapRuntime, motionTextGsap } from '@stageflip/runtimes-gsap';
-import { createLottieRuntime, lottieLogo } from '@stageflip/runtimes-lottie';
+import { createLottieRuntime, lottieLogo, lottiePlayer } from '@stageflip/runtimes-lottie';
 import {
   createShaderRuntime,
   flashThroughWhite,
@@ -53,7 +53,7 @@ export type LiveRuntimeId = (typeof LIVE_RUNTIME_IDS)[number];
 export function registerAllLiveRuntimes(): void {
   registerRuntime(createCssRuntime([solidBackgroundClip, gradientBackgroundClip]));
   registerRuntime(createGsapRuntime([motionTextGsap]));
-  registerRuntime(createLottieRuntime([lottieLogo]));
+  registerRuntime(createLottieRuntime([lottieLogo, lottiePlayer]));
   registerRuntime(createShaderRuntime([flashThroughWhite, swirlVortex, glitch, shaderBg]));
   registerRuntime(createThreeRuntime([threeProductReveal]));
   // frame-runtime-bridge ships the T-131b.1 clip tranche (counter,
