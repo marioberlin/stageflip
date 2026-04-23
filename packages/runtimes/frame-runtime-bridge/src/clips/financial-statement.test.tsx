@@ -225,6 +225,20 @@ describe('FinancialStatement component (T-131f.3)', () => {
     }
   });
 
+  it('renders the rail when commentaryMode=inline (current behaviour matches rail)', () => {
+    // The schema advertises 'inline' alongside 'rail' but the port has
+    // no distinct inline-within-row layout; both modes render the side
+    // rail. This mirrors reference behaviour — test pins the contract.
+    renderAt(30, {
+      statementType: 'pnl',
+      periods: PERIODS,
+      rows: ROWS,
+      comments: COMMENTS,
+      settings: { commentaryMode: 'inline' },
+    });
+    expect(screen.getByTestId('financial-statement-comments-rail')).toBeDefined();
+  });
+
   it('omits the comments rail when commentaryMode=none', () => {
     renderAt(30, {
       statementType: 'pnl',
@@ -281,6 +295,89 @@ describe('FinancialStatement component (T-131f.3)', () => {
     });
     const row = screen.getByTestId('financial-statement-row-loss');
     expect(row.textContent).toContain('(12.5)');
+  });
+
+  it('renders minus-prefixed negatives when negativeStyle=minus', () => {
+    const withNeg: FinancialStatementProps['rows'] = [
+      {
+        id: 'loss',
+        label: 'Operating Loss',
+        kind: 'line',
+        level: 1,
+        values: [-12.5],
+        formatting: { negativeStyle: 'minus' },
+      },
+    ];
+    renderAt(30, {
+      statementType: 'pnl',
+      periods: [{ id: 'q1', label: 'Q1' }],
+      rows: withNeg,
+    });
+    const row = screen.getByTestId('financial-statement-row-loss');
+    expect(row.textContent).toContain('-12.5');
+    expect(row.textContent).not.toContain('(12.5)');
+  });
+
+  it('applies red tint to negatives when negativeStyle=red', () => {
+    const withNeg: FinancialStatementProps['rows'] = [
+      {
+        id: 'loss',
+        label: 'Operating Loss',
+        kind: 'line',
+        level: 1,
+        values: [-12.5],
+        formatting: { negativeStyle: 'red' },
+      },
+    ];
+    const { container } = renderAt(30, {
+      statementType: 'pnl',
+      periods: [{ id: 'q1', label: 'Q1' }],
+      rows: withNeg,
+    });
+    const row = screen.getByTestId('financial-statement-row-loss');
+    // Value is wrapped in a <span> with colour when negStyle=red.
+    const coloured = row.querySelector('span[style*="color"]');
+    expect(coloured).not.toBeNull();
+    // Negative value printed as `-12.5` (no parentheses).
+    expect(row.textContent).toContain('-12.5');
+  });
+
+  it('renders variance absolute + percent cells when the feature flags default to on', () => {
+    // ROWS in the top-level fixture has `variance.absolute` on rev-line
+    // and `variance.percent` on gp-line / ebitda / net-income. Default
+    // settings show both columns → the table gets a "Var" + "Var %"
+    // header and populated cells on those rows.
+    const { container } = renderAt(30, {
+      statementType: 'pnl',
+      periods: PERIODS,
+      rows: ROWS,
+    });
+    const headers = container.querySelectorAll('thead th');
+    const headerText = Array.from(headers)
+      .map((th) => th.textContent ?? '')
+      .join(' | ');
+    expect(headerText).toContain('Var');
+    expect(headerText).toContain('Var %');
+    // Rev-line has absolute=15. Rendered in the Var column.
+    const revRow = screen.getByTestId('financial-statement-row-rev-line');
+    expect(revRow.textContent).toContain('15.0');
+    // Gp-line percent=22.2 → rendered with `%`.
+    const gpRow = screen.getByTestId('financial-statement-row-gp-line');
+    expect(gpRow.textContent).toContain('22.2%');
+  });
+
+  it('hides variance columns when both feature flags are off', () => {
+    const { container } = renderAt(30, {
+      statementType: 'pnl',
+      periods: PERIODS,
+      rows: ROWS,
+      settings: { showVarianceAbsolute: false, showVariancePercent: false },
+    });
+    const headers = container.querySelectorAll('thead th');
+    const headerText = Array.from(headers)
+      .map((th) => th.textContent ?? '')
+      .join(' | ');
+    expect(headerText).not.toContain('Var');
   });
 
   it('uses a dash for null/undefined KPI values', () => {
