@@ -130,7 +130,17 @@ importers:
 
   apps/stageflip-video: {}
 
-  packages/agent: {}
+  packages/agent:
+    dependencies:
+      '@stageflip/llm-abstraction':
+        specifier: workspace:*
+        version: link:../llm-abstraction
+      '@stageflip/schema':
+        specifier: workspace:*
+        version: link:../schema
+      zod:
+        specifier: 3.25.76
+        version: 3.25.76
 
   packages/cdp-host-bundle:
     dependencies:
