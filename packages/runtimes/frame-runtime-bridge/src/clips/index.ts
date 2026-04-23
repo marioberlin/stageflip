@@ -214,8 +214,8 @@ export {
 } from './product-dashboard.js';
 
 // `ObjectiveCard` is intentionally NOT exported — it's private to
-// okr-dashboard today. T-131f.2c (sales) may consume it; if so, the
-// export should land in the same PR that introduces the caller.
+// okr-dashboard today. If a future clip needs it, the export should
+// land in the same PR that introduces the caller.
 export {
   OkrDashboard,
   type OkrDashboardProps,
@@ -225,6 +225,21 @@ export {
   okrDashboardClip,
   okrDashboardPropsSchema,
 } from './okr-dashboard.js';
+
+// sales-dashboard inlines its own PipelineFunnel / ForecastChart /
+// DealCard sub-components — no public export for them (single-consumer).
+export {
+  SalesDashboard,
+  type SalesDashboardProps,
+  type SalesDeal,
+  type SalesDealStage,
+  type SalesDealStatus,
+  type SalesPipelineType,
+  type SalesSettings,
+  type SalesSummary,
+  salesDashboardClip,
+  salesDashboardPropsSchema,
+} from './sales-dashboard.js';
 
 import { animatedValueClip } from './animated-value.js';
 import { audioVisualizerReactiveClip } from './audio-visualizer-reactive.js';
@@ -247,6 +262,7 @@ import { particlesClip } from './particles.js';
 import { pieChartBuildClip } from './pie-chart-build.js';
 import { productDashboardClip } from './product-dashboard.js';
 import { pullQuoteClip } from './pull-quote.js';
+import { salesDashboardClip } from './sales-dashboard.js';
 import { scene3dClip } from './scene-3d.js';
 import { stockTickerClip } from './stock-ticker.js';
 import { subtitleOverlayClip } from './subtitle-overlay.js';
@@ -310,4 +326,5 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   marketingDashboardClip,
   productDashboardClip,
   okrDashboardClip,
+  salesDashboardClip,
 ];
