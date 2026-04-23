@@ -104,3 +104,24 @@ export {
   selectedAssetIdAtom,
 } from './assets';
 export type { Asset, AssetKind } from './assets';
+
+// T-139c — find/replace framework (pure + atom)
+export {
+  EMPTY_FIND_HIGHLIGHTS,
+  findHighlightsAtom,
+  findMatches,
+  replaceAll,
+  type FindHighlightsState,
+  type FindMatch,
+  type FindOptions,
+} from './find-replace';
+
+// T-139c — cloud-save framework (adapter contract + stub)
+export {
+  CloudSaveConflictError,
+  createStubCloudSaveAdapter,
+  type CloudSaveAdapter,
+  type CloudSaveResult,
+  type CloudSaveStatus,
+  type StubCloudSaveOptions,
+} from './cloud-save';
