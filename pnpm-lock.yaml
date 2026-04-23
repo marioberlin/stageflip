@@ -565,6 +565,9 @@ importers:
       '@stageflip/runtimes-contract':
         specifier: workspace:*
         version: link:../contract
+      zod:
+        specifier: 3.25.76
+        version: 3.25.76
     devDependencies:
       '@testing-library/react':
         specifier: 16.3.2

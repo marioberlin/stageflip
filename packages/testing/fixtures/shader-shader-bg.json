@@ -1,0 +1,22 @@
+{
+  "name": "shader-shader-bg",
+  "runtime": "shader",
+  "kind": "shader-bg",
+  "description": "User-shader escape hatch (T-131d.2). Fragment body + scalar uniform drives a procedural background. Minimal GLSL exercises the prop-driven pipeline end-to-end.",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 60 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 60,
+    "props": {
+      "glsl": "void main(){ vec2 uv = v_uv; float v = 0.5 + 0.5 * sin(uv.x * 6.2831853 + u_time * u_speed); gl_FragColor = vec4(v, v * 0.6, 1.0 - v, 1.0); }",
+      "uniforms": { "u_speed": 1.5 }
+    }
+  },
+  "referenceFrames": [0, 30, 59],
+  "thresholds": {
+    "minPsnr": 30,
+    "minSsim": 0.92,
+    "maxFailingFrames": 1
+  },
+  "goldens": { "dir": "goldens/shader-shader-bg" }
+}

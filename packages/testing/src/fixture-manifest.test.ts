@@ -32,6 +32,8 @@ const KNOWN_KINDS: ReadonlyMap<string, string> = new Map([
   ['flash-through-white', 'shader'],
   ['swirl-vortex', 'shader'],
   ['glitch', 'shader'],
+  // T-131d.2 — user-shader escape hatch in the shader runtime
+  ['shader-bg', 'shader'],
   ['three-product-reveal', 'three'],
   // T-131b.1 light tranche
   ['counter', 'frame-runtime'],

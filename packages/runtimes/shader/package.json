@@ -21,7 +21,8 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@stageflip/runtimes-contract": "workspace:*"
+    "@stageflip/runtimes-contract": "workspace:*",
+    "zod": "3.25.76"
   },
   "peerDependencies": {
     "react": "^19.0.0"

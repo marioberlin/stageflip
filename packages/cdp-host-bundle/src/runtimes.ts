@@ -26,6 +26,7 @@ import {
   createShaderRuntime,
   flashThroughWhite,
   glitch,
+  shaderBg,
   swirlVortex,
 } from '@stageflip/runtimes-shader';
 import { createThreeRuntime, threeProductReveal } from '@stageflip/runtimes-three';
@@ -53,7 +54,7 @@ export function registerAllLiveRuntimes(): void {
   registerRuntime(createCssRuntime([solidBackgroundClip, gradientBackgroundClip]));
   registerRuntime(createGsapRuntime([motionTextGsap]));
   registerRuntime(createLottieRuntime([lottieLogo]));
-  registerRuntime(createShaderRuntime([flashThroughWhite, swirlVortex, glitch]));
+  registerRuntime(createShaderRuntime([flashThroughWhite, swirlVortex, glitch, shaderBg]));
   registerRuntime(createThreeRuntime([threeProductReveal]));
   // frame-runtime-bridge ships the T-131b.1 clip tranche (counter,
   // kinetic-text, typewriter, logo-intro, chart-build) — see
