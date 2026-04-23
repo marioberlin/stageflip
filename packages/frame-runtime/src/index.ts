@@ -91,6 +91,16 @@ export {
 export { useMediaSync, type UseMediaSyncOptions } from './use-media-sync.js';
 
 export {
+  FrameAudio,
+  FrameImage,
+  FrameVideo,
+  type FrameAudioProps,
+  type FrameImageProps,
+  type FrameMediaWindowProps,
+  type FrameVideoProps,
+} from './media-host.js';
+
+export {
   useAudioVisualizer,
   type AudioVisualizerOptions,
   type AudioVisualizerSnapshot,
