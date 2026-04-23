@@ -108,15 +108,9 @@ export function autoFixDocument(document: RIRDocument, opts?: AutoFixOptions): A
 
     if (rulesApplied.length === 0) {
       // No rule wanted to change anything this pass. Stable.
+      // By convention `passes` only contains passes that did work, so
+      // we break without recording anything.
       converged = true;
-      passes.push({
-        passNumber,
-        rulesApplied: [],
-        findingsBefore,
-        findingsAfter: findingsBefore,
-      });
-      // Undo the passes.push — we record a pass only when work happened.
-      passes.pop();
       break;
     }
 

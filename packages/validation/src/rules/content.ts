@@ -218,10 +218,10 @@ export const videoTrimOrderedWhenPresent: LintRule = {
       if (!ids.has(el.id) || el.content.type !== 'video') return el;
       const { trimStartMs, trimEndMs } = el.content;
       if (trimStartMs === undefined || trimEndMs === undefined) return el;
-      // Only swap when strictly inverted (end <= start). Equal endpoints
-      // produce a zero-length window which the rule also flags; the
-      // operator-intended fix for that is unclear, so we skip equals and
-      // let the finding persist in the final report.
+      // Only swap when strictly inverted (end < start). Equal endpoints
+      // produce a zero-length window which the rule also flags, but
+      // swapping doesn't fix it — the operator intent is unclear, so we
+      // skip equals and let the finding persist in the final report.
       if (trimEndMs >= trimStartMs) return el;
       changed = true;
       return {
