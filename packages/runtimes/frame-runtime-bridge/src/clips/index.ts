@@ -153,12 +153,27 @@ export {
   generateBars,
 } from './audio-visualizer.js';
 
+export {
+  VideoBackground,
+  type VideoBackgroundProps,
+  videoBackgroundClip,
+  videoBackgroundPropsSchema,
+} from './video-background.js';
+
+export {
+  GifPlayer,
+  type GifPlayerProps,
+  gifPlayerClip,
+  gifPlayerPropsSchema,
+} from './gif-player.js';
+
 import { animatedValueClip } from './animated-value.js';
 import { audioVisualizerClip } from './audio-visualizer.js';
 import { chartBuildClip } from './chart-build.js';
 import { codeBlockClip } from './code-block.js';
 import { comparisonTableClip } from './comparison-table.js';
 import { counterClip } from './counter.js';
+import { gifPlayerClip } from './gif-player.js';
 import { imageGalleryClip } from './image-gallery.js';
 import { kineticTextClip } from './kinetic-text.js';
 import { kpiGridClip } from './kpi-grid.js';
@@ -173,6 +188,7 @@ import { stockTickerClip } from './stock-ticker.js';
 import { subtitleOverlayClip } from './subtitle-overlay.js';
 import { timelineMilestonesClip } from './timeline-milestones.js';
 import { typewriterClip } from './typewriter-clip.js';
+import { videoBackgroundClip } from './video-background.js';
 
 import type { ClipDefinition } from '@stageflip/runtimes-contract';
 
@@ -211,4 +227,9 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   imageGalleryClip,
   timelineMilestonesClip,
   audioVisualizerClip,
+  // T-131e.1 — bake-tier clips rendered bridge-style for preview. Deterministic
+  // export decodes the underlying media via the bake runtime (dispatcher
+  // wiring tracked separately).
+  videoBackgroundClip,
+  gifPlayerClip,
 ];

@@ -1,0 +1,23 @@
+{
+  "name": "frame-runtime-gif-player",
+  "runtime": "frame-runtime",
+  "kind": "gif-player",
+  "description": "Frame-runtime port of SlideMotion's gif-player — fade + scale entrance around an <img> (T-131e.1). GIF frame advance is browser-controlled in the bridge preview path; deterministic export decodes to frames via the bake runtime.",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 90 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 90,
+    "props": {
+      "src": "https://example.com/placeholder.gif",
+      "title": "Demo GIF",
+      "fit": "contain"
+    }
+  },
+  "referenceFrames": [0, 20, 89],
+  "thresholds": {
+    "minPsnr": 30,
+    "minSsim": 0.92,
+    "maxFailingFrames": 1
+  },
+  "goldens": { "dir": "goldens/frame-runtime-gif-player" }
+}

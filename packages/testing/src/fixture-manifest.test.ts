@@ -58,6 +58,9 @@ const KNOWN_KINDS: ReadonlyMap<string, string> = new Map([
   ['image-gallery', 'frame-runtime'],
   ['timeline-milestones', 'frame-runtime'],
   ['audio-visualizer', 'frame-runtime'],
+  // T-131e.1 — bake-tier clips rendered bridge-style for preview
+  ['video-background', 'frame-runtime'],
+  ['gif-player', 'frame-runtime'],
 ]);
 
 function listFixtureFiles(): string[] {
