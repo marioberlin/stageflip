@@ -1,0 +1,27 @@
+{
+  "name": "frame-runtime-hr-dashboard",
+  "runtime": "frame-runtime",
+  "kind": "hr-dashboard",
+  "description": "HR dashboard composite (T-131f.2). Flat-prop interface — departments + optional metrics drive the KPI strip, department table, and metrics panel.",
+  "composition": { "width": 1920, "height": 1080, "fps": 30, "durationInFrames": 60 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 60,
+    "props": {
+      "title": "Q4 Headcount",
+      "period": "Q4 2025",
+      "departments": [
+        { "id": "eng", "name": "Engineering", "color": "#81aeff", "headcount": 120, "openPositions": 6, "attritionRate": 8.5 },
+        { "id": "sales", "name": "Sales", "color": "#34d399", "headcount": 60, "openPositions": 12, "attritionRate": 18 },
+        { "id": "ops", "name": "Operations", "color": "#fb7185", "headcount": 30, "openPositions": 2, "attritionRate": 10 }
+      ],
+      "metrics": [
+        { "id": "engagement", "name": "Engagement", "category": "culture", "value": 78, "unit": "%", "trend": "up", "target": 80 },
+        { "id": "tenure", "name": "Avg Tenure", "category": "retention", "value": 3.2, "unit": "y", "trend": "flat" }
+      ]
+    }
+  },
+  "referenceFrames": [0, 30, 59],
+  "thresholds": { "minPsnr": 30, "minSsim": 0.92, "maxFailingFrames": 1 },
+  "goldens": { "dir": "goldens/frame-runtime-hr-dashboard" }
+}

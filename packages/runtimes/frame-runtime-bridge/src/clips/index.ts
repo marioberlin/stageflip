@@ -182,6 +182,25 @@ export {
   audioVisualizerReactivePropsSchema,
 } from './audio-visualizer-reactive.js';
 
+export {
+  HrDashboard,
+  type HrDashboardDepartment,
+  type HrDashboardMetric,
+  type HrDashboardProps,
+  hrDashboardClip,
+  hrDashboardPropsSchema,
+} from './hr-dashboard.js';
+
+export {
+  MarketingDashboard,
+  type MarketingDashboardChannel,
+  type MarketingDashboardFunnelStage,
+  type MarketingDashboardKpi,
+  type MarketingDashboardProps,
+  marketingDashboardClip,
+  marketingDashboardPropsSchema,
+} from './marketing-dashboard.js';
+
 import { animatedValueClip } from './animated-value.js';
 import { audioVisualizerReactiveClip } from './audio-visualizer-reactive.js';
 import { audioVisualizerClip } from './audio-visualizer.js';
@@ -190,12 +209,14 @@ import { codeBlockClip } from './code-block.js';
 import { comparisonTableClip } from './comparison-table.js';
 import { counterClip } from './counter.js';
 import { gifPlayerClip } from './gif-player.js';
+import { hrDashboardClip } from './hr-dashboard.js';
 import { imageGalleryClip } from './image-gallery.js';
 import { kineticTextClip } from './kinetic-text.js';
 import { kpiGridClip } from './kpi-grid.js';
 import { lightLeakClip } from './light-leak.js';
 import { lineChartDrawClip } from './line-chart-draw.js';
 import { logoIntroClip } from './logo-intro.js';
+import { marketingDashboardClip } from './marketing-dashboard.js';
 import { particlesClip } from './particles.js';
 import { pieChartBuildClip } from './pie-chart-build.js';
 import { pullQuoteClip } from './pull-quote.js';
@@ -255,4 +276,8 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // pre-decodes samples).
   voiceoverNarrationClip,
   audioVisualizerReactiveClip,
+  // T-131f.2 — dashboard composites (Option B: flat-prop interfaces per clip;
+  // no `@slidemotion/schema` domain types re-implemented).
+  hrDashboardClip,
+  marketingDashboardClip,
 ];
