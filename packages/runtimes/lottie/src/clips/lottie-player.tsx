@@ -223,13 +223,6 @@ const themeSlots: Readonly<Record<string, ThemeSlot>> = {
 const fontRequirementsFor = (props: LottiePlayerProps): FontRequirement[] =>
   props.title !== undefined ? [{ family: 'Plus Jakarta Sans', weight: 600 }] : [];
 
-/**
- * `lottie-player` ClipDefinition. Hand-rolled (not via
- * `defineLottieClip`) because the factory bakes `animationData` at
- * define time and this clip needs it at render time. Reuses the
- * package's `LottieClipHost` so the determinism posture
- * (`goToAndStop(ms, false)`) is identical to `lottie-logo`.
- */
 const lottiePlayerDef: ClipDefinition<LottiePlayerProps> = {
   kind: 'lottie-player',
   propsSchema: lottiePlayerPropsSchema,

@@ -91,6 +91,19 @@ outside and hand the decoded JSON in. When `animationData` is
 absent, renders an animated placeholder (three concentric pulsing
 rings derived purely from the clip-local frame).
 
+Public surface (from `@stageflip/runtimes-lottie`):
+
+- `lottiePlayer` — the `ClipDefinition` to register in
+  `createLottieRuntime([lottieLogo, lottiePlayer])`.
+- `lottiePlayerPropsSchema` — Zod schema for `animationData` / `title`
+  / `backgroundColor` / `scale`.
+- `LottiePlayerComponent` — the React component (renamed because the
+  unqualified `LottiePlayer` name is already taken by the lottie-web
+  player interface exported from `./types.js`).
+- `computePlaceholderRings(localFrame)` and
+  `normaliseAnimationData(data)` — pure helpers, exported for direct
+  unit-test coverage.
+
 ## Determinism contract
 
 `goToAndStop(ms, false)` is time-based (milliseconds) — seek is

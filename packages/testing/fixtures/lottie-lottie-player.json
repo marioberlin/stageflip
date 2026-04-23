@@ -2,7 +2,7 @@
   "name": "lottie-lottie-player",
   "runtime": "lottie",
   "kind": "lottie-player",
-  "description": "Prop-driven Lottie JSON player (T-131d.3). Inline animationData only — URL fetching lives outside the clip to keep the determinism scope clean. Goldens primed at operator time against a real Lottie JSON payload.",
+  "description": "Prop-driven Lottie JSON player (T-131d.3). Inline animationData only — URL fetching lives outside the clip to keep the determinism scope clean. This fixture ships the placeholder-path props (no animationData); the priming operator patches in a real Lottie JSON payload before parity scoring.",
   "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 90 },
   "clip": {
     "from": 0,
