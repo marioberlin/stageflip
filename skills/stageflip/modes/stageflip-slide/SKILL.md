@@ -189,6 +189,38 @@ Right-click inside the canvas dispatches through the
 T-139b's asset-browser + T-139c's find-replace are the first non-framework
 consumers.
 
+### Find/replace, onboarding, cloud-save, presentation (T-139c)
+
+Four surfaces mounted from `editor-app-client.tsx`:
+
+- **Find/replace** (`src/components/dialogs/find-replace/`). `Mod+F`
+  opens `<FindReplace>`. Driven by `findMatches` + `replaceAll` pure
+  functions in `@stageflip/editor-shell/find-replace`. The dialog
+  writes active matches into `findHighlightsAtom`; the canvas renders
+  them through `<FindHighlightsOverlay>` sitting above
+  `<SelectionOverlay>`. Replace-all funnels through
+  `beginTransaction` / `commitTransaction` so the whole rewrite is one
+  undo.
+- **Onboarding** (`src/components/onboarding/`). `<Onboarding>` mounts
+  at the editor root. Shows a step-indexed coachmark tour on first
+  mount (flagged in `localStorage` via
+  `isOnboardingComplete()`), skippable with Esc. Anchors are CSS
+  selectors on existing `data-testid` attributes; steps with a missing
+  anchor center in the viewport (graceful degradation — never blocks
+  the editor).
+- **Cloud-save** (`src/components/cloud-save/`).
+  `<CloudSavePanel adapter={…}>` hosts the save/conflict state
+  machine. Phase 6 uses `createStubCloudSaveAdapter()` (in-memory
+  Map); Phase 12's `@stageflip/collab` will swap in a real Firestore
+  adapter without changing the UI. The header's `nav.cloud` button
+  toggles the drawer.
+- **Presentation mode** (`src/components/presentation/`). `Mod+Enter`
+  or the persistent toolbar's Present button mounts
+  `<PresentationMode>` full-screen. Arrow keys / space / Enter
+  advance; Backspace / Shift-arrows retreat; `s` toggles notes; Esc
+  exits. Slide rendering reuses `<SlidePlayer>` at 1920×1080 scaled
+  to the viewport.
+
 ### AiCopilot stub (T-128)
 
 `apps/stageflip-slide/src/components/ai-copilot/` — right-rail chat

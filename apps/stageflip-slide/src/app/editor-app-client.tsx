@@ -6,10 +6,12 @@
 'use client';
 
 import {
+  type CloudSaveAdapter,
   ContextMenu,
   EditorShell,
   type Shortcut,
   activeSlideIdAtom,
+  createStubCloudSaveAdapter,
   slideByIdAtom,
   t,
   useDocument,
@@ -18,13 +20,17 @@ import {
 } from '@stageflip/editor-shell';
 import type { Document, Slide, SlideContent } from '@stageflip/schema';
 import type { ReactElement } from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AiCopilot } from '../components/ai-copilot/ai-copilot';
 import { Logo } from '../components/brand/logo';
 import { SlideCanvas } from '../components/canvas/slide-canvas';
 import { SlidePlayer } from '../components/canvas/slide-player';
+import { CloudSavePanel } from '../components/cloud-save';
 import { CommandPalette } from '../components/command-palette/command-palette';
+import { FindReplace } from '../components/dialogs/find-replace';
 import { Filmstrip } from '../components/filmstrip/filmstrip';
+import { Onboarding } from '../components/onboarding';
+import { PresentationMode } from '../components/presentation';
 import { PropertiesPanel } from '../components/properties/properties-panel';
 import { ShortcutCheatSheet } from '../components/shortcuts/shortcut-cheat-sheet';
 import { StatusBar } from '../components/status-bar/status-bar';
@@ -175,6 +181,15 @@ function EditorFrame(): ReactElement {
   const [copilotOpen, setCopilotOpen] = useState<boolean>(false);
   const [cheatSheetOpen, setCheatSheetOpen] = useState<boolean>(false);
   const [zoom, setZoom] = useState<number>(1);
+  const [findOpen, setFindOpen] = useState<boolean>(false);
+  const [presentationOpen, setPresentationOpen] = useState<boolean>(false);
+  const [cloudSaveOpen, setCloudSaveOpen] = useState<boolean>(false);
+  // Cloud-save adapter: one stub per editor mount. Phase 12's collab
+  // adapter will replace this with a provider-injected instance.
+  const cloudSaveAdapterRef = useRef<CloudSaveAdapter | null>(null);
+  if (!cloudSaveAdapterRef.current) {
+    cloudSaveAdapterRef.current = createStubCloudSaveAdapter();
+  }
   const activeSlideId = useEditorShellAtomValue(activeSlideIdAtom);
   const slideAtom = useMemo(() => slideByIdAtom(activeSlideId), [activeSlideId]);
   const slide = useEditorShellAtomValue(slideAtom);
@@ -184,6 +199,12 @@ function EditorFrame(): ReactElement {
   const closeCopilot = useCallback(() => setCopilotOpen(false), []);
   const openCheatSheet = useCallback(() => setCheatSheetOpen(true), []);
   const closeCheatSheet = useCallback(() => setCheatSheetOpen(false), []);
+  const openFind = useCallback(() => setFindOpen(true), []);
+  const closeFind = useCallback(() => setFindOpen(false), []);
+  const openPresentation = useCallback(() => setPresentationOpen(true), []);
+  const closePresentation = useCallback(() => setPresentationOpen(false), []);
+  const toggleCloudSave = useCallback(() => setCloudSaveOpen((v) => !v), []);
+  const closeCloudSave = useCallback(() => setCloudSaveOpen(false), []);
   const handleNewSlide = useCallback(() => {
     const newId = `slide-${Math.random().toString(36).slice(2, 10)}`;
     updateDocument((prev) => {
@@ -197,8 +218,12 @@ function EditorFrame(): ReactElement {
     });
     setActiveSlide(newId);
   }, [updateDocument, setActiveSlide]);
+  // `handlePresent` drives the persistent toolbar's Present button. It
+  // opens the full-screen `<PresentationMode>` overlay. The edit/preview
+  // mode toggle in the header remains a separate affordance for the
+  // inline preview loop (T-139a pre-dates presentation mode).
   const handlePresent = useCallback(() => {
-    setMode((m) => (m === 'edit' ? 'preview' : 'edit'));
+    setPresentationOpen(true);
   }, []);
   const handleZoomIn = useCallback(() => setZoom((z) => Math.min(z + 0.1, 4)), []);
   const handleZoomOut = useCallback(() => setZoom((z) => Math.max(z - 0.1, 0.25)), []);
@@ -264,8 +289,31 @@ function EditorFrame(): ReactElement {
           return undefined;
         },
       },
+      // T-139c — find/replace, presentation mode
+      {
+        id: 'edit.find',
+        combo: 'Mod+F',
+        description: 'Find and replace',
+        category: 'essential',
+        when: isNotEditingText,
+        handler: () => {
+          openFind();
+          return undefined;
+        },
+      },
+      {
+        id: 'view.present',
+        combo: 'Mod+Enter',
+        description: 'Enter presentation mode',
+        category: 'essential',
+        when: isNotEditingText,
+        handler: () => {
+          openPresentation();
+          return undefined;
+        },
+      },
     ],
-    [openPalette, toggleCopilot, openCheatSheet, undo, redo],
+    [openPalette, toggleCopilot, openCheatSheet, undo, redo, openFind, openPresentation],
   );
   useRegisterShortcuts(shortcuts);
 
@@ -289,6 +337,15 @@ function EditorFrame(): ReactElement {
             style={paletteButtonStyle}
           >
             {t('commandPalette.placeholder')}
+          </button>
+          <button
+            type="button"
+            data-testid="cloud-save-toggle"
+            aria-pressed={cloudSaveOpen}
+            onClick={toggleCloudSave}
+            style={copilotButtonStyle(cloudSaveOpen)}
+          >
+            {t('nav.cloud')}
           </button>
           <button
             type="button"
@@ -349,6 +406,14 @@ function EditorFrame(): ReactElement {
       <CommandPalette open={paletteOpen} onClose={closePalette} />
       <AiCopilot open={copilotOpen} onClose={closeCopilot} />
       <ShortcutCheatSheet open={cheatSheetOpen} onClose={closeCheatSheet} />
+      <FindReplace open={findOpen} onClose={closeFind} showReplace />
+      {cloudSaveOpen && cloudSaveAdapterRef.current ? (
+        <div data-testid="cloud-save-drawer" style={cloudSaveDrawerStyle}>
+          <CloudSavePanel adapter={cloudSaveAdapterRef.current} onClose={closeCloudSave} />
+        </div>
+      ) : null}
+      <PresentationMode open={presentationOpen} onClose={closePresentation} />
+      <Onboarding />
       <ContextMenu />
     </main>
   );
@@ -416,6 +481,13 @@ function modeButtonStyle(active: boolean): React.CSSProperties {
     cursor: 'pointer',
   };
 }
+
+const cloudSaveDrawerStyle: React.CSSProperties = {
+  position: 'fixed',
+  top: 72,
+  right: 24,
+  zIndex: 40,
+};
 
 const previewCenterStyle: React.CSSProperties = {
   width: '100%',
