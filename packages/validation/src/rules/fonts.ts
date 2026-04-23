@@ -28,6 +28,24 @@ export const fontRequirementCoversTextFamilies: LintRule = {
     }
     return out;
   },
+  fix(doc, findings) {
+    if (findings.length === 0) return null;
+    const declared = new Set(doc.fontRequirements.map((f) => f.family));
+    const additions = new Map<string, number>(); // family → weight (first-seen)
+    for (const el of doc.elements) {
+      if (el.content.type !== 'text') continue;
+      const fam = el.content.fontFamily;
+      if (declared.has(fam)) continue;
+      if (additions.has(fam)) continue;
+      additions.set(fam, el.content.fontWeight);
+    }
+    if (additions.size === 0) return null;
+    const nextReqs = [...doc.fontRequirements];
+    for (const [family, weight] of additions) {
+      nextReqs.push({ family, weight, style: 'normal' });
+    }
+    return { ...doc, fontRequirements: nextReqs };
+  },
 };
 
 export const fontRequirementWeightsCoverTextWeights: LintRule = {
@@ -63,6 +81,34 @@ export const fontRequirementWeightsCoverTextWeights: LintRule = {
       }
     }
     return out;
+  },
+  fix(doc, findings) {
+    if (findings.length === 0) return null;
+    // Recompute the (family, weight) gaps from the document rather than
+    // parsing the finding messages — simpler and more robust.
+    const byFamily = new Map<string, Set<number>>();
+    for (const f of doc.fontRequirements) {
+      const existing = byFamily.get(f.family) ?? new Set<number>();
+      if (typeof f.weight === 'number') existing.add(f.weight);
+      byFamily.set(f.family, existing);
+    }
+    const additions = new Map<string, Set<number>>();
+    for (const el of doc.elements) {
+      if (el.content.type !== 'text') continue;
+      const fam = el.content.fontFamily;
+      const weights = byFamily.get(fam);
+      if (!weights) continue; // family isn't declared at all — the other rule's fix handles that
+      if (weights.has(el.content.fontWeight)) continue;
+      const pending = additions.get(fam) ?? new Set<number>();
+      pending.add(el.content.fontWeight);
+      additions.set(fam, pending);
+    }
+    if (additions.size === 0) return null;
+    const nextReqs = [...doc.fontRequirements];
+    for (const [family, weights] of additions) {
+      for (const weight of weights) nextReqs.push({ family, weight, style: 'normal' });
+    }
+    return { ...doc, fontRequirements: nextReqs };
   },
 };
 

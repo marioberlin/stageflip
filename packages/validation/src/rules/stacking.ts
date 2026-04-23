@@ -22,6 +22,23 @@ export const stackingMapCoversAllElements: LintRule = {
     }
     return out;
   },
+  fix(doc, findings) {
+    if (findings.length === 0) return null;
+    const missing = new Set(
+      findings.map((f) => f.elementId).filter((id): id is string => Boolean(id)),
+    );
+    if (missing.size === 0) return null;
+    const nextMap = { ...doc.stackingMap };
+    let changed = false;
+    for (const el of doc.elements) {
+      if (missing.has(el.id) && !(el.id in nextMap)) {
+        nextMap[el.id] = el.stacking;
+        changed = true;
+      }
+    }
+    if (!changed) return null;
+    return { ...doc, stackingMap: nextMap };
+  },
 };
 
 export const stackingValueMatchesElement: LintRule = {
@@ -42,6 +59,21 @@ export const stackingValueMatchesElement: LintRule = {
       }
     }
     return out;
+  },
+  fix(doc, findings) {
+    if (findings.length === 0) return null;
+    const ids = new Set(findings.map((f) => f.elementId).filter((id): id is string => Boolean(id)));
+    if (ids.size === 0) return null;
+    const nextMap = { ...doc.stackingMap };
+    let changed = false;
+    for (const el of doc.elements) {
+      if (ids.has(el.id) && nextMap[el.id] !== el.stacking) {
+        nextMap[el.id] = el.stacking;
+        changed = true;
+      }
+    }
+    if (!changed) return null;
+    return { ...doc, stackingMap: nextMap };
   },
 };
 

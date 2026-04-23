@@ -49,6 +49,24 @@ export const textFontSizeReasonable: LintRule = {
     }
     return out;
   },
+  fix(doc, findings) {
+    if (findings.length === 0) return null;
+    const ids = new Set(findings.map((f) => f.elementId).filter((id): id is string => Boolean(id)));
+    if (ids.size === 0) return null;
+    let changed = false;
+    const elements = doc.elements.map((el) => {
+      if (!ids.has(el.id) || el.content.type !== 'text') return el;
+      const clamped = Math.min(
+        MAX_REASONABLE_FONT_SIZE,
+        Math.max(MIN_REASONABLE_FONT_SIZE, el.content.fontSize),
+      );
+      if (clamped === el.content.fontSize) return el;
+      changed = true;
+      return { ...el, content: { ...el.content, fontSize: clamped } };
+    });
+    if (!changed) return null;
+    return { ...doc, elements };
+  },
 };
 
 export const textColorIsValidCss: LintRule = {
@@ -153,6 +171,21 @@ export const videoPlaybackRateReasonable: LintRule = {
     }
     return out;
   },
+  fix(doc, findings) {
+    if (findings.length === 0) return null;
+    const ids = new Set(findings.map((f) => f.elementId).filter((id): id is string => Boolean(id)));
+    if (ids.size === 0) return null;
+    let changed = false;
+    const elements = doc.elements.map((el) => {
+      if (!ids.has(el.id) || el.content.type !== 'video') return el;
+      const clamped = Math.min(4, Math.max(0.25, el.content.playbackRate));
+      if (clamped === el.content.playbackRate) return el;
+      changed = true;
+      return { ...el, content: { ...el.content, playbackRate: clamped } };
+    });
+    if (!changed) return null;
+    return { ...doc, elements };
+  },
 };
 
 export const videoTrimOrderedWhenPresent: LintRule = {
@@ -176,6 +209,29 @@ export const videoTrimOrderedWhenPresent: LintRule = {
     }
     return out;
   },
+  fix(doc, findings) {
+    if (findings.length === 0) return null;
+    const ids = new Set(findings.map((f) => f.elementId).filter((id): id is string => Boolean(id)));
+    if (ids.size === 0) return null;
+    let changed = false;
+    const elements = doc.elements.map((el) => {
+      if (!ids.has(el.id) || el.content.type !== 'video') return el;
+      const { trimStartMs, trimEndMs } = el.content;
+      if (trimStartMs === undefined || trimEndMs === undefined) return el;
+      // Only swap when strictly inverted (end <= start). Equal endpoints
+      // produce a zero-length window which the rule also flags; the
+      // operator-intended fix for that is unclear, so we skip equals and
+      // let the finding persist in the final report.
+      if (trimEndMs >= trimStartMs) return el;
+      changed = true;
+      return {
+        ...el,
+        content: { ...el.content, trimStartMs: trimEndMs, trimEndMs: trimStartMs },
+      };
+    });
+    if (!changed) return null;
+    return { ...doc, elements };
+  },
 };
 
 export const embedSrcUsesHttps: LintRule = {
@@ -195,6 +251,20 @@ export const embedSrcUsesHttps: LintRule = {
       }
     }
     return out;
+  },
+  fix(doc, findings) {
+    if (findings.length === 0) return null;
+    const ids = new Set(findings.map((f) => f.elementId).filter((id): id is string => Boolean(id)));
+    if (ids.size === 0) return null;
+    let changed = false;
+    const elements = doc.elements.map((el) => {
+      if (!ids.has(el.id) || el.content.type !== 'embed') return el;
+      if (!el.content.src.startsWith('http://')) return el;
+      changed = true;
+      return { ...el, content: { ...el.content, src: `https://${el.content.src.slice(7)}` } };
+    });
+    if (!changed) return null;
+    return { ...doc, elements };
   },
 };
 
