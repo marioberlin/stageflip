@@ -241,6 +241,24 @@ export {
   salesDashboardPropsSchema,
 } from './sales-dashboard.js';
 
+// financial-statement inlines its own KpiStrip / StatementTable /
+// CommentsRail sub-components — same single-consumer discipline.
+export {
+  FinancialStatement,
+  type FinancialStatementProps,
+  type StatementComment,
+  type StatementDensity,
+  type StatementPeriod,
+  type StatementPeriodEmphasis,
+  type StatementRow,
+  type StatementRowKind,
+  type StatementSemanticRole,
+  type StatementSettings,
+  type StatementType,
+  financialStatementClip,
+  financialStatementPropsSchema,
+} from './financial-statement.js';
+
 import { animatedValueClip } from './animated-value.js';
 import { audioVisualizerReactiveClip } from './audio-visualizer-reactive.js';
 import { audioVisualizerClip } from './audio-visualizer.js';
@@ -248,6 +266,7 @@ import { chartBuildClip } from './chart-build.js';
 import { codeBlockClip } from './code-block.js';
 import { comparisonTableClip } from './comparison-table.js';
 import { counterClip } from './counter.js';
+import { financialStatementClip } from './financial-statement.js';
 import { gifPlayerClip } from './gif-player.js';
 import { hrDashboardClip } from './hr-dashboard.js';
 import { imageGalleryClip } from './image-gallery.js';
@@ -327,4 +346,8 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   productDashboardClip,
   okrDashboardClip,
   salesDashboardClip,
+  // T-131f.3 — financial-statement composite. Largest single port in the
+  // T-131 family (four sub-components inlined: KpiStrip / StatementTable /
+  // CommentsRail + the clip frame itself).
+  financialStatementClip,
 ];

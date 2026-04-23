@@ -74,6 +74,8 @@ const KNOWN_KINDS: ReadonlyMap<string, string> = new Map([
   ['product-dashboard', 'frame-runtime'],
   ['okr-dashboard', 'frame-runtime'],
   ['sales-dashboard', 'frame-runtime'],
+  // T-131f.3 — financial statement composite (largest single port)
+  ['financial-statement', 'frame-runtime'],
 ]);
 
 function listFixtureFiles(): string[] {

@@ -70,10 +70,10 @@ describe('registerAllLiveRuntimes', () => {
     expect(resolved?.runtime.id).toBe('three');
   });
 
-  it('registers all T-131b/d/f.1 + T-131e.1/.2 + T-131f.2 tranches on the frame-runtime bridge (29 clips)', () => {
+  it('registers all T-131b/d/f.1 + T-131e.1/.2 + T-131f.2/.3 tranches on the frame-runtime bridge (30 clips)', () => {
     registerAllLiveRuntimes();
     const bridge = listRuntimes().find((r) => r.id === 'frame-runtime');
-    expect(bridge?.clips.size).toBe(29);
+    expect(bridge?.clips.size).toBe(30);
     const expectedKinds = [
       // b.1 (light)
       'counter',
@@ -112,6 +112,8 @@ describe('registerAllLiveRuntimes', () => {
       'product-dashboard',
       'okr-dashboard',
       'sales-dashboard',
+      // f.3 — financial statement composite
+      'financial-statement',
     ];
     for (const kind of expectedKinds) {
       const resolved = findClip(kind);
