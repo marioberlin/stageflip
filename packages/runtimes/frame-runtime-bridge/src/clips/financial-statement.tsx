@@ -32,6 +32,7 @@ import {
   DASHBOARD_GOOD_COLOR,
   DASHBOARD_MUTED_COLOR,
   DASHBOARD_SUBDUED_COLOR,
+  currencyPrefix,
 } from './_dashboard-utils.js';
 
 // ---------------------------------------------------------------------------
@@ -222,12 +223,6 @@ function buildColors(overrides: { text: string; surface: string }): FinanceColor
     accent: '#5af8fb',
     border: 'rgba(129,174,255,0.15)',
   };
-}
-
-function currencyPrefix(currency: string | undefined): string {
-  if (currency === 'EUR') return '\u20AC';
-  if (currency === 'USD') return '$';
-  return '';
 }
 
 function fmtNumber(value: number, decimals: number): string {
@@ -650,10 +645,18 @@ function CommentsRail({
   comments,
   density,
   colors,
+  layout = 'rail',
 }: {
   comments: readonly StatementComment[];
   density: StatementDensity;
   colors: FinanceColors;
+  /**
+   * `rail` lays out the cards vertically as a right-side panel;
+   * `inline` lays them out horizontally as a strip below the table.
+   * The top-level clip picks the layout from `settings.commentaryMode`
+   * and sizes the surrounding container accordingly.
+   */
+  layout?: 'rail' | 'inline';
 }): ReactElement {
   const sorted = [...comments].sort((a, b) => {
     const pa = COMMENT_PRIORITY_ORDER[a.priority ?? 'medium'];
@@ -664,10 +667,14 @@ function CommentsRail({
 
   return (
     <div
-      data-testid="financial-statement-comments-rail"
+      data-testid={
+        layout === 'inline'
+          ? 'financial-statement-comments-inline'
+          : 'financial-statement-comments-rail'
+      }
       style={{
         display: 'flex',
-        flexDirection: 'column',
+        flexDirection: layout === 'inline' ? 'row' : 'column',
         gap: 12,
         width: '100%',
         height: '100%',
@@ -687,6 +694,9 @@ function CommentsRail({
               padding: 12,
               paddingLeft: 14,
               borderLeft: `3px solid ${accent}`,
+              // Inline layout lets cards share the horizontal strip
+              // evenly; rail layout lets cards stack full-width.
+              ...(layout === 'inline' ? { flex: '1 1 0', minWidth: 0 } : {}),
             }}
           >
             {comment.title !== undefined ? (
@@ -772,14 +782,22 @@ export function FinancialStatement({
       })
     : [];
 
-  // Layout zones (matches reference pixel offsets)
+  // Layout zones (matches reference pixel offsets). Two commentary
+  // layouts are supported:
+  //   - 'rail'   — side panel: table shrinks to 1320, rail 400 right.
+  //   - 'inline' — horizontal strip below the table: table keeps full
+  //                width, 120px strip below for a row of cards.
   const kpiY = 80;
   const kpiH = showKpiStrip && kpiItems.length > 0 ? 68 : 0;
   const tableY = kpiH > 0 ? 160 : 80;
-  const tableH = 1080 - tableY - 50;
-  const tableW = hasComments ? 1320 : 1760;
-  const railX = hasComments ? 1440 : 0;
-  const railW = hasComments ? 400 : 0;
+  const railActive = hasComments && commentaryMode === 'rail';
+  const inlineActive = hasComments && commentaryMode === 'inline';
+  const inlineH = inlineActive ? 120 : 0;
+  const tableH = 1080 - tableY - 50 - inlineH - (inlineActive ? 16 : 0);
+  const tableW = railActive ? 1320 : 1760;
+  const railX = railActive ? 1440 : 0;
+  const railW = railActive ? 400 : 0;
+  const inlineY = tableY + tableH + 16;
 
   return (
     <div
@@ -856,7 +874,7 @@ export function FinancialStatement({
         />
       </div>
 
-      {hasComments && comments !== undefined ? (
+      {railActive && comments !== undefined ? (
         <div
           style={{
             position: 'absolute',
@@ -866,7 +884,20 @@ export function FinancialStatement({
             height: tableH,
           }}
         >
-          <CommentsRail comments={comments} density={density} colors={colors} />
+          <CommentsRail comments={comments} density={density} colors={colors} layout="rail" />
+        </div>
+      ) : null}
+      {inlineActive && comments !== undefined ? (
+        <div
+          style={{
+            position: 'absolute',
+            left: 80,
+            top: inlineY,
+            width: 1760,
+            height: inlineH,
+          }}
+        >
+          <CommentsRail comments={comments} density={density} colors={colors} layout="inline" />
         </div>
       ) : null}
 

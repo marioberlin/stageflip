@@ -34,3 +34,41 @@ export function dashboardTrendColor(trend: DashboardTrend | undefined): string {
   if (trend === 'down') return DASHBOARD_BAD_COLOR;
   return DASHBOARD_MUTED_COLOR;
 }
+
+/**
+ * ISO 4217 currency code → short display prefix. Covers the currencies
+ * most decks actually use; any other code falls through to the
+ * `<CODE> ` prefix so the number stays unambiguous (reference behaviour
+ * silently renders the value with NO prefix, which looked buggy).
+ *
+ * CNY shares the ¥ glyph with JPY by convention; CAD / AUD / HKD /
+ * SGD / NZD are prefixed with their single-letter country to avoid
+ * colliding with the unadorned $ of USD.
+ */
+const CURRENCY_PREFIX_MAP: Readonly<Record<string, string>> = {
+  USD: '$',
+  EUR: '\u20AC',
+  GBP: '\u00A3',
+  JPY: '\u00A5',
+  CNY: '\u00A5',
+  INR: '\u20B9',
+  KRW: '\u20A9',
+  CHF: 'CHF ',
+  CAD: 'C$',
+  AUD: 'A$',
+  HKD: 'HK$',
+  SGD: 'S$',
+  NZD: 'NZ$',
+};
+
+/**
+ * Resolve the display prefix for a currency code. Unknown codes return
+ * `<CODE> ` (the code itself followed by a space) so the author sees
+ * *something* rather than a bare number.
+ */
+export function currencyPrefix(currency: string | undefined): string {
+  if (currency === undefined || currency.length === 0) return '';
+  const mapped = CURRENCY_PREFIX_MAP[currency];
+  if (mapped !== undefined) return mapped;
+  return `${currency} `;
+}

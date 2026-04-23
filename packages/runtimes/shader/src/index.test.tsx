@@ -362,6 +362,53 @@ describe('defineShaderClip — WebGL lifecycle (via stub)', () => {
     const el = clip.render(makeCtx({ frame: 0, props: {} }));
     expect(() => render(el as React.ReactElement)).not.toThrow();
   });
+
+  it('warns via console.warn in dev mode when shader compilation fails', () => {
+    const { gl } = makeGlStub();
+    // Force the fragment shader's COMPILE_STATUS check to fail.
+    (gl.getShaderParameter as ReturnType<typeof vi.fn>).mockReturnValueOnce(true); // vertex OK
+    (gl.getShaderParameter as ReturnType<typeof vi.fn>).mockReturnValueOnce(false); // fragment fails
+    (gl.getShaderInfoLog as ReturnType<typeof vi.fn>).mockReturnValueOnce('syntax error at line 3');
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      const clip = defineShaderClip({
+        kind: 'compile-fail',
+        fragmentShader: 'precision highp float; void main(){ BROKEN }',
+        glContextFactory: () => gl,
+      });
+      const el = clip.render(makeCtx({ frame: 0, props: {} }));
+      render(el as React.ReactElement);
+      expect(warnSpy).toHaveBeenCalledOnce();
+      const message = warnSpy.mock.calls[0]?.[0] as string;
+      expect(message).toMatch(/\[shader runtime\]/);
+      expect(message).toMatch(/syntax error at line 3/);
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  it('stays silent on compile failure when NODE_ENV === "production"', () => {
+    const { gl } = makeGlStub();
+    (gl.getShaderParameter as ReturnType<typeof vi.fn>).mockReturnValueOnce(true);
+    (gl.getShaderParameter as ReturnType<typeof vi.fn>).mockReturnValueOnce(false);
+    (gl.getShaderInfoLog as ReturnType<typeof vi.fn>).mockReturnValueOnce('oops');
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    try {
+      const clip = defineShaderClip({
+        kind: 'compile-fail-prod',
+        fragmentShader: 'precision highp float; void main(){ BROKEN }',
+        glContextFactory: () => gl,
+      });
+      const el = clip.render(makeCtx({ frame: 0, props: {} }));
+      render(el as React.ReactElement);
+      expect(warnSpy).not.toHaveBeenCalled();
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+      warnSpy.mockRestore();
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------

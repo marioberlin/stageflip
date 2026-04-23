@@ -157,10 +157,23 @@ export function ShaderClipHost({
     // define time so this path is reserved for the T-131d.2 user-shader
     // variant (`shader-bg`) where GLSL comes from props. A bad shader
     // leaves the canvas blank rather than crashing the surrounding deck.
+    //
+    // Dev-mode (`NODE_ENV !== 'production'`) surfaces the GL info log via
+    // `console.warn` so authors hitting the fallback know WHY the canvas
+    // is blank. Production stays silent to avoid console spam from decks
+    // that intentionally ship a stub fragment as a graceful placeholder.
     let program: WebGLProgram;
     try {
       program = linkProgram(gl, fragmentShader);
-    } catch {
+    } catch (err) {
+      if (
+        typeof process !== 'undefined' &&
+        process.env !== undefined &&
+        process.env.NODE_ENV !== 'production'
+      ) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.warn(`[shader runtime] compile/link failed; rendering blank canvas — ${message}`);
+      }
       return;
     }
     gl.useProgram(program);
