@@ -153,7 +153,16 @@ export function ShaderClipHost({
       // Bail silently — the canvas stays blank. Real browsers always get GL.
       return;
     }
-    const program = linkProgram(gl, fragmentShader);
+    // Silent-fallback on compile/link failure. Authored clips validate at
+    // define time so this path is reserved for the T-131d.2 user-shader
+    // variant (`shader-bg`) where GLSL comes from props. A bad shader
+    // leaves the canvas blank rather than crashing the surrounding deck.
+    let program: WebGLProgram;
+    try {
+      program = linkProgram(gl, fragmentShader);
+    } catch {
+      return;
+    }
     gl.useProgram(program);
     const posBuffer = setupFullscreenQuad(gl, program);
     stateRef.current = {

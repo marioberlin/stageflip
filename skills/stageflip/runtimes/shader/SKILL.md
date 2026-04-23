@@ -74,16 +74,23 @@ registerRuntime(createShaderRuntime([flashThroughWhite, swirlVortex, glitch, rip
 ### `defineShaderClip<P>(input)`
 
 - `kind` — globally unique clip identifier.
-- `fragmentShader` — GLSL source. **Must** declare a float precision
-  (`precision highp|mediump|lowp float;`); validated at
-  `defineShaderClip` call time. Implicit precision is rejected to
-  avoid cross-device drift. Receives `varying vec2 v_uv;` from the
-  host's vertex shader.
+- `fragmentShader` — `string | ((props) => string)`. A plain string is
+  validated at `defineShaderClip` call time (**must** declare a float
+  precision — `precision highp|mediump|lowp float;` — to defeat
+  cross-device drift). A **function** is the T-131d.2 user-shader
+  escape hatch (`shader-bg`): GLSL is computed per render from props,
+  define-time validation is skipped, and `ShaderClipHost` bails
+  silently on compile/link failure so a malformed deck prop can't
+  crash the rest of the slide. Receives `varying vec2 v_uv;` from the
+  host's vertex shader either way.
 - `uniforms?(ctx)` — callback returning uniform values keyed by name.
   Default maps to `u_progress`, `u_time`, `u_resolution`. Override to
   supply extra per-frame values (driven by props).
 - `fontRequirements?(props)` — forwarded to T-072 FontManager (shader
   clips typically don't need fonts).
+- `propsSchema?` / `themeSlots?` — forwarded to the produced
+  `ClipDefinition`, mirroring `defineCssClip` (T-131a) and
+  `defineFrameClip` (T-131b.1).
 - `glContextFactory?(canvas)` — test seam overriding
   `canvas.getContext('webgl2' | 'webgl')`. Production always gets the
   default factory.
@@ -97,8 +104,14 @@ registerRuntime(createShaderRuntime([flashThroughWhite, swirlVortex, glitch, rip
 - `flashThroughWhite` — triangular white pulse at progress=0.5.
 - `swirlVortex` — rotating hypnotic bands.
 - `glitch` — deterministic hash-noise channel shift + scanline tear.
+- `shaderBg` (T-131d.2) — user-shader escape hatch. Props: `glsl`
+  (fragment body) + `uniforms` (scalar float map). Identifier-
+  filtered uniform names are prepended as `uniform float` decls on
+  top of the standard `u_time` / `u_resolution`. Render-time compile
+  failure → blank canvas, no throw.
 
-Seeds for three T-067 parity fixtures.
+Seeds for four parity fixtures (three T-067 authored shaders + the
+T-131d.2 `shader-bg` escape hatch).
 
 ## Explicit-precision rule
 
@@ -140,7 +153,9 @@ as string literals in consumer bundles. No `size-limit` entry yet.
 | `packages/runtimes/shader/src/validate.ts` | `validateFragmentShader` (precision rule) |
 | `packages/runtimes/shader/src/host.tsx` | Canvas + WebGL compile / link / draw |
 | `packages/runtimes/shader/src/types.ts` | `GlContextFactory`, `UniformsForFrame`, `UniformValue`, default factory |
-| `packages/runtimes/shader/src/clips/{flash-through-white,swirl-vortex,glitch}.ts` | Three demo shaders (scanned) |
+| `packages/runtimes/shader/src/clips/{flash-through-white,swirl-vortex,glitch}.ts` | Three authored demo shaders (scanned) |
+| `packages/runtimes/shader/src/clips/shader-bg.ts` | T-131d.2 user-shader escape hatch — prop-driven fragment body + scalar uniforms |
+| `packages/runtimes/shader/src/clips/shader-bg.test.ts` | T-131d.2 — composition, uniforms, and schema coverage |
 | `packages/runtimes/shader/src/index.test.tsx` | Shape, gating, validation, GL lifecycle via stub |
 
 ## Related

@@ -15,12 +15,14 @@
 // causes cross-device drift that defeats the parity harness.
 
 import { type ReactElement, createElement } from 'react';
+import type { ZodType } from 'zod';
 
 import type {
   ClipDefinition,
   ClipRenderContext,
   ClipRuntime,
   FontRequirement,
+  ThemeSlot,
 } from '@stageflip/runtimes-contract';
 
 import { ShaderClipHost } from './host.js';
@@ -30,15 +32,28 @@ import { validateFragmentShader } from './validate.js';
 export type { GlContextFactory, UniformValue, UniformsForFrame } from './types.js';
 export { validateFragmentShader } from './validate.js';
 
+/**
+ * Either a static GLSL fragment source (validated at define time — the
+ * authored-shader path) or a function that computes the fragment from
+ * props (validated at render time — the T-131d.2 user-shader escape
+ * hatch used by `shader-bg`). The host silent-fallbacks on
+ * compile/link failure, so render-time validation errors do not crash
+ * the rest of the deck.
+ */
+export type FragmentShaderSource<P> = string | ((props: P) => string);
+
 export interface DefineShaderClipInput<P> {
   /** Globally unique clip kind. */
   kind: string;
   /**
-   * GLSL fragment shader source. Must declare an explicit float precision
-   * (e.g., `precision highp float;`) — validated at define time.
+   * GLSL fragment shader source. A plain string is validated at define
+   * time and must declare an explicit float precision (e.g.,
+   * `precision highp float;`). A function is invoked per render with
+   * the clip's props; validation is deferred to render time and the
+   * host bails to a blank canvas on failure.
    * Receives the standard `varying vec2 v_uv;` from the host's vertex shader.
    */
-  fragmentShader: string;
+  fragmentShader: FragmentShaderSource<P>;
   /**
    * Compute uniform values for this frame. Default maps to:
    *   u_progress: progress, u_time: timeSec, u_resolution: resolution
@@ -49,6 +64,10 @@ export interface DefineShaderClipInput<P> {
   fontRequirements?(props: P): FontRequirement[];
   /** Test seam — override WebGL context creation. */
   glContextFactory?: GlContextFactory;
+  /** Zod schema for the clip's props (T-125b pattern). Forwarded to the ClipDefinition. */
+  propsSchema?: ZodType<P>;
+  /** Theme-slot bindings (T-131a pattern). Forwarded to the ClipDefinition. */
+  themeSlots?: Readonly<Record<string, ThemeSlot>>;
 }
 
 const DEFAULT_UNIFORMS: UniformsForFrame<unknown> = ({ progress, timeSec, resolution }) => ({
@@ -63,7 +82,16 @@ const DEFAULT_UNIFORMS: UniformsForFrame<unknown> = ({ progress, timeSec, resolu
  * @throws If the fragment shader does not declare an explicit float precision.
  */
 export function defineShaderClip<P>(input: DefineShaderClipInput<P>): ClipDefinition<unknown> {
-  validateFragmentShader(input.fragmentShader, input.kind);
+  const fragmentFn: (props: P) => string =
+    typeof input.fragmentShader === 'function'
+      ? (input.fragmentShader as (props: P) => string)
+      : (_: P): string => input.fragmentShader as string;
+  if (typeof input.fragmentShader !== 'function') {
+    // Authored-shader path: validate at define time so invalid GLSL is
+    // caught once, not every frame. The user-shader path (function) bails
+    // silently in the host on compile failure instead.
+    validateFragmentShader(input.fragmentShader, input.kind);
+  }
 
   const uniformsFn: UniformsForFrame<P> =
     input.uniforms ?? (DEFAULT_UNIFORMS as UniformsForFrame<P>);
@@ -89,7 +117,7 @@ export function defineShaderClip<P>(input: DefineShaderClipInput<P>): ClipDefini
         props: ctx.props,
       });
       const hostProps = {
-        fragmentShader: input.fragmentShader,
+        fragmentShader: fragmentFn(ctx.props),
         width: ctx.width,
         height: ctx.height,
         uniforms,
@@ -99,10 +127,10 @@ export function defineShaderClip<P>(input: DefineShaderClipInput<P>): ClipDefini
       };
       return createElement(ShaderClipHost, hostProps);
     },
+    ...(input.fontRequirements !== undefined ? { fontRequirements: input.fontRequirements } : {}),
+    ...(input.propsSchema !== undefined ? { propsSchema: input.propsSchema } : {}),
+    ...(input.themeSlots !== undefined ? { themeSlots: input.themeSlots } : {}),
   };
-  if (input.fontRequirements !== undefined) {
-    def.fontRequirements = input.fontRequirements;
-  }
   return def as unknown as ClipDefinition<unknown>;
 }
 
@@ -130,3 +158,10 @@ export function createShaderRuntime(clips: Iterable<ClipDefinition<unknown>> = [
 export { flashThroughWhite } from './clips/flash-through-white.js';
 export { swirlVortex } from './clips/swirl-vortex.js';
 export { glitch } from './clips/glitch.js';
+export {
+  buildShaderBgUniforms,
+  composeShaderBgFragment,
+  shaderBg,
+  shaderBgPropsSchema,
+  type ShaderBgProps,
+} from './clips/shader-bg.js';

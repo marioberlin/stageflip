@@ -54,9 +54,9 @@ describe('registerAllLiveRuntimes', () => {
     expect(resolved?.runtime.id).toBe('lottie');
   });
 
-  it('exposes Shader flash-through-white + swirl-vortex + glitch clips via findClip', () => {
+  it('exposes Shader flash-through-white + swirl-vortex + glitch + shader-bg clips via findClip', () => {
     registerAllLiveRuntimes();
-    for (const kind of ['flash-through-white', 'swirl-vortex', 'glitch']) {
+    for (const kind of ['flash-through-white', 'swirl-vortex', 'glitch', 'shader-bg']) {
       const resolved = findClip(kind);
       expect(resolved?.runtime.id).toBe('shader');
     }
