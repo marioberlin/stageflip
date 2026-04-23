@@ -1,0 +1,26 @@
+{
+  "name": "frame-runtime-animated-map",
+  "runtime": "frame-runtime",
+  "kind": "animated-map",
+  "description": "Frame-runtime port of SlideMotion's animated-map — SVG fallback path only (T-131d.4). Pans an eased camera from a start lat/lng to an end lat/lng, sweeps a dashed route line between two baked SVG anchor points, and pulses a ring around the advancing dot. The reference's optional mapbox-gl real-tiles path is deliberately not ported (network fetches + imperative useEffect mutation violate frame-runtime determinism).",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 60 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 60,
+    "props": {
+      "startCenter": [48.8566, 2.3522],
+      "endCenter": [40.7128, -74.006],
+      "startZoom": 4,
+      "endZoom": 12,
+      "title": "Paris → New York",
+      "style": "dark"
+    }
+  },
+  "referenceFrames": [0, 30, 59],
+  "thresholds": {
+    "minPsnr": 30,
+    "minSsim": 0.92,
+    "maxFailingFrames": 1
+  },
+  "goldens": { "dir": "goldens/frame-runtime-animated-map" }
+}

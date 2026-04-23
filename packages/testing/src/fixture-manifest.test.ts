@@ -76,6 +76,10 @@ const KNOWN_KINDS: ReadonlyMap<string, string> = new Map([
   ['sales-dashboard', 'frame-runtime'],
   // T-131f.3 — financial statement composite (largest single port)
   ['financial-statement', 'frame-runtime'],
+  // T-131d.4 — animated-map (SVG fallback only; mapbox-gl path deliberately
+  // not ported — network tile fetches + imperative useEffect DOM mutation
+  // violate frame-runtime determinism invariants)
+  ['animated-map', 'frame-runtime'],
 ]);
 
 function listFixtureFiles(): string[] {

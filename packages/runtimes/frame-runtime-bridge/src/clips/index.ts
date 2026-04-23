@@ -259,6 +259,19 @@ export {
   financialStatementPropsSchema,
 } from './financial-statement.js';
 
+// animated-map ships the SVG-fallback path only (T-131d.4). Real Mapbox
+// tiles require network fetches + imperative useEffect DOM mutation —
+// both non-starters under frame-runtime determinism. See clip file header
+// for the rationale.
+export {
+  AnimatedMap,
+  type AnimatedMapProps,
+  type AnimatedMapStyle,
+  animatedMapClip,
+  animatedMapPropsSchema,
+} from './animated-map.js';
+
+import { animatedMapClip } from './animated-map.js';
 import { animatedValueClip } from './animated-value.js';
 import { audioVisualizerReactiveClip } from './audio-visualizer-reactive.js';
 import { audioVisualizerClip } from './audio-visualizer.js';
@@ -350,4 +363,7 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // T-131 family (four sub-components inlined: KpiStrip / StatementTable /
   // CommentsRail + the clip frame itself).
   financialStatementClip,
+  // T-131d.4 — animated-map (SVG fallback only; mapbox-gl path deliberately
+  // not ported — see clip header). Closes reference-clip coverage at 32/32.
+  animatedMapClip,
 ];
