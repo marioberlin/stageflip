@@ -70,10 +70,10 @@ describe('registerAllLiveRuntimes', () => {
     expect(resolved?.runtime.id).toBe('three');
   });
 
-  it('registers all T-131b/d/f.1 + T-131e.1/.2 + T-131f.2/.3 tranches on the frame-runtime bridge (30 clips)', () => {
+  it('registers all T-131b/d/f.1 + T-131e.1/.2 + T-131f.2/.3 + T-131d.4 tranches on the frame-runtime bridge (31 clips)', () => {
     registerAllLiveRuntimes();
     const bridge = listRuntimes().find((r) => r.id === 'frame-runtime');
-    expect(bridge?.clips.size).toBe(30);
+    expect(bridge?.clips.size).toBe(31);
     const expectedKinds = [
       // b.1 (light)
       'counter',
@@ -114,6 +114,8 @@ describe('registerAllLiveRuntimes', () => {
       'sales-dashboard',
       // f.3 — financial statement composite
       'financial-statement',
+      // d.4 — animated-map (SVG fallback only; mapbox-gl path not ported)
+      'animated-map',
     ];
     for (const kind of expectedKinds) {
       const resolved = findClip(kind);

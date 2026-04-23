@@ -3,7 +3,7 @@ title: Frame Runtime Bridge
 id: skills/stageflip/runtimes/frame-runtime-bridge
 tier: runtime
 status: substantive
-last_updated: 2026-04-22
+last_updated: 2026-04-23
 owner_task: T-061
 related:
   - skills/stageflip/runtimes/contract/SKILL.md
@@ -150,14 +150,30 @@ under `src/clips/`. Tranches:
 **T-131d.1 (lottie/three/shader tier — bridge-eligible portion)**
 
 The clips originally tier-labelled "lottie/three/shader" turned out to
-be mostly bridge-tier on inspection. These two land here; `shader-bg` /
-`lottie-player` / `animated-map` are deferred (see plan rows
-T-131d.2 / .3 / .4).
+be mostly bridge-tier on inspection. These two land here; `shader-bg`
+and `lottie-player` shipped in T-131d.2 / T-131d.3 respectively;
+`animated-map` shipped in T-131d.4 as an SVG-fallback-only port.
 
 | kind | file | notes |
 |---|---|---|
 | `scene-3d` | `src/clips/scene-3d.tsx` | CSS-3D transformed cube/sphere/torus/pyramid — no three.js or WebGL despite the name |
 | `particles` | `src/clips/particles.tsx` | confetti/sparkles/snow/rain/bokeh driven by a seeded LCG; no `Math.random` |
+
+**T-131d.4 (animated-map — SVG fallback only)**
+
+The reference clip ships a conditional `mapbox-gl` real-tiles branch
+that initialises when a `mapboxToken` prop is supplied; the bridge
+deliberately does NOT port that branch. Network tile fetches plus
+imperative `useEffect` DOM mutation on a canvas element both violate
+frame-runtime determinism invariants. The SVG fallback — which the
+reference itself renders whenever no token is supplied — is the sole
+implementation. Real Mapbox is a future bake-tier question (a separate
+`animated-map-real` clip that pre-renders tiles during export), not a
+preview-clip concern.
+
+| kind | file | notes |
+|---|---|---|
+| `animated-map` | `src/clips/animated-map.tsx` | SVG grid + dashed route line + eased camera center/zoom pan + deterministic pulse ring. `style` enum picks one of three hand-tuned palettes (dark / light / satellite); `backgroundColor` / `accentColor` / `textColor` overrides participate in `themeSlots`. `gridColor` overrideable but deliberately NOT a theme slot (hand-tuned tonal shift off the style's background). |
 
 **T-131f.1 (bridge standalones not covered by b.1/b.2/b.3)**
 
@@ -181,7 +197,7 @@ binding default colour props to `palette.*` roles (T-131a).
 editor look respectively.
 
 The barrel `ALL_BRIDGE_CLIPS` is the canonical iterable that the
-cdp-host-bundle passes to `createFrameRuntimeBridge`. All 30 bridge
+cdp-host-bundle passes to `createFrameRuntimeBridge`. All 31 bridge
 clips are registered through it — see the tranche ledger below for
 the breakdown.
 
@@ -191,8 +207,8 @@ the breakdown.
 |---|---|---|
 | `src/index.ts` | T-061, T-131b.1 | `defineFrameClip` (+ `propsSchema` / `themeSlots` passthrough) + `createFrameRuntimeBridge` + clip re-exports |
 | `src/index.test.tsx` | T-061, T-131b.1 | Runtime shape, render behaviour, window gating, props passthrough, schema/themeSlots passthrough |
-| `src/clips/*.tsx` | T-131b/d/e/f | Thirty reference-clip ports across nine tranches (light / medium / heavy / bridge-eligible lottie-three-shader / audit-driven standalones / bake-tier video+image / audio tranche / dashboard composites f.2a/b/c / financial statement f.3) |
-| `src/clips/index.ts` | T-131b/d/e/f | Barrel + `ALL_BRIDGE_CLIPS` constant (30 clips) |
+| `src/clips/*.tsx` | T-131b/d/e/f | Thirty-one reference-clip ports across ten tranches (light / medium / heavy / bridge-eligible lottie-three-shader / audit-driven standalones / bake-tier video+image / audio tranche / dashboard composites f.2a/b/c / financial statement f.3 / animated-map SVG fallback d.4) |
+| `src/clips/index.ts` | T-131b/d/e/f | Barrel + `ALL_BRIDGE_CLIPS` constant (31 clips) |
 | `src/clips/_dashboard-utils.ts` | T-131f.2a | Private shared helpers for the dashboard composites (trend schema, value formatter, colour constants) |
 
 ## Tranche ledger
@@ -208,6 +224,7 @@ the breakdown.
 | Bake tier · audio | T-131e.2 | voiceover-narration, audio-visualizer-reactive | `useAudioVisualizer` drives the reactive viz |
 | Dashboards · standalones | T-131f.2a, .2b | hr-, marketing-, product-, okr-dashboard | Option B flat-prop schemas; `_dashboard-utils.ts` shared |
 | Dashboards · composites | T-131f.2c, .3 | sales-dashboard, financial-statement | Inlined private sub-components |
+| Animated map (SVG fallback) | T-131d.4 | animated-map | `mapbox-gl` real-tiles path deliberately not ported — network tile fetches + imperative `useEffect` DOM mutation violate determinism. Ships the SVG simulation only (the reference's own no-token default). Closes reference-clip coverage at 32/32. |
 
 ## Related
 
@@ -217,6 +234,7 @@ the breakdown.
   T-072 (FontManager), T-083 (CDP dispatcher consumer). T-131
   family: b.1/b.2/b.3/d.1/f.1 shipped in Phase 6 mid-3 and mid-4;
   e.0/e.1/e.2/d.2/d.3/f.2a shipped in Phase 6 mid-5; f.2b/f.2c/f.3
-  shipped in Phase 6 mid-6. Still open: T-131d.4 (animated-map,
-  blocked on `mapbox-gl` licence review) and T-131f.4 (folded into
-  e.2 as `audio-visualizer-reactive`).
+  shipped in Phase 6 mid-6; d.4 (`animated-map`, SVG-fallback-only
+  port — `mapbox-gl` real-tiles branch deliberately omitted) closes
+  reference-clip coverage at 32/32. T-131f.4 folded into e.2 as
+  `audio-visualizer-reactive`.
