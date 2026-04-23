@@ -366,11 +366,17 @@ const EN_CATALOG = new Map<string, string>([
 
   // Onboarding coachmarks (T-139c)
   ['onboarding.coachmark.welcome.title', 'Welcome to StageFlip'],
-  ['onboarding.coachmark.welcome.body', 'A quick tour of the essentials. You can dismiss any tip with Esc.'],
+  [
+    'onboarding.coachmark.welcome.body',
+    'A quick tour of the essentials. You can dismiss any tip with Esc.',
+  ],
   ['onboarding.coachmark.canvas.title', 'The canvas'],
   ['onboarding.coachmark.canvas.body', 'Your slide lives here. Click text to edit inline.'],
   ['onboarding.coachmark.filmstrip.title', 'Slides list'],
-  ['onboarding.coachmark.filmstrip.body', 'Add, reorder, and delete slides from the filmstrip on the left.'],
+  [
+    'onboarding.coachmark.filmstrip.body',
+    'Add, reorder, and delete slides from the filmstrip on the left.',
+  ],
   ['onboarding.coachmark.properties.title', 'Properties'],
   ['onboarding.coachmark.properties.body', 'Fine-tune the selected element on the right.'],
   ['onboarding.coachmark.toolbar.title', 'Toolbar'],

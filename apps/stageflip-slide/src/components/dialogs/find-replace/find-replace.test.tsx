@@ -138,12 +138,12 @@ describe('<FindReplace />', () => {
   });
 
   it('performs replace-all via replaceAll mutation', () => {
-    let doc: Document | null = null;
+    const docRef: { current: Document | null } = { current: null };
     render(
       <EditorShell initialDocument={makeDoc()}>
         <DocProbe
           onDoc={(d) => {
-            doc = d;
+            docRef.current = d;
           }}
         />
         <FindReplace open onClose={() => undefined} showReplace />
@@ -156,8 +156,9 @@ describe('<FindReplace />', () => {
     act(() => {
       fireEvent.click(screen.getByTestId('find-replace-replace-all'));
     });
-    if (!doc || doc.content.mode !== 'slide') throw new Error();
-    const texts = doc.content.slides.flatMap((s) =>
+    const finalDoc = docRef.current;
+    if (!finalDoc || finalDoc.content.mode !== 'slide') throw new Error();
+    const texts = finalDoc.content.slides.flatMap((s) =>
       s.elements.filter((e) => e.type === 'text').map((e) => (e as { text: string }).text),
     );
     expect(texts).toEqual(['baz bar baz', 'baz again']);

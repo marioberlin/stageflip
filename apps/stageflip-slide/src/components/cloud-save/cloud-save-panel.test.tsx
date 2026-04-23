@@ -1,10 +1,7 @@
 // apps/stageflip-slide/src/components/cloud-save/cloud-save-panel.test.tsx
 // Tests for the cloud-save panel UI (T-139c).
 
-import {
-  EditorShell,
-  createStubCloudSaveAdapter,
-} from '@stageflip/editor-shell';
+import { EditorShell, createStubCloudSaveAdapter } from '@stageflip/editor-shell';
 import type { Document } from '@stageflip/schema';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
@@ -30,7 +27,9 @@ function makeDoc(): Document {
   };
 }
 
-function mount(adapter = createStubCloudSaveAdapter({ now: () => new Date('2026-04-22T00:00:00Z') })): {
+function mount(
+  adapter = createStubCloudSaveAdapter({ now: () => new Date('2026-04-22T00:00:00Z') }),
+): {
   view: ReactElement;
   adapter: ReturnType<typeof createStubCloudSaveAdapter>;
 } {

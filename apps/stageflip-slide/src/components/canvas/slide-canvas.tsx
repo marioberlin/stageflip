@@ -14,6 +14,7 @@ import type { CSSProperties, ReactElement, PointerEvent as ReactPointerEvent } f
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { CanvasScaleProvider } from './canvas-scale-context';
 import { ElementView } from './element-view';
+import { FindHighlightsOverlay } from './find-highlights-overlay';
 import { InlineTextEditor } from './inline-text-editor';
 import { SelectionOverlay } from './selection-overlay';
 import { TextSelectionToolbar } from './text-selection-toolbar';
@@ -153,6 +154,7 @@ export function SlideCanvas({ viewportSizeForTest }: SlideCanvasProps = {}): Rea
                   onElementDoubleClick={(id) => setEditingId(id)}
                 />
               )}
+              <FindHighlightsOverlay />
             </>
           ) : (
             <EmptyState />

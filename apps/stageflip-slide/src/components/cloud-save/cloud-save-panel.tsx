@@ -83,7 +83,7 @@ export function CloudSavePanel({ adapter, onClose }: CloudSavePanelProps): React
   }, [conflict, setDocument]);
 
   return (
-    <div data-testid="cloud-save-panel" style={panelStyle} role="region" aria-label={t('cloudSave.title')}>
+    <section data-testid="cloud-save-panel" style={panelStyle} aria-label={t('cloudSave.title')}>
       <header style={headerStyle}>
         <span style={titleStyle}>{t('cloudSave.title')}</span>
         {onClose ? (
@@ -112,7 +112,9 @@ export function CloudSavePanel({ adapter, onClose }: CloudSavePanelProps): React
           </div>
         ) : null}
       </div>
-      {conflict ? <ConflictPanel onKeepLocal={resolveKeepLocal} onKeepRemote={resolveKeepRemote} /> : null}
+      {conflict ? (
+        <ConflictPanel onKeepLocal={resolveKeepLocal} onKeepRemote={resolveKeepRemote} />
+      ) : null}
       <footer style={footerStyle}>
         <button
           type="button"
@@ -124,17 +126,13 @@ export function CloudSavePanel({ adapter, onClose }: CloudSavePanelProps): React
           {status === 'saved' ? t('cloudSave.saveAgain') : t('cloudSave.save')}
         </button>
       </footer>
-    </div>
+    </section>
   );
 }
 
 function StatusBadge({ status }: { status: CloudSaveStatus }): ReactElement {
   return (
-    <span
-      data-testid="cloud-save-status"
-      data-status={status}
-      style={badgeStyle(status)}
-    >
+    <span data-testid="cloud-save-status" data-status={status} style={badgeStyle(status)}>
       {t(`cloudSave.status.${status}`)}
     </span>
   );

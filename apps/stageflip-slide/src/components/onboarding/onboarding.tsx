@@ -72,7 +72,10 @@ export interface OnboardingProps {
  * `markOnboardingComplete()` so the tour never re-runs on subsequent
  * loads until cleared.
  */
-export function Onboarding({ forceOpen, steps = DEFAULT_COACHMARK_STEPS }: OnboardingProps): ReactElement | null {
+export function Onboarding({
+  forceOpen,
+  steps = DEFAULT_COACHMARK_STEPS,
+}: OnboardingProps): ReactElement | null {
   const [open, setOpen] = useState<boolean>(() => forceOpen ?? !isOnboardingComplete());
   const [stepIdx, setStepIdx] = useState<number>(0);
 
@@ -118,7 +121,13 @@ export function Onboarding({ forceOpen, steps = DEFAULT_COACHMARK_STEPS }: Onboa
   return (
     <div data-testid="onboarding" style={overlayStyle}>
       <div style={backdropStyle} />
-      <div data-testid="onboarding-coachmark" style={coachmarkStyle} role="dialog" aria-modal="true">
+      <div
+        data-testid="onboarding-coachmark"
+        style={coachmarkStyle}
+        // biome-ignore lint/a11y/useSemanticElements: Native <dialog> requires imperative showModal()/close() that does not compose with the declarative step-index state machine. role="dialog" + aria-modal supply the same a11y surface. Matches modal-shell.tsx pattern.
+        role="dialog"
+        aria-modal="true"
+      >
         <header style={coachmarkHeaderStyle}>
           <span data-testid="onboarding-step-counter" style={stepCounterStyle}>
             {t('onboarding.coachmark.stepCounter')} {stepIdx + 1} / {steps.length}

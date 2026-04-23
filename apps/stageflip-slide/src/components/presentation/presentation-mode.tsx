@@ -83,7 +83,10 @@ export function PresentationMode({
     const handler = (e: KeyboardEvent): void => {
       // Defensive focus-zone guard.
       const target = e.target as HTMLElement | null;
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+      if (
+        target &&
+        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+      ) {
         return;
       }
       switch (e.key) {
@@ -128,7 +131,14 @@ export function PresentationMode({
   }
 
   return (
-    <div data-testid="presentation" style={rootStyle} role="dialog" aria-modal="true" aria-label={t('nav.present')}>
+    <div
+      data-testid="presentation"
+      style={rootStyle}
+      // biome-ignore lint/a11y/useSemanticElements: Native <dialog> requires imperative showModal()/close() that does not compose with the declarative open prop + keyboard-nav state. role="dialog" + aria-modal supply the same a11y surface. Matches modal-shell.tsx pattern.
+      role="dialog"
+      aria-modal="true"
+      aria-label={t('nav.present')}
+    >
       <div style={stageStyle} data-testid="presentation-stage">
         <SlidePlayer
           slide={slide}
@@ -164,9 +174,15 @@ export function PresentationMode({
         </div>
       </div>
       {notesOpen ? (
-        <aside data-testid="presentation-notes" style={notesStyle} aria-label={t('presentation.notes.title')}>
+        <aside
+          data-testid="presentation-notes"
+          style={notesStyle}
+          aria-label={t('presentation.notes.title')}
+        >
           <h4 style={notesHeaderStyle}>{t('presentation.notes.title')}</h4>
-          <p style={notesBodyStyle}>{slide.notes && slide.notes.length > 0 ? slide.notes : t('presentation.notes.empty')}</p>
+          <p style={notesBodyStyle}>
+            {slide.notes && slide.notes.length > 0 ? slide.notes : t('presentation.notes.empty')}
+          </p>
         </aside>
       ) : null}
     </div>

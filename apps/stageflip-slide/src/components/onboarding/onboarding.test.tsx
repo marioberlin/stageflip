@@ -76,7 +76,13 @@ describe('<Onboarding />', () => {
     render(
       <Onboarding
         forceOpen
-        steps={[{ id: 'x', titleKey: 'onboarding.coachmark.welcome.title', bodyKey: 'onboarding.coachmark.welcome.body' }]}
+        steps={[
+          {
+            id: 'x',
+            titleKey: 'onboarding.coachmark.welcome.title',
+            bodyKey: 'onboarding.coachmark.welcome.body',
+          },
+        ]}
       />,
     );
     expect(screen.getByTestId('onboarding-step-counter').textContent).toContain('1 / 1');

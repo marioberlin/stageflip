@@ -2,11 +2,7 @@
 // In-memory stub adapter for the cloud-save framework (T-139c).
 
 import type { Document } from '@stageflip/schema';
-import {
-  CloudSaveConflictError,
-  type CloudSaveAdapter,
-  type CloudSaveResult,
-} from './types';
+import { type CloudSaveAdapter, CloudSaveConflictError, type CloudSaveResult } from './types';
 
 /**
  * Options for `createStubCloudSaveAdapter`.
@@ -38,9 +34,7 @@ export interface StubCloudSaveOptions {
  * `CloudSaveConflictError` on the next save for that id; tests use it
  * to exercise the conflict UI without a real backend.
  */
-export function createStubCloudSaveAdapter(
-  options: StubCloudSaveOptions = {},
-): CloudSaveAdapter & {
+export function createStubCloudSaveAdapter(options: StubCloudSaveOptions = {}): CloudSaveAdapter & {
   /** Test hook: force the next `save()` for `id` to throw a conflict error. */
   __simulateConflict(id: string, remote: Document): void;
   /** Test hook: force the next save or load to reject with `err`. */

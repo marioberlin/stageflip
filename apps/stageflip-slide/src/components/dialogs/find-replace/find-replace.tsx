@@ -207,10 +207,11 @@ export function FindReplace({ open, onClose, showReplace }: FindReplaceProps): R
 
   return (
     <div
+      data-testid="find-replace"
+      // biome-ignore lint/a11y/useSemanticElements: Native <dialog> requires imperative showModal()/close() calls that do not compose with the declarative open/onClose prop contract. role="dialog" + aria-modal supply the same a11y surface. Matches modal-shell.tsx pattern.
       role="dialog"
       aria-modal="true"
       aria-label={showReplace ? t('findReplace.title.findReplace') : t('findReplace.title.find')}
-      data-testid="find-replace"
       style={dialogStyle}
     >
       <header style={headerStyle}>

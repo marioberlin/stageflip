@@ -34,14 +34,16 @@ function makeDoc(): Document {
 }
 
 function mount(overrides: Partial<React.ComponentProps<typeof PresentationMode>> = {}): void {
+  const props: React.ComponentProps<typeof PresentationMode> = {
+    open: overrides.open ?? true,
+    onClose: overrides.onClose ?? (() => undefined),
+    initialFrame: overrides.initialFrame ?? 0,
+    ...(overrides.startSlideId !== undefined ? { startSlideId: overrides.startSlideId } : {}),
+    ...(overrides.fps !== undefined ? { fps: overrides.fps } : {}),
+  };
   render(
     <EditorShell initialDocument={makeDoc()}>
-      <PresentationMode
-        open={overrides.open ?? true}
-        onClose={overrides.onClose ?? (() => undefined)}
-        startSlideId={overrides.startSlideId}
-        initialFrame={overrides.initialFrame ?? 0}
-      />
+      <PresentationMode {...props} />
     </EditorShell>,
   );
 }

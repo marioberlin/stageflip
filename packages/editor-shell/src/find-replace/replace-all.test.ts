@@ -76,9 +76,7 @@ describe('replaceAll', () => {
 
     const caseSensitive = replaceAll(doc, 'foo', 'bar', { caseSensitive: true });
     if (caseSensitive.content.mode !== 'slide') throw new Error();
-    expect((caseSensitive.content.slides[0]?.elements[0] as TextElement).text).toBe(
-      'Foo bar FOO',
-    );
+    expect((caseSensitive.content.slides[0]?.elements[0] as TextElement).text).toBe('Foo bar FOO');
   });
 
   it('preserves non-matched element identity (structural sharing)', () => {
