@@ -1,0 +1,23 @@
+{
+  "name": "frame-runtime-voiceover-narration",
+  "runtime": "frame-runtime",
+  "kind": "voiceover-narration",
+  "description": "Frame-runtime port of SlideMotion's voiceover-narration — text + SVG waveform viz over timed narration segments, optional <FrameAudio> for playback sync (T-131e.2).",
+  "composition": { "width": 1920, "height": 1080, "fps": 30, "durationInFrames": 240 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 240,
+    "props": {
+      "text": "Welcome to our Q4 review. Revenue grew fifteen percent year over year. Customer retention hit a new high.",
+      "speaker": "Ada",
+      "title": "Chapter 1"
+    }
+  },
+  "referenceFrames": [0, 120, 239],
+  "thresholds": {
+    "minPsnr": 30,
+    "minSsim": 0.92,
+    "maxFailingFrames": 1
+  },
+  "goldens": { "dir": "goldens/frame-runtime-voiceover-narration" }
+}

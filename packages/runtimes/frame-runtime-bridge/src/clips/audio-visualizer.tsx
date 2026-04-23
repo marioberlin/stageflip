@@ -110,7 +110,7 @@ export function generateBars(frame: number, fps: number, barCount: number): numb
   });
 }
 
-interface VizProps {
+export interface VizProps {
   bars: number[];
   barCount: number;
   color: string;
@@ -123,7 +123,7 @@ interface VizProps {
   titleColor: string;
 }
 
-function BarsViz({
+export function BarsViz({
   bars,
   barCount,
   color,
@@ -182,7 +182,7 @@ function BarsViz({
   );
 }
 
-function WaveViz({
+export function WaveViz({
   bars,
   barCount,
   color,
@@ -243,7 +243,7 @@ function WaveViz({
   );
 }
 
-function CircularViz({
+export function CircularViz({
   bars,
   barCount,
   color,

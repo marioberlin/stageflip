@@ -167,7 +167,23 @@ export {
   gifPlayerPropsSchema,
 } from './gif-player.js';
 
+export {
+  VoiceoverNarration,
+  type VoiceoverNarrationProps,
+  type NarrationSegment,
+  voiceoverNarrationClip,
+  voiceoverNarrationPropsSchema,
+} from './voiceover-narration.js';
+
+export {
+  AudioVisualizerReactive,
+  type AudioVisualizerReactiveProps,
+  audioVisualizerReactiveClip,
+  audioVisualizerReactivePropsSchema,
+} from './audio-visualizer-reactive.js';
+
 import { animatedValueClip } from './animated-value.js';
+import { audioVisualizerReactiveClip } from './audio-visualizer-reactive.js';
 import { audioVisualizerClip } from './audio-visualizer.js';
 import { chartBuildClip } from './chart-build.js';
 import { codeBlockClip } from './code-block.js';
@@ -189,6 +205,7 @@ import { subtitleOverlayClip } from './subtitle-overlay.js';
 import { timelineMilestonesClip } from './timeline-milestones.js';
 import { typewriterClip } from './typewriter-clip.js';
 import { videoBackgroundClip } from './video-background.js';
+import { voiceoverNarrationClip } from './voiceover-narration.js';
 
 import type { ClipDefinition } from '@stageflip/runtimes-contract';
 
@@ -232,4 +249,10 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // wiring tracked separately).
   videoBackgroundClip,
   gifPlayerClip,
+  // T-131e.2 — audio tranche. voiceover-narration is text+SVG-only with an
+  // optional <FrameAudio>; audio-visualizer-reactive reads live FFT data
+  // via useAudioVisualizer (editor/preview determinism only; bake path
+  // pre-decodes samples).
+  voiceoverNarrationClip,
+  audioVisualizerReactiveClip,
 ];
