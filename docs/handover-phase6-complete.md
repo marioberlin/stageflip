@@ -356,6 +356,19 @@ All seven items landed on this PR:
    find-replace dialog never consumed `useRegisterContextMenu` as the
    T-139c description claimed. Item 6 resolves the keys; the text
    drift is recorded here and in the T-140 PR body.
+8. **Onboarding Escape migrated to element-level `onKeyDown`.** Post-
+   review of the T-140 branch found `apps/stageflip-slide/src/components/onboarding/onboarding.tsx`
+   still had a raw `window.addEventListener('keydown', ...)` for
+   Escape (shipped in T-139c, missed by the initial sweep). Migrating
+   it to `useRegisterShortcuts` surfaced an Escape conflict: onboarding
+   registers first, wins the registry's first-match iteration, and
+   swallows Escape intended for a later-mounted `<PresentationMode>`.
+   Fix: auto-focused coachmark + element-level `onKeyDown` (same
+   pattern the sweep used on `<ContextMenu>`). Focus determines which
+   modal owns Escape, sidestepping the registry-order race. Takeaway
+   for future modals: prefer the focus-gated element handler when a
+   modal stack is possible; only use the registry when there's
+   exactly one listener per key.
 
 ---
 

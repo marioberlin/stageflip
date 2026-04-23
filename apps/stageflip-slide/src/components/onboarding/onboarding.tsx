@@ -4,8 +4,8 @@
 'use client';
 
 import { t } from '@stageflip/editor-shell';
-import type { CSSProperties, ReactElement } from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import type { CSSProperties, KeyboardEvent, ReactElement } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { isOnboardingComplete, markOnboardingComplete } from './onboarding-storage';
 
 /**
@@ -99,17 +99,27 @@ export function Onboarding({
     setStepIdx((i) => Math.max(0, i - 1));
   }, []);
 
-  useEffect(() => {
+  // Escape dismisses the tour via the focused-coachmark's onKeyDown
+  // (the same pattern the T-140 sweep used on <ContextMenu>). Focus
+  // determines which modal owns Escape, so a later-mounted modal
+  // (e.g. <PresentationMode>) can receive Escape without onboarding
+  // swallowing it first — which a registry registration would do,
+  // since onboarding's provider mounts before presentation's.
+  const coachmarkRef = useRef<HTMLDivElement | null>(null);
+  useLayoutEffect(() => {
     if (!open) return;
-    const handler = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
+    coachmarkRef.current?.focus();
+  }, [open]);
+
+  const handleCoachmarkKey = useCallback(
+    (event: KeyboardEvent<HTMLDivElement>): void => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
         finish();
       }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [open, finish]);
+    },
+    [finish],
+  );
 
   if (!open) return null;
   const step = steps[stepIdx];
@@ -122,11 +132,14 @@ export function Onboarding({
     <div data-testid="onboarding" style={overlayStyle}>
       <div style={backdropStyle} />
       <div
+        ref={coachmarkRef}
         data-testid="onboarding-coachmark"
         style={coachmarkStyle}
         // biome-ignore lint/a11y/useSemanticElements: Native <dialog> requires imperative showModal()/close() that does not compose with the declarative step-index state machine. role="dialog" + aria-modal supply the same a11y surface. Matches modal-shell.tsx pattern.
         role="dialog"
         aria-modal="true"
+        tabIndex={-1}
+        onKeyDown={handleCoachmarkKey}
       >
         <header style={coachmarkHeaderStyle}>
           <span data-testid="onboarding-step-counter" style={stepCounterStyle}>

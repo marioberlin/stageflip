@@ -43,13 +43,12 @@ export function ModalShell({
 
   // Register Escape with the shortcut registry (CLAUDE.md §10) only
   // while the modal is open. The registry is a single window-keydown
-  // owner; stacking two modals registers two Escape shortcuts and the
-  // most-recently-registered wins (registration order is a FIFO
-  // tiebreaker in the registry — the newer handler appears later in
-  // the iteration list so the first matching is the outer one). Nested
-  // modals are rare in this app, so relying on registration order is
-  // safe; if nesting grows, the registry's `when` predicate is the
-  // knob to make only the topmost fire.
+  // owner that iterates shortcuts in registration order and fires the
+  // first match, so stacking two modals fires the OUTER (older) one
+  // first — the opposite of the usual top-closes-first UX. The app
+  // never nests modals today, so this is theoretical; if nesting
+  // grows, each modal's `when` predicate should gate on a
+  // mount-depth counter so only the topmost responds.
   const shortcuts = useMemo<Shortcut[]>(
     () =>
       open

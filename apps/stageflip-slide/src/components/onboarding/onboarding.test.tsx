@@ -1,7 +1,9 @@
 // apps/stageflip-slide/src/components/onboarding/onboarding.test.tsx
 // Tests for the first-run coachmark sequence (T-139c).
 
+import { ShortcutRegistryProvider } from '@stageflip/editor-shell';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Onboarding } from './onboarding';
 import {
@@ -13,21 +15,30 @@ import {
 beforeEach(() => resetOnboardingForTest());
 afterEach(() => cleanup());
 
+/**
+ * Wrap in a `<ShortcutRegistryProvider>` so the Escape-dismiss
+ * registration in `<Onboarding>` (T-140 sweep — migrated from a raw
+ * window listener) has a registry to register against.
+ */
+function renderWithRegistry(ui: ReactElement): ReturnType<typeof render> {
+  return render(<ShortcutRegistryProvider>{ui}</ShortcutRegistryProvider>);
+}
+
 describe('<Onboarding />', () => {
   it('renders on first mount when localStorage is clear', () => {
-    render(<Onboarding />);
+    renderWithRegistry(<Onboarding />);
     expect(screen.getByTestId('onboarding')).toBeTruthy();
     expect(screen.getByTestId('onboarding-title').textContent).toBe('Welcome to StageFlip');
   });
 
   it('does not render when markOnboardingComplete() was called before', () => {
     markOnboardingComplete();
-    render(<Onboarding />);
+    renderWithRegistry(<Onboarding />);
     expect(screen.queryByTestId('onboarding')).toBeNull();
   });
 
   it('advances through steps on Next', () => {
-    render(<Onboarding />);
+    renderWithRegistry(<Onboarding />);
     expect(screen.getByTestId('onboarding-step-counter').textContent).toContain('1 / 5');
     fireEvent.click(screen.getByTestId('onboarding-next'));
     expect(screen.getByTestId('onboarding-step-counter').textContent).toContain('2 / 5');
@@ -35,7 +46,7 @@ describe('<Onboarding />', () => {
   });
 
   it('Previous button is disabled on the first step', () => {
-    render(<Onboarding />);
+    renderWithRegistry(<Onboarding />);
     const prev = screen.getByTestId('onboarding-previous') as HTMLButtonElement;
     expect(prev.disabled).toBe(true);
     fireEvent.click(screen.getByTestId('onboarding-next'));
@@ -43,7 +54,7 @@ describe('<Onboarding />', () => {
   });
 
   it('Done button on the last step closes the tour + persists completion', () => {
-    render(<Onboarding />);
+    renderWithRegistry(<Onboarding />);
     // Step through all 5.
     for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('onboarding-next'));
     expect(screen.getByTestId('onboarding-next').textContent).toBe('Done');
@@ -53,27 +64,30 @@ describe('<Onboarding />', () => {
   });
 
   it('Skip button dismisses + persists completion', () => {
-    render(<Onboarding />);
+    renderWithRegistry(<Onboarding />);
     fireEvent.click(screen.getByTestId('onboarding-skip'));
     expect(screen.queryByTestId('onboarding')).toBeNull();
     expect(isOnboardingComplete()).toBe(true);
   });
 
-  it('Escape key dismisses the tour', () => {
-    render(<Onboarding />);
-    fireEvent.keyDown(window, { key: 'Escape' });
+  it('Escape key on the focused coachmark dismisses the tour', () => {
+    renderWithRegistry(<Onboarding />);
+    // Coachmark auto-focuses on mount via useLayoutEffect; Escape
+    // routes through its onKeyDown so focus determines which modal
+    // owns the key, not registry order.
+    fireEvent.keyDown(screen.getByTestId('onboarding-coachmark'), { key: 'Escape' });
     expect(screen.queryByTestId('onboarding')).toBeNull();
     expect(isOnboardingComplete()).toBe(true);
   });
 
   it('forceOpen re-opens even when localStorage is set', () => {
     markOnboardingComplete();
-    render(<Onboarding forceOpen />);
+    renderWithRegistry(<Onboarding forceOpen />);
     expect(screen.getByTestId('onboarding')).toBeTruthy();
   });
 
   it('respects a custom step list', () => {
-    render(
+    renderWithRegistry(
       <Onboarding
         forceOpen
         steps={[
