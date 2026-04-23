@@ -17,21 +17,53 @@
  * Submenu model: hover or Enter on a submenu item opens it at the
  * adjacent edge. Only one submenu chain is open at a time.
  *
- * Positioning: the menu is absolutely positioned at `openState.{x,y}`.
- * Edge-flipping (viewport-bounds clamp) is a progressive enhancement —
- * the first cut positions naively; a follow-up can use
- * `getBoundingClientRect` to nudge. Consumers that care about
- * pixel-perfect placement should compose their own wrapper.
+ * Positioning: the menu is absolutely positioned at `openState.{x,y}`,
+ * then clamped to the viewport via `clampToViewport` in a
+ * `useLayoutEffect` — a second-paint nudge that flips the origin when
+ * the menu would overflow the right or bottom edge (native-menu
+ * convention). The clamp is a no-op when the cursor sits far from the
+ * viewport edges (T-139b).
  */
 
 'use client';
 
 import type { CSSProperties, KeyboardEvent, ReactElement } from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { t } from '../i18n/catalog';
 import { formatCombo } from '../shortcuts/match-key-combo';
 import { useContextMenu } from './context-menu-provider';
 import type { ContextMenuItem, ContextMenuItemSpec, ContextMenuSubmenu } from './types';
+
+/** Padding kept between the menu edge and the viewport edge when clamping. */
+const VIEWPORT_CLAMP_MARGIN = 4;
+
+/**
+ * Clamp a proposed `{x, y}` origin so the rendered menu stays fully on
+ * screen. When the menu would overflow the right or bottom edge, flip
+ * the origin so the menu opens up-left of the cursor (native-menu
+ * convention). Zero-sized `width`/`height` fall through — the caller
+ * renders off-screen on the first paint and the layout-effect re-clamp
+ * corrects on the second. (T-139b addition — extends T-139a's naive
+ * positioner with a `getBoundingClientRect`-based nudge.)
+ */
+export function clampToViewport(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  viewportWidth: number,
+  viewportHeight: number,
+): { x: number; y: number } {
+  let clampedX = x;
+  let clampedY = y;
+  if (width > 0 && x + width + VIEWPORT_CLAMP_MARGIN > viewportWidth) {
+    clampedX = Math.max(VIEWPORT_CLAMP_MARGIN, viewportWidth - width - VIEWPORT_CLAMP_MARGIN);
+  }
+  if (height > 0 && y + height + VIEWPORT_CLAMP_MARGIN > viewportHeight) {
+    clampedY = Math.max(VIEWPORT_CLAMP_MARGIN, viewportHeight - height - VIEWPORT_CLAMP_MARGIN);
+  }
+  return { x: clampedX, y: clampedY };
+}
 
 export function ContextMenu(): ReactElement | null {
   const { openState, close } = useContextMenu();
@@ -71,6 +103,7 @@ function Menu({ items, x, y, onClose, testIdSuffix, submenu = false }: MenuProps
 
   const [focusedIndex, setFocusedIndex] = useState<number>(activatable[0] ?? -1);
   const [openSubIndex, setOpenSubIndex] = useState<number | null>(null);
+  const [clampedOrigin, setClampedOrigin] = useState<{ x: number; y: number }>({ x, y });
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -78,6 +111,21 @@ function Menu({ items, x, y, onClose, testIdSuffix, submenu = false }: MenuProps
     // this; real browsers honor it via the `tabIndex={-1}` on the div.
     containerRef.current?.focus();
   }, []);
+
+  useLayoutEffect(() => {
+    // Measure post-layout + clamp to the viewport so a near-edge cursor
+    // doesn't produce a half-off-screen menu. Runs every time the
+    // requested origin changes; typical case is once per open.
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const vw = typeof window !== 'undefined' ? window.innerWidth : rect.right;
+    const vh = typeof window !== 'undefined' ? window.innerHeight : rect.bottom;
+    const next = clampToViewport(x, y, rect.width, rect.height, vw, vh);
+    if (next.x !== clampedOrigin.x || next.y !== clampedOrigin.y) {
+      setClampedOrigin(next);
+    }
+  }, [x, y, clampedOrigin.x, clampedOrigin.y]);
 
   useEffect(() => {
     // If items change and the focused index no longer resolves to an
@@ -142,8 +190,8 @@ function Menu({ items, x, y, onClose, testIdSuffix, submenu = false }: MenuProps
 
   const style: CSSProperties = {
     position: 'fixed',
-    top: y,
-    left: x,
+    top: clampedOrigin.y,
+    left: clampedOrigin.x,
     minWidth: 200,
     padding: '6px 0',
     background: 'rgba(21, 28, 35, 0.92)',
