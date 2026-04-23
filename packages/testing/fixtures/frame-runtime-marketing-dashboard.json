@@ -1,0 +1,26 @@
+{
+  "name": "frame-runtime-marketing-dashboard",
+  "runtime": "frame-runtime",
+  "kind": "marketing-dashboard",
+  "description": "Marketing dashboard composite (T-131f.2). Flat-prop interface — channel spend/revenue/conversions plus optional KPIs drive the KPI strip, bar chart, and per-channel table.",
+  "composition": { "width": 1920, "height": 1080, "fps": 30, "durationInFrames": 60 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 60,
+    "props": {
+      "title": "Q1 Performance",
+      "dateRange": { "start": "2026-01-01", "end": "2026-03-31" },
+      "channels": [
+        { "id": "email", "name": "Email", "color": "#81aeff", "spend": 5000, "revenue": 18000, "conversions": 240 },
+        { "id": "paid", "name": "Paid Search", "color": "#fb7185", "spend": 12000, "revenue": 36000, "conversions": 460 },
+        { "id": "social", "name": "Social", "color": "#34d399", "spend": 8000, "revenue": 14000, "conversions": 200 }
+      ],
+      "kpis": [
+        { "id": "ctr", "name": "CTR", "value": 3.8, "unit": "%", "trend": "up" }
+      ]
+    }
+  },
+  "referenceFrames": [0, 30, 59],
+  "thresholds": { "minPsnr": 30, "minSsim": 0.92, "maxFailingFrames": 1 },
+  "goldens": { "dir": "goldens/frame-runtime-marketing-dashboard" }
+}
