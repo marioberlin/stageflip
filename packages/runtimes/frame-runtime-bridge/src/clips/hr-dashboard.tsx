@@ -20,9 +20,19 @@ import type { ReactElement } from 'react';
 import { z } from 'zod';
 
 import { defineFrameClip } from '../index.js';
+import {
+  DASHBOARD_BAD_COLOR,
+  DASHBOARD_GOOD_COLOR,
+  DASHBOARD_MUTED_COLOR,
+  DASHBOARD_SUBDUED_COLOR,
+  DASHBOARD_WARN_COLOR,
+  type DashboardTrend,
+  dashboardTrendColor,
+  dashboardTrendSchema,
+  formatDashboardValue,
+} from './_dashboard-utils.js';
 
-const trendSchema = z.enum(['up', 'down', 'flat']);
-export type HrTrend = z.infer<typeof trendSchema>;
+export type HrTrend = DashboardTrend;
 
 const departmentSchema = z
   .object({
@@ -42,7 +52,7 @@ const metricSchema = z
     category: z.string(),
     value: z.union([z.number(), z.string()]),
     unit: z.string().optional(),
-    trend: trendSchema.optional(),
+    trend: dashboardTrendSchema.optional(),
     target: z.union([z.number(), z.string()]).optional(),
     benchmark: z.union([z.number(), z.string()]).optional(),
   })
@@ -64,22 +74,11 @@ export type HrDashboardDepartment = z.infer<typeof departmentSchema>;
 export type HrDashboardMetric = z.infer<typeof metricSchema>;
 export type HrDashboardProps = z.infer<typeof hrDashboardPropsSchema>;
 
-const GOOD_COLOR = '#34d399';
-const WARN_COLOR = '#fbbf24';
-const BAD_COLOR = '#fb7185';
-const MUTED_COLOR = '#a5acb4';
-const SUBDUED_COLOR = '#6b7280';
-
-function formatValue(value: number | string, unit?: string): string {
-  const stringified = typeof value === 'number' ? String(value) : value;
-  return unit !== undefined && unit.length > 0 ? `${stringified}${unit}` : stringified;
-}
-
-function trendColor(trend: HrTrend | undefined): string {
-  if (trend === 'up') return GOOD_COLOR;
-  if (trend === 'down') return BAD_COLOR;
-  return MUTED_COLOR;
-}
+const GOOD_COLOR = DASHBOARD_GOOD_COLOR;
+const WARN_COLOR = DASHBOARD_WARN_COLOR;
+const BAD_COLOR = DASHBOARD_BAD_COLOR;
+const MUTED_COLOR = DASHBOARD_MUTED_COLOR;
+const SUBDUED_COLOR = DASHBOARD_SUBDUED_COLOR;
 
 function KpiCard({
   label,
@@ -205,8 +204,8 @@ export function HrDashboard({
           <KpiCard
             key={m.id}
             label={m.name.toUpperCase()}
-            value={formatValue(m.value, m.unit)}
-            color={trendColor(m.trend)}
+            value={formatDashboardValue(m.value, m.unit)}
+            color={dashboardTrendColor(m.trend)}
           />
         ))}
       </div>
@@ -359,20 +358,20 @@ export function HrDashboard({
                   style={{
                     fontSize: 18,
                     fontWeight: 800,
-                    color: trendColor(m.trend),
+                    color: dashboardTrendColor(m.trend),
                     fontVariantNumeric: 'tabular-nums',
                   }}
                 >
-                  {formatValue(m.value, m.unit)}
+                  {formatDashboardValue(m.value, m.unit)}
                 </div>
                 {m.target !== undefined ? (
                   <div style={{ fontSize: 9, color: SUBDUED_COLOR }}>
-                    Target: {formatValue(m.target, m.unit)}
+                    Target: {formatDashboardValue(m.target, m.unit)}
                   </div>
                 ) : null}
                 {m.benchmark !== undefined ? (
                   <div style={{ fontSize: 9, color: '#5af8fb' }}>
-                    Benchmark: {formatValue(m.benchmark, m.unit)}
+                    Benchmark: {formatDashboardValue(m.benchmark, m.unit)}
                   </div>
                 ) : null}
               </div>

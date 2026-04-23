@@ -88,6 +88,31 @@ describe('MarketingDashboard component (T-131f.2)', () => {
     expect(screen.queryByTestId('marketing-dashboard-funnel')).toBeNull();
   });
 
+  it('survives a zero-valued first funnel stage (no NaN width)', () => {
+    // If the top-of-funnel value is 0 the width ratio would otherwise divide
+    // by zero. The clip falls back to maxVal=1 so every stage renders at a
+    // fraction of the container; no NaN leaks into the DOM.
+    renderAt(30, {
+      channels: CHANNELS,
+      mode: 'funnel',
+      funnelStages: [
+        { id: 'aware', name: 'Awareness', color: '#81aeff', value: 0 },
+        { id: 'interest', name: 'Interest', color: '#5af8fb', value: 0 },
+      ],
+    });
+    for (const id of ['aware', 'interest']) {
+      const stage = screen.getByTestId(`marketing-dashboard-funnel-stage-${id}`);
+      // The stage has two direct children: a 140px-wide label div and a
+      // flex:1 bar container. Descend to the bar element inside the bar
+      // container (its only child).
+      const children = stage.children as HTMLCollection;
+      const barContainer = children[1] as HTMLElement | undefined;
+      const bar = barContainer?.firstElementChild as HTMLElement | null;
+      expect(bar?.style.width).toMatch(/%$/);
+      expect(bar?.style.width).not.toContain('NaN');
+    }
+  });
+
   it('renders funnel bars when mode=funnel', () => {
     renderAt(30, { channels: CHANNELS, mode: 'funnel', funnelStages: FUNNEL });
     for (const s of FUNNEL) {
