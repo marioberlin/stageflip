@@ -9,6 +9,7 @@ related:
   - skills/stageflip/concepts/agent-executor/SKILL.md
   - skills/stageflip/concepts/agent-validator/SKILL.md
   - skills/stageflip/concepts/tool-bundles/SKILL.md
+  - skills/stageflip/concepts/llm-abstraction/SKILL.md
 ---
 
 # Agent — Planner

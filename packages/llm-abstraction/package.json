@@ -22,5 +22,10 @@
     "typecheck": "tsc --noEmit",
     "lint": "biome check src",
     "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.91.0",
+    "@google/generative-ai": "0.24.1",
+    "openai": "6.34.0"
   }
 }

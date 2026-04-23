@@ -7,6 +7,7 @@ last_updated: 2026-04-20
 owner_task: T-153
 related:
   - skills/stageflip/concepts/agent-executor/SKILL.md
+  - skills/stageflip/concepts/llm-abstraction/SKILL.md
   - skills/stageflip/workflows/parity-testing/SKILL.md
 ---
 
