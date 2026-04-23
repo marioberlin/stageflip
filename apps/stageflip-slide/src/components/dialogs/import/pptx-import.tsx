@@ -59,8 +59,7 @@ export function PptxImport({ open, onClose, onImport }: PptxImportProps): ReactE
       setFile(null);
       return;
     }
-    const looksLikePptx =
-      picked.type === PPTX_MIME || picked.name.toLowerCase().endsWith('.pptx');
+    const looksLikePptx = picked.type === PPTX_MIME || picked.name.toLowerCase().endsWith('.pptx');
     if (!looksLikePptx) {
       setFile(null);
       setState('error');

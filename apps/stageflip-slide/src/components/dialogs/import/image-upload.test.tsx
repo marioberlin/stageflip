@@ -1,10 +1,6 @@
 // apps/stageflip-slide/src/components/dialogs/import/image-upload.test.tsx
 
-import {
-  EditorShell,
-  assetsAtom,
-  useEditorShellAtomValue,
-} from '@stageflip/editor-shell';
+import { EditorShell, assetsAtom, useEditorShellAtomValue } from '@stageflip/editor-shell';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -65,7 +61,9 @@ describe('<ImageUpload />', () => {
     fireEvent.change(input, { target: { files: [makeFile('p.png', 'image/png', 100)] } });
     const form = screen.getByTestId('import-image-submit').closest('form');
     if (form) fireEvent.submit(form);
-    expect(screen.getByTestId('image-upload-asset-count').textContent).toBe('1|p.png|blob:test-url');
+    expect(screen.getByTestId('image-upload-asset-count').textContent).toBe(
+      '1|p.png|blob:test-url',
+    );
     expect(onClose).toHaveBeenCalled();
   });
 });

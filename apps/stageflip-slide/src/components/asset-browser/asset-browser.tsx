@@ -30,7 +30,7 @@ import {
   useEditorShellSetAtom,
   useRegisterContextMenu,
 } from '@stageflip/editor-shell';
-import type { CSSProperties, DragEvent, ReactElement } from 'react';
+import type { CSSProperties, DragEvent, KeyboardEvent, ReactElement } from 'react';
 import { useCallback, useMemo, useState } from 'react';
 
 export interface AssetInsertPayload {
@@ -119,11 +119,7 @@ export function AssetBrowser({ onInsert, onUpload }: AssetBrowserProps): ReactEl
   useRegisterContextMenu(descriptor);
 
   return (
-    <aside
-      data-testid="asset-browser"
-      aria-label={t('assetBrowser.ariaLabel')}
-      style={rootStyle}
-    >
+    <aside data-testid="asset-browser" aria-label={t('assetBrowser.ariaLabel')} style={rootStyle}>
       <header style={headerStyle}>
         <h2 style={titleStyle}>{t('assetBrowser.title')}</h2>
         {onUpload ? (
@@ -138,10 +134,30 @@ export function AssetBrowser({ onInsert, onUpload }: AssetBrowserProps): ReactEl
         ) : null}
       </header>
       <div style={filterBarStyle} role="tablist">
-        <FilterPill label={t('assetBrowser.filter.all')} active={filter === 'all'} onClick={() => setFilter('all')} testId="asset-browser-filter-all" />
-        <FilterPill label={t('assetBrowser.filter.image')} active={filter === 'image'} onClick={() => setFilter('image')} testId="asset-browser-filter-image" />
-        <FilterPill label={t('assetBrowser.filter.video')} active={filter === 'video'} onClick={() => setFilter('video')} testId="asset-browser-filter-video" />
-        <FilterPill label={t('assetBrowser.filter.audio')} active={filter === 'audio'} onClick={() => setFilter('audio')} testId="asset-browser-filter-audio" />
+        <FilterPill
+          label={t('assetBrowser.filter.all')}
+          active={filter === 'all'}
+          onClick={() => setFilter('all')}
+          testId="asset-browser-filter-all"
+        />
+        <FilterPill
+          label={t('assetBrowser.filter.image')}
+          active={filter === 'image'}
+          onClick={() => setFilter('image')}
+          testId="asset-browser-filter-image"
+        />
+        <FilterPill
+          label={t('assetBrowser.filter.video')}
+          active={filter === 'video'}
+          onClick={() => setFilter('video')}
+          testId="asset-browser-filter-video"
+        />
+        <FilterPill
+          label={t('assetBrowser.filter.audio')}
+          active={filter === 'audio'}
+          onClick={() => setFilter('audio')}
+          testId="asset-browser-filter-audio"
+        />
       </div>
       {visible.length === 0 ? (
         <p data-testid="asset-browser-empty" style={emptyStyle}>
@@ -176,14 +192,25 @@ function AssetCell({
     event.dataTransfer.setData(ASSET_DRAG_MIME, asset.ref);
     event.dataTransfer.effectAllowed = 'copy';
   };
+  const handleKeyDown = (event: KeyboardEvent<HTMLLIElement>): void => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onSelect();
+    }
+  };
   return (
+    // biome-ignore lint/a11y/useSemanticElements: Grid cells must be <li> children of the <ul> grid container for list semantics; the keyboard-interactive pattern (tabIndex + onKeyDown for Enter / Space) supplies button-like affordances without violating list-item structure.
     <li
       data-testid={`asset-browser-cell-${asset.id}`}
       data-stageflip-asset-cell="true"
       data-selected={selected}
+      aria-selected={selected}
       draggable
+      // biome-ignore lint/a11y/noNoninteractiveTabindex: The cell IS interactive — click + Enter/Space + drag select the asset. The <li> role is required for list-semantics but biome's heuristic only scans aria-role, not handler attachments.
+      tabIndex={0}
       onDragStart={handleDragStart}
       onClick={onSelect}
+      onKeyDown={handleKeyDown}
       title={asset.name}
       style={cellStyle(selected)}
     >

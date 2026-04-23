@@ -1,10 +1,10 @@
 // apps/stageflip-slide/src/components/asset-browser/asset-browser.test.tsx
 
 import {
+  type Asset,
   ContextMenu,
   ContextMenuProvider,
   EditorShell,
-  type Asset,
   addAssetAtom,
   assetsAtom,
   useEditorShellAtomValue,
@@ -122,10 +122,9 @@ describe('<AssetBrowser />', () => {
   it('context-menu Insert action dispatches onInsert with the asset ref', () => {
     const onInsert = vi.fn();
     render(
-      mount(
-        [{ id: 'a', kind: 'image', name: 'p.png', url: 'https://x/p.png', addedAt: 0 }],
-        { onInsert },
-      ),
+      mount([{ id: 'a', kind: 'image', name: 'p.png', url: 'https://x/p.png', addedAt: 0 }], {
+        onInsert,
+      }),
     );
     const cell = screen.getByTestId('asset-browser-cell-a');
     // Select first so the context-menu "current" resolves.
@@ -156,7 +155,9 @@ describe('<AssetBrowser />', () => {
     render(
       <EditorShell initialDocument={DOC}>
         <ContextMenuProvider>
-          <Seed assets={[{ id: 'a', kind: 'image', name: 'p.png', url: 'https://x/p.png', addedAt: 0 }]} />
+          <Seed
+            assets={[{ id: 'a', kind: 'image', name: 'p.png', url: 'https://x/p.png', addedAt: 0 }]}
+          />
           <AssetBrowser onInsert={() => undefined} />
           <ContextMenu />
           <Observer />

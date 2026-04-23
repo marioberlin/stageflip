@@ -54,9 +54,16 @@ export function ModalShell({
   }, [open, onClose]);
 
   if (!open) return null;
+  const handleBackdropKey = (event: React.KeyboardEvent<HTMLDivElement>): void => {
+    if (event.target === event.currentTarget && event.key === 'Escape') {
+      event.preventDefault();
+      onClose();
+    }
+  };
   return (
     <div
       data-testid={`modal-${testIdSuffix}`}
+      // biome-ignore lint/a11y/useSemanticElements: Native <dialog> requires imperative showModal()/close() calls that do not compose cleanly with the declarative open/onClose prop contract this shell exposes. role="dialog" + aria-modal="true" supply the same a11y surface.
       role="dialog"
       aria-modal="true"
       aria-label={title}
@@ -64,6 +71,7 @@ export function ModalShell({
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
+      onKeyDown={handleBackdropKey}
     >
       <div ref={panelRef} style={panelStyle}>
         <header style={headerStyle}>

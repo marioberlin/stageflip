@@ -36,8 +36,6 @@ export interface ImageUploadProps {
 
 const MAX_BYTES = 20 * 1024 * 1024;
 
-type FormState = 'idle' | 'error';
-
 export function ImageUpload({
   open,
   onClose,
@@ -46,13 +44,11 @@ export function ImageUpload({
 }: ImageUploadProps): ReactElement {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [file, setFile] = useState<File | null>(null);
-  const [state, setState] = useState<FormState>('idle');
   const [errorKey, setErrorKey] = useState<string | null>(null);
   const addAsset = useEditorShellSetAtom(addAssetAtom);
 
   const reset = useCallback((): void => {
     setFile(null);
-    setState('idle');
     setErrorKey(null);
     if (inputRef.current) inputRef.current.value = '';
   }, []);
@@ -70,18 +66,15 @@ export function ImageUpload({
     }
     if (!picked.type.startsWith('image/')) {
       setFile(null);
-      setState('error');
       setErrorKey('import.image.error.invalidType');
       return;
     }
     if (picked.size > MAX_BYTES) {
       setFile(null);
-      setState('error');
       setErrorKey('import.image.error.tooLarge');
       return;
     }
     setFile(picked);
-    setState('idle');
     setErrorKey(null);
   }, []);
 

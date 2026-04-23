@@ -60,7 +60,12 @@ describe('<PptxImport />', () => {
     const input = screen.getByTestId('import-pptx-file') as HTMLInputElement;
     fireEvent.change(input, {
       target: {
-        files: [makeFile('deck.pptx', 'application/vnd.openxmlformats-officedocument.presentationml.presentation')],
+        files: [
+          makeFile(
+            'deck.pptx',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          ),
+        ],
       },
     });
     const form = screen.getByTestId('import-pptx-submit').closest('form');
