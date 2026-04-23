@@ -14,9 +14,16 @@ import {
   type AudioVisualizerReactiveProps,
   audioVisualizerReactiveClip,
   audioVisualizerReactivePropsSchema,
+  frequencyToBars,
 } from './audio-visualizer-reactive.js';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  // Clean up the global stub so it does not leak across test files in
+  // a shared Vitest worker. See the matching `beforeEach` below.
+  // biome-ignore lint/suspicious/noExplicitAny: test shim — globalThis is untyped here.
+  (globalThis as any).AudioContext = undefined;
+});
 
 // happy-dom does not ship AudioContext — stub it so the visualizer hook
 // does not throw when the clip mounts. We don't assert analyser behaviour
@@ -96,6 +103,48 @@ describe('AudioVisualizerReactive component (T-131e.2)', () => {
     // element is not laid out as a visible UI control. A minimal check
     // is that it has no controls attribute (default) or has style.display=none.
     expect(audio.controls).toBe(false);
+  });
+});
+
+describe('frequencyToBars helper (T-131e.2)', () => {
+  it('returns a flat 0.1 baseline when frequency is empty', () => {
+    expect(frequencyToBars(new Uint8Array(0), 4)).toEqual([0.1, 0.1, 0.1, 0.1]);
+  });
+
+  it('returns a flat 0.1 baseline when every bin is zero (pre-first-analyser-tick)', () => {
+    expect(frequencyToBars(new Uint8Array([0, 0, 0, 0]), 3)).toEqual([0.1, 0.1, 0.1]);
+  });
+
+  it('maps non-zero bins to normalised heights in [0.02, 1] with index averaging', () => {
+    // Frequency bins: [0, 255, 128, 64]. With barCount=4 each bar picks
+    // index Math.floor((i/4) * 4) = i → exact 1:1 mapping.
+    // Output should be [0/255, 255/255, 128/255, 64/255] clamped to [0.02, 1].
+    const bars = frequencyToBars(new Uint8Array([0, 255, 128, 64]), 4);
+    expect(bars[0]).toBe(0.02); // 0 clamped up to 0.02
+    expect(bars[1]).toBe(1);
+    expect(bars[2]).toBeCloseTo(128 / 255, 5);
+    expect(bars[3]).toBeCloseTo(64 / 255, 5);
+  });
+
+  it('downsamples when barCount < frequency.length', () => {
+    // 8 bins, 4 bars → each bar reads index floor((i/4) * 8) = i*2.
+    const freq = new Uint8Array([10, 0, 40, 0, 80, 0, 160, 0]);
+    const bars = frequencyToBars(freq, 4);
+    expect(bars.length).toBe(4);
+    expect(bars[0]).toBeCloseTo(10 / 255, 5);
+    expect(bars[1]).toBeCloseTo(40 / 255, 5);
+    expect(bars[2]).toBeCloseTo(80 / 255, 5);
+    expect(bars[3]).toBeCloseTo(160 / 255, 5);
+  });
+
+  it('upsamples when barCount > frequency.length (each source bin visited repeatedly)', () => {
+    // 2 bins, 4 bars. Each bar reads index floor((i/4) * 2) = floor(i/2).
+    const bars = frequencyToBars(new Uint8Array([64, 192]), 4);
+    expect(bars.length).toBe(4);
+    expect(bars[0]).toBeCloseTo(64 / 255, 5);
+    expect(bars[1]).toBeCloseTo(64 / 255, 5);
+    expect(bars[2]).toBeCloseTo(192 / 255, 5);
+    expect(bars[3]).toBeCloseTo(192 / 255, 5);
   });
 });
 

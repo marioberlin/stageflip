@@ -76,6 +76,23 @@ describe('VoiceoverNarration component (T-131e.2)', () => {
     expect(bars.length).toBe(40);
   });
 
+  it('snaps progress to 100% when the playhead is past the last segment end', () => {
+    // Explicit short segments ending at 500ms; composition duration much
+    // larger so frame=180 is well past the last segment's endMs.
+    renderAt(
+      180,
+      {
+        segments: [
+          { text: 'First.', startMs: 0, endMs: 250 },
+          { text: 'Second.', startMs: 250, endMs: 500 },
+        ],
+      },
+      300,
+    );
+    const progress = screen.getByTestId('voiceover-narration-progress-fill') as HTMLElement;
+    expect(Number.parseFloat(progress.style.width)).toBe(100);
+  });
+
   it('progress bar width grows as composition advances', () => {
     renderAt(0, { text: 'First. Second.' }, 60);
     const progress0 = screen.getByTestId('voiceover-narration-progress-fill') as HTMLElement;

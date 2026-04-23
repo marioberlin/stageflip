@@ -81,7 +81,14 @@ export function VoiceoverNarration({
       ? (currentTimeMs - activeSegment.startMs) / (activeSegment.endMs - activeSegment.startMs)
       : 0;
   const clampedProgress = Math.max(0, Math.min(1, segmentProgress));
-  const progressRatio = ((safeIndex + clampedProgress) / Math.max(1, segments.length)) * 100;
+  // Past the last segment's endMs, findIndex returns -1 and safeIndex
+  // collapses to 0 — which would make the progress bar read near-zero
+  // at the composition tail. Detect that explicitly and snap to 100%.
+  const lastEndMs = segments[segments.length - 1]?.endMs ?? 0;
+  const past = activeIndex === -1 && segments.length > 0 && currentTimeMs >= lastEndMs;
+  const progressRatio = past
+    ? 100
+    : ((safeIndex + clampedProgress) / Math.max(1, segments.length)) * 100;
 
   const fadeIn = interpolate(frame, [0, 15], [0, 1], {
     extrapolateLeft: 'clamp',

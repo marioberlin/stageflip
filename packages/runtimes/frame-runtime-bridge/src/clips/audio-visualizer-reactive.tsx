@@ -22,7 +22,6 @@ import {
   useAudioVisualizer,
   useCurrentFrame,
   useMediaSync,
-  useVideoConfig,
 } from '@stageflip/frame-runtime';
 import type { ClipDefinition } from '@stageflip/runtimes-contract';
 import { type ReactElement, useRef } from 'react';
@@ -63,7 +62,6 @@ export function AudioVisualizerReactive({
   titleColor = '#ebf1fa',
 }: AudioVisualizerReactiveProps): ReactElement {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
 
   const audioRef = useRef<HTMLAudioElement>(null);
   useMediaSync(audioRef);
@@ -84,11 +82,6 @@ export function AudioVisualizerReactive({
     background,
     titleColor,
   };
-
-  // Silence warnings about unused fps in strict builds while keeping the
-  // import stable — the bake-path orchestrator reads fps off videoConfig
-  // via its own code path.
-  void fps;
 
   return (
     <div
@@ -118,8 +111,11 @@ export function AudioVisualizerReactive({
  * Map a Uint8Array of FFT magnitudes (0..255) onto `barCount` normalised
  * bar heights in [0.02, 1]. Empty / all-zero input (hook mount before
  * first analyser tick) gets a flat 0.1 baseline so bars stay visible.
+ *
+ * Exported for direct unit-test coverage — the clip surface does not
+ * call it externally.
  */
-function frequencyToBars(frequency: Uint8Array, barCount: number): number[] {
+export function frequencyToBars(frequency: Uint8Array, barCount: number): number[] {
   if (frequency.length === 0) return new Array(barCount).fill(0.1);
   let hasSignal = false;
   for (let i = 0; i < frequency.length; i++) {
