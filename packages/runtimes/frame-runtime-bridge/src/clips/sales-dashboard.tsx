@@ -29,6 +29,7 @@ import {
   DASHBOARD_MUTED_COLOR,
   DASHBOARD_SUBDUED_COLOR,
   DASHBOARD_WARN_COLOR,
+  currencyPrefix,
 } from './_dashboard-utils.js';
 
 const dealStatusSchema = z.enum(['on_track', 'at_risk', 'slipping', 'won', 'lost']);
@@ -131,12 +132,6 @@ const STATUS_BADGES: Record<SalesDealStatus, { bg: string; text: string; label: 
   won: { bg: 'rgba(52,211,153,0.15)', text: DASHBOARD_GOOD_COLOR, label: 'Won' },
   lost: { bg: 'rgba(251,113,133,0.15)', text: DASHBOARD_BAD_COLOR, label: 'Lost' },
 };
-
-function currencyPrefix(currency: string): string {
-  if (currency === 'EUR') return '\u20AC';
-  if (currency === 'USD') return '$';
-  return '';
-}
 
 function fmtCurrency(value: number, currency: string): string {
   return `${currencyPrefix(currency)}${(value / 1000).toFixed(0)}K`;

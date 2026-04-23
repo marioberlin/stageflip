@@ -225,10 +225,7 @@ describe('FinancialStatement component (T-131f.3)', () => {
     }
   });
 
-  it('renders the rail when commentaryMode=inline (current behaviour matches rail)', () => {
-    // The schema advertises 'inline' alongside 'rail' but the port has
-    // no distinct inline-within-row layout; both modes render the side
-    // rail. This mirrors reference behaviour — test pins the contract.
+  it('renders an inline comments strip (distinct from the rail) when commentaryMode=inline', () => {
     renderAt(30, {
       statementType: 'pnl',
       periods: PERIODS,
@@ -236,7 +233,22 @@ describe('FinancialStatement component (T-131f.3)', () => {
       comments: COMMENTS,
       settings: { commentaryMode: 'inline' },
     });
+    // Inline carries its own data-testid so snapshots + downstream
+    // tooling can distinguish the two layouts.
+    expect(screen.getByTestId('financial-statement-comments-inline')).toBeDefined();
+    expect(screen.queryByTestId('financial-statement-comments-rail')).toBeNull();
+  });
+
+  it('renders the rail (not the inline strip) when commentaryMode=rail', () => {
+    renderAt(30, {
+      statementType: 'pnl',
+      periods: PERIODS,
+      rows: ROWS,
+      comments: COMMENTS,
+      settings: { commentaryMode: 'rail' },
+    });
     expect(screen.getByTestId('financial-statement-comments-rail')).toBeDefined();
+    expect(screen.queryByTestId('financial-statement-comments-inline')).toBeNull();
   });
 
   it('omits the comments rail when commentaryMode=none', () => {
