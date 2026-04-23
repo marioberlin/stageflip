@@ -12,9 +12,9 @@
 
 'use client';
 
-import { t } from '@stageflip/editor-shell';
+import { type Shortcut, t, useRegisterShortcuts } from '@stageflip/editor-shell';
 import type { CSSProperties, ReactElement, ReactNode } from 'react';
-import { useEffect, useRef } from 'react';
+import { useMemo, useRef } from 'react';
 
 export interface ModalShellProps {
   /** When false, the modal is not mounted. */
@@ -41,17 +41,34 @@ export function ModalShell({
 }: ModalShellProps): ReactElement | null {
   const panelRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+  // Register Escape with the shortcut registry (CLAUDE.md §10) only
+  // while the modal is open. The registry is a single window-keydown
+  // owner; stacking two modals registers two Escape shortcuts and the
+  // most-recently-registered wins (registration order is a FIFO
+  // tiebreaker in the registry — the newer handler appears later in
+  // the iteration list so the first matching is the outer one). Nested
+  // modals are rare in this app, so relying on registration order is
+  // safe; if nesting grows, the registry's `when` predicate is the
+  // knob to make only the topmost fire.
+  const shortcuts = useMemo<Shortcut[]>(
+    () =>
+      open
+        ? [
+            {
+              id: `modal.escape.${testIdSuffix}`,
+              combo: 'Escape',
+              description: 'Close modal',
+              category: 'navigation',
+              handler: () => {
+                onClose();
+                return undefined;
+              },
+            },
+          ]
+        : [],
+    [open, testIdSuffix, onClose],
+  );
+  useRegisterShortcuts(shortcuts);
 
   if (!open) return null;
   const handleBackdropKey = (event: React.KeyboardEvent<HTMLDivElement>): void => {
