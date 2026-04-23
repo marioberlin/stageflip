@@ -8,6 +8,7 @@
 //   stageflip-parity --candidates <dir> [fixture.json]
 //   stageflip-parity --fixtures-dir <dir>
 //   stageflip-parity prime --reference-fixtures --out <dir>  (T-119b subcommand)
+//   stageflip-parity report [fixture.json ...] --out <file>  (T-137 subcommand)
 //   stageflip-parity --help
 //
 // Exit codes:
@@ -19,6 +20,7 @@ import { readdir } from 'node:fs/promises';
 import { extname, join, resolve } from 'node:path';
 
 import { type PrimeRunDeps, runPrime } from './prime-cli.js';
+import { runReport } from './report-cli.js';
 import { type FixtureScoreOutcome, outcomeIsFailure, scoreFixture } from './score-fixture.js';
 
 export interface CliOptions {
@@ -38,6 +40,7 @@ USAGE
   stageflip-parity --fixtures-dir <dir>
   stageflip-parity --candidates <dir> [fixture.json]
   stageflip-parity prime --reference-fixtures --out <dir>  (T-119b)
+  stageflip-parity report [fixture.json ...] --out <file>  (T-137)
   stageflip-parity --help
 
 OPTIONS (score mode)
@@ -49,6 +52,9 @@ OPTIONS (score mode)
 SUBCOMMANDS
   prime                  Render fixtures to golden PNGs. Run
                          \`stageflip-parity prime --help\` for usage.
+  report                 Build an HTML visual-diff viewer (side-by-side /
+                         slider / overlay-difference). Run
+                         \`stageflip-parity report --help\` for usage.
 
 EXIT CODES
   0  every scored fixture passed; skipped fixtures don't fail the run.
@@ -148,6 +154,9 @@ export async function runCli(
       return 2;
     }
     return runPrime(argv.slice(1), primeDeps, io);
+  }
+  if (argv[0] === 'report') {
+    return runReport(argv.slice(1), io);
   }
   let opts: CliOptions;
   try {

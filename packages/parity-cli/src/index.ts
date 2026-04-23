@@ -48,3 +48,22 @@ export {
   createPuppeteerPrimer,
   type PuppeteerPrimerOptions,
 } from './puppeteer-primer.js';
+
+// T-137 — visual-diff viewer (HTML artifact).
+export {
+  renderViewerHtml,
+  type ViewerFixture,
+  type ViewerFrame,
+  type ViewerHtmlInput,
+} from './viewer-html.js';
+export {
+  buildViewerInput,
+  type BuildViewerInputOptions,
+  type PngReader,
+} from './viewer.js';
+export {
+  REPORT_HELP_TEXT,
+  parseReportArgs,
+  runReport,
+  type ReportCliOptions,
+} from './report-cli.js';
