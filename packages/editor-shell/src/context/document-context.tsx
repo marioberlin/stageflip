@@ -158,6 +158,19 @@ export function useEditorShellAtomValue<T>(atom: Atom<T>): T {
 }
 
 /**
+ * Thin re-export of jotai's `useSetAtom` scoped to the editor-shell
+ * store. Consumers call this to get a stable setter for any writable
+ * atom owned by the provider (asset registry, selection sets, etc.)
+ * without importing jotai directly — keeps the shell's dependency
+ * graph the single entry point for state plumbing (T-139b).
+ */
+export function useEditorShellSetAtom<Value, Args extends unknown[], Result>(
+  atom: import('jotai').WritableAtom<Value, Args, Result>,
+): (...args: Args) => Result {
+  return useSetAtom(atom);
+}
+
+/**
  * The primary facade hook. Returns the current document state and
  * stable mutator callbacks. Must be used inside `<DocumentProvider>`.
  */

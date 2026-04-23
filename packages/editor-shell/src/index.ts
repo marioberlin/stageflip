@@ -48,6 +48,7 @@ export {
   type DocumentProviderProps,
   useDocument,
   useEditorShellAtomValue,
+  useEditorShellSetAtom,
 } from './context/document-context';
 
 // T-121c — composition, persistence, i18n
@@ -92,3 +93,14 @@ export type {
   ContextMenuSubmenu,
   OpenContextMenuState,
 } from './context-menu';
+
+// T-139b — asset registry (image / video / audio) shared across modes
+export {
+  addAssetAtom,
+  assetsAtom,
+  removeAssetAtom,
+  replaceAssetsAtom,
+  selectedAssetAtom,
+  selectedAssetIdAtom,
+} from './assets';
+export type { Asset, AssetKind } from './assets';

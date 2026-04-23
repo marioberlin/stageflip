@@ -282,6 +282,68 @@ const EN_CATALOG = new Map<string, string>([
   ['toolbar.contextual.type.embed', 'Embed'],
   ['toolbar.contextual.type.code', 'Code'],
   ['toolbar.contextual.type.audio', 'Audio'],
+
+  // Asset browser (T-139b)
+  ['assetBrowser.title', 'Assets'],
+  ['assetBrowser.ariaLabel', 'Asset browser'],
+  ['assetBrowser.empty', 'No assets yet — upload an image to get started.'],
+  ['assetBrowser.uploadButton', 'Upload'],
+  ['assetBrowser.dragHint', 'Drag onto the canvas'],
+  ['assetBrowser.filter.all', 'All'],
+  ['assetBrowser.filter.image', 'Images'],
+  ['assetBrowser.filter.video', 'Videos'],
+  ['assetBrowser.filter.audio', 'Audio'],
+  ['assetBrowser.contextMenu.insert', 'Insert on slide'],
+  ['assetBrowser.contextMenu.copyRef', 'Copy asset ref'],
+  ['assetBrowser.contextMenu.rename', 'Rename'],
+  ['assetBrowser.contextMenu.remove', 'Remove from library'],
+
+  // Import dialogs (T-139b)
+  ['import.google.title', 'Import Google Slides'],
+  ['import.google.tokenLabel', 'OAuth access token'],
+  ['import.google.tokenPlaceholder', 'ya29.…'],
+  ['import.google.deckIdLabel', 'Slides deck ID'],
+  ['import.google.deckIdPlaceholder', '1A2b3C4dEfGhIjK…'],
+  ['import.google.submit', 'Import deck'],
+  ['import.google.pending', 'Fetching deck…'],
+  [
+    'import.google.featureFlag',
+    'OAuth backend is not wired yet — import runs in legacy-bridge mode.',
+  ],
+  ['import.google.error.missingFields', 'Both token and deck ID are required.'],
+  ['import.google.error.generic', 'Import failed. Check the token and deck ID.'],
+
+  ['import.pptx.title', 'Import PowerPoint'],
+  ['import.pptx.pickLabel', 'Choose a .pptx file'],
+  ['import.pptx.submit', 'Import'],
+  [
+    'import.pptx.stub',
+    'Full PPTX parse ships in a follow-up task. The picker validates the file but no slides are imported.',
+  ],
+  ['import.pptx.error.invalidType', 'Only .pptx files are supported.'],
+
+  ['import.image.title', 'Upload image'],
+  ['import.image.pickLabel', 'Choose an image file'],
+  ['import.image.submit', 'Upload'],
+  ['import.image.error.invalidType', 'Only image files are supported.'],
+  ['import.image.error.tooLarge', 'File exceeds the 20 MB upload limit.'],
+
+  // Export dialog (T-139b)
+  ['export.dialog.title', 'Export deck'],
+  ['export.dialog.formatLabel', 'Format'],
+  ['export.dialog.format.png', 'PNG frames'],
+  ['export.dialog.format.mp4', 'MP4 video'],
+  ['export.dialog.resolutionLabel', 'Resolution'],
+  ['export.dialog.resolution.1080', '1080p (1920×1080)'],
+  ['export.dialog.resolution.720', '720p (1280×720)'],
+  ['export.dialog.resolution.4k', '4K (3840×2160)'],
+  ['export.dialog.rangeLabel', 'Range'],
+  ['export.dialog.range.all', 'Full deck'],
+  ['export.dialog.range.current', 'Current slide'],
+  ['export.dialog.submit', 'Start export'],
+  ['export.dialog.pending', 'Exporting…'],
+  ['export.dialog.error.noDocument', 'Open a deck before exporting.'],
+  ['export.dialog.success', 'Export queued.'],
 ]);
 
 let activeLocale: Locale = 'en';
