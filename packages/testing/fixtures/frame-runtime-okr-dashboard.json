@@ -1,0 +1,54 @@
+{
+  "name": "frame-runtime-okr-dashboard",
+  "runtime": "frame-runtime",
+  "kind": "okr-dashboard",
+  "description": "OKR dashboard composite (T-131f.2b). Flat-prop interface — objectives[] with nested keyResults[] drive the KPI strip + objective-card grid with circular SVG progress rings. Card sub-component is inlined (no separate `@slidemotion/schema` domain types).",
+  "composition": { "width": 1920, "height": 1080, "fps": 30, "durationInFrames": 60 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 60,
+    "props": {
+      "title": "Q4 OKRs",
+      "period": "Q4 2025",
+      "okrType": "dashboard",
+      "density": "standard",
+      "objectives": [
+        {
+          "id": "growth",
+          "title": "Accelerate user growth",
+          "owner": "Ada",
+          "status": "on_track",
+          "progress": 68,
+          "team": "growth",
+          "keyResults": [
+            { "id": "k1", "title": "DAU to 1M", "current": 820000, "target": 1000000, "status": "on_track", "trend": "up" },
+            { "id": "k2", "title": "Churn below 2%", "current": 2.3, "target": 2, "unit": "%", "status": "at_risk", "trend": "flat" }
+          ]
+        },
+        {
+          "id": "perf",
+          "title": "Improve performance",
+          "owner": "Ben",
+          "status": "at_risk",
+          "progress": 42,
+          "team": "platform",
+          "keyResults": [
+            { "id": "k3", "title": "P99 under 250ms", "current": 320, "target": 250, "unit": "ms", "status": "behind", "trend": "down" }
+          ]
+        },
+        {
+          "id": "brand",
+          "title": "Refresh brand identity",
+          "owner": "Cam",
+          "status": "behind",
+          "progress": 18,
+          "team": "marketing",
+          "keyResults": []
+        }
+      ]
+    }
+  },
+  "referenceFrames": [0, 30, 59],
+  "thresholds": { "minPsnr": 30, "minSsim": 0.92, "maxFailingFrames": 1 },
+  "goldens": { "dir": "goldens/frame-runtime-okr-dashboard" }
+}
