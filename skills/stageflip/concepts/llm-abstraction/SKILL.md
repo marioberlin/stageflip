@@ -82,6 +82,14 @@ type LLMContentBlock =
 An assistant message is always returned as `LLMContentBlock[]`, even for
 plain text. Consumers switch on `type` rather than sniffing shape.
 
+**Tool name resolution across messages.** Anthropic and OpenAI pair
+`tool_result` to the prior `tool_use` via the id alone. Gemini requires
+`functionResponse.name` to equal the original tool name. The Google
+provider walks every prior `tool_use` in the request to build an
+`id → name` map, then uses the map when translating `tool_result` blocks.
+Consumers therefore only need to carry `tool_use_id` (the neutral
+contract); the provider handles the name lookup.
+
 ## Error taxonomy
 
 Every provider wraps SDK errors into `LLMError`:

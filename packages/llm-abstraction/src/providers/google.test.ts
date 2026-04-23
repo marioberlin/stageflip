@@ -133,11 +133,11 @@ describe('createGoogleProvider.complete', () => {
       messages: [
         {
           role: 'assistant',
-          content: [{ type: 'tool_use', id: 'toolu_1', name: 'x', input: { a: 1 } }],
+          content: [{ type: 'tool_use', id: 'call_0', name: 'add_slide', input: { a: 1 } }],
         },
         {
           role: 'tool',
-          content: [{ type: 'tool_result', tool_use_id: 'x', content: 'ok' }],
+          content: [{ type: 'tool_result', tool_use_id: 'call_0', content: 'ok' }],
         },
       ],
     });
@@ -146,14 +146,50 @@ describe('createGoogleProvider.complete', () => {
     expect((sent as { contents: unknown }).contents).toEqual([
       {
         role: 'model',
-        parts: [{ functionCall: { name: 'x', args: { a: 1 } } }],
+        parts: [{ functionCall: { name: 'add_slide', args: { a: 1 } } }],
       },
       {
         role: 'user',
         parts: [
           {
             functionResponse: {
-              name: 'x',
+              name: 'add_slide',
+              response: { content: 'ok', is_error: false },
+            },
+          },
+        ],
+      },
+    ]);
+  });
+
+  it('falls back to tool_use_id when no earlier tool_use binds the id', async () => {
+    const generate = vi.fn(async () => ({
+      response: {
+        candidates: [{ finishReason: 'STOP', content: { parts: [] } }],
+      },
+    }));
+    const { client } = fakeClient({ generateContent: generate });
+
+    const provider = createGoogleProvider({ client });
+    await provider.complete({
+      model: 'gemini-1.5-pro',
+      max_tokens: 100,
+      messages: [
+        {
+          role: 'tool',
+          content: [{ type: 'tool_result', tool_use_id: 'orphan', content: 'ok' }],
+        },
+      ],
+    });
+
+    const [sent] = generate.mock.calls[0] ?? [];
+    expect((sent as { contents: unknown }).contents).toEqual([
+      {
+        role: 'user',
+        parts: [
+          {
+            functionResponse: {
+              name: 'orphan',
               response: { content: 'ok', is_error: false },
             },
           },

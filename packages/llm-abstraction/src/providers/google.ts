@@ -56,7 +56,7 @@ export function createGoogleProvider(options: GoogleProviderOptions = {}): LLMPr
         const model = client.getGenerativeModel(buildModelConfig(request));
         const { response } = await model.generateContent(
           {
-            contents: request.messages.map(translateMessage),
+            contents: translateMessages(request.messages),
             generationConfig: buildGenerationConfig(request),
           },
           callOptions?.signal ? { signal: callOptions.signal } : {},
@@ -83,7 +83,7 @@ async function* streamEvents(
   try {
     const result = await model.generateContentStream(
       {
-        contents: request.messages.map(translateMessage),
+        contents: translateMessages(request.messages),
         generationConfig: buildGenerationConfig(request),
       },
       callOptions?.signal ? { signal: callOptions.signal } : {},
@@ -194,18 +194,39 @@ function buildGenerationConfig(request: LLMRequest): Record<string, unknown> {
   return config;
 }
 
-function translateMessage(message: LLMMessage): GeminiContent {
+/**
+ * Walk messages in order so tool_result blocks can resolve their matching
+ * tool name from an earlier tool_use block in the same request. Gemini's
+ * `functionResponse.name` must equal the original `functionCall.name` (the
+ * tool name, not an id) — the neutral interface carries `tool_use_id` only,
+ * so we track id -> name locally.
+ */
+function translateMessages(messages: LLMMessage[]): GeminiContent[] {
+  const toolNameById = new Map<string, string>();
+  for (const message of messages) {
+    if (typeof message.content === 'string') continue;
+    for (const block of message.content) {
+      if (block.type === 'tool_use') toolNameById.set(block.id, block.name);
+    }
+  }
+  return messages.map((message) => translateMessage(message, toolNameById));
+}
+
+function translateMessage(message: LLMMessage, toolNameById: Map<string, string>): GeminiContent {
   const role = message.role === 'assistant' ? 'model' : 'user';
   if (typeof message.content === 'string') {
     return { role, parts: [{ text: message.content }] };
   }
   return {
     role,
-    parts: message.content.map(translateContentBlock),
+    parts: message.content.map((block) => translateContentBlock(block, toolNameById)),
   };
 }
 
-function translateContentBlock(block: LLMContentBlock): GeminiPart {
+function translateContentBlock(
+  block: LLMContentBlock,
+  toolNameById: Map<string, string>,
+): GeminiPart {
   switch (block.type) {
     case 'text':
       return { text: block.text };
@@ -219,7 +240,7 @@ function translateContentBlock(block: LLMContentBlock): GeminiPart {
     case 'tool_result':
       return {
         functionResponse: {
-          name: block.tool_use_id,
+          name: toolNameById.get(block.tool_use_id) ?? block.tool_use_id,
           response: { content: block.content, is_error: block.is_error ?? false },
         },
       };
