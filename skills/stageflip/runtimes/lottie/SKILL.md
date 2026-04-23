@@ -78,6 +78,19 @@ Canonical demo (kind `lottie-logo`). Rounded pink square rotating
 readable, scanned by `check-determinism`. Seed for T-067 parity fixture
 (`lottie-lottie-logo`).
 
+### `lottiePlayer` (T-131d.3)
+
+Prop-driven variant (kind `lottie-player`). Accepts `animationData`
+(object or JSON string) at **render time** — hand-rolled
+`ClipDefinition` rather than going through `defineLottieClip` (which
+bakes data at define time). Reuses `LottieClipHost` so the
+determinism posture is identical. URL fetching is intentionally
+**not** supported inside the clip — the reference clip's `fetch()`
+path violates the determinism scope; deck authors resolve URLs
+outside and hand the decoded JSON in. When `animationData` is
+absent, renders an animated placeholder (three concentric pulsing
+rings derived purely from the clip-local frame).
+
 ## Determinism contract
 
 `goToAndStop(ms, false)` is time-based (milliseconds) — seek is
@@ -112,6 +125,8 @@ module-init CanvasFeatureDetect requires.
 | `packages/runtimes/lottie/src/host.tsx` | autoplay:false + goToAndStop(ms) host |
 | `packages/runtimes/lottie/src/types.ts` | `LottiePlayer` / `LottieAnimationItem` narrow types |
 | `packages/runtimes/lottie/src/clips/lottie-logo.ts` | Canonical demo clip |
+| `packages/runtimes/lottie/src/clips/lottie-player.tsx` | T-131d.3 — prop-driven Lottie JSON player with animated placeholder fallback |
+| `packages/runtimes/lottie/src/clips/lottie-player.test.tsx` | T-131d.3 — schema, placeholder rings, and fake-player host lifecycle |
 | `packages/runtimes/lottie/src/index.test.tsx` | Runtime shape, window gating, lifecycle probes via stub |
 
 ## Related

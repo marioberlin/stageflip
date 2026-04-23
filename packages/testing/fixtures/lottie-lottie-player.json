@@ -1,0 +1,21 @@
+{
+  "name": "lottie-lottie-player",
+  "runtime": "lottie",
+  "kind": "lottie-player",
+  "description": "Prop-driven Lottie JSON player (T-131d.3). Inline animationData only — URL fetching lives outside the clip to keep the determinism scope clean. Goldens primed at operator time against a real Lottie JSON payload.",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 90 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 90,
+    "props": {
+      "title": "Lottie"
+    }
+  },
+  "referenceFrames": [0, 45, 89],
+  "thresholds": {
+    "minPsnr": 30,
+    "minSsim": 0.92,
+    "maxFailingFrames": 1
+  },
+  "goldens": { "dir": "goldens/lottie-lottie-player" }
+}

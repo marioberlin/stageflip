@@ -22,7 +22,8 @@
   },
   "dependencies": {
     "@stageflip/runtimes-contract": "workspace:*",
-    "lottie-web": "5.13.0"
+    "lottie-web": "5.13.0",
+    "zod": "3.25.76"
   },
   "peerDependencies": {
     "react": "^19.0.0"

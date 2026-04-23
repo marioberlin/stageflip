@@ -104,3 +104,10 @@ export function createLottieRuntime(clips: Iterable<ClipDefinition<unknown>> = [
 }
 
 export { lottieLogo } from './clips/lottie-logo.js';
+export {
+  LottiePlayer as LottiePlayerComponent,
+  type LottiePlayerProps,
+  lottiePlayer,
+  lottiePlayerPropsSchema,
+} from './clips/lottie-player.js';
+export { LottieClipHost } from './host.js';
