@@ -127,9 +127,7 @@ export function defineShaderClip<P>(input: DefineShaderClipInput<P>): ClipDefini
       };
       return createElement(ShaderClipHost, hostProps);
     },
-    ...(input.fontRequirements !== undefined
-      ? { fontRequirements: input.fontRequirements }
-      : {}),
+    ...(input.fontRequirements !== undefined ? { fontRequirements: input.fontRequirements } : {}),
     ...(input.propsSchema !== undefined ? { propsSchema: input.propsSchema } : {}),
     ...(input.themeSlots !== undefined ? { themeSlots: input.themeSlots } : {}),
   };

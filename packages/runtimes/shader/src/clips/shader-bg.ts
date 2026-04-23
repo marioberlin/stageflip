@@ -37,6 +37,17 @@ export type ShaderBgProps = z.infer<typeof shaderBgPropsSchema>;
 
 const GLSL_IDENT_RE = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 
+/**
+ * GLSL reserves every `gl_`-prefixed identifier for built-ins
+ * (`gl_FragColor`, `gl_Position`, `gl_PointCoord`, …) — re-declaring
+ * one as a user uniform would compile-fail and silent-bail the canvas.
+ * Filter them out proactively so a typo in a deck prop doesn't blank
+ * the slide.
+ */
+function isValidUserUniformName(name: string): boolean {
+  return GLSL_IDENT_RE.test(name) && !name.startsWith('gl_');
+}
+
 const FRAGMENT_HEADER = [
   'precision mediump float;',
   'varying vec2 v_uv;',
@@ -53,7 +64,7 @@ const FRAGMENT_HEADER = [
 export function composeShaderBgFragment(props: ShaderBgProps): string {
   const userUniforms = props.uniforms ?? {};
   const userUniformDecls = Object.keys(userUniforms)
-    .filter((name) => GLSL_IDENT_RE.test(name))
+    .filter(isValidUserUniformName)
     .sort()
     .map((name) => `uniform float ${name};`)
     .join('\n');
@@ -76,7 +87,7 @@ export function buildShaderBgUniforms(
     u_resolution: resolution,
   };
   for (const [name, value] of Object.entries(userUniforms)) {
-    if (!GLSL_IDENT_RE.test(name)) continue;
+    if (!isValidUserUniformName(name)) continue;
     out[name] = value;
   }
   return out;

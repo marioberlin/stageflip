@@ -110,7 +110,8 @@ registerRuntime(createShaderRuntime([flashThroughWhite, swirlVortex, glitch, rip
   top of the standard `u_time` / `u_resolution`. Render-time compile
   failure → blank canvas, no throw.
 
-Seeds for three T-067 parity fixtures.
+Seeds for four parity fixtures (three T-067 authored shaders + the
+T-131d.2 `shader-bg` escape hatch).
 
 ## Explicit-precision rule
 
@@ -152,7 +153,9 @@ as string literals in consumer bundles. No `size-limit` entry yet.
 | `packages/runtimes/shader/src/validate.ts` | `validateFragmentShader` (precision rule) |
 | `packages/runtimes/shader/src/host.tsx` | Canvas + WebGL compile / link / draw |
 | `packages/runtimes/shader/src/types.ts` | `GlContextFactory`, `UniformsForFrame`, `UniformValue`, default factory |
-| `packages/runtimes/shader/src/clips/{flash-through-white,swirl-vortex,glitch}.ts` | Three demo shaders (scanned) |
+| `packages/runtimes/shader/src/clips/{flash-through-white,swirl-vortex,glitch}.ts` | Three authored demo shaders (scanned) |
+| `packages/runtimes/shader/src/clips/shader-bg.ts` | T-131d.2 user-shader escape hatch — prop-driven fragment body + scalar uniforms |
+| `packages/runtimes/shader/src/clips/shader-bg.test.ts` | T-131d.2 — composition, uniforms, and schema coverage |
 | `packages/runtimes/shader/src/index.test.tsx` | Shape, gating, validation, GL lifecycle via stub |
 
 ## Related

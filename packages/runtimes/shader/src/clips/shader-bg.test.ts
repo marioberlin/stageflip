@@ -76,6 +76,16 @@ describe('composeShaderBgFragment', () => {
     expect(fragment).not.toMatch(/uniform float bad-name/);
     expect(fragment).not.toMatch(/uniform float bad name/);
   });
+
+  it('drops GLSL-reserved `gl_`-prefixed identifiers (would shadow built-ins)', () => {
+    const fragment = composeShaderBgFragment({
+      glsl: 'void main() {}',
+      uniforms: { gl_FragColor: 1, gl_Position: 2, myOwn: 3 },
+    });
+    expect(fragment).toContain('uniform float myOwn;');
+    expect(fragment).not.toMatch(/uniform float gl_FragColor/);
+    expect(fragment).not.toMatch(/uniform float gl_Position/);
+  });
 });
 
 describe('buildShaderBgUniforms', () => {
