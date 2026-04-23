@@ -3,7 +3,7 @@ title: Workflow — Parity Testing
 id: skills/stageflip/workflows/parity-testing
 tier: workflow
 status: substantive
-last_updated: 2026-04-21
+last_updated: 2026-04-23
 owner_task: T-107
 related:
   - skills/stageflip/concepts/determinism
@@ -210,10 +210,67 @@ pipeline is stable, commit the first set of goldens and run
 that change rendering code must keep those goldens green or bump
 their thresholds in the manifest.
 
-## What comes later
+## Visual-diff viewer (T-137)
 
-- **T-105** — visual-diff viewer (side-by-side / slider / overlay)
-  consuming the `ScoreReport`.
+`stageflip-parity report` renders a self-contained HTML artifact from
+the same fixture set `stageflip-parity` (score mode) consumes. Every
+scored frame shows three synchronised view modes:
+
+1. **Side-by-side** — golden ‖ candidate next to each other.
+2. **Slider** — candidate layered over golden with a draggable
+   `<input type="range">` clipping the candidate so the golden is
+   revealed underneath.
+3. **Overlay · difference** — candidate layered over golden with CSS
+   `mix-blend-mode: difference` + a black background; pure black
+   pixels mean identical channels.
+
+Per-frame PSNR / SSIM readouts and failure reasons are rendered
+alongside each frame panel. All PNG bytes are base64-embedded into
+the output HTML — the file is portable (emailable, PR-attachable,
+file:// viewable without a server).
+
+```sh
+# Build a report for the whole fixture set:
+stageflip-parity report --fixtures-dir packages/testing/fixtures \
+  --out /tmp/parity-report.html
+
+# Build a report for a single fixture:
+stageflip-parity report packages/testing/fixtures/css-solid-background.json \
+  --out /tmp/report.html
+
+# Override the title shown in the header:
+stageflip-parity report --fixtures-dir packages/testing/fixtures \
+  --title "Release candidate RC-42" --out report.html
+```
+
+**Exit codes**: `0` on successful HTML emission (even when a scored
+fixture FAILs its thresholds — the viewer is a tool for diagnosing
+failures, not a gate). `2` on usage errors.
+
+**Skip fixtures** (`no-goldens` / `no-candidates` / `missing-frames`)
+render as banner-only sections; the viewer is useful pre-goldens to
+confirm a fixture is wired, not just post-goldens to triage drift.
+
+### Module surface (T-137)
+
+| Export | From | What it does |
+|---|---|---|
+| `renderViewerHtml(input)` | `@stageflip/parity-cli` | Pure HTML string generator. All PNGs must already be base64-embedded in `input.fixtures[i].frames[j].goldenUri` / `.candidateUri`. |
+| `buildViewerInput(outcomes, pngReader, options)` | `@stageflip/parity-cli` | Orchestrator — reads PNG bytes via an injectable `PngReader` port and produces a `ViewerHtmlInput`. Missing assets yield `null` URIs + `missingReason` passthrough. |
+| `runReport(argv, io)` | `@stageflip/parity-cli` | CLI subcommand entry. Scores fixtures, reads PNGs, writes HTML. |
+| `parseReportArgs(argv)` | `@stageflip/parity-cli` | Pure argv parser — `--out` / `--fixtures-dir` / `--candidates` / `--title` / `--help`. |
+
+### What's NOT in the viewer
+
+- **Pixel-level SSIM / PSNR heatmaps.** Mean per-frame scores ship;
+  block-level SSIM maps need `@stageflip/parity` to expose its
+  internal windowed SSIM matrix (not currently public). Tracked as a
+  follow-up.
+- **Watch mode / live reload.** The artifact is one-shot; re-run
+  `stageflip-parity report` after re-rendering candidates.
+- **Region-scoped rendering.** The viewer always displays the full
+  frame even when `thresholds.region` is set. Adding a region-overlay
+  box is a cheap follow-up if it becomes necessary.
 
 ## Workflow guidance (T-107)
 
@@ -248,8 +305,9 @@ When CI flags a fixture's SSIM below threshold:
    `thresholds.region` is set, the mismatch is inside that
    rectangle (text-heavy area). If unset, it's anywhere in the frame.
 2. **Open side-by-side** goldens vs candidates for the failing
-   frames. T-105's visual diff viewer will automate this once it
-   ships; today, use any side-by-side image tool.
+   frames via `stageflip-parity report --out report.html` (T-137).
+   Open the HTML file in any browser and use the slider / overlay-
+   difference views to localise pixel drift.
 3. **Check which frames failed** via `ScoreReport.frames[*]`. If
    only one frame failed while the rest passed, the drift is
    temporally localised — likely an animation easing, frame

@@ -252,6 +252,20 @@ describe('formatOutcome', () => {
   });
 });
 
+describe('runCli — report subcommand dispatch (T-137)', () => {
+  it("forwards argv[1..] to runReport when argv[0] === 'report'", async () => {
+    // `report --help` is the cheapest end-to-end dispatch check; it
+    // returns 0 without touching the filesystem and prints the report
+    // subcommand's own HELP_TEXT, which differs from the score
+    // subcommand's.
+    const io = recorder();
+    const exit = await runCli(['report', '--help'], io);
+    expect(exit).toBe(0);
+    expect(io.stdoutLines.join('\n')).toContain('stageflip-parity report');
+    expect(io.stdoutLines.join('\n')).toContain('visual-diff viewer');
+  });
+});
+
 describe('formatSummary', () => {
   it('counts scored PASS + FAIL + skipped', () => {
     const line = formatSummary([
