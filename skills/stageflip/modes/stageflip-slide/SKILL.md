@@ -3,7 +3,7 @@ title: StageFlip.Slide Mode
 id: skills/stageflip/modes/stageflip-slide
 tier: mode
 status: substantive
-last_updated: 2026-04-22
+last_updated: 2026-04-23
 owner_task: T-135
 related:
   - skills/stageflip/runtimes/contract/SKILL.md
@@ -14,6 +14,7 @@ related:
   - skills/stageflip/workflows/parity-testing/SKILL.md
   - skills/stageflip/concepts/determinism/SKILL.md
   - skills/stageflip/concepts/loss-flags/SKILL.md
+  - skills/stageflip/concepts/editor-context-menu/SKILL.md
 ---
 
 # StageFlip.Slide Mode
@@ -164,6 +165,29 @@ undo stack.
 commands keyed on the current selection. `commands.ts` holds the pure
 command registry; Cmd/Ctrl-K surfaces the UI. Commands dispatch
 actions via the `useDocument()` mutators.
+
+### Persistent + contextual toolbars (T-139a)
+
+`apps/stageflip-slide/src/components/toolbar/`
+
+- `persistent-toolbar.tsx` — docked above `<SlideCanvas>`. Global
+  actions: new slide, undo / redo (disabled state follows the
+  `canUndoAtom` / `canRedoAtom` pair), zoom stepper + percent readout,
+  slide counter (N / total), and the present toggle.
+- `contextual-toolbar.tsx` — selection-driven floating toolbar that
+  mounts inside the canvas frame. Mirrors T-125a's PropertiesPanel
+  routing: text → bold / italic / underline + align + font-size
+  readout; shape → fill / stroke badges; image → crop / filter stubs.
+  Non-selection renders nothing. Accepts an optional `anchor` prop for
+  viewport-space positioning (selection overlay passes this when the
+  selection rect is known); falls back to inline flex layout without
+  an anchor.
+
+Right-click inside the canvas dispatches through the
+`<ContextMenuProvider>` framework (T-139a) — see
+`concepts/editor-context-menu/SKILL.md` for the registration pattern.
+T-139b's asset-browser + T-139c's find-replace are the first non-framework
+consumers.
 
 ### AiCopilot stub (T-128)
 
@@ -326,6 +350,7 @@ and is the formal ratification gate.
 | Adding… | Goes in |
 |---|---|
 | New Slide-editor panel | `apps/stageflip-slide/src/components/<panel>/` + i18n keys + tests. Register shortcuts via `useRegisterShortcuts`. |
+| New context-menu on a selector | Call `useRegisterContextMenu({ id, match, items })` from `@stageflip/editor-shell`. Labels are catalog keys; keybinds use the shortcut-registry combo grammar. See `concepts/editor-context-menu/SKILL.md`. |
 | New translated UI string | `packages/editor-shell/src/i18n/catalog.ts` + `t('key')` at the use site (never a bare string literal). |
 | New command-palette command | `apps/stageflip-slide/src/components/command-palette/commands.ts` — keep dispatch pure. |
 | New type-specific properties editor | `apps/stageflip-slide/src/components/properties/<type>-element-properties.tsx` + route from `selected-element-properties.tsx`. |

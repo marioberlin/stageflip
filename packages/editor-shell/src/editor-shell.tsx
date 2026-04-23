@@ -12,6 +12,10 @@
  * --------------
  *   ShortcutRegistryProvider   ← outer: shortcuts keep firing even if
  *                                 the document provider remounts
+ *     ContextMenuProvider      ← T-139a: right-click dispatch; sits
+ *                                 outside DocumentProvider so its open
+ *                                 state isn't cleared when the document
+ *                                 atom is replaced
  *       DocumentProvider       ← middle: owns doc, selection, undo
  *           AuthProvider       ← inner: user state; deliberately
  *                                 narrow so `useAuth()` stays cheap
@@ -32,6 +36,7 @@
 import type { Document } from '@stageflip/schema';
 import type React from 'react';
 import { useEffect, useMemo } from 'react';
+import { ContextMenuProvider } from './context-menu/context-menu-provider';
 import { AuthProvider } from './context/auth-context';
 import { DocumentProvider, useDocument } from './context/document-context';
 import { type Locale, setLocale } from './i18n/catalog';
@@ -61,12 +66,14 @@ export function EditorShell({
 
   return (
     <ShortcutRegistryProvider>
-      <DocumentProvider initialDocument={initialDocument}>
-        <AuthProvider>
-          <EditorShellEffects {...effectsProps} />
-          {children}
-        </AuthProvider>
-      </DocumentProvider>
+      <ContextMenuProvider>
+        <DocumentProvider initialDocument={initialDocument}>
+          <AuthProvider>
+            <EditorShellEffects {...effectsProps} />
+            {children}
+          </AuthProvider>
+        </DocumentProvider>
+      </ContextMenuProvider>
     </ShortcutRegistryProvider>
   );
 }

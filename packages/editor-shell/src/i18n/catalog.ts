@@ -246,6 +246,42 @@ const EN_CATALOG = new Map<string, string>([
   ['status.slides', 'slides'],
   ['status.saving', 'Saving…'],
   ['status.saved', 'Saved'],
+
+  // Persistent toolbar (T-139a)
+  ['toolbar.persistent.newSlide', 'New slide'],
+  ['toolbar.persistent.undo', 'Undo'],
+  ['toolbar.persistent.redo', 'Redo'],
+  ['toolbar.persistent.zoomIn', 'Zoom in'],
+  ['toolbar.persistent.zoomOut', 'Zoom out'],
+  ['toolbar.persistent.zoomLabel', 'Zoom'],
+  ['toolbar.persistent.present', 'Present'],
+  ['toolbar.persistent.slideCounter', 'Slide counter'],
+
+  // Contextual toolbar (T-139a)
+  ['toolbar.contextual.ariaLabel', 'Selection toolbar'],
+  ['toolbar.contextual.empty', 'Nothing selected'],
+  ['toolbar.contextual.text.bold', 'Bold'],
+  ['toolbar.contextual.text.italic', 'Italic'],
+  ['toolbar.contextual.text.underline', 'Underline'],
+  ['toolbar.contextual.text.alignLeft', 'Align left'],
+  ['toolbar.contextual.text.alignCenter', 'Align center'],
+  ['toolbar.contextual.text.alignRight', 'Align right'],
+  ['toolbar.contextual.text.fontSize', 'Font size'],
+  ['toolbar.contextual.shape.fill', 'Fill'],
+  ['toolbar.contextual.shape.stroke', 'Stroke'],
+  ['toolbar.contextual.image.crop', 'Crop'],
+  ['toolbar.contextual.image.filter', 'Filter'],
+  ['toolbar.contextual.type.text', 'Text'],
+  ['toolbar.contextual.type.shape', 'Shape'],
+  ['toolbar.contextual.type.image', 'Image'],
+  ['toolbar.contextual.type.video', 'Video'],
+  ['toolbar.contextual.type.table', 'Table'],
+  ['toolbar.contextual.type.chart', 'Chart'],
+  ['toolbar.contextual.type.clip', 'Clip'],
+  ['toolbar.contextual.type.group', 'Group'],
+  ['toolbar.contextual.type.embed', 'Embed'],
+  ['toolbar.contextual.type.code', 'Code'],
+  ['toolbar.contextual.type.audio', 'Audio'],
 ]);
 
 let activeLocale: Locale = 'en';

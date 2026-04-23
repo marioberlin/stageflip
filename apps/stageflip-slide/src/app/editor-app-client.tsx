@@ -6,6 +6,7 @@
 'use client';
 
 import {
+  ContextMenu,
   EditorShell,
   type Shortcut,
   activeSlideIdAtom,
@@ -15,7 +16,7 @@ import {
   useEditorShellAtomValue,
   useRegisterShortcuts,
 } from '@stageflip/editor-shell';
-import type { Document, Slide } from '@stageflip/schema';
+import type { Document, Slide, SlideContent } from '@stageflip/schema';
 import type { ReactElement } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AiCopilot } from '../components/ai-copilot/ai-copilot';
@@ -28,6 +29,8 @@ import { PropertiesPanel } from '../components/properties/properties-panel';
 import { ShortcutCheatSheet } from '../components/shortcuts/shortcut-cheat-sheet';
 import { StatusBar } from '../components/status-bar/status-bar';
 import { TimelinePanel } from '../components/timeline/timeline-panel';
+import { ContextualToolbar } from '../components/toolbar/contextual-toolbar';
+import { PersistentToolbar } from '../components/toolbar/persistent-toolbar';
 
 // Typed via `satisfies` rather than a blind `as Document` cast so TypeScript
 // still validates the literal against the schema's inferred shape.
@@ -164,13 +167,14 @@ function isNotEditingText(): boolean {
 }
 
 function EditorFrame(): ReactElement {
-  const { document: doc, undo, redo } = useDocument();
+  const { document: doc, undo, redo, updateDocument, setActiveSlide } = useDocument();
   const slideCount = doc && doc.content.mode === 'slide' ? doc.content.slides.length : 0;
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const [currentFrame, setCurrentFrame] = useState<number>(0);
   const [paletteOpen, setPaletteOpen] = useState<boolean>(false);
   const [copilotOpen, setCopilotOpen] = useState<boolean>(false);
   const [cheatSheetOpen, setCheatSheetOpen] = useState<boolean>(false);
+  const [zoom, setZoom] = useState<number>(1);
   const activeSlideId = useEditorShellAtomValue(activeSlideIdAtom);
   const slideAtom = useMemo(() => slideByIdAtom(activeSlideId), [activeSlideId]);
   const slide = useEditorShellAtomValue(slideAtom);
@@ -180,6 +184,24 @@ function EditorFrame(): ReactElement {
   const closeCopilot = useCallback(() => setCopilotOpen(false), []);
   const openCheatSheet = useCallback(() => setCheatSheetOpen(true), []);
   const closeCheatSheet = useCallback(() => setCheatSheetOpen(false), []);
+  const handleNewSlide = useCallback(() => {
+    const newId = `slide-${Math.random().toString(36).slice(2, 10)}`;
+    updateDocument((prev) => {
+      if (prev.content.mode !== 'slide') return prev;
+      const newSlide: Slide = { id: newId, elements: [] };
+      const content: SlideContent = {
+        ...prev.content,
+        slides: [...prev.content.slides, newSlide],
+      };
+      return { ...prev, content };
+    });
+    setActiveSlide(newId);
+  }, [updateDocument, setActiveSlide]);
+  const handlePresent = useCallback(() => {
+    setMode((m) => (m === 'edit' ? 'preview' : 'edit'));
+  }, []);
+  const handleZoomIn = useCallback(() => setZoom((z) => Math.min(z + 0.1, 4)), []);
+  const handleZoomOut = useCallback(() => setZoom((z) => Math.max(z - 0.1, 0.25)), []);
 
   const shortcuts = useMemo<Shortcut[]>(
     () => [
@@ -289,11 +311,21 @@ function EditorFrame(): ReactElement {
           </button>
         </div>
       </header>
+      <PersistentToolbar
+        zoom={zoom}
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+        onPresent={handlePresent}
+        onNewSlide={handleNewSlide}
+      />
       <section style={workspaceStyle} aria-label="Canvas workspace">
         <Filmstrip />
         <div style={canvasFrameStyle}>
           {mode === 'edit' ? (
-            <SlideCanvas />
+            <>
+              <SlideCanvas />
+              <ContextualToolbar />
+            </>
           ) : (
             <PreviewFrame
               slide={slide ?? null}
@@ -317,6 +349,7 @@ function EditorFrame(): ReactElement {
       <CommandPalette open={paletteOpen} onClose={closePalette} />
       <AiCopilot open={copilotOpen} onClose={closeCopilot} />
       <ShortcutCheatSheet open={cheatSheetOpen} onClose={closeCheatSheet} />
+      <ContextMenu />
     </main>
   );
 }

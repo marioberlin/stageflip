@@ -73,3 +73,22 @@ export {
   introspectSchema,
 } from './zodform/introspect';
 export { ZodForm, type ZodFormProps } from './zodform/zod-form';
+
+// T-139a — context-menu framework
+export {
+  ContextMenu,
+  ContextMenuProvider,
+  pickContextMenu,
+  useAllContextMenus,
+  useContextMenu,
+  useRegisterContextMenu,
+} from './context-menu';
+export type {
+  ContextMenuDescriptor,
+  ContextMenuItem,
+  ContextMenuItemSpec,
+  ContextMenuMatch,
+  ContextMenuSeparator,
+  ContextMenuSubmenu,
+  OpenContextMenuState,
+} from './context-menu';
