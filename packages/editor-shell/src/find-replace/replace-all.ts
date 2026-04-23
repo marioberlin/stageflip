@@ -29,6 +29,9 @@ export function replaceAll(
 ): Document {
   if (!doc) throw new Error('replaceAll requires a non-null document');
   if (doc.content.mode !== 'slide' || query === '') return doc;
+  // Capture the slide-content snapshot so structural comparisons below
+  // retain their narrowed `mode: 'slide'` type through the mapping closure.
+  const slideContent = doc.content;
 
   const matches = findMatches(doc, query, options);
   if (matches.length === 0) return doc;
@@ -43,7 +46,7 @@ export function replaceAll(
     byElement.set(m.elementId, arr);
   }
 
-  const nextSlides: Slide[] = doc.content.slides.map((slide) => {
+  const nextSlides: Slide[] = slideContent.slides.map((slide) => {
     let slideChanged = false;
     const nextElements = slide.elements.map<Element>((el) => {
       if (el.type !== 'text') return el;
@@ -62,9 +65,9 @@ export function replaceAll(
     return slideChanged ? { ...slide, elements: nextElements } : slide;
   });
 
-  const allSlidesSame = nextSlides.every((s, i) => s === doc.content.slides[i]);
+  const allSlidesSame = nextSlides.every((s, i) => s === slideContent.slides[i]);
   if (allSlidesSame) return doc;
 
-  const content: SlideContent = { ...doc.content, slides: nextSlides };
+  const content: SlideContent = { ...slideContent, slides: nextSlides };
   return { ...doc, content };
 }
