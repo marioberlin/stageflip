@@ -93,7 +93,32 @@ export const elementRotationWithinReasonableRange: LintRule = {
     }
     return out;
   },
+  fix(doc, findings) {
+    if (findings.length === 0) return null;
+    const ids = new Set(findings.map((f) => f.elementId).filter((id): id is string => Boolean(id)));
+    if (ids.size === 0) return null;
+    return {
+      ...doc,
+      elements: doc.elements.map((el) => {
+        if (!ids.has(el.id)) return el;
+        return {
+          ...el,
+          transform: { ...el.transform, rotation: normaliseRotation(el.transform.rotation) },
+        };
+      }),
+    };
+  },
 };
+
+// Normalise any rotation into (-360, 360]. Preserves sign: a positive
+// input maps to [0, 360]; a negative input maps to (-360, 0]. Zero
+// stays zero. Multiples of 360 collapse to 360 (positive) or 0 (negative)
+// depending on sign — visually equivalent in either case.
+function normaliseRotation(r: number): number {
+  const wrapped = r % 360;
+  if (r > 0 && wrapped === 0) return 360;
+  return wrapped;
+}
 
 export const TRANSFORM_RULES: readonly LintRule[] = [
   elementOverlapsCompositionBounds,

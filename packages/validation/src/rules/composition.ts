@@ -32,6 +32,14 @@ export const compositionDimensionsEvenForVideo: LintRule = {
     }
     return out;
   },
+  fix(doc, findings) {
+    if (findings.length === 0) return null;
+    const next = { ...doc };
+    if (next.width % 2 !== 0) next.width = next.width + 1;
+    if (next.height % 2 !== 0) next.height = next.height + 1;
+    if (next.width === doc.width && next.height === doc.height) return null;
+    return next;
+  },
 };
 
 export const compositionFpsStandard: LintRule = {

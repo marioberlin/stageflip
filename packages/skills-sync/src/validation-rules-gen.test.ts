@@ -88,8 +88,8 @@ describe('generateValidationRulesSkill', () => {
     });
     const out = generateValidationRulesSkill(pkg);
     // The description's `|` should be escaped as `\|` to survive the
-    // markdown table.
-    expect(out).toContain('| `pipe-rule` | error | has a \\| pipe that must be escaped |');
+    // markdown table. Auto-fix column is '—' when the rule has no `fix`.
+    expect(out).toContain('| `pipe-rule` | error | — | has a \\| pipe that must be escaped |');
   });
 
   it('renders "_No rules registered in this category._" when a group is empty', () => {
@@ -106,12 +106,30 @@ describe('generateValidationRulesSkill', () => {
     expect(a).toBe(b);
   });
 
-  it('includes the quick-start snippet + severity legend + customising + lifecycle prose', () => {
+  it('includes the quick-start snippet + severity legend + customising + lifecycle + auto-fix prose', () => {
     const out = generateValidationRulesSkill(mkPkg());
     expect(out).toContain('## Quick start');
     expect(out).toContain('## Severity legend');
     expect(out).toContain('## Customising the rule set');
     expect(out).toContain('## Lifecycle');
+    expect(out).toContain('## Auto-fix (T-138)');
+    expect(out).toContain('autoFixDocument');
+  });
+
+  it('marks auto-fixable rules with ✓ in the auto-fix column', () => {
+    const fixable: LintRule = {
+      id: 'fix-me',
+      severity: 'warn',
+      description: 'has a fix',
+      run: () => [],
+      fix: () => null,
+    };
+    const pkg = mkPkg({
+      CONTENT_RULES: [fixable],
+      ALL_RULES: [...mkPkg().ALL_RULES.filter((r) => r.id !== 'content-a'), fixable],
+    });
+    const out = generateValidationRulesSkill(pkg);
+    expect(out).toContain('| `fix-me` | warn | ✓ | has a fix |');
   });
 
   it('preserves the order of rules within a category', () => {

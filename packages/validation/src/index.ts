@@ -36,3 +36,11 @@ export type {
   LintRule,
   LintSeverity,
 } from './types.js';
+
+// T-138 — iterative auto-fix orchestrator.
+export {
+  autoFixDocument,
+  type AutoFixOptions,
+  type AutoFixPassOutcome,
+  type AutoFixResult,
+} from './auto-fix.js';

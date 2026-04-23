@@ -56,7 +56,7 @@ export function buildValidationRuleGroups(pkg: ValidationRulesPkg): readonly Rul
  * regenerations, so humans bump this by hand when the rule surface
  * actually changes.
  */
-const LAST_UPDATED = '2026-04-21';
+const LAST_UPDATED = '2026-04-23';
 
 /** Escape a description for safe inclusion in a markdown table cell. */
 function escapeCell(text: string): string {
@@ -150,6 +150,39 @@ export function generateValidationRulesSkill(pkg: ValidationRulesPkg): string {
     '',
   ].join('\n');
 
+  const autoFix = [
+    '## Auto-fix (T-138)',
+    '',
+    'Rules marked ✓ in the **Auto-fix** column expose a `fix(document,',
+    'findings)` method that returns a repaired document (or `null` when',
+    "there's nothing to do). The `autoFixDocument` orchestrator runs up",
+    'to 10 iterative passes (lint → fix-all-applicable-rules → re-lint),',
+    'stopping when either no rule produces a change (`converged: true`)',
+    'or the pass limit is reached (`hitMaxPasses: true`).',
+    '',
+    '```ts',
+    "import { autoFixDocument } from '@stageflip/validation';",
+    '',
+    'const result = autoFixDocument(doc);',
+    'console.log(`${result.passes.length} passes applied;`,',
+    '            `${result.initialReport.findings.length} findings →',
+    '            `${result.finalReport.findings.length}`);',
+    'const repairedDoc = result.document;',
+    '```',
+    '',
+    '`include` / `exclude` rule-id lists are honoured the same way',
+    '`lintDocument` honours them; `maxPasses` defaults to 10 but can be',
+    'overridden for pathological-rule drills.',
+    '',
+    '**When a fix is _not_ offered** — for rules like',
+    '`text-color-is-valid-css` or `shape-custom-path-has-path`, there is',
+    'no deterministic replacement that would preserve authorial intent.',
+    'Those findings persist into `finalReport` for the operator to',
+    'resolve manually. Auto-fix is opt-in — regular `lintDocument`',
+    'never mutates.',
+    '',
+  ].join('\n');
+
   const lifecycle = [
     '## Lifecycle',
     '',
@@ -162,6 +195,12 @@ export function generateValidationRulesSkill(pkg: ValidationRulesPkg): string {
     '3. **Post-compiler** — the RIR compiler (T-030) emits valid',
     '   documents by construction, but regression risk remains. Treat',
     '   the linter as defense-in-depth on top of Zod.',
+    '4. **Auto-fix pre-pass (optional)** — call `autoFixDocument` before',
+    '   `lintDocument` when you want to normalise obvious issues',
+    '   (rotation wrap-around, stacking-map gaps, missing font',
+    '   requirements, http→https embeds) in one shot. The fixed',
+    '   document is still linted and still subject to hard-fail on',
+    '   error findings — auto-fix is not a gate bypass.',
     '',
   ].join('\n');
 
@@ -183,6 +222,7 @@ export function generateValidationRulesSkill(pkg: ValidationRulesPkg): string {
     '',
     catalogue,
     customising,
+    autoFix,
     lifecycle,
   ].join('\n');
 }
@@ -197,11 +237,12 @@ function renderCatalogue(groups: readonly RuleGroup[]): string {
       out.push('');
       continue;
     }
-    out.push('| Rule id | Severity | What |');
-    out.push('|---|---|---|');
+    out.push('| Rule id | Severity | Auto-fix | What |');
+    out.push('|---|---|---|---|');
     for (const rule of group.rules) {
+      const autoFix = rule.fix !== undefined ? '✓' : '—';
       out.push(
-        `| \`${escapeCell(rule.id)}\` | ${rule.severity} | ${escapeCell(rule.description)} |`,
+        `| \`${escapeCell(rule.id)}\` | ${rule.severity} | ${autoFix} | ${escapeCell(rule.description)} |`,
       );
     }
     out.push('');

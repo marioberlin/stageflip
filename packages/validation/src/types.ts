@@ -55,12 +55,23 @@ export interface LintContext {
  * findings; individual findings MAY override via their own field
  * (e.g. a rule that's usually `warn` but escalates to `error` on a
  * specific sub-condition).
+ *
+ * The optional `fix` method (T-138) lets a rule repair its own
+ * findings. The auto-fix orchestrator calls `fix` with the document
+ * and the subset of findings this rule just emitted; the rule
+ * returns either a new document (fix applied) or `null` (nothing to
+ * do — either the rule has no auto-fix, or none of the findings are
+ * auto-fixable). Rules that implement `fix` MUST return a
+ * structurally-different document when they apply a change;
+ * returning the same reference (or an equivalent clone) indicates
+ * "no change" and stops the fix loop from spinning.
  */
 export interface LintRule {
   readonly id: string;
   readonly severity: LintSeverity;
   readonly description: string;
   run(document: RIRDocument, context: LintContext): readonly LintFinding[];
+  fix?(document: RIRDocument, findings: readonly LintFinding[]): RIRDocument | null;
 }
 
 /**
