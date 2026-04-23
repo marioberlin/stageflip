@@ -156,6 +156,35 @@ const FPS = 30;
 const DURATION_IN_FRAMES = 60;
 
 /**
+ * Monotonic counter for session-scoped slide ids. Module-scoped (one
+ * mount per browser tab). T-139a minted via `Math.random()`; T-140
+ * replaces with a monotonic counter after the reviewer flagged
+ * collision risk on many-slide decks.
+ */
+let nextSlideId = 0;
+
+/**
+ * Seed the counter above any pre-existing `slide-N` id so re-opens
+ * and legacy imports don't collide. Non-numeric suffixes are ignored.
+ */
+function seedSlideIdCounter(doc: Document | null): void {
+  if (!doc || doc.content.mode !== 'slide') return;
+  let max = nextSlideId;
+  for (const s of doc.content.slides) {
+    const match = /^slide-(\d+)$/.exec(s.id);
+    if (!match) continue;
+    const n = Number.parseInt(match[1] ?? '', 10);
+    if (Number.isFinite(n) && n > max) max = n;
+  }
+  nextSlideId = max;
+}
+
+function mintSlideId(): string {
+  nextSlideId += 1;
+  return `slide-${nextSlideId}`;
+}
+
+/**
  * Returns true when focus is NOT inside a contenteditable node. Gates global
  * shortcuts that would otherwise collide with the inline text editor:
  *   - `Mod+Z` / `Mod+Shift+Z` — contenteditable owns its own undo history, so
@@ -205,8 +234,13 @@ function EditorFrame(): ReactElement {
   const closePresentation = useCallback(() => setPresentationOpen(false), []);
   const toggleCloudSave = useCallback(() => setCloudSaveOpen((v) => !v), []);
   const closeCloudSave = useCallback(() => setCloudSaveOpen(false), []);
+  // Seed the counter once per doc reference so re-opens don't collide
+  // with pre-existing ids.
+  useEffect(() => {
+    seedSlideIdCounter(doc ?? null);
+  }, [doc]);
   const handleNewSlide = useCallback(() => {
-    const newId = `slide-${Math.random().toString(36).slice(2, 10)}`;
+    const newId = mintSlideId();
     updateDocument((prev) => {
       if (prev.content.mode !== 'slide') return prev;
       const newSlide: Slide = { id: newId, elements: [] };

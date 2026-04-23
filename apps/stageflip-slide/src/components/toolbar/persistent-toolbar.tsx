@@ -54,7 +54,7 @@ export function PersistentToolbar({
     <div
       data-testid="persistent-toolbar"
       role="toolbar"
-      aria-label="Persistent toolbar"
+      aria-label={t('toolbar.persistent.ariaLabel')}
       style={rootStyle}
     >
       <div style={groupStyle}>

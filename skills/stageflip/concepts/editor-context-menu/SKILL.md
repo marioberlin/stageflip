@@ -123,6 +123,19 @@ document swap, and outside the shortcut provider only because the
 shortcut listener also lives on `window` — the ordering is convenience,
 not semantic.
 
+## Invariant — contextual toolbar is read-only for non-text elements
+
+`<ContextualToolbar>` (T-139a) surfaces the selection type + current
+values for shape / image / video / table / chart / clip elements as
+read-only badges. Editing those properties lives in T-125a's
+`<PropertiesPanel>` router (via `ClipElementProperties` / `ChartEditor`
+/ `TableEditor` / `AnimationPicker`). One edit surface per element
+type — duplicating fill / stroke / crop / filter into the floating
+toolbar would fork the mutation path. Text elements are the single
+exception: inline typographic controls (bold / italic / alignment)
+live directly on the contextual toolbar because they map 1-1 to
+contenteditable commands rather than atom mutations.
+
 ## Where consumers live
 
 - `apps/stageflip-slide/src/components/**` registers slide-editor menus

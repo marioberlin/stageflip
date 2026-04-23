@@ -197,7 +197,7 @@ describe('ContextMenuProvider', () => {
     expect(screen.queryByTestId('context-menu-second')).toBeNull();
   });
 
-  it('closes on Escape', () => {
+  it('closes on Escape dispatched on the menu root (T-140)', () => {
     render(
       withProvider(
         <>
@@ -216,9 +216,13 @@ describe('ContextMenuProvider', () => {
     act(() => {
       dispatchContextMenu(screen.getByTestId('target'));
     });
-    expect(screen.getByTestId('context-menu-esc')).toBeTruthy();
+    const menu = screen.getByTestId('context-menu-esc');
+    expect(menu).toBeTruthy();
+    // Post-T-140 Escape routes through the menu root's element-level
+    // onKeyDown (the menu auto-focuses on open) rather than a
+    // window-level listener.
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      fireEvent.keyDown(menu, { key: 'Escape' });
     });
     expect(screen.queryByTestId('context-menu-esc')).toBeNull();
   });

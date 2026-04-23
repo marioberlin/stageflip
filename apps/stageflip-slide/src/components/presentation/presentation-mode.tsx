@@ -3,7 +3,7 @@
 
 'use client';
 
-import { t, useDocument } from '@stageflip/editor-shell';
+import { type Shortcut, t, useDocument, useRegisterShortcuts } from '@stageflip/editor-shell';
 import type { Slide } from '@stageflip/schema';
 import type { CSSProperties, ReactElement } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -31,12 +31,12 @@ const DEFAULT_DURATION_IN_FRAMES = 120;
  * Backspace → previous, Esc → close), and renders an optional speaker
  * notes side panel.
  *
- * Keyboard bindings are attached to `window` while open and removed on
- * close. They NEVER fire when an `<input>`/`<textarea>`/`contenteditable`
- * element has focus — consistent with the T-121a shortcut registry's
- * focus-zone policy, but since presentation mode is full-screen and
- * doesn't host form inputs, this guard is defensive (future
- * speaker-notes edit-in-present would trip it otherwise).
+ * Keyboard bindings flow through the T-121a shortcut registry
+ * (CLAUDE.md §10) — one `useRegisterShortcuts` batch registered while
+ * `open`, unregistered on close. Bare-key combos are suppressed
+ * automatically when focus is inside an input / textarea /
+ * contenteditable (registry's `isTypingTarget` guard). T-140 migrated
+ * this from a raw `window.addEventListener('keydown', ...)`.
  */
 export function PresentationMode({
   open,
@@ -78,45 +78,93 @@ export function PresentationMode({
     setCurrentFrame(0);
   }, []);
 
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: KeyboardEvent): void => {
-      // Defensive focus-zone guard.
-      const target = e.target as HTMLElement | null;
-      if (
-        target &&
-        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
-      ) {
-        return;
-      }
-      switch (e.key) {
-        case 'ArrowRight':
-        case 'ArrowDown':
-        case ' ':
-        case 'Enter':
-          e.preventDefault();
-          goNext();
-          break;
-        case 'ArrowLeft':
-        case 'ArrowUp':
-        case 'Backspace':
-          e.preventDefault();
-          goPrev();
-          break;
-        case 'Escape':
-          e.preventDefault();
-          onClose();
-          break;
-        case 's':
-        case 'S':
-          e.preventDefault();
-          setNotesOpen((v) => !v);
-          break;
-      }
+  const toggleNotes = useCallback((): void => {
+    setNotesOpen((v) => !v);
+  }, []);
+
+  const shortcuts = useMemo<Shortcut[]>(() => {
+    if (!open) return [];
+    const next: Shortcut['handler'] = () => {
+      goNext();
+      return undefined;
     };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [open, goNext, goPrev, onClose]);
+    const prev: Shortcut['handler'] = () => {
+      goPrev();
+      return undefined;
+    };
+    return [
+      {
+        id: 'presentation.next.arrowRight',
+        combo: 'ArrowRight',
+        description: 'Next slide',
+        category: 'presentation',
+        handler: next,
+      },
+      {
+        id: 'presentation.next.arrowDown',
+        combo: 'ArrowDown',
+        description: 'Next slide',
+        category: 'presentation',
+        handler: next,
+      },
+      {
+        id: 'presentation.next.space',
+        combo: 'Space',
+        description: 'Next slide',
+        category: 'presentation',
+        handler: next,
+      },
+      {
+        id: 'presentation.next.enter',
+        combo: 'Enter',
+        description: 'Next slide',
+        category: 'presentation',
+        handler: next,
+      },
+      {
+        id: 'presentation.prev.arrowLeft',
+        combo: 'ArrowLeft',
+        description: 'Previous slide',
+        category: 'presentation',
+        handler: prev,
+      },
+      {
+        id: 'presentation.prev.arrowUp',
+        combo: 'ArrowUp',
+        description: 'Previous slide',
+        category: 'presentation',
+        handler: prev,
+      },
+      {
+        id: 'presentation.prev.backspace',
+        combo: 'Backspace',
+        description: 'Previous slide',
+        category: 'presentation',
+        handler: prev,
+      },
+      {
+        id: 'presentation.exit',
+        combo: 'Escape',
+        description: 'Exit presentation',
+        category: 'presentation',
+        handler: () => {
+          onClose();
+          return undefined;
+        },
+      },
+      {
+        id: 'presentation.notes.toggle',
+        combo: 's',
+        description: 'Toggle speaker notes',
+        category: 'presentation',
+        handler: () => {
+          toggleNotes();
+          return undefined;
+        },
+      },
+    ];
+  }, [open, goNext, goPrev, onClose, toggleNotes]);
+  useRegisterShortcuts(shortcuts);
 
   if (!open) return null;
   const slide = slides[currentIdx];

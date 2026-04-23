@@ -20,6 +20,19 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
+    // Mark onboarding as complete for every test context so the
+    // first-run coachmark overlay (T-139c) does not intercept clicks
+    // and hang interaction-driven specs. Specs that specifically
+    // cover onboarding should clear this key via addInitScript().
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: BASE_URL,
+          localStorage: [{ name: 'stageflip:editor:onboarding:complete', value: '1' }],
+        },
+      ],
+    },
   },
   webServer: {
     // Use `next start` against a pre-built app so CI verifies the

@@ -248,6 +248,7 @@ const EN_CATALOG = new Map<string, string>([
   ['status.saved', 'Saved'],
 
   // Persistent toolbar (T-139a)
+  ['toolbar.persistent.ariaLabel', 'Persistent toolbar'],
   ['toolbar.persistent.newSlide', 'New slide'],
   ['toolbar.persistent.undo', 'Undo'],
   ['toolbar.persistent.redo', 'Redo'],
@@ -361,8 +362,6 @@ const EN_CATALOG = new Map<string, string>([
   ['findReplace.invalidRegex', 'Invalid regex'],
   ['findReplace.of', 'of'],
   ['findReplace.close', 'Close'],
-  ['findReplace.contextMenu.replaceOne', 'Replace this match'],
-  ['findReplace.contextMenu.skip', 'Skip to next match'],
 
   // Onboarding coachmarks (T-139c)
   ['onboarding.coachmark.welcome.title', 'Welcome to StageFlip'],

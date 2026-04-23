@@ -12,9 +12,9 @@
 
 'use client';
 
-import { t } from '@stageflip/editor-shell';
+import { type Shortcut, t, useRegisterShortcuts } from '@stageflip/editor-shell';
 import type { CSSProperties, ReactElement, ReactNode } from 'react';
-import { useEffect, useRef } from 'react';
+import { useMemo, useRef } from 'react';
 
 export interface ModalShellProps {
   /** When false, the modal is not mounted. */
@@ -41,17 +41,33 @@ export function ModalShell({
 }: ModalShellProps): ReactElement | null {
   const panelRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+  // Register Escape with the shortcut registry (CLAUDE.md §10) only
+  // while the modal is open. The registry is a single window-keydown
+  // owner that iterates shortcuts in registration order and fires the
+  // first match, so stacking two modals fires the OUTER (older) one
+  // first — the opposite of the usual top-closes-first UX. The app
+  // never nests modals today, so this is theoretical; if nesting
+  // grows, each modal's `when` predicate should gate on a
+  // mount-depth counter so only the topmost responds.
+  const shortcuts = useMemo<Shortcut[]>(
+    () =>
+      open
+        ? [
+            {
+              id: `modal.escape.${testIdSuffix}`,
+              combo: 'Escape',
+              description: 'Close modal',
+              category: 'navigation',
+              handler: () => {
+                onClose();
+                return undefined;
+              },
+            },
+          ]
+        : [],
+    [open, testIdSuffix, onClose],
+  );
+  useRegisterShortcuts(shortcuts);
 
   if (!open) return null;
   const handleBackdropKey = (event: React.KeyboardEvent<HTMLDivElement>): void => {
