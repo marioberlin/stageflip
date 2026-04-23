@@ -1,0 +1,23 @@
+{
+  "name": "frame-runtime-video-background",
+  "runtime": "frame-runtime",
+  "kind": "video-background",
+  "description": "Frame-runtime port of SlideMotion's video-background — full-bleed muted <FrameVideo> with timed title + subtitle overlay (T-131e.1). Fixture uses a placeholder URL; goldens are operator-rendered against a real clip at prime time.",
+  "composition": { "width": 640, "height": 360, "fps": 30, "durationInFrames": 90 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 90,
+    "props": {
+      "videoUrl": "https://example.com/placeholder.mp4",
+      "title": "Video Title",
+      "subtitle": "A short supporting line"
+    }
+  },
+  "referenceFrames": [0, 40, 89],
+  "thresholds": {
+    "minPsnr": 30,
+    "minSsim": 0.92,
+    "maxFailingFrames": 1
+  },
+  "goldens": { "dir": "goldens/frame-runtime-video-background" }
+}
