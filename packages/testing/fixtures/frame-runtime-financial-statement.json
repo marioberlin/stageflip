@@ -1,0 +1,45 @@
+{
+  "name": "frame-runtime-financial-statement",
+  "runtime": "frame-runtime",
+  "kind": "financial-statement",
+  "description": "Financial statement composite (T-131f.3) — largest single port in the T-131 family. Flat-prop interface over periods[] + rows[] + optional comments[]. Renders KPI strip, hierarchical statement table (line/section/subtotal/total/note/spacer rows with variance columns), and commentary rail as private inlined sub-components.",
+  "composition": { "width": 1920, "height": 1080, "fps": 30, "durationInFrames": 60 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 60,
+    "props": {
+      "title": "FY26 H1 Consolidated P&L",
+      "statementType": "pnl",
+      "currency": "USD",
+      "unit": "millions",
+      "decimals": 1,
+      "periods": [
+        { "id": "q1", "label": "Q1", "emphasis": "secondary" },
+        { "id": "q2", "label": "Q2", "emphasis": "secondary" },
+        { "id": "q3", "label": "Q3", "emphasis": "primary" }
+      ],
+      "rows": [
+        { "id": "rev-section", "label": "Revenue", "kind": "section", "level": 0, "values": [null, null, null] },
+        { "id": "rev", "label": "Total Revenue", "shortLabel": "Revenue", "kind": "line", "level": 1, "values": [120.0, 132.5, 145.8], "meta": { "semanticRole": "revenue" }, "variance": { "absolute": [13.3], "percent": [10.0] } },
+        { "id": "cogs", "label": "Cost of Goods Sold", "kind": "line", "level": 1, "values": [-52.1, -57.4, -62.0] },
+        { "id": "gp", "label": "Gross Profit", "shortLabel": "Gross", "kind": "subtotal", "level": 1, "values": [67.9, 75.1, 83.8], "meta": { "semanticRole": "gross_profit" }, "variance": { "percent": [11.6] } },
+        { "id": "spacer1", "label": "", "kind": "spacer", "level": 0, "values": [] },
+        { "id": "opex-section", "label": "Operating Expenses", "kind": "section", "level": 0, "values": [null, null, null] },
+        { "id": "rd", "label": "Research & Development", "kind": "line", "level": 1, "values": [-22.5, -24.1, -26.0] },
+        { "id": "sm", "label": "Sales & Marketing", "kind": "line", "level": 1, "values": [-18.0, -19.8, -21.4] },
+        { "id": "ga", "label": "G&A", "kind": "line", "level": 1, "values": [-8.2, -8.9, -9.6] },
+        { "id": "ebitda", "label": "EBITDA", "kind": "subtotal", "level": 1, "values": [19.2, 22.3, 26.8], "meta": { "semanticRole": "ebitda" }, "variance": { "percent": [20.2] } },
+        { "id": "ni", "label": "Net Income", "kind": "total", "level": 0, "values": [14.4, 16.8, 20.1], "meta": { "semanticRole": "net_income" }, "variance": { "percent": [19.6] } }
+      ],
+      "comments": [
+        { "id": "c1", "title": "Strong revenue growth", "body": "Driven by European expansion launched in Q1 and pricing tailwinds across the enterprise tier.", "type": "driver", "priority": "high" },
+        { "id": "c2", "title": "Gross margin expansion", "body": "Supplier consolidation + vertical integration complete by Q4; expect ~200bps tailwind.", "type": "variance", "priority": "medium" },
+        { "id": "c3", "body": "Watch list: FX exposure in EUR and APAC routes.", "type": "risk", "priority": "medium" }
+      ],
+      "settings": { "density": "standard", "showVarianceAbsolute": false, "showVariancePercent": true }
+    }
+  },
+  "referenceFrames": [0, 30, 59],
+  "thresholds": { "minPsnr": 30, "minSsim": 0.92, "maxFailingFrames": 1 },
+  "goldens": { "dir": "goldens/frame-runtime-financial-statement" }
+}
