@@ -28,6 +28,7 @@ import {
   DASHBOARD_SUBDUED_COLOR,
   DASHBOARD_WARN_COLOR,
   dashboardTrendSchema,
+  formatDashboardValue,
 } from './_dashboard-utils.js';
 
 const okrStatusSchema = z.enum(['on_track', 'at_risk', 'behind', 'completed', 'not_started']);
@@ -100,6 +101,15 @@ const TREND_GLYPHS: Record<'up' | 'down' | 'flat', string> = {
   flat: '→',
 };
 
+/**
+ * Tint for the small inline trend-arrow glyph (`↑` / `↓` / `→`) at the
+ * end of each key-result row. Intentionally distinct from
+ * `_dashboard-utils.dashboardTrendColor`: that helper is for KPI-value
+ * text (flat → muted, `#a5acb4`); this one is for the understated
+ * glyph arrow (flat → subdued, `#6b7280`), preserving the SlideMotion
+ * reference's tonal contrast between "KPI read-out" and "secondary
+ * marker."
+ */
 function trendGlyphColor(trend: 'up' | 'down' | 'flat'): string {
   if (trend === 'up') return DASHBOARD_GOOD_COLOR;
   if (trend === 'down') return DASHBOARD_BAD_COLOR;
@@ -252,9 +262,8 @@ export function ObjectiveCard({
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {kr.current}
-                  {kr.unit ?? ''} / {kr.target}
-                  {kr.unit ?? ''}
+                  {formatDashboardValue(kr.current, kr.unit)} /{' '}
+                  {formatDashboardValue(kr.target, kr.unit)}
                 </div>
                 {kr.trend !== undefined ? (
                   <span style={{ fontSize: 9, color: trendGlyphColor(kr.trend) }}>
@@ -556,6 +565,10 @@ export function OkrDashboard({
                 : lane === 'next'
                   ? '#81aeff'
                   : DASHBOARD_SUBDUED_COLOR;
+            // Roadmap status → lane mapping preserved from SlideMotion
+            // reference. `completed` objectives are deliberately dropped
+            // from the roadmap (a roadmap surfaces upcoming / in-flight
+            // work, not finished work) — matches reference behaviour.
             const items = objectives
               .filter((o) => {
                 if (lane === 'now') return o.status === 'on_track' || o.status === 'at_risk';

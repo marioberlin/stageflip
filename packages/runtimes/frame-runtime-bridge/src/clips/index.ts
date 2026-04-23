@@ -213,8 +213,10 @@ export {
   productDashboardPropsSchema,
 } from './product-dashboard.js';
 
+// `ObjectiveCard` is intentionally NOT exported — it's private to
+// okr-dashboard today. T-131f.2c (sales) may consume it; if so, the
+// export should land in the same PR that introduces the caller.
 export {
-  ObjectiveCard,
   OkrDashboard,
   type OkrDashboardProps,
   type OkrKeyResult,

@@ -248,13 +248,20 @@ function Sparkline({ values }: { values: readonly number[] }): ReactElement | nu
   );
 }
 
-function resolveTitle(props: ProductDashboardProps): string {
-  if (props.title !== undefined) return props.title;
-  switch (props.reportType) {
+interface TitleInputs {
+  readonly title: string | undefined;
+  readonly reportType: ProductReportType | undefined;
+  readonly sprintNumber: string | number | undefined;
+  readonly version: string | undefined;
+}
+
+function resolveTitle(inputs: TitleInputs): string {
+  if (inputs.title !== undefined) return inputs.title;
+  switch (inputs.reportType) {
     case 'sprint_review':
-      return `Sprint ${props.sprintNumber ?? ''} Review`.trim();
+      return `Sprint ${inputs.sprintNumber ?? ''} Review`.trim();
     case 'release_notes':
-      return `Release ${props.version ?? ''}`.trim();
+      return `Release ${inputs.version ?? ''}`.trim();
     case 'roadmap':
       return 'Product Roadmap';
     case 'metrics_dashboard':
@@ -285,14 +292,7 @@ export function ProductDashboard({
   const shipped = features.filter((f) => f.status === 'shipped').length;
   const inProgress = features.filter((f) => f.status === 'in_progress').length;
   const blocked = features.filter((f) => f.status === 'blocked').length;
-  const resolvedTitle = resolveTitle({
-    title,
-    period,
-    reportType,
-    sprintNumber,
-    version,
-    features,
-  });
+  const resolvedTitle = resolveTitle({ title, reportType, sprintNumber, version });
 
   return (
     <div
