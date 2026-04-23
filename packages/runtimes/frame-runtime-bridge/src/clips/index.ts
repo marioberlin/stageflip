@@ -201,6 +201,29 @@ export {
   marketingDashboardPropsSchema,
 } from './marketing-dashboard.js';
 
+export {
+  ProductDashboard,
+  type ProductDashboardProps,
+  type ProductFeature,
+  type ProductFeaturePriority,
+  type ProductFeatureStatus,
+  type ProductMetric,
+  type ProductReportType,
+  productDashboardClip,
+  productDashboardPropsSchema,
+} from './product-dashboard.js';
+
+export {
+  ObjectiveCard,
+  OkrDashboard,
+  type OkrDashboardProps,
+  type OkrKeyResult,
+  type OkrStatus,
+  type Objective,
+  okrDashboardClip,
+  okrDashboardPropsSchema,
+} from './okr-dashboard.js';
+
 import { animatedValueClip } from './animated-value.js';
 import { audioVisualizerReactiveClip } from './audio-visualizer-reactive.js';
 import { audioVisualizerClip } from './audio-visualizer.js';
@@ -217,8 +240,10 @@ import { lightLeakClip } from './light-leak.js';
 import { lineChartDrawClip } from './line-chart-draw.js';
 import { logoIntroClip } from './logo-intro.js';
 import { marketingDashboardClip } from './marketing-dashboard.js';
+import { okrDashboardClip } from './okr-dashboard.js';
 import { particlesClip } from './particles.js';
 import { pieChartBuildClip } from './pie-chart-build.js';
+import { productDashboardClip } from './product-dashboard.js';
 import { pullQuoteClip } from './pull-quote.js';
 import { scene3dClip } from './scene-3d.js';
 import { stockTickerClip } from './stock-ticker.js';
@@ -277,7 +302,10 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   voiceoverNarrationClip,
   audioVisualizerReactiveClip,
   // T-131f.2 — dashboard composites (Option B: flat-prop interfaces per clip;
-  // no `@slidemotion/schema` domain types re-implemented).
+  // no `@slidemotion/schema` domain types re-implemented). Split into
+  // f.2a (hr+marketing), f.2b (product+okr), f.2c (sales).
   hrDashboardClip,
   marketingDashboardClip,
+  productDashboardClip,
+  okrDashboardClip,
 ];

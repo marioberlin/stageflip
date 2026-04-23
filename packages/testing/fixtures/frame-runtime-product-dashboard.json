@@ -1,0 +1,30 @@
+{
+  "name": "frame-runtime-product-dashboard",
+  "runtime": "frame-runtime",
+  "kind": "product-dashboard",
+  "description": "Product dashboard composite (T-131f.2b). Flat-prop interface — features[] + metrics[] drive KPI strip, a 2-column feature grid in sprint_review/release_notes modes, Now/Next/Later lanes in roadmap mode, and a sparkline metrics panel in metrics_dashboard mode.",
+  "composition": { "width": 1920, "height": 1080, "fps": 30, "durationInFrames": 60 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 60,
+    "props": {
+      "title": "Sprint 42 Review",
+      "period": "Sprint 42",
+      "reportType": "sprint_review",
+      "sprintNumber": 42,
+      "features": [
+        { "id": "f1", "title": "Auth rewrite", "status": "shipped", "priority": "p0", "team": "platform" },
+        { "id": "f2", "title": "Billing portal", "status": "in_progress", "priority": "p1", "team": "billing" },
+        { "id": "f3", "title": "Mobile push", "status": "planned", "priority": "p2", "team": "mobile" },
+        { "id": "f4", "title": "Legacy export", "status": "blocked", "priority": "p2", "description": "Waiting on legal." }
+      ],
+      "metrics": [
+        { "id": "uptime", "name": "Uptime", "value": 99.9, "unit": "%", "trend": "up" },
+        { "id": "deploys", "name": "Deploys", "value": 42, "trend": "flat" }
+      ]
+    }
+  },
+  "referenceFrames": [0, 30, 59],
+  "thresholds": { "minPsnr": 30, "minSsim": 0.92, "maxFailingFrames": 1 },
+  "goldens": { "dir": "goldens/frame-runtime-product-dashboard" }
+}

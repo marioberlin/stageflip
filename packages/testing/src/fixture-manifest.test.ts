@@ -71,6 +71,8 @@ const KNOWN_KINDS: ReadonlyMap<string, string> = new Map([
   // T-131f.2 — dashboard composites (flat-prop interfaces)
   ['hr-dashboard', 'frame-runtime'],
   ['marketing-dashboard', 'frame-runtime'],
+  ['product-dashboard', 'frame-runtime'],
+  ['okr-dashboard', 'frame-runtime'],
 ]);
 
 function listFixtureFiles(): string[] {

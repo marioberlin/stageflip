@@ -70,10 +70,10 @@ describe('registerAllLiveRuntimes', () => {
     expect(resolved?.runtime.id).toBe('three');
   });
 
-  it('registers all T-131b/d/f.1 + T-131e.1/.2 + T-131f.2 (hr/marketing) tranches on the frame-runtime bridge (26 clips)', () => {
+  it('registers all T-131b/d/f.1 + T-131e.1/.2 + T-131f.2a/.2b tranches on the frame-runtime bridge (28 clips)', () => {
     registerAllLiveRuntimes();
     const bridge = listRuntimes().find((r) => r.id === 'frame-runtime');
-    expect(bridge?.clips.size).toBe(26);
+    expect(bridge?.clips.size).toBe(28);
     const expectedKinds = [
       // b.1 (light)
       'counter',
@@ -106,9 +106,11 @@ describe('registerAllLiveRuntimes', () => {
       // e.2 — audio tranche
       'voiceover-narration',
       'audio-visualizer-reactive',
-      // f.2 — dashboard composites (hr + marketing in this PR; product/okr/sales to follow)
+      // f.2 — dashboard composites (hr + marketing from f.2a; product + okr from f.2b; sales follows in f.2c)
       'hr-dashboard',
       'marketing-dashboard',
+      'product-dashboard',
+      'okr-dashboard',
     ];
     for (const kind of expectedKinds) {
       const resolved = findClip(kind);
