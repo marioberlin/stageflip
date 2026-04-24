@@ -142,4 +142,28 @@ describe('registerAllLiveRuntimes', () => {
     registerAllLiveRuntimes();
     expect(() => registerAllLiveRuntimes()).toThrow(/is already registered/);
   });
+
+  it('matches the static LIVE_RUNTIME_MANIFEST used by @stageflip/skills-sync (T-220)', async () => {
+    const { LIVE_RUNTIME_MANIFEST } = await import('@stageflip/skills-sync');
+    registerAllLiveRuntimes();
+    const live = listRuntimes();
+
+    expect(live.map((r) => r.id)).toEqual(LIVE_RUNTIME_MANIFEST.runtimes.map((r) => r.id));
+
+    for (const manifestRuntime of LIVE_RUNTIME_MANIFEST.runtimes) {
+      const liveRuntime = live.find((r) => r.id === manifestRuntime.id);
+      expect(
+        liveRuntime,
+        `manifest lists ${manifestRuntime.id} but registry does not`,
+      ).toBeDefined();
+      if (!liveRuntime) continue;
+      expect(liveRuntime.tier).toBe(manifestRuntime.tier);
+      const liveKinds = [...liveRuntime.clips.keys()].sort();
+      const manifestKinds = [...manifestRuntime.clips].sort();
+      expect(
+        liveKinds,
+        `${manifestRuntime.id}: manifest clip kinds out of sync with live registry — update packages/skills-sync/src/live-runtime-manifest.ts then run \`pnpm --filter @stageflip/skills-sync build\` + \`pnpm skills-sync\``,
+      ).toEqual(manifestKinds);
+    }
+  });
 });
