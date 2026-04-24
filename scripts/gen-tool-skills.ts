@@ -58,6 +58,7 @@ const OWNER_TASK_MAP: Record<string, string> = {
   'data-source-bindings': 'T-167',
   'semantic-layout': 'T-168',
   'video-mode': 'T-185',
+  'display-mode': 'T-206',
 };
 
 function populateRegistry() {

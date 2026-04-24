@@ -84,6 +84,12 @@ export const CANONICAL_BUNDLES: readonly ToolBundle[] = [
       'StageFlip.Video profile tools — multi-aspect export planning, per-aspect layout helpers (T-185 and onward).',
     tools: [],
   },
+  {
+    name: 'display-mode',
+    description:
+      'StageFlip.Display profile tools — file-size optimization planning, multi-size preview resolution (T-206 and onward).',
+    tools: [],
+  },
 ];
 
 export const CANONICAL_BUNDLE_NAMES: readonly string[] = CANONICAL_BUNDLES.map((b) => b.name);
