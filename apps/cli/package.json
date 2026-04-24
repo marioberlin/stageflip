@@ -1,9 +1,15 @@
 {
-  "name": "@stageflip/app-cli",
+  "name": "@stageflip/cli",
   "version": "0.0.0",
-  "private": true,
   "type": "module",
-  "description": "StageFlip CLI — user manual §4 command surface (T-225).",
+  "description": "StageFlip CLI — command-line access to the motion platform (slides, video, display).",
+  "license": "BUSL-1.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marioberlin/stageflip.git",
+    "directory": "apps/cli"
+  },
+  "homepage": "https://stageflip.dev",
   "bin": {
     "stageflip": "./dist/bin/stageflip.js"
   },
@@ -18,8 +24,13 @@
   },
   "files": [
     "dist",
-    "src"
+    "src",
+    "README.md",
+    "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup src/index.ts src/bin/stageflip.ts --dts --format esm --clean",
     "dev": "tsup src/index.ts src/bin/stageflip.ts --dts --format esm --watch",

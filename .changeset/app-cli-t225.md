@@ -1,5 +1,5 @@
 ---
-"@stageflip/app-cli": minor
+"@stageflip/cli": minor
 ---
 
 T-225: `apps/cli` — `stageflip` CLI.
