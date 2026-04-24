@@ -297,7 +297,18 @@ importers:
 
   packages/export-pptx: {}
 
-  packages/export-video: {}
+  packages/export-video:
+    dependencies:
+      '@stageflip/schema':
+        specifier: workspace:^
+        version: link:../schema
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: 2.1.9
+        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.1))
+      vitest:
+        specifier: 2.1.9
+        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.1)
 
   packages/fonts:
     dependencies:
