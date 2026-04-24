@@ -52,6 +52,27 @@ export {
   testimonialCardPropsSchema,
 } from './testimonial-card.js';
 
+// T-183b — StageFlip.Video profile clips (motion tranche).
+export {
+  HookMoment,
+  type HookMomentProps,
+  hookMomentClip,
+  hookMomentPropsSchema,
+} from './hook-moment.js';
+export {
+  ProductReveal,
+  type ProductRevealProps,
+  productRevealClip,
+  productRevealPropsSchema,
+} from './product-reveal.js';
+export {
+  BeatSyncedText,
+  type BeatSyncedTextProps,
+  beatSyncedTextClip,
+  beatSyncedTextPropsSchema,
+  currentBeatIndex,
+} from './beat-synced-text.js';
+
 export {
   ChartBuild,
   type ChartBuildProps,
@@ -295,6 +316,7 @@ import { animatedMapClip } from './animated-map.js';
 import { animatedValueClip } from './animated-value.js';
 import { audioVisualizerReactiveClip } from './audio-visualizer-reactive.js';
 import { audioVisualizerClip } from './audio-visualizer.js';
+import { beatSyncedTextClip } from './beat-synced-text.js';
 import { chartBuildClip } from './chart-build.js';
 import { codeBlockClip } from './code-block.js';
 import { comparisonTableClip } from './comparison-table.js';
@@ -302,6 +324,7 @@ import { counterClip } from './counter.js';
 import { endslateLogoClip } from './endslate-logo.js';
 import { financialStatementClip } from './financial-statement.js';
 import { gifPlayerClip } from './gif-player.js';
+import { hookMomentClip } from './hook-moment.js';
 import { hrDashboardClip } from './hr-dashboard.js';
 import { imageGalleryClip } from './image-gallery.js';
 import { kineticTextClip } from './kinetic-text.js';
@@ -315,6 +338,7 @@ import { okrDashboardClip } from './okr-dashboard.js';
 import { particlesClip } from './particles.js';
 import { pieChartBuildClip } from './pie-chart-build.js';
 import { productDashboardClip } from './product-dashboard.js';
+import { productRevealClip } from './product-reveal.js';
 import { pullQuoteClip } from './pull-quote.js';
 import { salesDashboardClip } from './sales-dashboard.js';
 import { scene3dClip } from './scene-3d.js';
@@ -389,9 +413,12 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // T-131d.4 — animated-map (SVG fallback only; mapbox-gl path deliberately
   // not ported — see clip header). Closes reference-clip coverage at 32/32.
   animatedMapClip,
-  // T-183a — StageFlip.Video profile clips: overlay tranche. The motion-heavy
-  // hook-moment / product-reveal / beat-synced-text clips land in T-183b.
+  // T-183a — StageFlip.Video profile clips: overlay tranche.
   lowerThirdClip,
   endslateLogoClip,
   testimonialCardClip,
+  // T-183b — StageFlip.Video profile clips: motion tranche.
+  hookMomentClip,
+  productRevealClip,
+  beatSyncedTextClip,
 ];

@@ -70,10 +70,10 @@ describe('registerAllLiveRuntimes', () => {
     expect(resolved?.runtime.id).toBe('three');
   });
 
-  it('registers all T-131b/d/f.1 + T-131e.1/.2 + T-131f.2/.3 + T-131d.4 + T-183a tranches on the frame-runtime bridge (34 clips)', () => {
+  it('registers all T-131b/d/f.1 + T-131e.1/.2 + T-131f.2/.3 + T-131d.4 + T-183a + T-183b tranches on the frame-runtime bridge (37 clips)', () => {
     registerAllLiveRuntimes();
     const bridge = listRuntimes().find((r) => r.id === 'frame-runtime');
-    expect(bridge?.clips.size).toBe(34);
+    expect(bridge?.clips.size).toBe(37);
     const expectedKinds = [
       // b.1 (light)
       'counter',
@@ -120,6 +120,10 @@ describe('registerAllLiveRuntimes', () => {
       'lower-third',
       'endslate-logo',
       'testimonial-card',
+      // T-183b — StageFlip.Video profile clips: motion tranche
+      'hook-moment',
+      'product-reveal',
+      'beat-synced-text',
     ];
     for (const kind of expectedKinds) {
       const resolved = findClip(kind);
