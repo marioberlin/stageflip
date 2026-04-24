@@ -57,3 +57,9 @@ export {
   TIMING_TOOL_DEFINITIONS,
   registerTimingBundle,
 } from './handlers/timing/register.js';
+export {
+  LAYOUT_BUNDLE_NAME,
+  LAYOUT_HANDLERS,
+  LAYOUT_TOOL_DEFINITIONS,
+  registerLayoutBundle,
+} from './handlers/layout/register.js';
