@@ -93,3 +93,9 @@ export {
   TABLE_CM1_TOOL_DEFINITIONS,
   registerTableCm1Bundle,
 } from './handlers/table-cm1/register.js';
+export {
+  QC_EXPORT_BULK_BUNDLE_NAME,
+  QC_EXPORT_BULK_HANDLERS,
+  QC_EXPORT_BULK_TOOL_DEFINITIONS,
+  registerQcExportBulkBundle,
+} from './handlers/qc-export-bulk/register.js';
