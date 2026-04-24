@@ -1,0 +1,124 @@
+# .github/workflows/deploy.yml
+# T-231 Cloud Run deploy. Builds the API + render-worker images,
+# pushes to Artifact Registry, deploys to Cloud Run. Deployment is
+# opt-in via GCP_WORKLOAD_IDENTITY_PROVIDER + GCP_SERVICE_ACCOUNT
+# secrets; the "has-secrets" gate runs first and every other job
+# short-circuits when those are absent.
+
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/api/**"
+      - "apps/render-worker/**"
+      - "packages/mcp-server/**"
+      - "packages/export-html5-zip/**"
+      - "packages/export-video/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+concurrency: deploy-${{ github.ref }}
+
+jobs:
+  check-secrets:
+    name: Check deploy secrets
+    runs-on: ubuntu-latest
+    outputs:
+      has_secrets: ${{ steps.check.outputs.has_secrets }}
+    steps:
+      - name: Check
+        id: check
+        env:
+          WIP: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          SA: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+        run: |
+          if [ -n "$WIP" ] && [ -n "$SA" ]; then
+            echo "has_secrets=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_secrets=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Deploy secrets not configured — skipping build + deploy."
+          fi
+
+  build-and-deploy:
+    name: Build + deploy ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: check-secrets
+    if: needs.check-secrets.outputs.has_secrets == 'true'
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: stageflip-api
+            dockerfile: apps/api/Dockerfile
+            runtime: service
+          - service: stageflip-render-worker
+            dockerfile: apps/render-worker/Dockerfile
+            runtime: job
+    env:
+      PROJECT_ID: stageflip-prod
+      REGION: us-central1
+      REPO: stageflip
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Configure Docker for Artifact Registry
+        env:
+          REGION: ${{ env.REGION }}
+        run: gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+
+      - name: Build image
+        env:
+          IMAGE_TAG: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO }}/${{ matrix.service }}:${{ github.sha }}
+          DOCKERFILE: ${{ matrix.dockerfile }}
+        run: docker build -f "$DOCKERFILE" -t "$IMAGE_TAG" .
+
+      - name: Push image
+        env:
+          IMAGE_TAG: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO }}/${{ matrix.service }}:${{ github.sha }}
+        run: docker push "$IMAGE_TAG"
+
+      - name: Deploy Cloud Run service
+        if: matrix.runtime == 'service'
+        env:
+          IMAGE_TAG: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO }}/${{ matrix.service }}:${{ github.sha }}
+          SERVICE_NAME: ${{ matrix.service }}
+          REGION: ${{ env.REGION }}
+        run: |
+          gcloud run deploy "$SERVICE_NAME" \
+            --image "$IMAGE_TAG" \
+            --region "$REGION" \
+            --platform managed \
+            --allow-unauthenticated \
+            --set-secrets STAGEFLIP_JWT_SECRET=stageflip-jwt-secret:latest
+
+      - name: Deploy Cloud Run job
+        if: matrix.runtime == 'job'
+        env:
+          IMAGE_TAG: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO }}/${{ matrix.service }}:${{ github.sha }}
+          JOB_NAME: ${{ matrix.service }}
+          REGION: ${{ env.REGION }}
+        run: |
+          gcloud run jobs deploy "$JOB_NAME" \
+            --image "$IMAGE_TAG" \
+            --region "$REGION" \
+            --cpu 2 \
+            --memory 2Gi \
+            --max-retries 1

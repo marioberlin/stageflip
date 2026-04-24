@@ -50,6 +50,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@hono/node-server':
+        specifier: 1.13.8
+        version: 1.13.8(hono@4.6.14)
       '@hono/zod-validator':
         specifier: 0.4.2
         version: 0.4.2(hono@4.6.14)(zod@3.25.76)
@@ -144,6 +147,28 @@ importers:
       typescript:
         specifier: 5.6.3
         version: 5.6.3
+      vitest:
+        specifier: 2.1.9
+        version: 2.1.9(@types/node@22.19.17)(happy-dom@20.9.0)(terser@5.46.2)
+
+  apps/render-worker:
+    dependencies:
+      '@stageflip/export-html5-zip':
+        specifier: workspace:*
+        version: link:../../packages/export-html5-zip
+      '@stageflip/export-video':
+        specifier: workspace:*
+        version: link:../../packages/export-video
+      zod:
+        specifier: 3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: 22.19.17
+        version: 22.19.17
+      tsup:
+        specifier: 8.5.1
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.10)(tsx@4.21.0)(typescript@5.6.3)(yaml@2.8.3)
       vitest:
         specifier: 2.1.9
         version: 2.1.9(@types/node@22.19.17)(happy-dom@20.9.0)(terser@5.46.2)
@@ -302,6 +327,15 @@ importers:
         version: 5.6.3
 
   firebase:
+    devDependencies:
+      '@types/node':
+        specifier: 22.19.17
+        version: 22.19.17
+      vitest:
+        specifier: 2.1.9
+        version: 2.1.9(@types/node@22.19.17)(happy-dom@20.9.0)(terser@5.46.2)
+
+  infra:
     devDependencies:
       '@types/node':
         specifier: 22.19.17
@@ -1919,6 +1953,12 @@ packages:
     resolution: {integrity: sha512-rc1hOQtjIWGxcxpb9aHAfLpIctjEnsDehj0DAiVfBlmT84uvR0uUtN2hEi/ecvWVjXUGf5qPF4qEgiLOx1YIMQ==}
     engines: {node: '>=6'}
     hasBin: true
+
+  '@hono/node-server@1.13.8':
+    resolution: {integrity: sha512-fsn8ucecsAXUoVxrUil0m13kOEq4mkX4/4QozCqmY+HpGfKl74OYSn8JcMA8GnG0ClfdRI4/ZSeG7zhFaVg+wg==}
+    engines: {node: '>=18.14.1'}
+    peerDependencies:
+      hono: ^4
 
   '@hono/node-server@1.19.14':
     resolution: {integrity: sha512-GwtvgtXxnWsucXvbQXkRgqksiH2Qed37H9xHZocE5sA3N8O8O8/8FA3uclQXxXVzc9XBZuEOMK7+r02FmSpHtw==}
@@ -6981,6 +7021,10 @@ snapshots:
       protobufjs: 7.5.5
       yargs: 17.7.2
     optional: true
+
+  '@hono/node-server@1.13.8(hono@4.6.14)':
+    dependencies:
+      hono: 4.6.14
 
   '@hono/node-server@1.19.14(hono@4.12.15)':
     dependencies:
