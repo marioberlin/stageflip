@@ -117,3 +117,9 @@ export {
   DATA_SOURCE_BINDINGS_TOOL_DEFINITIONS,
   registerDataSourceBindingsBundle,
 } from './handlers/data-source-bindings/register.js';
+export {
+  SEMANTIC_LAYOUT_BUNDLE_NAME,
+  SEMANTIC_LAYOUT_HANDLERS,
+  SEMANTIC_LAYOUT_TOOL_DEFINITIONS,
+  registerSemanticLayoutBundle,
+} from './handlers/semantic-layout/register.js';
