@@ -254,6 +254,9 @@ importers:
       '@stageflip/llm-abstraction':
         specifier: workspace:*
         version: link:../llm-abstraction
+      '@stageflip/schema':
+        specifier: workspace:*
+        version: link:../schema
       zod:
         specifier: 3.25.76
         version: 3.25.76

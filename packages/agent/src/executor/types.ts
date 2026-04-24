@@ -4,7 +4,7 @@
 // machines in the editor UI (ai-copilot sidebar) and parity traces key
 // on the discriminated `kind` field.
 
-import type { ToolContext } from '@stageflip/engine';
+import type { DocumentContext } from '@stageflip/engine';
 import type { Document } from '@stageflip/schema';
 import type { Operation as JsonPatchOp } from 'fast-json-patch';
 
@@ -43,12 +43,12 @@ export interface PatchSink {
 
 /**
  * Context passed to every tool handler in an Executor-driven run.
- * `document` is the working document snapshot at call time — handlers
- * must treat it as read-only and mutate via `patchSink`. The Executor
- * applies drained patches + re-reads `document` on the next call.
+ * Extends `DocumentContext` (from `@stageflip/engine`) with
+ * Executor-specific fields: `patchSink` for write-tier handlers and
+ * `stepId` for audit. The `document` + `selection` fields come from the
+ * base type so read-tier handlers can accept either context shape.
  */
-export interface ExecutorContext extends ToolContext {
-  readonly document: Document;
+export interface ExecutorContext extends DocumentContext {
   readonly patchSink: PatchSink;
   readonly stepId: string;
 }

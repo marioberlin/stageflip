@@ -6,6 +6,7 @@
 // (in @stageflip/llm-abstraction) — the LLM-facing JSONSchema half — via
 // the shared `name`.
 
+import type { Document } from '@stageflip/schema';
 import type { z } from 'zod';
 
 /**
@@ -16,6 +17,26 @@ import type { z } from 'zod';
  */
 export interface ToolContext {
   readonly signal?: AbortSignal;
+}
+
+/**
+ * Selection state — what the editor currently has highlighted. The
+ * Executor plumbs this through from the client so selection-aware tools
+ * (e.g. `describe_selection`) can answer "what am I looking at right now".
+ */
+export interface DocumentSelection {
+  readonly slideId?: string;
+  readonly elementIds: readonly string[];
+}
+
+/**
+ * Every handler that reads the document extends this — a read-only doc
+ * snapshot plus optional selection. Handlers that also mutate the doc
+ * (via a patch sink in the Executor's context) declare a wider context.
+ */
+export interface DocumentContext extends ToolContext {
+  readonly document: Document;
+  readonly selection?: DocumentSelection;
 }
 
 export interface ToolHandler<
