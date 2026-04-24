@@ -1,8 +1,8 @@
 # ADR-004: Preset System
 
 **Date**: 2026-04-25
-**Ratified**: pending
-**Status**: **Proposed**
+**Ratified**: 2026-04-25
+**Status**: **Accepted**
 **Supersedes**: N/A
 **Superseded by**: N/A
 
@@ -173,7 +173,7 @@ When Implementer and Reviewer disagree on whether a preset matches its compass s
 
 ## Ratification Signoff
 
-- [ ] Product owner (Mario Tiedemann) — ADR decisions
-- [ ] Product owner — parity-fixture sign-off authority (D5) accepted
-- [ ] Engineering — preset schema + loader + registry green
-- [ ] Engineering — `check-preset-integrity` gate green on main
+- [x] Product owner (Mario Tiedemann) — ADR decisions ratified 2026-04-25
+- [x] Product owner — parity-fixture sign-off authority (D5) accepted 2026-04-25
+- [ ] Engineering — preset schema + loader + registry green (deferred to T-304 implementation)
+- [ ] Engineering — `check-preset-integrity` gate green on main (deferred to T-308 implementation)
