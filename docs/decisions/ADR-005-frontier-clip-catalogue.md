@@ -1,8 +1,8 @@
 # ADR-005: Frontier Clip Catalogue
 
 **Date**: 2026-04-25
-**Ratified**: pending
-**Status**: **Proposed**
+**Ratified**: 2026-04-25
+**Status**: **Accepted**
 **Supersedes**: N/A
 **Superseded by**: N/A
 
@@ -153,8 +153,8 @@ The review is tracked as T-403; hardening responses as T-404; GA sign-off as T-4
 
 ## Ratification Signoff
 
-- [ ] Product owner (Mario Tiedemann) — catalogue scope
-- [ ] Product owner — feature-flag policy (D3)
-- [ ] Engineering — seven clip implementations + three deployment targets green
+- [x] Product owner (Mario Tiedemann) — catalogue scope ratified 2026-04-25
+- [x] Product owner — feature-flag policy (D3) ratified 2026-04-25
+- [ ] Engineering — seven clip implementations + three deployment targets green (deferred to T-383 → T-401 implementation)
 - [ ] Security — pre-GA review complete (T-403); GA sign-off recorded here
 - [ ] Security review signed: pending
