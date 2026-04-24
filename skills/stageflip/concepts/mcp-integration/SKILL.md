@@ -74,12 +74,21 @@ skill file. Drift = CI failure.
   `~/.config/stageflip/auth.json` at mode 0600; `guardMcpSession`
   verifies the bearer JWT on each MCP call and returns the session's
   `allowedBundles` to feed the adapter gate.
-- **T-224 in flight**. `@stageflip/plugin` will package the skills
-  tree + a concrete `AuthProvider` for the Claude-plugin install.
-- The auto-gen table above already works for several rows —
-  `reference/schema`, `reference/validation-rules`,
-  `clips/catalog`, `tools/SKILL.md`, `runtimes/SKILL.md` all ship via
-  T-034 + T-107 + T-220.
+- **T-224 shipped**. `@stageflip/plugin` packages the skills tree +
+  a `.mcp.json` + `.claude-plugin/plugin.json` via
+  `writePluginBundle`; exposes `createGoogleAuthProvider` for the
+  Claude-plugin install's OAuth round-trip.
+- **T-225 shipped**. `apps/cli` ships the `stageflip` binary with
+  login / logout / whoami / doctor / render / export / plugin
+  install wired end-to-end; 28 additional commands registered as
+  stubs for Phase-10 / Phase-11 follow-ups.
+- **T-226 shipped**. Every row in the auto-gen table below is now
+  live:
+  `reference/schema` (T-034), `reference/validation-rules` (T-107),
+  `clips/catalog` (T-220), `tools/SKILL.md` (T-220),
+  `runtimes/SKILL.md` (T-220), `reference/cli` (T-226 wires
+  `@stageflip/app-cli`'s `CLI_COMMAND_REGISTRY` through T-220's
+  `generateCliReferenceSkill`).
 
 ## Calling a StageFlip tool over MCP
 

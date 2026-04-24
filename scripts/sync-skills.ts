@@ -34,12 +34,14 @@ import {
   LIVE_RUNTIME_MANIFEST,
   type ToolsIndexPkg,
   generateClipsCatalogSkill,
+  generateCliReferenceSkill,
   generateRuntimesIndexSkill,
   generateSchemaSkill,
   generateToolsIndexSkill,
   generateValidationRulesSkill,
 } from '../packages/skills-sync/src/index.js';
 import * as validation from '../packages/validation/src/index.js';
+import { commandRegistryAsCliReferencePkg } from '../apps/cli/src/index.js';
 
 interface SyncJob {
   name: string;
@@ -121,6 +123,11 @@ function buildJobs(): SyncJob[] {
       name: 'runtimes/index',
       target: resolve('skills/stageflip/runtimes/SKILL.md'),
       generate: () => generateRuntimesIndexSkill(runtimesIndex),
+    },
+    {
+      name: 'reference/cli',
+      target: resolve('skills/stageflip/reference/cli/SKILL.md'),
+      generate: () => generateCliReferenceSkill(commandRegistryAsCliReferencePkg()),
     },
   ];
 }
