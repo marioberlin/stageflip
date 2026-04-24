@@ -18,7 +18,7 @@ import {
 import type { LLMContentBlock, LLMMessage, LLMProvider } from '@stageflip/llm-abstraction';
 import { LLMError } from '@stageflip/llm-abstraction';
 import type { Document } from '@stageflip/schema';
-import { applyPatch } from 'fast-json-patch';
+import { type Operation, applyPatch } from 'fast-json-patch';
 import type { Plan, PlanStep } from '../planner/types.js';
 import { createPatchSink } from './patch-sink.js';
 import type { ExecutorContext, ExecutorEvent, JsonPatchOp, StepStatus } from './types.js';
@@ -212,7 +212,7 @@ async function* runStep(
       const patches = patchSink.drain();
       if (patches.length > 0 && !isError) {
         try {
-          document = applyPatch(document, patches, false, false).newDocument;
+          document = applyPatch(document, patches as Operation[], false, false).newDocument;
         } catch (patchError) {
           // A handler pushed patches that fail to apply — treat as a handler
           // bug and feed the error back to the LLM without mutating document.
