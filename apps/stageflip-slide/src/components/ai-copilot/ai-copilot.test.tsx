@@ -87,6 +87,44 @@ describe('<AiCopilot>', () => {
     expect(testIds.size).toBe(2);
   });
 
+  it('renders the not_configured hint when the route returns 503 (T-170)', async () => {
+    const executor = vi.fn().mockResolvedValue({
+      kind: 'not_configured',
+      message: 'Agent orchestrator is not configured. Set ANTHROPIC_API_KEY and retry.',
+    } as AgentExecuteResult);
+    render(withShell(<AiCopilot open onClose={() => undefined} executor={executor} />));
+    const input = screen.getByTestId('ai-copilot-input') as HTMLTextAreaElement;
+    fireEvent.change(input, { target: { value: 'anything' } });
+    fireEvent.submit(screen.getByTestId('ai-copilot-form'));
+    await waitFor(() => {
+      expect(lastMessageOfRole('assistant')?.textContent).toMatch(/ANTHROPIC_API_KEY/i);
+    });
+    // Status returns to idle (not error) — the user can configure and retry.
+    expect(screen.getByTestId('ai-command-bar').getAttribute('data-status')).toBe('idle');
+  });
+
+  it('renders a step-count + validation summary on applied results (T-170)', async () => {
+    const executor = vi.fn().mockResolvedValue({
+      kind: 'applied',
+      message: 'Applied.',
+      payload: {
+        plan: { steps: [{}, {}, {}] },
+        events: [],
+        finalDocument: {},
+        validation: { tier: 'pass-with-notes' },
+      },
+    } as AgentExecuteResult);
+    render(withShell(<AiCopilot open onClose={() => undefined} executor={executor} />));
+    const input = screen.getByTestId('ai-copilot-input') as HTMLTextAreaElement;
+    fireEvent.change(input, { target: { value: 'Build me a deck' } });
+    fireEvent.submit(screen.getByTestId('ai-copilot-form'));
+    await waitFor(() => {
+      const text = lastMessageOfRole('assistant')?.textContent ?? '';
+      expect(text).toContain('3 steps');
+      expect(text).toContain('pass-with-notes');
+    });
+  });
+
   it('shows the error prefix on executor error and flips status to error', async () => {
     const executor = vi.fn().mockResolvedValue({
       kind: 'error',

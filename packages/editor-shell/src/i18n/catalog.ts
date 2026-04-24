@@ -127,6 +127,10 @@ const EN_CATALOG = new Map<string, string>([
     'Hi! Ask me to tweak slides — add a bullet, restyle a title, shorten a block of text.',
   ],
   ['copilot.notWired', 'AI execution is wired in Phase 7.'],
+  [
+    'copilot.notConfigured',
+    'Agent orchestrator is not configured. Set ANTHROPIC_API_KEY and retry.',
+  ],
   ['copilot.errorPrefix', 'Error:'],
   ['copilot.status.idle', 'Idle'],
   ['copilot.status.pending', 'Thinking…'],
