@@ -11,6 +11,7 @@ import {
   BundleLoader,
   type BundleRegistry,
   DEFAULT_TOOL_LIMIT,
+  type DocumentSelection,
   type ToolRouter,
   ToolRouterError,
 } from '@stageflip/engine';
@@ -34,6 +35,12 @@ export interface ExecutorRequest {
   maxIterationsPerStep?: number;
   /** Per-step I-9 budget. Defaults to {@link DEFAULT_TOOL_LIMIT} (30). */
   maxTools?: number;
+  /**
+   * Editor-side selection at run start. Threaded through to every handler
+   * via `ExecutorContext.selection` — read-tier tools like
+   * `describe_selection` rely on it. Omit when there is no selection.
+   */
+  selection?: DocumentSelection;
 }
 
 export interface ExecutorCallOptions {
@@ -187,6 +194,7 @@ async function* runStep(
         patchSink,
         stepId: step.id,
         ...(signal ? { signal } : {}),
+        ...(request.selection !== undefined ? { selection: request.selection } : {}),
       };
 
       let result: unknown;

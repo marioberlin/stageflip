@@ -18,7 +18,13 @@ export {
   DEFAULT_TOOL_LIMIT,
 } from './bundles/loader.js';
 
-export type { AnyToolHandler, ToolContext, ToolHandler } from './router/types.js';
+export type {
+  AnyToolHandler,
+  DocumentContext,
+  DocumentSelection,
+  ToolContext,
+  ToolHandler,
+} from './router/types.js';
 export {
   type ToolCallEvent,
   ToolRouter,
@@ -27,3 +33,11 @@ export {
   type ToolRouterErrorKind,
   type ToolRouterOptions,
 } from './router/router.js';
+
+// Handler bundles — T-155 shipped `read`; T-156–T-168 populate the rest.
+export {
+  READ_BUNDLE_NAME,
+  READ_HANDLERS,
+  READ_TOOL_DEFINITIONS,
+  registerReadBundle,
+} from './handlers/read/register.js';
