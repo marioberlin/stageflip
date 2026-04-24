@@ -108,6 +108,8 @@ You are autonomous, not reckless. Escalate to the Orchestrator (post to the task
 - You discover an architectural question not covered by existing skills.
 - A license issue appears mid-implementation.
 - A task's acceptance criteria conflict with an invariant.
+- Implementer and Reviewer disagree on whether a preset matches its compass source and reference-frame parity does not resolve it. Escalate with both candidate frames and both interpretations; Orchestrator approves or routes to the user.
+- Type-design consultant returns "no adequate fallback" for a bespoke font referenced by a preset in clusters A/B/D/F/G (see ADR-004 §D4).
 
 Say exactly what's blocking you. Propose options. Wait.
 
