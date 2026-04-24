@@ -63,3 +63,9 @@ export {
   LAYOUT_TOOL_DEFINITIONS,
   registerLayoutBundle,
 } from './handlers/layout/register.js';
+export {
+  VALIDATE_BUNDLE_NAME,
+  VALIDATE_HANDLERS,
+  VALIDATE_TOOL_DEFINITIONS,
+  registerValidateBundle,
+} from './handlers/validate/register.js';
