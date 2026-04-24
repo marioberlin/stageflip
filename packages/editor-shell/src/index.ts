@@ -179,3 +179,20 @@ export {
   Playhead,
   TimelinePanel,
 } from './timeline/panel';
+
+// T-182 — aspect-ratio bouncer (multi-aspect preview grid).
+export {
+  type AspectPreviewPlacement,
+  type AspectRatio,
+  type AspectRowLayoutOptions,
+  type BoxSize,
+  COMMON_ASPECTS,
+  fitAspect,
+  layoutAspectPreviews,
+} from './aspect-ratio/math';
+export {
+  type AspectRatioGridProps,
+  type AspectRatioPreviewProps,
+  AspectRatioGrid,
+  AspectRatioPreview,
+} from './aspect-ratio/components';
