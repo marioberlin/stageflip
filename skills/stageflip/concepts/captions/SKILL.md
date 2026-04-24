@@ -3,7 +3,7 @@ title: Captions
 id: skills/stageflip/concepts/captions
 tier: concept
 status: substantive
-last_updated: 2026-04-20
+last_updated: 2026-04-24
 owner_task: T-184
 related:
   - skills/stageflip/modes/stageflip-video/SKILL.md
@@ -49,13 +49,19 @@ Caption appearance comes from the theme's caption slot (`theme.captions.*`).
 Burned-in vs. sidecar `.vtt` is an export-time choice. IAB banners don't
 support captions (budget-forbidden); see `concepts/display-budget`.
 
-## Current state (Phase 1 exit)
+## Current state (Phase 8, T-184a)
 
 - **Schema shape** is live: `captionTrackSchema` + `captionSegmentSchema` in
   `packages/schema/src/content/video.ts`. `VideoContent.captions` is optional
   and carries pre-segmented Whisper output.
-- **Pipeline** (Whisper integration, per-aspect packing) is **not yet
-  implemented** — Phase 8 (T-184, T-185).
+- **Package** `@stageflip/captions` ships the pipeline contract + a deterministic
+  word→segment packer + a SHA-256 content-hash `TranscriptCache` + an in-memory
+  default cache + a mock provider for tests. The public entry is
+  `transcribeAndPack({ source, language?, pack, provider, cache? })`.
+- **Real Whisper provider** (OpenAI SDK) lands in **T-184b** — the
+  `TranscriptionProvider` seam is already in place.
+- **Per-aspect bouncing** of packed segments is **T-185**; the packer
+  already accepts the `maxCharsPerLine` that T-185 will vary per aspect.
 
 ## Related
 
