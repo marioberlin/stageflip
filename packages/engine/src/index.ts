@@ -87,3 +87,9 @@ export {
   SLIDE_CM1_TOOL_DEFINITIONS,
   registerSlideCm1Bundle,
 } from './handlers/slide-cm1/register.js';
+export {
+  TABLE_CM1_BUNDLE_NAME,
+  TABLE_CM1_HANDLERS,
+  TABLE_CM1_TOOL_DEFINITIONS,
+  registerTableCm1Bundle,
+} from './handlers/table-cm1/register.js';
