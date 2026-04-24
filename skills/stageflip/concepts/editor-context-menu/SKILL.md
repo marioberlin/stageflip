@@ -7,6 +7,7 @@ last_updated: 2026-04-23
 owner_task: T-139a
 related:
   - skills/stageflip/modes/stageflip-slide/SKILL.md
+  - skills/stageflip/concepts/skills-tree/SKILL.md
 ---
 
 # Editor Context-Menu Registry

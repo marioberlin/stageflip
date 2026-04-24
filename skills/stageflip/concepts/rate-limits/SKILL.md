@@ -7,6 +7,8 @@ last_updated: 2026-04-20
 owner_task: T-263
 related:
   - skills/stageflip/concepts/auth/SKILL.md
+  - skills/stageflip/concepts/mcp-integration/SKILL.md
+  - skills/stageflip/concepts/agent-executor/SKILL.md
 ---
 
 # Rate Limits

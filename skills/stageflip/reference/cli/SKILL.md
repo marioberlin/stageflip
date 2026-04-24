@@ -5,7 +5,9 @@ tier: reference
 status: placeholder
 last_updated: 2026-04-20
 owner_task: T-226
-related: []
+related:
+  - skills/stageflip/reference/schema
+  - skills/stageflip/reference/validation-rules
 ---
 
 # Reference — CLI (auto-gen)

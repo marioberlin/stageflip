@@ -5,7 +5,9 @@ tier: workflow
 status: placeholder
 last_updated: 2026-04-20
 owner_task: T-250
-related: []
+related:
+  - skills/stageflip/concepts/loss-flags
+  - skills/stageflip/concepts/design-system-learning
 ---
 
 # Workflow — Import Google Slides

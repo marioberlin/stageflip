@@ -67,6 +67,23 @@ delivers the MCP integration. `@stageflip/mcp-server` and `@stageflip/plugin`
 packages are scaffolded but empty. The auto-gen table above already works
 for one of its rows — `reference/schema/SKILL.md` is live via T-034.
 
+## Calling a StageFlip tool over MCP
+
+```jsonc
+// Claude (or any MCP client) → @stageflip/mcp-server
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "stageflip.create_slide",
+    "arguments": { "title": "Quarterly metrics", "layout": "title-body" }
+  }
+}
+```
+
+The server authenticates via the JWT attached to the session (T-223), resolves the principal's permitted bundles, dispatches through the existing `ToolRouter` under the covers, and returns the router's Zod-validated result unchanged. Unknown tool names map to MCP `ErrorCode.MethodNotFound`; Zod validation failures map to `InvalidParams`.
+
 ## Related
 
 - Auth: `concepts/auth/SKILL.md`

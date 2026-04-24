@@ -5,7 +5,9 @@ tier: profile
 status: placeholder
 last_updated: 2026-04-20
 owner_task: T-021
-related: []
+related:
+  - skills/stageflip/modes/stageflip-slide
+  - skills/stageflip/concepts/rir
 ---
 
 # Slide Profile
