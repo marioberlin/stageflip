@@ -1,5 +1,6 @@
 // packages/agent/src/planner/planner.test.ts
 
+import { BundleRegistry, CANONICAL_BUNDLES, createCanonicalRegistry } from '@stageflip/engine';
 import type {
   LLMContentBlock,
   LLMProvider,
@@ -8,7 +9,6 @@ import type {
   LLMStreamEvent,
 } from '@stageflip/llm-abstraction';
 import { describe, expect, it, vi } from 'vitest';
-import { listBundles } from './bundles.js';
 import { PlannerError, createPlanner } from './planner.js';
 import { EMIT_PLAN_TOOL_NAME } from './prompt.js';
 
@@ -227,8 +227,35 @@ describe('createPlanner', () => {
 
     const [req] = completeSpy.mock.calls[0] ?? [];
     const system = (req as LLMRequest).system ?? '';
-    for (const b of listBundles()) {
+    for (const b of CANONICAL_BUNDLES) {
       expect(system).toContain(b.name);
     }
+  });
+
+  it('uses a caller-supplied registry in place of the canonical default', async () => {
+    const { provider, completeSpy } = fakeProvider({
+      stop_reason: 'tool_use',
+      content: [
+        toolUseBlock({
+          justification: 'ok',
+          steps: [{ id: 's1', description: 'x', bundles: ['only-one'] }],
+        }),
+      ],
+    });
+
+    const scoped = new BundleRegistry();
+    scoped.register({ name: 'only-one', description: 'd', tools: [] });
+
+    const planner = createPlanner({ provider, registry: scoped });
+    const plan = await planner.plan({ prompt: 'x', model: 'claude-opus-4-7' });
+    expect(plan.steps[0]?.bundles).toEqual(['only-one']);
+
+    const [req] = completeSpy.mock.calls[0] ?? [];
+    expect((req as LLMRequest).system).toContain('only-one');
+
+    // Canonical registry is untouched — the override did not leak.
+    const canonical = createCanonicalRegistry();
+    expect(canonical.has('read')).toBe(true);
+    expect(canonical.has('only-one')).toBe(false);
   });
 });

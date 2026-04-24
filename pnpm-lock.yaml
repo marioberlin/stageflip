@@ -132,6 +132,9 @@ importers:
 
   packages/agent:
     dependencies:
+      '@stageflip/engine':
+        specifier: workspace:*
+        version: link:../engine
       '@stageflip/llm-abstraction':
         specifier: workspace:*
         version: link:../llm-abstraction
@@ -243,7 +246,11 @@ importers:
         specifier: 19.2.5
         version: 19.2.5(react@19.2.5)
 
-  packages/engine: {}
+  packages/engine:
+    dependencies:
+      '@stageflip/llm-abstraction':
+        specifier: workspace:*
+        version: link:../llm-abstraction
 
   packages/export-html5-zip: {}
 
