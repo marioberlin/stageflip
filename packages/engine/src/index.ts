@@ -75,3 +75,9 @@ export {
   CLIP_ANIMATION_TOOL_DEFINITIONS,
   registerClipAnimationBundle,
 } from './handlers/clip-animation/register.js';
+export {
+  ELEMENT_CM1_BUNDLE_NAME,
+  ELEMENT_CM1_HANDLERS,
+  ELEMENT_CM1_TOOL_DEFINITIONS,
+  registerElementCm1Bundle,
+} from './handlers/element-cm1/register.js';
