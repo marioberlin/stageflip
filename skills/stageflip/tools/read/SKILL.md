@@ -38,7 +38,6 @@ Output:
   mode: 'slide' | 'video' | 'display';
   locale: string;
   title?: string;
-  themeName?: string;
   // Exactly one of these, keyed on mode:
   slideCount?: number;
   trackCount?: number;

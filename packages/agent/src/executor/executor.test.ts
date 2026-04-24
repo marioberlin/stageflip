@@ -410,6 +410,66 @@ describe('Executor — edge cases', () => {
     expect(planEnd.finalDocument).toEqual(doc);
   });
 
+  it('threads ExecutorRequest.selection through to every handler invocation', async () => {
+    const registry = new BundleRegistry();
+    registry.register({ name: 'read', description: 'r', tools: [declareTool('inspect')] });
+    const router = new ToolRouter<ExecutorContext>();
+    const seen: Array<ExecutorContext['selection']> = [];
+    router.register(
+      basicHandler('inspect', {
+        run: (_input, ctx) => {
+          seen.push(ctx.selection);
+          return { ok: true };
+        },
+      }),
+    );
+
+    const { provider } = scriptedProvider([
+      response([{ type: 'tool_use', id: 'tu', name: 'inspect', input: {} }], 'tool_use'),
+      response([{ type: 'text', text: 'done' }], 'end_turn'),
+    ]);
+
+    const executor = createExecutor({ provider, registry, router });
+    await collect(
+      executor.run({
+        plan: singleStepPlan(),
+        document: doc,
+        model: 'claude-opus-4-7',
+        selection: { slideId: 'slide-1', elementIds: ['el-a', 'el-b'] },
+      }),
+    );
+
+    expect(seen).toHaveLength(1);
+    expect(seen[0]).toEqual({ slideId: 'slide-1', elementIds: ['el-a', 'el-b'] });
+  });
+
+  it('leaves ctx.selection undefined when the request omits it', async () => {
+    const registry = new BundleRegistry();
+    registry.register({ name: 'read', description: 'r', tools: [declareTool('inspect')] });
+    const router = new ToolRouter<ExecutorContext>();
+    const seen: Array<ExecutorContext['selection']> = [];
+    router.register(
+      basicHandler('inspect', {
+        run: (_input, ctx) => {
+          seen.push(ctx.selection);
+          return { ok: true };
+        },
+      }),
+    );
+
+    const { provider } = scriptedProvider([
+      response([{ type: 'tool_use', id: 'tu', name: 'inspect', input: {} }], 'tool_use'),
+      response([{ type: 'text', text: 'done' }], 'end_turn'),
+    ]);
+
+    const executor = createExecutor({ provider, registry, router });
+    await collect(
+      executor.run({ plan: singleStepPlan(), document: doc, model: 'claude-opus-4-7' }),
+    );
+
+    expect(seen).toEqual([undefined]);
+  });
+
   it('forwards a custom systemPrompt through to the provider', async () => {
     const { provider, spy } = scriptedProvider([
       response([{ type: 'text', text: 'done' }], 'end_turn'),

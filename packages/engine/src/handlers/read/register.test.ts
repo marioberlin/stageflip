@@ -60,4 +60,10 @@ describe('registerReadBundle', () => {
   it('declares READ_BUNDLE_NAME === "read" (matches the skill catalog)', () => {
     expect(READ_BUNDLE_NAME).toBe('read');
   });
+
+  it('every handler declares bundle === "read" (tool-bundles §Enforcement invariant)', () => {
+    for (const handler of READ_HANDLERS) {
+      expect(handler.bundle).toBe(READ_BUNDLE_NAME);
+    }
+  });
 });

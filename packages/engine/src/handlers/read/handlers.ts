@@ -14,15 +14,17 @@ export const READ_BUNDLE_NAME = 'read';
 // --- get_document ---------------------------------------------------------
 
 const getDocumentInput = z.object({}).strict();
-const getDocumentOutput = z.object({
-  id: z.string(),
-  mode: z.enum(['slide', 'video', 'display']),
-  title: z.string().optional(),
-  locale: z.string(),
-  slideCount: z.number().int().nonnegative().optional(),
-  trackCount: z.number().int().nonnegative().optional(),
-  sizeCount: z.number().int().nonnegative().optional(),
-});
+const getDocumentOutput = z
+  .object({
+    id: z.string(),
+    mode: z.enum(['slide', 'video', 'display']),
+    title: z.string().optional(),
+    locale: z.string(),
+    slideCount: z.number().int().nonnegative().optional(),
+    trackCount: z.number().int().nonnegative().optional(),
+    sizeCount: z.number().int().nonnegative().optional(),
+  })
+  .strict();
 
 const getDocumentHandler: ToolHandler<
   z.infer<typeof getDocumentInput>,
@@ -57,21 +59,25 @@ const getDocumentHandler: ToolHandler<
 // --- get_slide ------------------------------------------------------------
 
 const getSlideInput = z.object({ slideId: z.string().min(1) }).strict();
-const getSlideOutput = z.union([
-  z.object({
-    found: z.literal(true),
-    id: z.string(),
-    title: z.string().optional(),
-    elementCount: z.number().int().nonnegative(),
-    durationMs: z.number().int().positive().optional(),
-    hasBackground: z.boolean(),
-    hasTransition: z.boolean(),
-    hasNotes: z.boolean(),
-  }),
-  z.object({
-    found: z.literal(false),
-    reason: z.enum(['wrong_mode', 'not_found']),
-  }),
+const getSlideOutput = z.discriminatedUnion('found', [
+  z
+    .object({
+      found: z.literal(true),
+      id: z.string(),
+      title: z.string().optional(),
+      elementCount: z.number().int().nonnegative(),
+      durationMs: z.number().int().positive().optional(),
+      hasBackground: z.boolean(),
+      hasTransition: z.boolean(),
+      hasNotes: z.boolean(),
+    })
+    .strict(),
+  z
+    .object({
+      found: z.literal(false),
+      reason: z.enum(['wrong_mode', 'not_found']),
+    })
+    .strict(),
 ]);
 
 const getSlideHandler: ToolHandler<
@@ -113,16 +119,20 @@ const elementSummary = z.object({
   name: z.string().optional(),
   visible: z.boolean(),
 });
-const listElementsOutput = z.union([
-  z.object({
-    found: z.literal(true),
-    slideId: z.string(),
-    elements: z.array(elementSummary),
-  }),
-  z.object({
-    found: z.literal(false),
-    reason: z.enum(['wrong_mode', 'not_found']),
-  }),
+const listElementsOutput = z.discriminatedUnion('found', [
+  z
+    .object({
+      found: z.literal(true),
+      slideId: z.string(),
+      elements: z.array(elementSummary),
+    })
+    .strict(),
+  z
+    .object({
+      found: z.literal(false),
+      reason: z.enum(['wrong_mode', 'not_found']),
+    })
+    .strict(),
 ]);
 
 const listElementsHandler: ToolHandler<
