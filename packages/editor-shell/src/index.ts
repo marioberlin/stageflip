@@ -196,3 +196,17 @@ export {
   AspectRatioGrid,
   AspectRatioPreview,
 } from './aspect-ratio/components';
+
+// T-201 — multi-size banner preview grid (StageFlip.Display).
+export {
+  type BannerSize,
+  type BannerSizeLayoutOptions,
+  type BannerSizePlacement,
+  layoutBannerSizes,
+} from './banner-size/math';
+export {
+  type BannerSizeGridProps,
+  type BannerSizePreviewProps,
+  BannerSizeGrid,
+  BannerSizePreview,
+} from './banner-size/components';
