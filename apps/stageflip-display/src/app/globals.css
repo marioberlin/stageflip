@@ -1,0 +1,34 @@
+/* apps/stageflip-display/src/app/globals.css */
+/* Framework-level reset + dark-ish default palette matching the video */
+/* + slide apps' walking skeletons. Component-level styling lives next */
+/* to each component rather than in this file.                         */
+
+:root {
+  color-scheme: dark;
+  --sf-bg: #0c1116;
+  --sf-surface: #111821;
+  --sf-fg: #f5f7fa;
+  --sf-muted: #9aa3b2;
+  --sf-accent: #5af8fb;
+  --sf-banner-chrome: #1a2432;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+    sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+button {
+  font-family: inherit;
+}
