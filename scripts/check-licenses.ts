@@ -85,24 +85,54 @@ const REVIEWED_OK = new Map<string, string>([
   ['gsap', "Standard 'no charge' license (URL form); Business Green procured"],
 ]);
 
-/** Split a composite SPDX string into atomic tokens. */
-function tokenize(license: string): string[] {
+/**
+ * Split a single license branch (no OR) into atomic SPDX tokens.
+ * Handles AND + WITH + slash-separated lists; parens are stripped.
+ */
+function tokenizeBranch(branch: string): string[] {
+  return branch
+    .replace(/[()]/g, ' ')
+    .split(/\s+(?:AND|WITH)\s+|,|\//i)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Split a composite SPDX expression into OR branches. Each branch
+ * is a license the licensor offers us the choice of — if ANY branch
+ * is fully allowed, the package is allowed (we pick that branch).
+ * Parens at the top level are stripped before the split.
+ */
+function splitOrBranches(license: string): string[] {
   return license
     .replace(/[()]/g, ' ')
-    .split(/\s+(?:OR|AND|WITH)\s+|,|\//i)
+    .split(/\s+OR\s+/i)
     .map((s) => s.trim())
     .filter(Boolean);
 }
 
 type Verdict = 'allowed' | 'needs-adr' | 'forbidden' | 'unknown';
 
-function classify(licenseKey: string): Verdict {
-  if (!licenseKey || licenseKey === 'UNKNOWN') return 'unknown';
-  const tokens = tokenize(licenseKey);
+function classifyBranch(branch: string): Verdict {
+  const tokens = tokenizeBranch(branch);
   if (tokens.length === 0) return 'unknown';
   if (tokens.some((t) => FORBIDDEN.has(t))) return 'forbidden';
-  if (tokens.some((t) => ALLOWED.has(t))) return 'allowed';
+  if (tokens.every((t) => ALLOWED.has(t))) return 'allowed';
   if (tokens.some((t) => NEEDS_ADR.has(t))) return 'needs-adr';
+  if (tokens.some((t) => ALLOWED.has(t))) return 'allowed';
+  return 'unknown';
+}
+
+function classify(licenseKey: string): Verdict {
+  if (!licenseKey || licenseKey === 'UNKNOWN') return 'unknown';
+  const branches = splitOrBranches(licenseKey);
+  if (branches.length === 0) return 'unknown';
+  const verdicts = branches.map(classifyBranch);
+  // OR semantics: any allowed branch wins.
+  if (verdicts.some((v) => v === 'allowed')) return 'allowed';
+  if (verdicts.every((v) => v === 'forbidden')) return 'forbidden';
+  if (verdicts.some((v) => v === 'needs-adr')) return 'needs-adr';
+  if (verdicts.some((v) => v === 'forbidden')) return 'forbidden';
   return 'unknown';
 }
 

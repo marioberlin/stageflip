@@ -3,5 +3,36 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Stub. Hono API service — scaffolded when authZ + rate limiting land (T-262+)."
+  "description": "StageFlip API service — Hono + Firebase Admin + MCP session mint (T-229).",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --dts --format esm --clean",
+    "dev": "tsup src/index.ts --dts --format esm --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "0.4.2",
+    "@stageflip/mcp-server": "workspace:^",
+    "firebase-admin": "13.0.1",
+    "hono": "4.6.14",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.17",
+    "tsup": "8.5.1",
+    "vitest": "2.1.9"
+  }
 }
