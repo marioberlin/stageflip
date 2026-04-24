@@ -3,7 +3,7 @@ title: Agent — Validator
 id: skills/stageflip/concepts/agent-validator
 tier: concept
 status: substantive
-last_updated: 2026-04-20
+last_updated: 2026-04-24
 owner_task: T-153
 related:
   - skills/stageflip/concepts/agent-executor/SKILL.md
@@ -67,10 +67,69 @@ interface ValidationResult {
 A `fail` or `pass-with-notes` routes back to the Executor (or to the user,
 depending on severity).
 
-## Current state (Phase 1 exit)
+## Current state (Phase 7, T-153 shipped)
 
-Not yet implemented. Phase 7 (T-153) delivers the Validator. Parity harness
-(the programmatic half) lands in Phase 5 (T-100).
+`@stageflip/agent` exports `createValidator({ provider, extraProgrammaticChecks? })`
+returning a `Validator` whose `validate(request, { signal? })` yields a
+`ValidationResult`.
+
+**Built-in programmatic checks** (run on every call):
+
+- `schema_round_trip` — `documentSchema.parse` succeeds AND
+  `JSON.stringify(parse(doc))` round-trips byte-for-byte. Catches
+  Executor-side patches that land a shape the schema silently accepts
+  but the serializer can't.
+
+**Additional programmatic checks** ride through `extraProgrammaticChecks`
+on the factory; each implements `{ name, run(document) }`. Intended plugs:
+
+- Pre-render lint (T-104's `@stageflip/validation`) — wrap
+  `lintDocument(rir(document))` and map `severity: 'error'` to `fail`.
+- Parity PSNR/SSIM — inject a closure that captures the current render +
+  golden pair and scores it; the Validator stays render-agnostic.
+
+**Qualitative checks** (opt-in via `request.qualitativeChecks: QualitativeCheckName[]`):
+
+- `brand_voice` — single LLM call; tone/diction/claim-style consistency
+  across slides.
+- `claim_plausibility` — internal consistency of numeric + named facts
+  (no outside-world fact-check).
+- `reading_level` — estimates effective grade level of body copy.
+- Every check uses one forced `emit_qualitative_verdict` tool call with
+  a Zod-validated `{ verdict, evidence, suggestedFix? }` payload.
+
+**Tier computation** (authoritative, matches the skill's core rule —
+"Quality tier is set programmatically, not by LLM"):
+
+- Any programmatic `fail` → `tier: 'fail'`.
+- Otherwise, any qualitative check emitting `suggestedFix` →
+  `tier: 'pass-with-notes'`.
+- Otherwise → `tier: 'pass'`.
+
+`required_fixes` aggregates every qualitative `suggestedFix`, even under
+`tier: 'fail'` (the Executor / UI may still surface them alongside the
+programmatic failure reason).
+
+Error surface: `QualitativeCheckError` with `kind: 'no_tool_call' | 'invalid_verdict'`
+lets the caller retry or surface a diagnostic. Programmatic checks that
+throw are captured as `status: 'fail'` so a broken check cannot panic
+the run.
+
+Aborting between qualitative checks is supported — the signal is polled
+at each boundary; already-completed checks stay in the result.
+
+Mid-check errors that are abort-shaped (host `AbortError`, the signal
+fired during the call, or an `LLMError(kind: 'aborted')` propagating
+from the provider) break the iteration cleanly. Any other mid-check
+exception is recorded as a degraded qualitative entry (`verdict: "check
+errored: ..."`, no `suggestedFix`) so the completed checks before it
+still surface in the result.
+
+**Qualitative checks run in slide mode only today.** For video / display
+documents, each requested qualitative check returns a synthetic entry
+with `verdict: "skipped: mode=video is not supported for qualitative
+checks yet"` — no provider call, no "looks fine" noise. Extending
+coverage is a Phase 8 / Phase 9 concern.
 
 ## Related
 

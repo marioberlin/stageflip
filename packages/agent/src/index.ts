@@ -1,6 +1,7 @@
 // packages/agent/src/index.ts
-// Public barrel — Planner (T-151) + Executor (T-152). Validator (T-153)
-// populates further exports.
+// Public barrel — Planner (T-151) + Executor (T-152) + Validator (T-153).
+// The three-agent triad now ships; downstream tasks (T-155–T-168 handler
+// bundles, T-170 copilot wiring) layer on top.
 
 export type {
   BundleSummary,
@@ -54,3 +55,39 @@ export {
   type ExecutorRequest,
   createExecutor,
 } from './executor/executor.js';
+
+// Validator (T-153)
+export type {
+  ProgrammaticCheck,
+  ProgrammaticCheckResult,
+  QualitativeCheckName,
+  QualitativeCheckResult,
+  ValidationResult,
+  ValidationTier,
+  Validator,
+  ValidatorCallOptions,
+  ValidatorRequest,
+} from './validator/types.js';
+export {
+  programmaticCheckResultSchema,
+  qualitativeCheckResultSchema,
+  validationResultSchema,
+} from './validator/types.js';
+export {
+  DEFAULT_PROGRAMMATIC_CHECKS,
+  runProgrammaticChecks,
+  schemaRoundTripCheck,
+} from './validator/programmatic.js';
+export {
+  EMIT_QUALITATIVE_VERDICT_TOOL,
+  EMIT_QUALITATIVE_VERDICT_TOOL_NAME,
+  QUALITATIVE_CHECKS,
+  QualitativeCheckError,
+  qualitativeToolInputSchema,
+  runQualitativeCheck,
+} from './validator/qualitative.js';
+export {
+  type CreateValidatorOptions,
+  DEFAULT_VALIDATOR_MAX_TOKENS,
+  createValidator,
+} from './validator/validator.js';
