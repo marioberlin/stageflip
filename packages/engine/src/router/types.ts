@@ -39,6 +39,33 @@ export interface DocumentContext extends ToolContext {
   readonly selection?: DocumentSelection;
 }
 
+/** JSON-Patch op shape. Narrow alias to keep agent + engine in sync. */
+export interface JsonPatchOp {
+  readonly op: 'add' | 'remove' | 'replace' | 'move' | 'copy' | 'test';
+  readonly path: string;
+  readonly value?: unknown;
+  readonly from?: string;
+}
+
+/**
+ * Queue every write-tier handler pushes JSON-Patch ops onto. The Executor
+ * drains + applies + emits `patch-applied` after each tool call; the
+ * handler's return value is orthogonal to the mutation.
+ */
+export interface PatchSink {
+  push(op: JsonPatchOp): void;
+  pushAll(ops: readonly JsonPatchOp[]): void;
+}
+
+/**
+ * Context for handlers that mutate the document. Read-tier handlers
+ * should declare `DocumentContext`; write-tier handlers declare this.
+ */
+export interface MutationContext extends DocumentContext {
+  readonly patchSink: PatchSink;
+  readonly stepId?: string;
+}
+
 export interface ToolHandler<
   TInput = unknown,
   TOutput = unknown,

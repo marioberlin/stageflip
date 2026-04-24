@@ -22,6 +22,9 @@ export type {
   AnyToolHandler,
   DocumentContext,
   DocumentSelection,
+  JsonPatchOp,
+  MutationContext,
+  PatchSink,
   ToolContext,
   ToolHandler,
 } from './router/types.js';
@@ -34,10 +37,17 @@ export {
   type ToolRouterOptions,
 } from './router/router.js';
 
-// Handler bundles — T-155 shipped `read`; T-156–T-168 populate the rest.
+// Handler bundles — T-155 shipped `read`, T-156 shipped `create-mutate`;
+// T-157–T-168 populate the rest.
 export {
   READ_BUNDLE_NAME,
   READ_HANDLERS,
   READ_TOOL_DEFINITIONS,
   registerReadBundle,
 } from './handlers/read/register.js';
+export {
+  CREATE_MUTATE_BUNDLE_NAME,
+  CREATE_MUTATE_HANDLERS,
+  CREATE_MUTATE_TOOL_DEFINITIONS,
+  registerCreateMutateBundle,
+} from './handlers/create-mutate/register.js';

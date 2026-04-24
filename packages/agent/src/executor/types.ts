@@ -4,9 +4,8 @@
 // machines in the editor UI (ai-copilot sidebar) and parity traces key
 // on the discriminated `kind` field.
 
-import type { DocumentContext } from '@stageflip/engine';
+import type { PatchSink as EnginePatchSink, JsonPatchOp, MutationContext } from '@stageflip/engine';
 import type { Document } from '@stageflip/schema';
-import type { Operation as JsonPatchOp } from 'fast-json-patch';
 
 export type { JsonPatchOp };
 
@@ -28,13 +27,12 @@ export type ExecutorEvent =
   | { kind: 'plan-end'; finalDocument: Document };
 
 /**
- * Patch accumulator — tool handlers push JSON-Patch ops during `handle()`;
- * the Executor drains + applies them against the working document after
- * each tool call, then emits `patch-applied`.
+ * Patch accumulator — Executor-side extension of the engine's
+ * {@link EnginePatchSink} contract, adding `drain` + `size` that the
+ * Executor relies on between tool calls. Handler-side code uses only
+ * the `push` / `pushAll` surface defined in engine.
  */
-export interface PatchSink {
-  push(op: JsonPatchOp): void;
-  pushAll(ops: readonly JsonPatchOp[]): void;
+export interface PatchSink extends EnginePatchSink {
   /** Returns pending ops and clears the internal queue. */
   drain(): JsonPatchOp[];
   /** Pending op count (inspection only; tests use this). */
@@ -43,12 +41,12 @@ export interface PatchSink {
 
 /**
  * Context passed to every tool handler in an Executor-driven run.
- * Extends `DocumentContext` (from `@stageflip/engine`) with
- * Executor-specific fields: `patchSink` for write-tier handlers and
- * `stepId` for audit. The `document` + `selection` fields come from the
- * base type so read-tier handlers can accept either context shape.
+ * Narrows engine's {@link MutationContext} with a required `stepId` and
+ * an Executor-implemented {@link PatchSink}. Read-tier handlers that
+ * accept `DocumentContext` and write-tier handlers that accept
+ * `MutationContext` both work unchanged.
  */
-export interface ExecutorContext extends DocumentContext {
+export interface ExecutorContext extends MutationContext {
   readonly patchSink: PatchSink;
   readonly stepId: string;
 }
