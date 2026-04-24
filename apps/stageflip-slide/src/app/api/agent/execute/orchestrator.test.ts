@@ -13,7 +13,7 @@ import {
   OrchestratorNotConfigured,
   buildProviderFromEnv,
   createOrchestrator,
-} from './orchestrator.js';
+} from './orchestrator';
 
 // Matches `LLMProvider` surface enough for orchestrator tests; nothing
 // below actually calls `complete` / `stream` — we just need a non-null
