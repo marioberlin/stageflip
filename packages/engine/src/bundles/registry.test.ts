@@ -63,9 +63,9 @@ describe('BundleRegistry', () => {
 });
 
 describe('createCanonicalRegistry', () => {
-  it('seeds the 14 canonical bundles', () => {
+  it('seeds the 15 canonical bundles', () => {
     const r = createCanonicalRegistry();
-    expect(r.size).toBe(14);
+    expect(r.size).toBe(15);
     for (const name of CANONICAL_BUNDLE_NAMES) {
       expect(r.has(name)).toBe(true);
     }

@@ -249,6 +249,10 @@ describe('VIDEO_TOOL_BUNDLES', () => {
     }
   });
 
+  it('includes the video-mode bundle (T-185)', () => {
+    expect(VIDEO_TOOL_BUNDLES).toContain('video-mode');
+  });
+
   it('excludes slide-oriented bundles (slide-cm1, table-cm1, domain composite)', () => {
     for (const b of ['slide-cm1', 'table-cm1', 'domain-finance-sales-okr']) {
       expect(VIDEO_TOOL_BUNDLES).not.toContain(b);

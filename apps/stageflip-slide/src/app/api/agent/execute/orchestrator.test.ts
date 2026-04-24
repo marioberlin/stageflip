@@ -72,10 +72,10 @@ describe('buildProviderFromEnv', () => {
 });
 
 describe('createOrchestrator', () => {
-  it('registers all 14 handler bundles on the router', () => {
+  it('registers all 15 handler bundles on the router', () => {
     const deps = createOrchestrator(fakeProvider());
     const summaries = deps.registry.list();
-    expect(summaries.length).toBe(14);
+    expect(summaries.length).toBe(15);
     let totalTools = 0;
     for (const s of summaries) {
       expect(s.toolCount).toBeGreaterThan(0);

@@ -78,6 +78,12 @@ export const CANONICAL_BUNDLES: readonly ToolBundle[] = [
     description: 'Semantic-role layout helpers — title blocks, KPI strips, two-column flows.',
     tools: [],
   },
+  {
+    name: 'video-mode',
+    description:
+      'StageFlip.Video profile tools — multi-aspect export planning, per-aspect layout helpers (T-185 and onward).',
+    tools: [],
+  },
 ];
 
 export const CANONICAL_BUNDLE_NAMES: readonly string[] = CANONICAL_BUNDLES.map((b) => b.name);

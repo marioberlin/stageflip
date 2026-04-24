@@ -57,6 +57,7 @@ const OWNER_TASK_MAP: Record<string, string> = {
   'domain-finance-sales-okr': 'T-166',
   'data-source-bindings': 'T-167',
   'semantic-layout': 'T-168',
+  'video-mode': 'T-185',
 };
 
 function populateRegistry() {
