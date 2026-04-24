@@ -1,5 +1,5 @@
 ---
-title: Tools — Fact-Check Bundle
+title: Tools — Fact Check Bundle
 id: skills/stageflip/tools/fact-check
 tier: tools
 status: substantive
@@ -7,59 +7,46 @@ last_updated: 2026-04-24
 owner_task: T-165
 related:
   - skills/stageflip/concepts/tool-bundles/SKILL.md
-  - skills/stageflip/tools/qc-export-bulk/SKILL.md
+  - skills/stageflip/concepts/tool-router/SKILL.md
 ---
 
-# Tools — Fact-Check Bundle
+# Tools — Fact Check Bundle
 
-Two tools that bookend the LLM's fact-checking loop:
+Fact-verification tools using web search + citation.
 
-1. `list_factual_claims` — heuristic extractor. Scans every text
-   element (including run-style text) and slide notes for sentences
-   containing numeric claims (percentages, dollar amounts, counts),
-   year references (`in 2023`, `by 1984`, `circa 1999`), or
-   `"according to <source>"` phrasing. Returns a ranked list of
-   candidate claims with `{ slideId, source: 'element'|'notes',
-   elementId?, snippet }`. The LLM picks which to verify.
+> **This file is generated from the engine's registered tool
+> definitions** (`pnpm gen:tool-skills`). Hand-edits will be
+> overwritten. Tool descriptions themselves are the single source of
+> truth — edit them in the handler's `ToolHandler` + matching
+> `LLMToolDefinition` in `packages/engine/src/handlers/fact-check/`.
 
-2. `record_fact_check_result` — append a structured fact-check
-   annotation to a slide's speaker notes. Status is
-   `verified` / `unverified` / `disputed`; `source` is an optional
-   URL. Format: machine-parseable block inside `slide.notes`:
+Registration: see `@stageflip/engine`'s `registerFactCheckBundle` (or equivalent) export.
 
-   ```
-   [fact-check:<status>]
-   <claim>
-   <source>
-   [/fact-check]
-   ```
+## Tools
 
-   Refuses `exceeds_max_length` when the appended block would push
-   `notes` over the 5000-char schema limit.
+### `list_factual_claims`
 
-## Design note — no HTTP from handlers
+Heuristic extractor: scan every text element and slide notes for sentences containing numeric claims (percentages, dollar amounts, counts), year references, or 'according to' phrasing. Returns candidates ranked by source location; the LLM picks which to verify externally via a web-search tool (provided by the orchestrator layer, not this bundle). This tool does NOT make HTTP calls.
 
-This bundle does **not** make HTTP calls. Engine handlers are pure +
-deterministic (CLAUDE.md §3 forbids `fetch` inside
-`packages/engine/**`'s production paths by convention, and determinism
-gates enforce this for clip/runtime code). The LLM is expected to call
-a web-search tool from the orchestrator layer (planner tier, not the
-engine bundle tier), gather evidence, then use
-`record_fact_check_result` to write the conclusion back into the
-document.
+### `record_fact_check_result`
+
+Append a structured fact-check annotation to a slide's speaker notes. The block format is a machine-parseable `[fact-check:<status>]\n<claim>\n<source?>\n[/fact-check]` so downstream consumers (audit pipelines, export renderers) can extract findings. Status is `verified` / `unverified` / `disputed`. `source` must be a valid URL when provided. Refuses `exceeds_max_length` when the appended block would push notes over the 5000-char schema limit.
+
+- `slideId` (`string`)
+- `status` (`string`) — enum: `verified` / `unverified` / `disputed`
+- `claim` (`string`)
+- `source` (`string`) _(optional)_
+
 
 ## Invariants
 
 - Every handler declares `bundle: 'fact-check'`.
-- Both handlers type against `MutationContext`.
-- Tool count 2 → well within I-9's 30 cap.
-- Fact-check blocks in notes are machine-parseable: downstream
-  consumers (audit pipelines, export renderers, QC tools) can grep for
-  `[fact-check:` prefix. The bundle exports `FACT_CHECK_BLOCK_RE` for
-  parsers that need it.
+- Tool count 2 (I-9 cap is 30).
+- Tool names + descriptions above mirror what the LLM sees at plan +
+  execution time, produced by the router's `LLMToolDefinition[]`.
 
 ## Related
 
-- Meta: `concepts/tool-bundles/SKILL.md`
-- QC sibling: `tools/qc-export-bulk/SKILL.md`
+- `concepts/tool-bundles/SKILL.md` — bundle catalog + loading policy.
+- `concepts/tool-router/SKILL.md` — Zod-validated dispatch.
 - Task: T-165

@@ -1,5 +1,5 @@
 ---
-title: Tools — QC/Export/Bulk Bundle
+title: Tools — QC Export Bulk Bundle
 id: skills/stageflip/tools/qc-export-bulk
 tier: tools
 status: substantive
@@ -7,69 +7,75 @@ last_updated: 2026-04-24
 owner_task: T-164
 related:
   - skills/stageflip/concepts/tool-bundles/SKILL.md
-  - skills/stageflip/tools/validate/SKILL.md
-  - skills/stageflip/tools/slide-cm1/SKILL.md
-  - skills/stageflip/tools/element-cm1/SKILL.md
+  - skills/stageflip/concepts/tool-router/SKILL.md
 ---
 
-# Tools — QC/Export/Bulk Bundle
+# Tools — QC Export Bulk Bundle
 
-Nine tools spanning three responsibilities: quality-control audits,
-cross-element bulk ops, and export-prep helpers. Slide-mode only. All
-handlers type against `MutationContext`; QC tools emit no patches but
-share the write-tier context signature.
+Batch quality checks, bulk operations, and export-trigger tools.
 
-Scope boundary vs `validate` (T-159): `validate` handles schema +
-structural validation (duplicate ids, schema parse, timing coverage).
-This bundle handles content-quality audits (a11y, layout, orphans) and
-production-prep utilities (bulk edits, export helpers).
+> **This file is generated from the engine's registered tool
+> definitions** (`pnpm gen:tool-skills`). Hand-edits will be
+> overwritten. Tool descriptions themselves are the single source of
+> truth — edit them in the handler's `ToolHandler` + matching
+> `LLMToolDefinition` in `packages/engine/src/handlers/qc-export-bulk/`.
 
-Registration: `registerQcExportBulkBundle(registry, router)` from
-`@stageflip/engine`.
+Registration: see `@stageflip/engine`'s `registerQcExportBulkBundle` (or equivalent) export.
 
 ## Tools
 
-### QC (read-only, all take `{}`)
+### `check_alt_text_coverage`
 
-- `check_alt_text_coverage` — find images without `alt`. Empty-string
-  alt is treated as decorative (per ARIA) and NOT flagged.
-- `check_notes_coverage` — find slides without speaker notes.
-- `check_element_outside_canvas` — find elements whose transform
-  extends beyond the 1920×1080 reference canvas; reports per-direction
-  tags (`left`/`right`/`top`/`bottom`).
-- `check_orphan_animations` — find B3 `anchored` animations whose
-  `anchor` id references a non-existent element on the same slide.
+A11y audit: find every image element with no `alt` field (or an empty-string alt that WASN'T explicitly marked decorative). Reports `totalImages` + a list of `{ slideId, elementId }` pairs needing attention. Empty-string alt is treated as decorative (per ARIA convention) and does NOT show up as missing.
 
-### Bulk
+### `check_notes_coverage`
 
-- `bulk_set_slide_duration` — apply `durationMs` to many slides
-  atomically.
-- `bulk_set_element_flags` — flip `visible` / `locked` across elements
-  spanning multiple slides.
-- `bulk_delete_elements` — delete multiple elements across slides;
-  emits patches in reverse element-index order per slide so successive
-  removes within a slide stay index-stable.
+Find slides without speaker notes (or with empty-string notes). Returns `totalSlides` + the list of slide ids needing attention.
 
-### Export
+### `check_element_outside_canvas`
 
-- `list_export_profiles` — static catalog of export formats
-  (`pdf` / `pptx` / `marp` / `html5-zip` / `video`) with an
-  `animationsSupported: boolean` flag per profile.
-- `freeze_animations_for_static_export` — clear every element's
-  `animations` array across the deck. Run before exporting to profiles
-  with `animationsSupported: false` (PDF / Marp).
+Find elements whose transform bounding box extends outside the 1920×1080 reference canvas. Reports direction tags (`left` / `right` / `top` / `bottom`) so the caller can understand which edge is violated. Elements entirely off-canvas report all four directions the box exits.
+
+### `check_orphan_animations`
+
+Find B3 `anchored` animations whose `anchor` id references a non-existent element on the same slide. Reports `{ slideId, elementId, animationId, missingAnchor }` per orphan. Only checks same-slide scope (cross-slide anchoring isn't allowed by the RIR compiler).
+
+### `bulk_set_slide_duration`
+
+Set `durationMs` on multiple slides at once. Validates every assignment (slide exists) before emitting any patches; rejects atomically with `slide_not_found` on first offender.
+
+- `assignments` (`array`)
+
+### `bulk_set_element_flags`
+
+Bulk version of `set_element_flags` (element-cm1): flip `visible` / `locked` across many elements spanning multiple slides. Fails atomically on first `slide_not_found` / `element_not_found`. Reports `applied` assignments + total `patchCount` emitted (one patch per flip per element).
+
+- `assignments` (`array`)
+
+### `bulk_delete_elements`
+
+Delete multiple elements across slides in one call. Atomic: validates every assignment first. Patches are emitted per-slide in reverse element-index order so successive removes within a slide stay index-stable.
+
+- `assignments` (`array`)
+
+### `list_export_profiles`
+
+Return the static catalog of known export profiles. Each entry has `name`, `description`, and `animationsSupported` — callers that target profiles with `animationsSupported: false` (PDF / Marp) should prep with `freeze_animations_for_static_export` first.
+
+### `freeze_animations_for_static_export`
+
+Clear every element's `animations` array across the deck (replaces with `[]`) so static exports (PDF / Marp / image sequence) render deterministically from the first frame. Reports `animationsCleared` total. Idempotent — rerunning on a frozen deck emits patches (still replacing with `[]`) but leaves visible state unchanged.
+
 
 ## Invariants
 
 - Every handler declares `bundle: 'qc-export-bulk'`.
-- All 9 handlers type against `MutationContext`. QC handlers emit no
-  patches despite the wider context.
-- Tool count 9 → within I-9's 30 cap.
-- Bulk handlers validate every assignment before emitting any patches
-  (atomic all-or-nothing).
+- Tool count 9 (I-9 cap is 30).
+- Tool names + descriptions above mirror what the LLM sees at plan +
+  execution time, produced by the router's `LLMToolDefinition[]`.
 
 ## Related
 
-- Meta: `concepts/tool-bundles/SKILL.md`
-- Sibling (schema validation): `tools/validate/SKILL.md`
+- `concepts/tool-bundles/SKILL.md` — bundle catalog + loading policy.
+- `concepts/tool-router/SKILL.md` — Zod-validated dispatch.
 - Task: T-164

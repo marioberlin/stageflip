@@ -71,6 +71,9 @@ jobs:
       - name: Gate - skills-sync (auto-gen freshness)
         run: pnpm skills-sync:check
 
+      - name: Gate - tool-skills (registry-driven auto-gen)
+        run: pnpm gen:tool-skills:check
+
       - name: Gate - determinism (scoped to clip/runtime code)
         run: pnpm check-determinism
 

@@ -1,5 +1,5 @@
 ---
-title: Tools — Data-Source Bindings Bundle
+title: Tools — Data Source Bindings Bundle
 id: skills/stageflip/tools/data-source-bindings
 tier: tools
 status: substantive
@@ -7,52 +7,49 @@ last_updated: 2026-04-24
 owner_task: T-167
 related:
   - skills/stageflip/concepts/tool-bundles/SKILL.md
-  - skills/stageflip/tools/domain-finance-sales-okr/SKILL.md
-  - skills/stageflip/tools/element-cm1/SKILL.md
+  - skills/stageflip/concepts/tool-router/SKILL.md
 ---
 
-# Tools — Data-Source Bindings Bundle
+# Tools — Data Source Bindings Bundle
 
-Two tools for swapping a chart element's `data` field between inline
-`ChartData` (`{ labels, series }`) and a `dataSourceRefSchema`
-reference (`ds:<id>`). Slide-mode only. Handlers type against
-`MutationContext`.
+Bind document values to external data sources (CSV, Sheets, GraphQL).
 
-Actual data-source resolution (CSV / Sheets / GraphQL → labels +
-series) happens downstream at render time. This bundle only rewrites
-the document's binding — no I/O.
+> **This file is generated from the engine's registered tool
+> definitions** (`pnpm gen:tool-skills`). Hand-edits will be
+> overwritten. Tool descriptions themselves are the single source of
+> truth — edit them in the handler's `ToolHandler` + matching
+> `LLMToolDefinition` in `packages/engine/src/handlers/data-source-bindings/`.
 
-Registration: `registerDataSourceBindingsBundle(registry, router)` from
-`@stageflip/engine`.
+Registration: see `@stageflip/engine`'s `registerDataSourceBindingsBundle` (or equivalent) export.
 
 ## Tools
 
-### `bind_chart_to_data_source` — `{ slideId, elementId, dataSourceRef }`
+### `bind_chart_to_data_source`
 
-Swap a chart's `data` to a `ds:<id>` reference. Overwrites whatever
-was there; reports `previousKind: 'inline' | 'reference'` so the caller
-knows if they stomped on inline data. The ref format is validated by
-`dataSourceRefSchema` (lowercase alphanumerics + `_` + `-` after the
-`ds:` prefix).
+Swap a chart element's `data` field to a `ds:<id>` reference. Replaces whatever was there (inline `ChartData` or another reference). Reports `previousKind: 'inline' | 'reference'` so the caller knows what they overwrote. Ref format is enforced by `dataSourceRefSchema` (lowercase alphanumerics + underscores / dashes).
 
-### `unbind_chart_data_source` — `{ slideId, elementId, replacement }`
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `dataSourceRef` (`string`) — `ds:<id>` reference — Zod-validated server-side.
 
-Swap a `ds:` reference back to inline `ChartData`. Refuses `not_bound`
-if the chart's `data` isn't currently a reference. `replacement` is
-Zod-validated against `chartDataSchema`.
+### `unbind_chart_data_source`
+
+Replace a chart element's `ds:` reference with inline `ChartData` (`{ labels, series }`). Refuses `not_bound` if the chart's `data` isn't currently a `ds:<id>` reference. `replacement` is Zod-validated against the chart data schema.
+
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `replacement` (`object`) — Inline chart data — `{ labels, series }` — Zod-validated against `chartDataSchema`.
+
 
 ## Invariants
 
 - Every handler declares `bundle: 'data-source-bindings'`.
-- Both handlers type against `MutationContext`.
-- Only targets elements with `type: 'chart'`; non-chart targets refuse
-  `wrong_element_type`.
-- Handlers make no I/O — they only rewrite the document's binding.
-- Tool count 2 → well within I-9's 30 cap.
+- Tool count 2 (I-9 cap is 30).
+- Tool names + descriptions above mirror what the LLM sees at plan +
+  execution time, produced by the router's `LLMToolDefinition[]`.
 
 ## Related
 
-- Meta: `concepts/tool-bundles/SKILL.md`
-- Composite consumers: `tools/domain-finance-sales-okr/SKILL.md`
-  (emits charts that this bundle can bind/unbind)
+- `concepts/tool-bundles/SKILL.md` — bundle catalog + loading policy.
+- `concepts/tool-router/SKILL.md` — Zod-validated dispatch.
 - Task: T-167

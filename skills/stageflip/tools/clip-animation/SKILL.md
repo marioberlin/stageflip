@@ -1,5 +1,5 @@
 ---
-title: Tools — Clip/Animation Bundle
+title: Tools — Clip Animation Bundle
 id: skills/stageflip/tools/clip-animation
 tier: tools
 status: substantive
@@ -8,133 +8,164 @@ owner_task: T-160
 related:
   - skills/stageflip/concepts/tool-bundles/SKILL.md
   - skills/stageflip/concepts/tool-router/SKILL.md
-  - skills/stageflip/concepts/agent-executor/SKILL.md
-  - skills/stageflip/tools/create-mutate/SKILL.md
 ---
 
-# Tools — Clip/Animation Bundle
+# Tools — Clip Animation Bundle
 
-Fourteen write-tier tools for clip-element props (runtime / clipName /
-params / fonts) and element-level animations (add / remove / re-order,
-timing, easing, autoplay, inner kind-params, keyframed operations).
-Slide-mode only. Handlers type against `MutationContext`; mutations flow
-through `ctx.patchSink.push(op)` as JSON-Patch. The Executor drains +
-applies + re-reads between tool calls so chained animation edits in one
-plan step see the previous mutation's effect.
+Pick and configure clips + animations across all registered runtimes.
 
-Registration: `registerClipAnimationBundle(registry, router)` from
-`@stageflip/engine`.
+> **This file is generated from the engine's registered tool
+> definitions** (`pnpm gen:tool-skills`). Hand-edits will be
+> overwritten. Tool descriptions themselves are the single source of
+> truth — edit them in the handler's `ToolHandler` + matching
+> `LLMToolDefinition` in `packages/engine/src/handlers/clip-animation/`.
 
-Every response is a discriminated union on `ok`. Failure branches carry
-`reason` drawn from: `wrong_mode` / `slide_not_found` / `element_not_found`
-/ `not_a_clip` / `animation_not_found` / `wrong_animation_kind` /
-`keyframe_not_found` / `min_keyframes` / `mismatched_ids` /
-`mismatched_count` / `rejected_fields`. Handlers never throw for
-caller-controllable errors.
+Registration: see `@stageflip/engine`'s `registerClipAnimationBundle` (or equivalent) export.
 
 ## Tools
 
-### Clip-element props
+### `add_clip_element`
 
-#### `add_clip_element` — `{ slideId, runtime, clipName, params?, transform?, name?, fonts?, position? }`
+Insert a new clip element on a slide. Clip-specific shortcut over `add_element`: caller supplies only `runtime` / `clipName` / `params`, the handler fills in defaults for `visible` / `locked` / `animations` / `transform`. Element id is auto-generated as `clip-<n>`.
 
-Insert a new clip element on a slide. Fills in defaults for `visible`,
-`locked`, `animations: []`, and a full-bleed `transform`. Element id
-auto-generated as `clip-<n>`.
+- `slideId` (`string`)
+- `runtime` (`string`)
+- `clipName` (`string`)
+- `params` (`object`) _(optional)_
+- `transform` (`object`) _(optional)_ — Element transform — `{ x, y, width, height, rotation, opacity }`. Zod-validated server-side.
+- `name` (`string`) _(optional)_
+- `fonts` (`array`) _(optional)_
+- `position` (`integer`) _(optional)_
 
-#### `update_clip_element` — `{ slideId, elementId, runtime?, clipName?, params?, fonts? }`
+### `update_clip_element`
 
-Replace top-level fields on an existing clip element. `params` and `fonts`
-are replaced wholesale; use `set_clip_params` for a partial merge.
-Refuses `not_a_clip` if `element.type !== 'clip'`.
+Replace top-level fields on an existing clip element (`runtime`, `clipName`, `params`, `fonts`). Fields left out remain unchanged. `params` and `fonts` are replaced wholesale; use `set_clip_params` for a partial-merge of `params`. Refuses with `not_a_clip` if the element's `type` isn't `clip`.
 
-#### `set_clip_params` — `{ slideId, elementId, merge?, remove? }`
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `runtime` (`string`) _(optional)_
+- `clipName` (`string`) _(optional)_
+- `params` (`object`) _(optional)_
+- `fonts` (`array`) _(optional)_
 
-Partial-merge edit on a clip element's `params`. `merge` sets/replaces
-individual keys (`add` vs `replace` op chosen from current state);
-`remove` deletes keys if present. Pointer-safe key encoding (RFC 6901).
+### `set_clip_params`
 
-### Animation lifecycle
+Partial-merge edit on a clip element's `params` object. `merge` sets/replaces values at individual keys; `remove` deletes keys. Use this instead of `update_clip_element` when you only want to tweak one or two params without rewriting the whole object. Refuses with `not_a_clip` if the element's `type` isn't `clip`.
 
-#### `add_animation` — `{ slideId, elementId, animation, timing, autoplay?, id?, position? }`
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `merge` (`object`) _(optional)_
+- `remove` (`array`) _(optional)_
 
-Attach an animation. `animation` is the inner kind object (fade / slide /
-scale / rotate / color / keyframed / runtime); `timing` is a B1–B5
-primitive. Animation id auto-generated as `anim-<n>`; caller-supplied
-colliding ids are reassigned.
+### `add_animation`
 
-#### `remove_animation` — `{ slideId, elementId, animationId }`
+Attach a new animation to any element. Caller provides the inner kind-specific `animation` object (fade / slide / scale / rotate / color / keyframed / runtime) plus a `timing` primitive. Animation id is auto-generated as `anim-<n>` when omitted; if a caller-supplied id collides, a fresh one is assigned. `position` inserts at an index; default is the end of the array.
 
-Remove a single animation by id. Reports remaining count.
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `animation` (`object`) — Inner animation kind — Zod-validated server-side against `animationKindSchema` (fade / slide / scale / rotate / color / keyframed / runtime, discriminated on `kind`).
+- `timing` (`object`) — Timing primitive — Zod-validated server-side against `timingPrimitiveSchema` (one of the five B1–B5 kinds).
+- `autoplay` (`boolean`) _(optional)_
+- `id` (`string`) _(optional)_
+- `position` (`integer`) _(optional)_
 
-#### `clear_animations` — `{ slideId, elementId }`
+### `remove_animation`
 
-Replace the element's `animations` with `[]` in one patch. Reports the
-prior count.
+Remove a single animation from an element by animation id.
 
-#### `replace_animation` — `{ slideId, elementId, animationId, animation }`
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `animationId` (`string`)
 
-Wholesale-replace an existing animation. Use to change `kind`
-(fade → keyframed). `animation.id` must equal `animationId` — otherwise
-`mismatched_ids`.
+### `clear_animations`
 
-#### `reorder_animations` — `{ slideId, elementId, order }`
+Remove every animation from an element in a single `replace` op. `cleared` reports how many animations were present before the reset (0 is valid).
 
-Replace the element's animation order. `order` must list every existing
-animation id exactly once. RIR compiler resolves in array order at
-timing-flatten.
+- `slideId` (`string`)
+- `elementId` (`string`)
 
-### Animation field edits
+### `replace_animation`
 
-#### `set_animation_timing` — `{ slideId, elementId, animationId, timing }`
+Wholesale-replace an existing animation by id. The new animation's `id` must equal `animationId` (use delete + add to change the id). Use this to swap animation kinds (e.g. fade → keyframed).
 
-Swap the timing primitive on an animation. Any of the five B1–B5 kinds
-accepted.
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `animationId` (`string`)
+- `animation` (`object`) — Full animation object — `{ id, timing, animation, autoplay? }`. Zod-validated server-side; `animation.id` must equal `animationId`.
 
-#### `set_animation_easing` — `{ slideId, elementId, animationId, easing }`
+### `reorder_animations`
 
-Replace `.animation.easing` on fade / slide / scale / rotate / color
-animations. Refuses `wrong_animation_kind` for `keyframed` (easing lives
-per-keyframe) and `runtime` (opaque).
+Replace the element's animation order. `order` must contain every existing animation id exactly once. Emits a single `replace` op on the element's `animations` array. The RIR compiler resolves animations in array order at timing-flatten, so this reorder directly affects render ordering.
 
-#### `set_animation_autoplay` — `{ slideId, elementId, animationId, autoplay }`
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `order` (`array`)
 
-Toggle `autoplay`. `false` stages the animation but parks visual progress
-until a runtime `resume` event fires.
+### `set_animation_timing`
 
-#### `set_animation_kind_params` — `{ slideId, elementId, animationId, updates }`
+Replace the timing primitive on an animation. Any of the five B1–B5 kinds (`absolute` / `relative` / `anchored` / `beat` / `event`) is accepted; the router validates the payload against `timingPrimitiveSchema`.
 
-Partial-merge into the inner `animation` object — the kind-specific
-params (`from`, `to`, `direction`, `distance`, `fromDegrees`, …). `kind`
-is forbidden (`rejected_fields`); use `replace_animation` for
-kind-change.
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `animationId` (`string`)
+- `timing` (`object`) — Timing primitive — Zod-validated server-side against `timingPrimitiveSchema` (one of the five B1–B5 kinds).
 
-### Keyframes (for `keyframed` animations)
+### `set_animation_easing`
 
-#### `add_keyframe` — `{ slideId, elementId, animationId, keyframe, position? }`
+Replace the `easing` on a fade / slide / scale / rotate / color animation. Refuses with `wrong_animation_kind` for `keyframed` (easing lives per-keyframe) and `runtime` (opaque to engine). Easing payload can be a named keyword, cubic-bezier, spring, or steps.
 
-Insert a keyframe. `position` defaults to the end. Refuses
-`wrong_animation_kind` if the animation isn't `keyframed`.
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `animationId` (`string`)
+- `easing` (`object`) — Easing — Zod-validated server-side against `easingSchema`. Accepts a named string, or a parametric object (`cubic-bezier` / `spring` / `steps`). Strings are also accepted at the top level.
 
-#### `remove_keyframe` — `{ slideId, elementId, animationId, index }`
+### `set_animation_autoplay`
 
-Remove a keyframe by zero-based index. Refuses `min_keyframes` when only
-2 keyframes remain (schema invariant: keyframed animations keep ≥2).
+Set the animation's `autoplay` boolean. `false` stages the animation but leaves its visual parked until a runtime `resume` event fires.
+
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `animationId` (`string`)
+- `autoplay` (`boolean`)
+
+### `set_animation_kind_params`
+
+Partial-merge into the inner `animation` object (the kind-specific params — `from`, `to`, `direction`, `distance`, `fromDegrees`, etc.). Cannot change `kind` — use `replace_animation` for that. Each update becomes one `replace` op on `.../animation/<field>`.
+
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `animationId` (`string`)
+- `updates` (`object`) — Field → new value within the inner `animation` object. `kind` is forbidden.
+
+### `add_keyframe`
+
+Insert a keyframe into a `keyframed` animation's `keyframes` array. `position` defaults to the end. `at` in the keyframe is 0..1 over the animation duration (Zod-validated). Refuses with `wrong_animation_kind` if the animation isn't `keyframed`.
+
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `animationId` (`string`)
+- `keyframe` (`object`) — Keyframe — `{ at: 0..1, value: any, easing?: Easing }`. Zod-validated server-side.
+- `position` (`integer`) _(optional)_
+
+### `remove_keyframe`
+
+Remove a keyframe by zero-based `index`. Refuses with `wrong_animation_kind` if the animation isn't `keyframed`, `keyframe_not_found` if the index is out of range, and `min_keyframes` if the animation only has 2 keyframes (schema requires ≥2 — use `replace_animation` to change kind instead).
+
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `animationId` (`string`)
+- `index` (`integer`)
+
 
 ## Invariants
 
-- Every handler declares `bundle: 'clip-animation'` (tool-bundles §Enforcement).
-- All 14 handlers type against `MutationContext`; Executor's
-  `ExecutorContext` satisfies it.
-- Tool count 14 → well within the 30-tool I-9 budget.
-- Handlers mutate via patches only. They never mutate `ctx.document`
-  directly; they never call the LLM; they never reach runtime registries
-  — `runtime` and `clipName` are opaque strings on the document.
+- Every handler declares `bundle: 'clip-animation'`.
+- Tool count 14 (I-9 cap is 30).
+- Tool names + descriptions above mirror what the LLM sees at plan +
+  execution time, produced by the router's `LLMToolDefinition[]`.
 
 ## Related
 
-- Meta: `concepts/tool-bundles/SKILL.md`
-- Router: `concepts/tool-router/SKILL.md`
-- Executor (consumer): `concepts/agent-executor/SKILL.md`
-- Create/Mutate (sibling): `tools/create-mutate/SKILL.md`
+- `concepts/tool-bundles/SKILL.md` — bundle catalog + loading policy.
+- `concepts/tool-router/SKILL.md` — Zod-validated dispatch.
 - Task: T-160
