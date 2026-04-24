@@ -3,7 +3,7 @@ title: Agent — Executor
 id: skills/stageflip/concepts/agent-executor
 tier: concept
 status: substantive
-last_updated: 2026-04-20
+last_updated: 2026-04-24
 owner_task: T-152
 related:
   - skills/stageflip/concepts/agent-planner/SKILL.md
@@ -69,11 +69,43 @@ patches are **not** rolled back (user's editor can undo). Stream emits a
 - Bundle selection: Planner.
 - Parity diff: parity harness, run after Executor finishes.
 
-## Current state (Phase 1 exit)
+## Current state (Phase 7, T-152 shipped)
 
-Not yet implemented. Phase 7 (T-152) delivers the Executor. This skill
-records the contract the implementation will satisfy; event stream shape +
-AbortController semantics are settled here.
+`@stageflip/agent` exports `createExecutor({ provider, registry, router })`
+returning an `Executor` whose `run(request, { signal? })` yields an
+`AsyncIterable<ExecutorEvent>`.
+
+- **Event stream** matches the skill's shape exactly with one addition:
+  `tool-result` carries `isError: boolean` so UI consumers can style
+  success vs retry-prompting failures without re-parsing the result
+  payload. `step-end` carries `status: 'ok' | 'aborted' | 'max_iterations'
+  | 'bundle_limit_exceeded'`.
+- **Per-step flow**: construct `BundleLoader`, load every `step.bundles`
+  name (catches `BundleLoadError` → `bundle_limit_exceeded`). Build
+  messages, call `provider.complete` with `loader.toolDefinitions()`,
+  dispatch each `tool_use` block through `router.call(name, input,
+  executorContext)`. Drain `patchSink`, `applyPatch` against the working
+  document, emit `patch-applied`. Append `tool_result` blocks (flagged
+  `is_error: true` when the router threw) back into the messages for the
+  next iteration. Loop until the model stops calling tools or we hit
+  `maxIterationsPerStep` (default 20).
+- **AbortController**: `signal.aborted` checks at every loop boundary;
+  `LLMError(kind: 'aborted')` from the provider, `ToolRouterError(kind:
+  'aborted')` from a handler, and a pre-start aborted signal all produce
+  `step-end { status: 'aborted' }` cleanly. Partial patches already
+  applied are kept; the UI's undo stack owns rollback.
+- **Tool-input errors re-prompt**: the router throws `input_invalid`;
+  the executor feeds the error payload back as a `tool_result` with
+  `is_error: true` so the model can self-correct on the next iteration.
+  `handler_error` + `output_invalid` follow the same re-prompt path;
+  they're still "handler ran, failed" rather than bugs that abort.
+- **Patch validation**: patches that fail `applyPatch` surface as an
+  `is_error: true` tool_result with `error: 'patch_apply_failed'` and
+  do NOT mutate the document.
+- **Executor context** extends `ToolContext` with `document` (read-only
+  snapshot per call), `patchSink` (`push` / `pushAll` / `drain`), and
+  `stepId`. Handlers that only need the abort signal ignore the rest.
+
 
 ## Related
 
