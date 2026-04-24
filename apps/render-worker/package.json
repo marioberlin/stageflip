@@ -1,0 +1,29 @@
+{
+  "name": "@stageflip/app-render-worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "StageFlip Cloud Run render worker — consumes a render job and dispatches to @stageflip/export-* (T-231).",
+  "main": "./dist/bin.js",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsup src/bin.ts --format esm --clean",
+    "start": "node dist/bin.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@stageflip/export-html5-zip": "workspace:*",
+    "@stageflip/export-video": "workspace:*",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.17",
+    "tsup": "8.5.1",
+    "vitest": "2.1.9"
+  }
+}
