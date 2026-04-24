@@ -166,3 +166,16 @@ export {
   TimelineStack,
   TrackRow,
 } from './timeline/components';
+
+// T-181c — scrubber state + playhead + panel composition.
+export {
+  type UseScrubberOptions,
+  type UseScrubberResult,
+  useScrubber,
+} from './timeline/use-scrubber';
+export {
+  type PlayheadProps,
+  type TimelinePanelProps,
+  Playhead,
+  TimelinePanel,
+} from './timeline/panel';
