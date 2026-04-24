@@ -111,3 +111,9 @@ export {
   DOMAIN_TOOL_DEFINITIONS,
   registerDomainBundle,
 } from './handlers/domain-finance-sales-okr/register.js';
+export {
+  DATA_SOURCE_BINDINGS_BUNDLE_NAME,
+  DATA_SOURCE_BINDINGS_HANDLERS,
+  DATA_SOURCE_BINDINGS_TOOL_DEFINITIONS,
+  registerDataSourceBindingsBundle,
+} from './handlers/data-source-bindings/register.js';
