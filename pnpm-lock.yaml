@@ -162,6 +162,9 @@ importers:
       '@stageflip/schema':
         specifier: workspace:^
         version: link:../schema
+      openai:
+        specifier: 6.34.0
+        version: 6.34.0(ws@8.20.0)(zod@3.25.76)
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
