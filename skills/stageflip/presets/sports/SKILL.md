@@ -36,6 +36,7 @@ Do **not** invoke for fitness / lifestyle / creator sports content — that's Cl
 - [`wimbledon-green-purple`](wimbledon-green-purple.md) — scoreBug bottom-left, restrained, Gotham-fallback
 - [`masters-red-under-par`](masters-red-under-par.md) — standings + leaderboard, red-under-par canon
 - [`uefa-starball-refraction`](uefa-starball-refraction.md) — fullScreen, refraction palette, premium register
+- [`espn-bottomline-flipper`](espn-bottomline-flipper.md) — newsTicker, persistent two-line flipper, ESPN Red + yellow score highlights
 
 ## Semantic tools
 
