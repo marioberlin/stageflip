@@ -24,6 +24,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@stageflip/llm-abstraction": "workspace:*"
+    "@stageflip/llm-abstraction": "workspace:*",
+    "zod": "3.25.76"
   }
 }

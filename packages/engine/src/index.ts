@@ -1,6 +1,7 @@
 // packages/engine/src/index.ts
-// Public barrel — BundleRegistry + BundleLoader (T-151a). Tool router
-// (T-154) + handler bundles (T-155–T-168) populate further exports.
+// Public barrel — BundleRegistry + BundleLoader (T-151a) + ToolRouter
+// (T-154). Handler bundles (T-155–T-168) register handlers onto the
+// router + `mergeTools` onto the registry from their own packages.
 
 export type { BundleSummary, ToolBundle } from './bundles/types.js';
 export { summarise } from './bundles/types.js';
@@ -16,3 +17,13 @@ export {
   type BundleLoaderOptions,
   DEFAULT_TOOL_LIMIT,
 } from './bundles/loader.js';
+
+export type { AnyToolHandler, ToolContext, ToolHandler } from './router/types.js';
+export {
+  type ToolCallEvent,
+  ToolRouter,
+  ToolRouterError,
+  type ToolRouterErrorContext,
+  type ToolRouterErrorKind,
+  type ToolRouterOptions,
+} from './router/router.js';

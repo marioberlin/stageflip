@@ -251,6 +251,9 @@ importers:
       '@stageflip/llm-abstraction':
         specifier: workspace:*
         version: link:../llm-abstraction
+      zod:
+        specifier: 3.25.76
+        version: 3.25.76
 
   packages/export-html5-zip: {}
 
