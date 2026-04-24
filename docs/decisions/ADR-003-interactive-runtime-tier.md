@@ -1,8 +1,8 @@
 # ADR-003: Interactive Runtime Tier
 
 **Date**: 2026-04-25
-**Ratified**: pending
-**Status**: **Proposed**
+**Ratified**: 2026-04-25
+**Status**: **Accepted**
 **Supersedes**: N/A
 **Superseded by**: N/A
 
@@ -153,6 +153,6 @@ The interactive tier ships behind a feature flag (ADR-005 §D3). Flag-on is perm
 
 ## Ratification Signoff
 
-- [ ] Product owner (Mario Tiedemann) — ADR decisions
-- [ ] Engineering — tier scaffolded, `check-determinism` scope updated green
+- [x] Product owner (Mario Tiedemann) — ADR decisions ratified 2026-04-25
+- [ ] Engineering — tier scaffolded, `check-determinism` scope updated green (deferred to T-306 / T-309 implementation)
 - [ ] Security review — deferred to pre-GA (D6); tracked on ADR-005 ratification block
