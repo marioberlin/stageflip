@@ -125,3 +125,27 @@ export {
   type CloudSaveStatus,
   type StubCloudSaveOptions,
 } from './cloud-save';
+
+// T-181 — shared timeline primitives (math + track layout).
+export {
+  type TimelineScale,
+  formatFrameLabel,
+  frameToPx,
+  pxToFrame,
+  rulerTickFrames,
+  snapFrame,
+} from './timeline/math';
+export {
+  type ElementBlockInput,
+  type ElementBlockPlacement,
+  type TimelineTrackKind,
+  type TrackLaneInput,
+  type TrackRowPlacement,
+  DEFAULT_TRACK_ROW_HEIGHT_PX,
+  TRACK_KIND_HEIGHT_PX,
+  TRACK_KIND_ORDER,
+  placeElementBlock,
+  placeTrackElements,
+  totalTrackStackHeight,
+  trackRowLayout,
+} from './timeline/tracks';
