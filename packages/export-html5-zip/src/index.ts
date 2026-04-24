@@ -31,3 +31,11 @@ export {
   escapeClickTagForScript,
   injectClickTagScript,
 } from './click-tag.js';
+
+export { type AssetResolver, InMemoryAssetResolver } from './asset-resolver.js';
+export { mapWithConcurrency } from './concurrency.js';
+export {
+  type ExportOrchestratorOptions,
+  exportHtml5Zip,
+  exportHtml5ZipForSize,
+} from './orchestrator.js';
