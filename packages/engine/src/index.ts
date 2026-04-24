@@ -81,3 +81,9 @@ export {
   ELEMENT_CM1_TOOL_DEFINITIONS,
   registerElementCm1Bundle,
 } from './handlers/element-cm1/register.js';
+export {
+  SLIDE_CM1_BUNDLE_NAME,
+  SLIDE_CM1_HANDLERS,
+  SLIDE_CM1_TOOL_DEFINITIONS,
+  registerSlideCm1Bundle,
+} from './handlers/slide-cm1/register.js';
