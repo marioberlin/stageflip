@@ -301,6 +301,15 @@ importers:
         specifier: 5.6.3
         version: 5.6.3
 
+  firebase:
+    devDependencies:
+      '@types/node':
+        specifier: 22.19.17
+        version: 22.19.17
+      vitest:
+        specifier: 2.1.9
+        version: 2.1.9(@types/node@22.19.17)(happy-dom@20.9.0)(terser@5.46.2)
+
   packages/agent:
     dependencies:
       '@stageflip/engine':

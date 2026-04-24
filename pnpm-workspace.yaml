@@ -6,3 +6,4 @@ packages:
   - "packages/*"
   - "packages/runtimes/*"
   - "packages/profiles/*"
+  - "firebase"

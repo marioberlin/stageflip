@@ -1,0 +1,42 @@
+rules_version = '2';
+
+// storage.rules — deny-by-default. Asset storage is org-scoped:
+// `/orgs/{orgId}/assets/**` holds user-uploaded images, video, fonts,
+// and import bundles. The role model mirrors firestore.rules —
+// at-least-editor writes, at-least-viewer reads.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAuthed() {
+      return request.auth != null;
+    }
+
+    function activeOrg() {
+      return request.auth.token.get('org', '');
+    }
+
+    function role() {
+      return request.auth.token.get('role', '');
+    }
+
+    function isAtLeast(level) {
+      let ranks = { 'viewer': 1, 'editor': 2, 'admin': 3, 'owner': 4 };
+      return ranks.get(role(), 0) >= ranks.get(level, 99);
+    }
+
+    function isOrgMember(orgId) {
+      return isAuthed() && activeOrg() == orgId;
+    }
+
+    match /orgs/{orgId}/assets/{allPaths=**} {
+      allow read: if isOrgMember(orgId) && isAtLeast('viewer');
+      allow write: if isOrgMember(orgId) && isAtLeast('editor')
+        && request.resource.size < 200 * 1024 * 1024;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
