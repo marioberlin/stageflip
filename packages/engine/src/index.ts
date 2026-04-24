@@ -105,3 +105,9 @@ export {
   FACT_CHECK_TOOL_DEFINITIONS,
   registerFactCheckBundle,
 } from './handlers/fact-check/register.js';
+export {
+  DOMAIN_BUNDLE_NAME,
+  DOMAIN_HANDLERS,
+  DOMAIN_TOOL_DEFINITIONS,
+  registerDomainBundle,
+} from './handlers/domain-finance-sales-okr/register.js';
