@@ -149,3 +149,20 @@ export {
   totalTrackStackHeight,
   trackRowLayout,
 } from './timeline/tracks';
+
+// T-181b — headless timeline React primitives.
+export {
+  type UseTimelineScaleOptions,
+  type UseTimelineScaleResult,
+  useTimelineScale,
+} from './timeline/use-timeline-scale';
+export {
+  type ElementBlockProps,
+  type TimelineRulerProps,
+  type TimelineStackProps,
+  type TrackRowProps,
+  ElementBlock,
+  TimelineRuler,
+  TimelineStack,
+  TrackRow,
+} from './timeline/components';
