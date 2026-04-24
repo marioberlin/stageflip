@@ -59,9 +59,9 @@ export function rulerTickFrames(scale: TimelineScale): number {
 
 /**
  * Format a frame number as a human label for ruler ticks and the
- * scrubber read-out. Returns seconds when the value falls on an
- * integer second (`1.0s`) and otherwise pads to one decimal
- * (`0.5s`, `2.3s`).
+ * scrubber read-out. Returns seconds as an integer when the value
+ * falls exactly on a whole second (`1s`, `2s`) and otherwise pads
+ * to one decimal (`0.5s`, `2.3s`).
  */
 export function formatFrameLabel(frame: number, fps: number): string {
   if (fps <= 0 || !Number.isFinite(fps)) return `${frame}f`;
