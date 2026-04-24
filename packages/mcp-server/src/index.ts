@@ -28,3 +28,41 @@ export {
   populateCanonicalRegistryForMcp,
   type PopulatedRegistry,
 } from './populate.js';
+// Auth (T-223): OAuth → JWT → local store, plus the request guard that
+// binds a verified session's allowedBundles to the adapter's gate.
+export {
+  issueMcpSessionJwt,
+  verifyMcpSessionJwt,
+  type IssueMcpSessionJwtArgs,
+  type McpSessionClaims,
+  type McpSessionRole,
+  type VerifiedMcpSession,
+  type VerifyMcpSessionJwtArgs,
+} from './auth/jwt.js';
+export {
+  createFileTokenStore,
+  defaultTokenStorePath,
+  type CreateFileTokenStoreArgs,
+  type StoredToken,
+  type TokenStore,
+} from './auth/store.js';
+export { derivePkceChallenge, generatePkceVerifier } from './auth/pkce.js';
+export {
+  MockAuthProvider,
+  runAuthFlow,
+  type AuthProvider,
+  type AuthorizationUrlArgs,
+  type ExchangeCodeArgs,
+  type ExchangeCodeResult,
+  type MintSessionJwtArgs,
+  type RunAuthFlowArgs,
+  type RunAuthFlowResult,
+} from './auth/flow.js';
+export {
+  UnauthorizedError,
+  guardMcpSession,
+  type GuardMcpSessionArgs,
+  type GuardMcpSessionResult,
+  type McpSessionPrincipal,
+  type UnauthorizedReason,
+} from './auth/guard.js';

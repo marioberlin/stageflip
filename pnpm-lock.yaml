@@ -555,6 +555,9 @@ importers:
       '@stageflip/llm-abstraction':
         specifier: workspace:^
         version: link:../llm-abstraction
+      jose:
+        specifier: 6.2.2
+        version: 6.2.2
     devDependencies:
       vitest:
         specifier: 2.1.9

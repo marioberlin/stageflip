@@ -60,12 +60,26 @@ Tool schemas, CLI reference, and the skills tree are *all* auto-generated:
 `check-skill-drift` (T-014) runs each generator and diffs against the checked-in
 skill file. Drift = CI failure.
 
-## Current state (Phase 1 exit)
+## Current state (Phase 10)
 
-Not yet implemented. Phase 10 (T-222 server, T-223 auth, T-224 plugin)
-delivers the MCP integration. `@stageflip/mcp-server` and `@stageflip/plugin`
-packages are scaffolded but empty. The auto-gen table above already works
-for one of its rows — `reference/schema/SKILL.md` is live via T-034.
+- **T-222 shipped**. `@stageflip/mcp-server` exposes `createMcpServer`,
+  the pure `buildMcpToolList` / `dispatchMcpToolCall` adapter, and
+  `populateCanonicalRegistryForMcp`. Router errors map 1:1 to MCP
+  `{ isError: true }` tool-call results.
+- **T-223 shipped**. Same package ships the auth building blocks:
+  `issueMcpSessionJwt` + `verifyMcpSessionJwt` (HS256, `typ:
+  mcp-session`, `iss: stageflip`); `runAuthFlow` drives the
+  OAuth-2.0 Authorization-Code + PKCE round-trip against a pluggable
+  `AuthProvider`; `createFileTokenStore` persists tokens to
+  `~/.config/stageflip/auth.json` at mode 0600; `guardMcpSession`
+  verifies the bearer JWT on each MCP call and returns the session's
+  `allowedBundles` to feed the adapter gate.
+- **T-224 in flight**. `@stageflip/plugin` will package the skills
+  tree + a concrete `AuthProvider` for the Claude-plugin install.
+- The auto-gen table above already works for several rows —
+  `reference/schema`, `reference/validation-rules`,
+  `clips/catalog`, `tools/SKILL.md`, `runtimes/SKILL.md` all ship via
+  T-034 + T-107 + T-220.
 
 ## Calling a StageFlip tool over MCP
 
