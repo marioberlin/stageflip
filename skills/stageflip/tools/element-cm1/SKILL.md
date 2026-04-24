@@ -8,123 +8,156 @@ owner_task: T-161
 related:
   - skills/stageflip/concepts/tool-bundles/SKILL.md
   - skills/stageflip/concepts/tool-router/SKILL.md
-  - skills/stageflip/tools/create-mutate/SKILL.md
-  - skills/stageflip/tools/layout/SKILL.md
-  - skills/stageflip/tools/clip-animation/SKILL.md
 ---
 
 # Tools — Element CM1 Bundle
 
-Twelve write-tier tools for per-element content mutation. Slide-mode
-only. Handlers type against `MutationContext`; mutations flow as
-JSON-Patch ops via `ctx.patchSink.push(op)`. Between tool calls the
-Executor drains + applies + re-reads, so chained element edits in one
-plan step see the previous mutation.
+Element-level content-mutation tools (text, shape, image, table cells).
 
-Scope boundary:
+> **This file is generated from the engine's registered tool
+> definitions** (`pnpm gen:tool-skills`). Hand-edits will be
+> overwritten. Tool descriptions themselves are the single source of
+> truth — edit them in the handler's `ToolHandler` + matching
+> `LLMToolDefinition` in `packages/engine/src/handlers/element-cm1/`.
 
-- `create-mutate` (T-156) owns slide/element CRUD (add / delete /
-  reorder at the collection level).
-- `layout` (T-158) owns geometry (transform / alignment / sizing).
-- `clip-animation` (T-160) owns clip props + animations.
-- `table-cm1` (T-163) owns table row/column/cell edits — **not**
-  touched here. Table elements are the only element type this bundle
-  does not operate on.
-
-Registration: `registerElementCm1Bundle(registry, router)` from
-`@stageflip/engine`.
-
-Every response is a discriminated union on `ok`. Type-specific tools
-refuse with `wrong_element_type` (matches `wrong_animation_kind` /
-`not_a_clip` naming from sibling bundles) when the element's
-discriminant doesn't match the tool's target.
+Registration: see `@stageflip/engine`'s `registerElementCm1Bundle` (or equivalent) export.
 
 ## Tools
 
-### Text
+### `set_text_content`
 
-#### `set_text_content` — `{ slideId, elementId, text?, runs? }`
+Replace a text element's `text` (plain string), its `runs` (styled segments), or both. Supply one or both; at least one must be present. `runs` is wholesale-replaced — use `append_text_run` / `remove_text_run` for incremental edits. Refuses `wrong_element_type` unless the element is `type: 'text'`.
 
-Replace `text` (plain string), `runs` (styled segments), or both. At
-least one must be supplied (Zod `refine`). `runs` is wholesale-replaced
-— use `append_text_run` / `remove_text_run` for incremental edits.
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `text` (`string`) _(optional)_
+- `runs` (`array`) _(optional)_
 
-#### `append_text_run` — `{ slideId, elementId, run, position? }`
+### `append_text_run`
 
-Insert a single styled run. If `runs` is absent, creates the array with
-one element. `position` defaults to end.
+Insert a single styled run into a text element's `runs` array. If the element has no `runs` yet, creates the array. `position` defaults to the end.
 
-#### `remove_text_run` — `{ slideId, elementId, index }`
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `run` (`object`) — Styled text run — Zod-validated server-side against `textRunSchema` (`{ text, color?, weight?, italic?, underline? }`).
+- `position` (`integer`) _(optional)_
 
-Remove by zero-based index. `run_not_found` if out of range or `runs`
-absent.
+### `remove_text_run`
 
-#### `update_text_run_style` — `{ slideId, elementId, index, style }`
+Remove a single run from a text element's `runs` array by zero-based index. Refuses `run_not_found` if the index is out of range (or `runs` is absent / empty).
 
-Partial-merge into a run's fields: `color` / `weight` / `italic` /
-`underline` / `text`. Each non-undefined field is one `add` or `replace`
-based on current run state.
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `index` (`integer`)
 
-### Block-level text
+### `update_text_run_style`
 
-#### `update_text_style` — `{ slideId, elementId, fontFamily?, fontSize?, color?, align?, lineHeight? }`
+Partial-merge into a single run's fields (color / weight / italic / underline / text). Each non-undefined field becomes one `add` or `replace` op depending on whether the run already has that field. Refuses `run_not_found` if the index is out of range.
 
-Partial-merge block-level styles on a text element.
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `index` (`integer`)
+- `style` (`object`)
 
-### Per-type
+### `update_text_style`
 
-#### `update_shape` — `{ slideId, elementId, shape?, path?, fill?, stroke?, cornerRadius? }`
+Partial-merge into a text element's block-level style (fontFamily / fontSize / color / align / lineHeight). Emits one `add` or `replace` per provided field.
 
-Partial-merge into a shape element. `stroke` is replaced wholesale.
-Custom-path validation (path required for `shape='custom-path'`) lives
-at RIR compile time, not here.
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `fontFamily` (`string`) _(optional)_
+- `fontSize` (`number`) _(optional)_
+- `color` (`string`) _(optional)_ — Hex `#RGB` / `#RRGGBB` / `#RRGGBBAA` or theme ref `theme:<dotted.path>`.
+- `align` (`string`) _(optional)_ — enum: `left` / `center` / `right` / `justify`
+- `lineHeight` (`number`) _(optional)_
 
-#### `update_image` — `{ slideId, elementId, src?, alt?, fit? }`
+### `update_shape`
 
-Empty-string `alt` removes the field (matches `update_slide`'s
-empty-string handling in T-156).
+Partial-merge into a shape element (shape kind / path / fill / stroke / cornerRadius). `stroke` is replaced wholesale; pass the full stroke object to change a sub-field. `custom-path` shapes need `path` — enforced at RIR compile time, not here.
 
-#### `update_video` — `{ slideId, elementId, src?, trim?, muted?, loop?, playbackRate? }`
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `shape` (`string`) _(optional)_ — enum: `rect` / `ellipse` / `line` / `polygon` / `star` / `custom-path`
+- `path` (`string`) _(optional)_
+- `fill` (`string`) _(optional)_ — Hex `#RGB` / `#RRGGBB` / `#RRGGBBAA` or theme ref `theme:<dotted.path>`.
+- `stroke` (`object`) _(optional)_ — Stroke — Zod-validated server-side against `strokeSchema` (`{ color, width, dasharray?, linecap?, linejoin? }`).
+- `cornerRadius` (`number`) _(optional)_
 
-`trim` validated against `trimWindowSchema` (`endMs > startMs`).
+### `update_image`
 
-#### `update_audio` — `{ slideId, elementId, src?, trim?, mix?, loop? }`
+Partial-merge into an image element (src / alt / fit). Empty-string `alt` removes the field; any other provided field becomes an `add` or `replace`.
 
-`mix` is **merged field-by-field** into any existing `mix` object — the
-only per-type tool with sub-object merge semantics, because audio mix is
-a natural partial edit target. When `mix` is absent, the patch seeds a
-fresh object.
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `src` (`string`) _(optional)_ — Asset reference `asset:<id>` — Zod-validated server-side.
+- `alt` (`string`) _(optional)_
+- `fit` (`string`) _(optional)_ — enum: `cover` / `contain` / `fill` / `none` / `scale-down`
 
-#### `update_code` — `{ slideId, elementId, code?, language?, theme?, showLineNumbers?, wrap? }`
+### `update_video`
 
-Empty-string `theme` removes the field.
+Partial-merge into a video element (src / trim / muted / loop / playbackRate). `trim` is validated against `trimWindowSchema` (endMs > startMs).
 
-#### `update_embed` — `{ slideId, elementId, src?, sandbox?, allowFullscreen? }`
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `src` (`string`) _(optional)_ — Asset reference `asset:<id>`.
+- `trim` (`object`) _(optional)_ — `{ startMs, endMs }` with `endMs > startMs`.
+- `muted` (`boolean`) _(optional)_
+- `loop` (`boolean`) _(optional)_
+- `playbackRate` (`number`) _(optional)_
 
-`sandbox` is replaced wholesale.
+### `update_audio`
 
-### Common
+Partial-merge into an audio element (src / trim / mix / loop). `mix` is merged field-by-field (gain / pan / fadeInMs / fadeOutMs) onto any existing mix object; missing fields survive.
 
-#### `set_element_flags` — `{ slideId, elementId, visible?, locked?, name? }`
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `src` (`string`) _(optional)_ — Asset reference `asset:<id>`.
+- `trim` (`object`) _(optional)_ — `{ startMs, endMs }` with `endMs > startMs`.
+- `mix` (`object`) _(optional)_ — Audio mix patch — `{ gain?, pan?, fadeInMs?, fadeOutMs? }`. Merged field-by-field onto any existing mix.
+- `loop` (`boolean`) _(optional)_
 
-Type-agnostic — works on any element. Empty-string `name` removes the
-field.
+### `update_code`
+
+Partial-merge into a code element (code / language / theme / showLineNumbers / wrap). Empty-string `theme` removes the field.
+
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `code` (`string`) _(optional)_
+- `language` (`string`) _(optional)_ — Enum from `codeLanguageSchema` — Zod-validated server-side.
+- `theme` (`string`) _(optional)_
+- `showLineNumbers` (`boolean`) _(optional)_
+- `wrap` (`boolean`) _(optional)_
+
+### `update_embed`
+
+Partial-merge into an embed element (src / sandbox / allowFullscreen). `sandbox` is replaced wholesale; pass the full array to toggle flags.
+
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `src` (`string`) _(optional)_
+- `sandbox` (`array`) _(optional)_
+- `allowFullscreen` (`boolean`) _(optional)_
+
+### `set_element_flags`
+
+Set element-level metadata (visible / locked / name) on any element regardless of type. Empty-string `name` removes the field.
+
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `visible` (`boolean`) _(optional)_
+- `locked` (`boolean`) _(optional)_
+- `name` (`string`) _(optional)_
+
 
 ## Invariants
 
 - Every handler declares `bundle: 'element-cm1'`.
-- All 12 handlers type against `MutationContext`; Executor's
-  `ExecutorContext` satisfies it.
-- Tool count 12 → well within I-9's 30 cap.
-- Type-specific tools always refuse `wrong_element_type` when the
-  element discriminant doesn't match the tool's target — no silent
-  "edit a shape as if it were text".
-- Handlers mutate via patches only.
-- Table elements are out-of-scope — use `table-cm1` (T-163).
+- Tool count 12 (I-9 cap is 30).
+- Tool names + descriptions above mirror what the LLM sees at plan +
+  execution time, produced by the router's `LLMToolDefinition[]`.
 
 ## Related
 
-- Meta: `concepts/tool-bundles/SKILL.md`
-- Sibling: `tools/create-mutate/SKILL.md`, `tools/layout/SKILL.md`,
-  `tools/clip-animation/SKILL.md`
+- `concepts/tool-bundles/SKILL.md` — bundle catalog + loading policy.
+- `concepts/tool-router/SKILL.md` — Zod-validated dispatch.
 - Task: T-161

@@ -7,90 +7,84 @@ last_updated: 2026-04-24
 owner_task: T-163
 related:
   - skills/stageflip/concepts/tool-bundles/SKILL.md
-  - skills/stageflip/tools/element-cm1/SKILL.md
-  - skills/stageflip/tools/create-mutate/SKILL.md
+  - skills/stageflip/concepts/tool-router/SKILL.md
 ---
 
 # Tools — Table CM1 Bundle
 
-Six write-tier tools for table-element content mutation. Slide-mode
-only. Handlers type against `MutationContext`; mutations flow as
-JSON-Patch ops.
+Table-specific content-mutation tools — rows, columns, cell merges.
 
-Table elements store cells sparsely — one entry per non-default cell,
-addressed by `{row, col}`. Tools that reshape the grid (`insert_row` /
-`delete_row` / `insert_column` / `delete_column`) automatically shift
-every affected cell's coordinates AND update the table's declared
-`rows` / `columns` counts atomically via wholesale-replace ops.
+> **This file is generated from the engine's registered tool
+> definitions** (`pnpm gen:tool-skills`). Hand-edits will be
+> overwritten. Tool descriptions themselves are the single source of
+> truth — edit them in the handler's `ToolHandler` + matching
+> `LLMToolDefinition` in `packages/engine/src/handlers/table-cm1/`.
 
-Scope boundary: `create-mutate` owns table-element add / delete;
-`element-cm1` does NOT touch tables (by design — tables need
-coordinate-aware edits). This bundle is the only one that manipulates
-the `cells` array, `rows`, and `columns`.
-
-Registration: `registerTableCm1Bundle(registry, router)` from
-`@stageflip/engine`.
+Registration: see `@stageflip/engine`'s `registerTableCm1Bundle` (or equivalent) export.
 
 ## Tools
 
-### Cell-level
+### `set_cell`
 
-#### `set_cell` — `{ slideId, elementId, row, col, cell }`
+Upsert a cell at `(row, col)`. If a cell already exists at those coordinates, it's wholesale-replaced; otherwise it's appended to the sparse `cells` array. Refuses `out_of_bounds` if `row >= table.rows` or `col >= table.columns`. The cell payload is Zod-validated against the per-cell shape (content required; color / background / bold / align / colspan / rowspan optional).
 
-Upsert a cell at `(row, col)`. Adds a new cell entry if absent, or
-wholesale-replaces the existing one. Refuses `out_of_bounds` when
-`row >= rows` or `col >= columns`. `cell.content` is required; styling
-fields (`color` / `background` / `bold` / `align` / `colspan` /
-`rowspan`) are optional. Reports `action: 'added' | 'replaced'`.
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `row` (`integer`)
+- `col` (`integer`)
+- `cell` (`object`)
 
-#### `clear_cell` — `{ slideId, elementId, row, col }`
+### `clear_cell`
 
-Remove the cell entry at `(row, col)`. Noop when no cell is present
-(`wasSet: false`) — sparse cells mean "absent" is a valid state, so
-this is not an error. Out-of-bounds coordinates also noop.
+Remove a cell entry at `(row, col)` from the sparse `cells` array. Reports `wasSet: false` when no cell was present (noop — no patch emitted). Out-of-bounds coordinates silently noop too, since a missing coordinate and an out-of-bounds coordinate both mean 'no cell to clear'.
 
-### Grid reshape
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `row` (`integer`)
+- `col` (`integer`)
 
-#### `insert_row` — `{ slideId, elementId, at }`
+### `insert_row`
 
-Insert a blank row at index `at`. Shifts every cell with `row >= at`
-up by one AND increments `table.rows` in one atomic pair of replace
-ops. `at = rows` appends at the bottom; `at > rows` refuses
-`out_of_bounds`.
+Insert a blank row at index `at`. Shifts every cell whose row ≥ at up by one, and increments `table.rows`. `at = table.rows` appends at the bottom; `at > table.rows` refuses with `out_of_bounds`. Atomic: emits one replace op for `cells` and one for `rows`.
 
-#### `delete_row` — `{ slideId, elementId, at }`
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `at` (`integer`)
 
-Delete the row at `at`. Removes every cell with `row == at`, shifts
-cells with `row > at` down by one, and decrements `table.rows`. Reports
-`cellsRemoved`. Refuses `last_row` when `rows == 1` (table must keep
-≥1 row) and `out_of_bounds` when `at >= rows`.
+### `delete_row`
 
-#### `insert_column` — `{ slideId, elementId, at }`
+Delete the row at index `at`. Removes every cell whose row equals `at`, shifts cells with row > at down by one, and decrements `table.rows`. Refuses `last_row` when `table.rows == 1` (tables must keep ≥1 row) and `out_of_bounds` when `at >= rows`.
 
-Mirror of `insert_row` for columns.
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `at` (`integer`)
 
-#### `delete_column` — `{ slideId, elementId, at }`
+### `insert_column`
 
-Mirror of `delete_row`. Refuses `last_column` when `columns == 1`.
+Insert a blank column at index `at`. Shifts every cell whose col ≥ at right by one, and increments `table.columns`. `at = table.columns` appends on the right.
+
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `at` (`integer`)
+
+### `delete_column`
+
+Delete the column at index `at`. Removes every cell whose col equals `at`, shifts cells with col > at left by one, and decrements `table.columns`. Refuses `last_column` when `table.columns == 1`.
+
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `at` (`integer`)
+
 
 ## Invariants
 
 - Every handler declares `bundle: 'table-cm1'`.
-- All 6 handlers type against `MutationContext` and refuse
-  `wrong_element_type` when the element isn't `type: 'table'`.
-- Tool count 6 → within I-9's 30 cap.
-- `rows >= 1` and `columns >= 1` — enforced by `last_row` /
-  `last_column` refusals.
-- Grid-reshape tools emit exactly 2 patches (`cells` + `rows` |
-  `cells` + `columns`) — Executor applies them together so
-  post-mutation reads never see a mismatched count.
-- Sparse cell convention: an absent `(row, col)` entry means "default
-  cell" (empty content + default style). Tools never force creation
-  of empty cell stubs.
+- Tool count 6 (I-9 cap is 30).
+- Tool names + descriptions above mirror what the LLM sees at plan +
+  execution time, produced by the router's `LLMToolDefinition[]`.
 
 ## Related
 
-- Meta: `concepts/tool-bundles/SKILL.md`
-- Siblings: `tools/element-cm1/SKILL.md` (all non-table elements),
-  `tools/create-mutate/SKILL.md` (element CRUD)
+- `concepts/tool-bundles/SKILL.md` — bundle catalog + loading policy.
+- `concepts/tool-router/SKILL.md` — Zod-validated dispatch.
 - Task: T-163

@@ -8,61 +8,59 @@ owner_task: T-157
 related:
   - skills/stageflip/concepts/tool-bundles/SKILL.md
   - skills/stageflip/concepts/tool-router/SKILL.md
-  - skills/stageflip/concepts/agent-executor/SKILL.md
-  - skills/stageflip/tools/create-mutate/SKILL.md
 ---
 
 # Tools — Timing Bundle
 
-Four write-tier tools for per-slide duration + transition control. Slide-
-mode only. Handlers type against `MutationContext`; mutation flows
-through `ctx.patchSink.push(op)`.
+Adjust per-slide duration, sequence, and timeline timing hints.
 
-Registration: `registerTimingBundle(registry, router)` from
-`@stageflip/engine`.
+> **This file is generated from the engine's registered tool
+> definitions** (`pnpm gen:tool-skills`). Hand-edits will be
+> overwritten. Tool descriptions themselves are the single source of
+> truth — edit them in the handler's `ToolHandler` + matching
+> `LLMToolDefinition` in `packages/engine/src/handlers/timing/`.
 
-Every response shape is a discriminated union on `ok`. Failure `reason`s
-are `wrong_mode` (non-slide document) or `not_found` (unknown slide id);
-handlers never throw.
+Registration: see `@stageflip/engine`'s `registerTimingBundle` (or equivalent) export.
 
 ## Tools
 
-### `set_slide_duration` — `{ slideId, durationMs }`
+### `set_slide_duration`
 
-Set a slide's static duration in ms. Positive integer. Emits `add` when
-the field was absent, `replace` otherwise. Returns `{ ok: true, slideId,
-durationMs }`.
+Set a single slide's static duration in milliseconds. Must be a positive integer. Omit (use `clear_slide_duration`) for "advance on user click".
 
-### `clear_slide_duration` — `{ slideId }`
+- `slideId` (`string`)
+- `durationMs` (`integer`)
 
-Remove `durationMs`, reverting the slide to "advance on user click". When
-the field was already absent, returns `{ ok: true, wasSet: false }` with
-no patch emitted.
+### `clear_slide_duration`
 
-### `set_slide_transition` — `{ slideId, kind, durationMs? }`
+Remove a slide's `durationMs`, reverting it to "advance on user click". `wasSet: false` means the field was absent already; no patch emitted in that case.
 
-Set the slide's entrance transition. `kind` ∈ `none` / `fade` /
-`slide-left` / `slide-right` / `zoom` / `push`. `durationMs` defaults to
-400 (schema default). Emits `add` / `replace` as appropriate.
+- `slideId` (`string`)
 
-### `clear_slide_transition` — `{ slideId }`
+### `set_slide_transition`
 
-Remove the slide's transition. Same `wasSet` pattern as
-`clear_slide_duration`.
+Set a slide's entrance transition. `kind` is one of `none` / `fade` / `slide-left` / `slide-right` / `zoom` / `push`. `durationMs` defaults to 400 when omitted (schema default).
+
+- `slideId` (`string`)
+- `kind` (`string`) — enum: `none` / `fade` / `slide-left` / `slide-right` / `zoom` / `push`
+- `durationMs` (`integer`) _(optional)_
+
+### `clear_slide_transition`
+
+Remove a slide's entrance transition entirely. `wasSet: false` means the field was absent already; no patch emitted.
+
+- `slideId` (`string`)
+
 
 ## Invariants
 
 - Every handler declares `bundle: 'timing'`.
-- All 4 handlers type against `MutationContext`; Executor's
-  `ExecutorContext` satisfies it.
-- Tool count 4 → well within the 30-tool I-9 budget.
-- `clear_*` handlers are idempotent: calling twice is safe; the second
-  call returns `wasSet: false` with no patch.
+- Tool count 4 (I-9 cap is 30).
+- Tool names + descriptions above mirror what the LLM sees at plan +
+  execution time, produced by the router's `LLMToolDefinition[]`.
 
 ## Related
 
-- Meta: `concepts/tool-bundles/SKILL.md`
-- Router: `concepts/tool-router/SKILL.md`
-- Executor (consumer): `concepts/agent-executor/SKILL.md`
-- Sibling (slide + element CRUD): `tools/create-mutate/SKILL.md`
+- `concepts/tool-bundles/SKILL.md` — bundle catalog + loading policy.
+- `concepts/tool-router/SKILL.md` — Zod-validated dispatch.
 - Task: T-157

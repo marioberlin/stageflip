@@ -1,5 +1,5 @@
 ---
-title: Tools — Slide CM1 + Accessibility Bundle
+title: Tools — Slide CM1 Bundle
 id: skills/stageflip/tools/slide-cm1
 tier: tools
 status: substantive
@@ -7,88 +7,76 @@ last_updated: 2026-04-24
 owner_task: T-162
 related:
   - skills/stageflip/concepts/tool-bundles/SKILL.md
-  - skills/stageflip/tools/create-mutate/SKILL.md
-  - skills/stageflip/tools/timing/SKILL.md
-  - skills/stageflip/tools/element-cm1/SKILL.md
+  - skills/stageflip/concepts/tool-router/SKILL.md
 ---
 
-# Tools — Slide CM1 + Accessibility Bundle
+# Tools — Slide CM1 Bundle
 
-Six write-tier tools for slide-level content mutation + accessibility
-affordances. Slide-mode only. Handlers type against `MutationContext`;
-mutations flow as JSON-Patch ops via `ctx.patchSink.push(op)`.
+Slide-level content-mutation + accessibility (alt text, reading order).
 
-Scope boundary:
+> **This file is generated from the engine's registered tool
+> definitions** (`pnpm gen:tool-skills`). Hand-edits will be
+> overwritten. Tool descriptions themselves are the single source of
+> truth — edit them in the handler's `ToolHandler` + matching
+> `LLMToolDefinition` in `packages/engine/src/handlers/slide-cm1/`.
 
-- `create-mutate` (T-156) owns slide CRUD (add / duplicate / delete /
-  reorder) and the catch-all `update_slide` for arbitrary field writes.
-- `timing` (T-157) owns slide duration + transitions.
-- `element-cm1` (T-161) owns per-element content mutation.
-- **This bundle** adds focused slide affordances the LLM can reach
-  for without packing everything into one generic call, plus
-  accessibility primitives: reading-order reorder and bulk alt-text.
-
-Registration: `registerSlideCm1Bundle(registry, router)` from
-`@stageflip/engine`.
+Registration: see `@stageflip/engine`'s `registerSlideCm1Bundle` (or equivalent) export.
 
 ## Tools
 
-### Slide content
+### `set_slide_title`
 
-#### `set_slide_title` — `{ slideId, title }`
+Set or clear a slide's title. Empty-string `title` removes the field entirely (follows the T-156 empty-string-removes convention). Reports `action: 'set' | 'cleared'`.
 
-Empty-string `title` removes the field; otherwise `add` or `replace`
-based on prior state. Reports `action: 'set' | 'cleared'`.
+- `slideId` (`string`)
+- `title` (`string`)
 
-#### `set_slide_notes` — `{ slideId, notes }`
+### `set_slide_notes`
 
-Same empty-string-removes semantics for speaker notes. Use
-`append_slide_notes` when preserving prior content matters.
+Set or clear a slide's speaker notes. Empty-string `notes` removes the field. Use `append_slide_notes` when you want to preserve existing notes.
 
-#### `append_slide_notes` — `{ slideId, text, separator? }`
+- `slideId` (`string`)
+- `notes` (`string`)
 
-Concatenate `text` onto existing notes. `separator` defaults to two
-newlines (paragraph break). Refuses `exceeds_max_length` if the combined
-string would exceed 5000 chars (the schema limit).
+### `append_slide_notes`
 
-#### `set_slide_background` — `{ slideId, background: SlideBackground | null }`
+Append text to a slide's speaker notes. `separator` defaults to two newlines (paragraph break); use `' '` for inline joins. Adds the field when absent. Refuses `exceeds_max_length` when the appended total would exceed 5000 chars (schema limit).
 
-Set a `{ kind: 'color', value }` or `{ kind: 'asset', value }`
-background; pass `null` to clear. Noop when asked to clear an absent
-background.
+- `slideId` (`string`)
+- `text` (`string`)
+- `separator` (`string`) _(optional)_
 
-### Accessibility
+### `set_slide_background`
 
-#### `reorder_slide_elements` — `{ slideId, order: string[] }`
+Set or clear a slide's background. Pass a `{ kind: 'color', value }` or `{ kind: 'asset', value }` to set; pass `null` to clear. Noop when asked to clear a slide that has no background.
 
-Replace the slide's `elements` array order. `order` must contain every
-existing element id exactly once (drift-gate reasons
-`mismatched_ids` / `mismatched_count`). Element array order is BOTH the
-a11y reading order (screen readers announce in document order) AND the
-z-index source for the RIR compiler (array-index × 10) — reordering
-affects both. No other bundle reorders elements.
+- `slideId` (`string`)
+- `background` (`object`) — Background — `{ kind: 'color', value }` or `{ kind: 'asset', value }`, or `null` to clear.
 
-#### `bulk_set_alt_text` — `{ slideId, assignments: Array<{ elementId, alt }> }`
+### `reorder_slide_elements`
 
-Set alt text on multiple image elements in one call. Empty-string `alt`
-marks an image as decorative (removes the field per ARIA convention).
-**Atomic** — validates every assignment (element exists, is `image`)
-before emitting any patches; rejects with `element_not_found` or
-`wrong_element_type` on first offender.
+Reorder a slide's `elements` array. `order` must contain every existing element id exactly once — drift-gate checks match `reorder_slides` (T-156). Element array order is the a11y reading order (screen readers announce in document order) AND drives RIR z-index (array-index × 10). Changing this order therefore affects both a11y and stacking.
+
+- `slideId` (`string`)
+- `order` (`array`)
+
+### `bulk_set_alt_text`
+
+A11y: set alt text on multiple image elements in one call. Each assignment targets an image element by id; empty-string `alt` marks the image as decorative (removes the field). Fails atomically — validates every assignment before emitting any patches. Refuses `element_not_found` / `wrong_element_type` with `detail` on first offender.
+
+- `slideId` (`string`)
+- `assignments` (`array`)
+
 
 ## Invariants
 
 - Every handler declares `bundle: 'slide-cm1'`.
-- All 6 handlers type against `MutationContext`.
-- Tool count 6 → well within I-9's 30 cap.
-- `bulk_set_alt_text` is the only bundle tool with all-or-nothing
-  validation semantics (fail without partial patches).
-- Reading order (reorder_slide_elements) is intentionally co-located
-  with a11y tools — the element array IS the reading order.
+- Tool count 6 (I-9 cap is 30).
+- Tool names + descriptions above mirror what the LLM sees at plan +
+  execution time, produced by the router's `LLMToolDefinition[]`.
 
 ## Related
 
-- Meta: `concepts/tool-bundles/SKILL.md`
-- Siblings: `tools/create-mutate/SKILL.md`, `tools/timing/SKILL.md`,
-  `tools/element-cm1/SKILL.md`
+- `concepts/tool-bundles/SKILL.md` — bundle catalog + loading policy.
+- `concepts/tool-router/SKILL.md` — Zod-validated dispatch.
 - Task: T-162

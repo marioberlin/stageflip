@@ -32,6 +32,8 @@
     "size-limit": "turbo run build --filter=@stageflip/frame-runtime --filter=@stageflip/cdp-host-bundle && size-limit",
     "skills-sync": "tsx scripts/sync-skills.ts",
     "skills-sync:check": "tsx scripts/sync-skills.ts --check",
+    "gen:tool-skills": "tsx scripts/gen-tool-skills.ts",
+    "gen:tool-skills:check": "tsx scripts/gen-tool-skills.ts --check",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "turbo run build && changeset publish"

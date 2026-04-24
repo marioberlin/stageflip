@@ -8,60 +8,74 @@ owner_task: T-158
 related:
   - skills/stageflip/concepts/tool-bundles/SKILL.md
   - skills/stageflip/concepts/tool-router/SKILL.md
-  - skills/stageflip/tools/create-mutate/SKILL.md
 ---
 
 # Tools — Layout Bundle
 
-Five write-tier tools for element geometry: alignment, distribution,
-grid snapping, direct transform edits, size matching. Slide-mode only.
-Every tool emits `replace` patches against `slide.elements[*].transform`
-and returns a discriminated union on `ok` with failure `reason`s:
-`wrong_mode` / `slide_not_found` / `element_not_found`.
+Apply alignment, distribution, grids, and constraint-based layout.
 
-Registration: `registerLayoutBundle(registry, router)`.
+> **This file is generated from the engine's registered tool
+> definitions** (`pnpm gen:tool-skills`). Hand-edits will be
+> overwritten. Tool descriptions themselves are the single source of
+> truth — edit them in the handler's `ToolHandler` + matching
+> `LLMToolDefinition` in `packages/engine/src/handlers/layout/`.
+
+Registration: see `@stageflip/engine`'s `registerLayoutBundle` (or equivalent) export.
 
 ## Tools
 
-### `align_elements` — `{ slideId, elementIds: string[] (min 2), axis, mode }`
+### `align_elements`
 
-Align 2+ elements. `axis=horizontal` operates on the y dimension (top /
-center / bottom edges); `axis=vertical` mirrors for x. `mode` ∈ `start`
-/ `center` / `end`.
+Align 2+ elements along an axis. `axis=horizontal` + `mode=start` aligns their top edges (y = min y); `mode=center` aligns vertical centers; `mode=end` aligns bottom edges. `axis=vertical` mirrors this for x.
 
-### `distribute_elements` — `{ slideId, elementIds: string[] (min 3), axis }`
+- `slideId` (`string`)
+- `elementIds` (`array`)
+- `axis` (`string`) — enum: `horizontal` / `vertical`
+- `mode` (`string`) — enum: `start` / `center` / `end`
 
-Evenly space 3+ elements between the outermost two. Outermost stay put;
-middle centres are equalised. `axis=vertical` distributes along x;
-`axis=horizontal` along y (same "axis is the line" convention as
-`align_elements`).
+### `distribute_elements`
 
-### `snap_to_grid` — `{ slideId, elementIds, gridSize }`
+Evenly space 3+ elements between the outermost two. `axis=horizontal` distributes along x; `axis=vertical` along y. The outermost elements stay put; middle elements are repositioned so inter-centre gaps are equal.
 
-Round each element's `x` + `y` to nearest `gridSize`. Width / height
-untouched.
+- `slideId` (`string`)
+- `elementIds` (`array`)
+- `axis` (`string`) — enum: `horizontal` / `vertical`
 
-### `set_element_transform` — `{ slideId, elementId, transform: Partial<Transform> }`
+### `snap_to_grid`
 
-Patch one or more `transform` fields on a single element. Emits per-
-field `replace` ops so untouched fields survive. Prefer this over raw
-`update_element` (create-mutate bundle) for geometry edits.
+Snap each element's `x` + `y` to the nearest multiple of `gridSize`. Width / height left untouched. `gridSize` is in the document's transform units (typically px against a 1920×1080 reference).
 
-### `match_size` — `{ slideId, sourceElementId, targetElementIds, dimensions? }`
+- `slideId` (`string`)
+- `elementIds` (`array`)
+- `gridSize` (`number`)
 
-Copy `width` / `height` / both from source to every target. Position
-unchanged. Default `dimensions: 'both'`.
+### `set_element_transform`
+
+Patch one or more fields on a single element's `transform`. Fields left out remain unchanged. Prefer this over raw `update_element` for geometry edits — this handler always emits per-field `replace` patches so other transform fields survive.
+
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `transform` (`object`)
+
+### `match_size`
+
+Copy the source element's `width` / `height` / both onto each target element. Position is unchanged. Use after `align_elements` when a row of cards needs uniform sizing.
+
+- `slideId` (`string`)
+- `sourceElementId` (`string`)
+- `targetElementIds` (`array`)
+- `dimensions` (`string`) _(optional)_ — enum: `width` / `height` / `both`
+
 
 ## Invariants
 
 - Every handler declares `bundle: 'layout'`.
-- Every output is a discriminated union on `ok`; handlers never throw
-  for caller-controllable errors.
-- Tool count 5 → well within the 30-tool I-9 budget.
+- Tool count 5 (I-9 cap is 30).
+- Tool names + descriptions above mirror what the LLM sees at plan +
+  execution time, produced by the router's `LLMToolDefinition[]`.
 
 ## Related
 
-- Meta: `concepts/tool-bundles/SKILL.md`
-- Router: `concepts/tool-router/SKILL.md`
-- Sibling (CRUD): `tools/create-mutate/SKILL.md`
+- `concepts/tool-bundles/SKILL.md` — bundle catalog + loading policy.
+- `concepts/tool-router/SKILL.md` — Zod-validated dispatch.
 - Task: T-158

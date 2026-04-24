@@ -7,63 +7,70 @@ last_updated: 2026-04-24
 owner_task: T-168
 related:
   - skills/stageflip/concepts/tool-bundles/SKILL.md
-  - skills/stageflip/tools/layout/SKILL.md
-  - skills/stageflip/tools/domain-finance-sales-okr/SKILL.md
+  - skills/stageflip/concepts/tool-router/SKILL.md
 ---
 
 # Tools — Semantic Layout Bundle
 
-Four write-tier tools that reshape existing slide elements into
-conventional layouts. Slide-mode only. Handlers type against
-`MutationContext`; each tool emits per-element
-`replace /content/slides/<i>/elements/<j>/transform` ops.
+Semantic-role layout helpers — title blocks, KPI strips, two-column flows.
 
-Scope boundary vs other layout bundles:
+> **This file is generated from the engine's registered tool
+> definitions** (`pnpm gen:tool-skills`). Hand-edits will be
+> overwritten. Tool descriptions themselves are the single source of
+> truth — edit them in the handler's `ToolHandler` + matching
+> `LLMToolDefinition` in `packages/engine/src/handlers/semantic-layout/`.
 
-- `layout` (T-158) is the low-level primitive layer — alignment,
-  distribution, grid snap, per-element transform edits.
-- `domain-finance-sales-okr` (T-166) CREATES new slides with
-  pre-composed elements.
-- **This bundle** assumes the caller has already placed elements; it
-  only reshapes `transform` to match a semantic role layout. Never
-  adds, removes, or re-types elements.
+Registration: see `@stageflip/engine`'s `registerSemanticLayoutBundle` (or equivalent) export.
 
 ## Tools
 
-### `apply_title_body_layout` — `{ slideId, titleElementId, bodyElementId, titleHeight? }`
+### `apply_title_body_layout`
 
-Title at top (full width, default 160 px), body fills remaining
-vertical space.
+Reshape two existing elements into a title-over-body layout. Title gets `titleHeight` (default 160 px) at the top with standard margins; body fills the remaining vertical space. Emits one transform replace per element — doesn't touch `type`, content, or any field other than `transform`.
 
-### `apply_two_column_layout` — `{ slideId, leftElementIds, rightElementIds, topY?, gap? }`
+- `slideId` (`string`)
+- `titleElementId` (`string`)
+- `bodyElementId` (`string`)
+- `titleHeight` (`integer`) _(optional)_
 
-Equal-width columns starting at `topY` (default 240, leaving room for
-a title). Elements within each column share remaining vertical space
-equally with `gap` (default 24 px) between them.
+### `apply_two_column_layout`
 
-### `apply_kpi_strip_layout` — `{ slideId, elementIds, y?, height? }`
+Reshape existing elements into a two-column layout. `leftElementIds` become equal-height cards stacked in the left column; `rightElementIds` fill the right. `topY` defaults to 240 (leaving room for a title); `gap` is inter-row spacing (default 24 px).
 
-1–6 elements in a horizontal equal-width strip. Default `y: 280`,
-`height: 240`. Useful for retrofitting mis-aligned metric cards.
+- `slideId` (`string`)
+- `leftElementIds` (`array`)
+- `rightElementIds` (`array`)
+- `topY` (`integer`) _(optional)_
+- `gap` (`integer`) _(optional)_
 
-### `apply_centered_hero_layout` — `{ slideId, elementId, widthRatio?, heightRatio? }`
+### `apply_kpi_strip_layout`
 
-Centers a single element as a hero box. Ratios default to 0.75 × 0.5
-(1440×540 at 240, 270 on the 1920×1080 canvas).
+Reshape 1–6 existing elements into a horizontal equal-width KPI strip. `y` defaults to 280, `height` to 240. Perfect for quick retrofits of mis-aligned metric cards.
+
+- `slideId` (`string`)
+- `elementIds` (`array`)
+- `y` (`integer`) _(optional)_
+- `height` (`integer`) _(optional)_
+
+### `apply_centered_hero_layout`
+
+Reshape one element to a centered hero box. `widthRatio` / `heightRatio` are fractions of the canvas (default 0.75 / 0.5), so the default box is 1440×540 centered on the slide.
+
+- `slideId` (`string`)
+- `elementId` (`string`)
+- `widthRatio` (`number`) _(optional)_
+- `heightRatio` (`number`) _(optional)_
+
 
 ## Invariants
 
 - Every handler declares `bundle: 'semantic-layout'`.
-- All 4 handlers type against `MutationContext`.
-- Tool count 4 → well within I-9's 30 cap.
-- Handlers emit only `transform` replace ops. They never touch
-  element `type`, content, animations, or siblings not listed in the
-  input.
-- Reference canvas: 1920×1080, margin 80 px, column gap 48 px.
+- Tool count 4 (I-9 cap is 30).
+- Tool names + descriptions above mirror what the LLM sees at plan +
+  execution time, produced by the router's `LLMToolDefinition[]`.
 
 ## Related
 
-- Meta: `concepts/tool-bundles/SKILL.md`
-- Low-level sibling: `tools/layout/SKILL.md`
-- Composite sibling: `tools/domain-finance-sales-okr/SKILL.md`
+- `concepts/tool-bundles/SKILL.md` — bundle catalog + loading policy.
+- `concepts/tool-router/SKILL.md` — Zod-validated dispatch.
 - Task: T-168
