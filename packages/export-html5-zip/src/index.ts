@@ -54,6 +54,21 @@ export {
 } from './optimize/index.js';
 
 export {
+  type CreateFallbackGeneratorInput,
+  type EncodeGifOptions,
+  type FallbackGeneratorOptions,
+  type FrameRenderer,
+  type RgbaFrame,
+  type SolidColorRendererOptions,
+  createFallbackGenerator,
+  createSolidColorFrameRenderer,
+  encodeGif,
+  encodePng,
+  gifFrameIndices,
+  midpointFrameIndex,
+} from './fallback/index.js';
+
+export {
   ALL_VALIDATION_RULES,
   IAB_INITIAL_LOAD_BYTES,
   type ValidateBannerZipOptions,
