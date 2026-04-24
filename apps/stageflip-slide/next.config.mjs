@@ -7,7 +7,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  transpilePackages: ['@stageflip/editor-shell', '@stageflip/schema'],
+  transpilePackages: ['@stageflip/app-agent', '@stageflip/editor-shell', '@stageflip/schema'],
   // sharp is LGPL-3.0 and excluded via pnpm `ignoredOptionalDependencies`
   // at the workspace root (CLAUDE.md §3 license whitelist). Disable the
   // image optimizer so Next.js doesn't try to require the missing

@@ -1,19 +1,18 @@
-// apps/stageflip-slide/src/app/api/agent/execute/orchestrator.ts
-// Wiring layer between the Next.js route handler and the
-// Planner / Executor / Validator triad. Populates the engine's
-// registry with all 14 handler bundles, constructs a shared
-// ToolRouter, and exposes a single `runAgent` entrypoint the route
-// calls. Kept out of the route file so unit tests can exercise the
-// pipeline without mounting Next.
+// packages/app-agent/src/orchestrator.ts
+// Shared Planner → Executor → Validator orchestration layer for the
+// StageFlip editor apps (slide + video + display). Lifted from
+// apps/stageflip-slide's Phase-7 implementation (T-170) so both apps
+// load the same 15-bundle registry + run the same pipeline without
+// duplicating the wiring. T-187b.
 //
 // Environment: `ANTHROPIC_API_KEY` is read lazily at request time
 // (Next.js may reuse the server process across many requests). When
-// unset, `runAgent` throws `OrchestratorNotConfigured`, which the
-// route translates into a 503 response — distinct from the Phase-6
-// 501 "not wired" sentinel the old stub used.
+// unset, `runAgent` throws `OrchestratorNotConfigured`; the route
+// translates that into a 503 response.
 
 import {
   type Executor,
+  type ExecutorContext,
   type ExecutorEvent,
   type Plan,
   type Planner,
@@ -24,7 +23,6 @@ import {
   createPlanner,
   createValidator,
 } from '@stageflip/agent';
-import type { ExecutorContext } from '@stageflip/agent';
 import {
   type BundleRegistry,
   type DocumentSelection,
@@ -59,9 +57,9 @@ export class OrchestratorNotConfigured extends Error {
 }
 
 /** Default models for the triad. Overridable per request. */
-const DEFAULT_PLANNER_MODEL = 'claude-sonnet-4-6';
-const DEFAULT_EXECUTOR_MODEL = 'claude-sonnet-4-6';
-const DEFAULT_VALIDATOR_MODEL = 'claude-sonnet-4-6';
+export const DEFAULT_PLANNER_MODEL = 'claude-sonnet-4-6';
+export const DEFAULT_EXECUTOR_MODEL = 'claude-sonnet-4-6';
+export const DEFAULT_VALIDATOR_MODEL = 'claude-sonnet-4-6';
 
 export interface RunAgentRequest {
   prompt: string;
