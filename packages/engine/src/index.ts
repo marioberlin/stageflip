@@ -129,3 +129,9 @@ export {
   VIDEO_MODE_TOOL_DEFINITIONS,
   registerVideoModeBundle,
 } from './handlers/video-mode/register.js';
+export {
+  DISPLAY_MODE_BUNDLE_NAME,
+  DISPLAY_MODE_HANDLERS,
+  DISPLAY_MODE_TOOL_DEFINITIONS,
+  registerDisplayModeBundle,
+} from './handlers/display-mode/register.js';

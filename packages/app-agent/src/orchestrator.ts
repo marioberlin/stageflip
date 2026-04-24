@@ -2,8 +2,9 @@
 // Shared Planner → Executor → Validator orchestration layer for the
 // StageFlip editor apps (slide + video + display). Lifted from
 // apps/stageflip-slide's Phase-7 implementation (T-170) so both apps
-// load the same 15-bundle registry + run the same pipeline without
-// duplicating the wiring. T-187b.
+// load the same 16-bundle registry + run the same pipeline without
+// duplicating the wiring. T-187b (video-mode added in T-185,
+// display-mode added in T-206).
 //
 // Environment: `ANTHROPIC_API_KEY` is read lazily at request time
 // (Next.js may reuse the server process across many requests). When
@@ -31,6 +32,7 @@ import {
   registerClipAnimationBundle,
   registerCreateMutateBundle,
   registerDataSourceBindingsBundle,
+  registerDisplayModeBundle,
   registerDomainBundle,
   registerElementCm1Bundle,
   registerFactCheckBundle,
@@ -104,6 +106,7 @@ function populate(registry: BundleRegistry, router: ToolRouter<ExecutorContext>)
   registerDataSourceBindingsBundle(registry, router);
   registerSemanticLayoutBundle(registry, router);
   registerVideoModeBundle(registry, router);
+  registerDisplayModeBundle(registry, router);
 }
 
 /**
