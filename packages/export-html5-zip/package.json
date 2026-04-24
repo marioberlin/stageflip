@@ -25,7 +25,8 @@
   },
   "dependencies": {
     "@stageflip/schema": "workspace:^",
-    "fflate": "0.8.2"
+    "fflate": "0.8.2",
+    "terser": "5.46.2"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "2.1.9",

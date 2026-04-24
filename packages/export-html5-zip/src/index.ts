@@ -1,8 +1,10 @@
 // packages/export-html5-zip/src/index.ts
 // @stageflip/export-html5-zip — IAB / GDN-compliant HTML5 banner export.
 // T-203a ships the types + deterministic-ZIP utility + clickTag injector.
-// T-203b will wire the orchestrator that drives an `HtmlBundler`, embeds
-// the fallback asset, and enforces `DisplayBudget` caps.
+// T-203b wires the orchestrator that drives an `HtmlBundler`, embeds the
+// fallback asset, and enforces `DisplayBudget` caps.
+// T-205 adds the pre-pack optimisation passes (unused-CSS strip, JS
+// minify via terser, pluggable `ImageOptimizer`).
 
 export type {
   BannerAsset,
@@ -39,3 +41,14 @@ export {
   exportHtml5Zip,
   exportHtml5ZipForSize,
 } from './orchestrator.js';
+
+export {
+  DEFAULT_MINIFY_OPTIONS,
+  extractHtmlReferences,
+  type ImageOptimizer,
+  minifyInlineJsInHtml,
+  type OptimizeOptions,
+  optimizeHtmlBundle,
+  stripUnusedCss,
+  stripUnusedCssFromHtml,
+} from './optimize/index.js';
