@@ -31,6 +31,27 @@ directory at `pnpm test` time.
 | `shader-glitch.json` | `shader` | `glitch` | — |
 | `three-three-product-reveal.json` | `three` | `three-product-reveal` | ✓ (30 dB / 0.95) |
 
+### T-188 StageFlip.Video fixtures
+
+One manifest per `VIDEO_CLIP_KINDS` entry (T-180b), plus an aspect-bounce
+spread and a caption-pack sanity check. Together these exercise the Phase 8
+render targets called out in `docs/implementation-plan.md` (audio-sync,
+captions, video overlays, aspect-bounce).
+
+| File | Composition | Parity category |
+|---|---|---|
+| `frame-runtime-hook-moment.json` | 1920×1080 30fps | video overlay |
+| `frame-runtime-product-reveal.json` | 1920×1080 30fps | video overlay |
+| `frame-runtime-lower-third.json` | 1920×1080 30fps | video overlay |
+| `frame-runtime-endslate-logo.json` | 1080×1920 30fps (**9:16**) | aspect-bounce |
+| `frame-runtime-testimonial-card.json` | 1080×1080 30fps (**1:1**) | aspect-bounce |
+| `frame-runtime-beat-synced-text.json` | 1920×1080 30fps | audio-sync (beat-driven) |
+
+The **captions** category is already covered by the existing
+`frame-runtime-subtitle-overlay.json` fixture (karaoke-style word reveal);
+T-184's caption pack consumes the same render surface, so no duplicate
+fixture is needed.
+
 ## Adding a new fixture
 
 1. Drop a JSON file in this directory; file name must be

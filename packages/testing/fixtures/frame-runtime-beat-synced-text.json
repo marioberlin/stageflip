@@ -1,0 +1,23 @@
+{
+  "name": "frame-runtime-beat-synced-text",
+  "runtime": "frame-runtime",
+  "kind": "beat-synced-text",
+  "description": "Video-profile beat-driven text pulse — verifies per-beat scale + glow land deterministically (T-183b / T-188 audio-sync).",
+  "composition": { "width": 1920, "height": 1080, "fps": 30, "durationInFrames": 120 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 120,
+    "props": {
+      "phrases": ["GO", "SET", "HIT", "WIN"],
+      "beatFrames": [0, 15, 30, 45, 60, 75, 90, 105],
+      "pulseDecayFrames": 8
+    }
+  },
+  "referenceFrames": [0, 3, 15, 45, 75, 105, 119],
+  "thresholds": {
+    "minPsnr": 32,
+    "minSsim": 0.95,
+    "maxFailingFrames": 0
+  },
+  "goldens": { "dir": "goldens/frame-runtime-beat-synced-text" }
+}

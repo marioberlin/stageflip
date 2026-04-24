@@ -1,0 +1,19 @@
+{
+  "name": "frame-runtime-endslate-logo",
+  "runtime": "frame-runtime",
+  "kind": "endslate-logo",
+  "description": "Video-profile closing brand card at 9:16 — exercises the aspect-bounce path (T-183a / T-188 aspect-bounce).",
+  "composition": { "width": 1080, "height": 1920, "fps": 30, "durationInFrames": 90 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 90,
+    "props": { "brand": "StageFlip", "tagline": "motion for everyone", "fontSize": 144 }
+  },
+  "referenceFrames": [0, 24, 60, 89],
+  "thresholds": {
+    "minPsnr": 32,
+    "minSsim": 0.95,
+    "maxFailingFrames": 0
+  },
+  "goldens": { "dir": "goldens/frame-runtime-endslate-logo" }
+}

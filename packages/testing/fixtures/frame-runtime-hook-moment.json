@@ -1,0 +1,19 @@
+{
+  "name": "frame-runtime-hook-moment",
+  "runtime": "frame-runtime",
+  "kind": "hook-moment",
+  "description": "Video-profile opening attention-grabber: claim zoom-in + brightness pulse, supporting tagline slides up (T-183b / T-188 video overlay).",
+  "composition": { "width": 1920, "height": 1080, "fps": 30, "durationInFrames": 60 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 60,
+    "props": { "claim": "Limited Drop", "supporting": "Ends Friday", "fontSize": 160 }
+  },
+  "referenceFrames": [0, 9, 30, 59],
+  "thresholds": {
+    "minPsnr": 32,
+    "minSsim": 0.95,
+    "maxFailingFrames": 0
+  },
+  "goldens": { "dir": "goldens/frame-runtime-hook-moment" }
+}

@@ -80,6 +80,15 @@ const KNOWN_KINDS: ReadonlyMap<string, string> = new Map([
   // not ported — network tile fetches + imperative useEffect DOM mutation
   // violate frame-runtime determinism invariants)
   ['animated-map', 'frame-runtime'],
+  // T-183a / T-183b — StageFlip.Video profile clips (overlay + motion
+  // tranches). T-188 ships parity fixtures for every kind plus a 9:16
+  // aspect-bounce spread.
+  ['lower-third', 'frame-runtime'],
+  ['endslate-logo', 'frame-runtime'],
+  ['testimonial-card', 'frame-runtime'],
+  ['hook-moment', 'frame-runtime'],
+  ['product-reveal', 'frame-runtime'],
+  ['beat-synced-text', 'frame-runtime'],
 ]);
 
 function listFixtureFiles(): string[] {
