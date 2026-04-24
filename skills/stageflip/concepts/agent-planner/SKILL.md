@@ -67,10 +67,19 @@ re-invoked with the failing step highlighted and asked to split it. If the
 Executor reports `tool-missing`, the Planner adds the appropriate bundle and
 re-emits.
 
-## Current state (Phase 1 exit)
+## Current state (Phase 7, T-151 shipped)
 
-Not yet implemented. Phase 7 (T-151) delivers the Planner; this skill records
-the contract the implementation will satisfy.
+- `@stageflip/agent` exports `createPlanner({ provider })` → `Planner.plan({ prompt, document?, model, bundles?, maxTokens?, temperature? }, { signal? })` → `Promise<Plan>`.
+- Contract enforced via `planSchema` (Zod); emission enforced via the
+  `emit_plan` single-tool pattern (see `concepts/llm-abstraction/SKILL.md`).
+- Bundle catalog seeded from a stub `listBundles()` returning the 14
+  canonical bundles; T-151a swaps this for a real registry driven by
+  `skills/stageflip/tools/<bundle>/SKILL.md`.
+- Unknown bundles referenced by the LLM throw `PlannerError({ kind: 'unknown_bundle' })`.
+- Default temperature 0, default max_tokens 2048.
+
+Follow-ups tracked against T-151a / T-152:
+- "Recovery from bad plans" loop (bundle-limit-exceeded / tool-missing) is the Executor's concern — this skill owns the emission contract; the retry loop lives in `concepts/agent-executor/SKILL.md`.
 
 ## Related
 

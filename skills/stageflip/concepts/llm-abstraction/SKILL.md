@@ -137,14 +137,17 @@ exported for that purpose.
 - Response caching — deferred; Anthropic prompt-cache headers can pass
   through via the provider-native model config when needed.
 
-## Current state (Phase 7 opener, T-150)
+## Current state (Phase 7, T-150 + T-151)
 
-- Shipped: three providers (Anthropic, Google, OpenAI), streaming +
-  tool-use across all three, `AbortSignal` support, classified
+- Shipped in T-150: three providers (Anthropic, Google, OpenAI), streaming
+  + tool-use across all three, `AbortSignal` support, classified
   `LLMError`, `collectStream` helper, `createProvider(spec)` factory.
-- Consumers: `@stageflip/agent` (T-151/T-152/T-153) and
-  `apps/stageflip-slide/src/components/ai-copilot/` will wire through
-  this interface starting T-151.
+- Consumed by T-151: `@stageflip/agent`'s `createPlanner({ provider })`
+  uses `provider.complete(...)` with a forced single-tool pattern
+  (`emit_plan`). Executor (T-152) will use `stream()` for token-level UI.
+- Consumers: `@stageflip/agent` (T-151 ✅ / T-152 / T-153) and
+  `apps/stageflip-slide/src/components/ai-copilot/` wire through this
+  interface starting at the `/api/agent/execute` route.
 
 ## Related
 
