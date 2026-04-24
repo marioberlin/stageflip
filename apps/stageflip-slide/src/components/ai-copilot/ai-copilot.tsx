@@ -2,10 +2,19 @@
 // AI copilot sidebar: chat-style input backed by /api/agent/execute.
 
 /**
- * Phase 6 stub. The route returns 501 today, so every submit round-trips
- * through `executeAgent` → `{ kind: 'pending' }` and renders a placeholder
- * assistant message citing the Phase 7 wiring. Three invariants hold now
- * that Phase 7 will keep:
+ * Phase-7 client for `/api/agent/execute`. Four result kinds:
+ *
+ *   - `applied`         — real orchestration result; surface a brief
+ *                         one-line summary (step count + validation tier)
+ *                         and leave the detailed diff preview to a
+ *                         downstream modal that doesn't live here.
+ *   - `not_configured`  — 503 from the route (ANTHROPIC_API_KEY missing);
+ *                         surface a configuration hint.
+ *   - `pending`         — legacy 501 from a pre-T-170 deploy; kept for
+ *                         backwards compat during the rollout window.
+ *   - `error`           — any other failure; surface `message` as-is.
+ *
+ * Three invariants carry from Phase 6:
  *
  *   1. Messages flow one-way into a local array; the copilot never mutates
  *      the document. When Phase 7 introduces `applied` kinds, the outer
@@ -120,7 +129,22 @@ export function AiCopilot({ open, onClose, executor }: AiCopilotProps): ReactEle
         setStatus('idle');
         return;
       }
-      appendMessage('assistant', result.message);
+      if (result.kind === 'not_configured') {
+        appendMessage('assistant', t('copilot.notConfigured'));
+        setStatus('idle');
+        return;
+      }
+      // kind === 'applied' — Phase-7 real orchestration result. Summarise
+      // the plan step count + validation tier in one line; downstream work
+      // will stream the full event log into a diff-preview modal.
+      const plan = result.payload.plan as { steps?: unknown[] } | null | undefined;
+      const stepCount = Array.isArray(plan?.steps) ? (plan.steps.length ?? 0) : 0;
+      const validation = result.payload.validation as { tier?: string } | null | undefined;
+      const tier = validation?.tier ?? 'unknown';
+      appendMessage(
+        'assistant',
+        `Applied — ${stepCount} step${stepCount === 1 ? '' : 's'}, validation: ${tier}.`,
+      );
       setStatus('idle');
     },
     [input, status, appendMessage, executor],
