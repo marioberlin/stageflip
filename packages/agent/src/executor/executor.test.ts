@@ -367,6 +367,67 @@ describe('Executor — safety valves', () => {
   });
 });
 
+describe('Executor — edge cases', () => {
+  it('surfaces a failed patch as tool-result(isError) without mutating document or emitting patch-applied', async () => {
+    const registry = new BundleRegistry();
+    registry.register({ name: 'read', description: 'r', tools: [declareTool('bad-patch')] });
+    const router = new ToolRouter<ExecutorContext>();
+    router.register(
+      basicHandler('bad-patch', {
+        run: (_input, ctx) => {
+          // /missing/path does not exist in the doc; a 'remove' op against
+          // a non-existent path is rejected by fast-json-patch.
+          ctx.patchSink.push({ op: 'remove', path: '/missing/path' });
+          return { attempted: true };
+        },
+      }),
+    );
+
+    const { provider } = scriptedProvider([
+      response([{ type: 'tool_use', id: 'tu_1', name: 'bad-patch', input: {} }], 'tool_use'),
+      response([{ type: 'text', text: 'done' }], 'end_turn'),
+    ]);
+
+    const executor = createExecutor({ provider, registry, router });
+    const events = await collect(
+      executor.run({ plan: singleStepPlan(), document: doc, model: 'claude-opus-4-7' }),
+    );
+
+    expect(events.map((e) => e.kind)).toEqual([
+      'step-start',
+      'tool-call',
+      'tool-result',
+      'step-end',
+      'plan-end',
+    ]);
+    const toolResult = events.find(
+      (e): e is Extract<ExecutorEvent, { kind: 'tool-result' }> => e.kind === 'tool-result',
+    );
+    expect(toolResult?.isError).toBe(true);
+    expect((toolResult?.result as { error: string }).error).toBe('patch_apply_failed');
+
+    const planEnd = events.at(-1) as Extract<ExecutorEvent, { kind: 'plan-end' }>;
+    expect(planEnd.finalDocument).toEqual(doc);
+  });
+
+  it('forwards a custom systemPrompt through to the provider', async () => {
+    const { provider, spy } = scriptedProvider([
+      response([{ type: 'text', text: 'done' }], 'end_turn'),
+    ]);
+    const executor = createExecutor({
+      provider,
+      registry: createCanonicalRegistry(),
+      router: new ToolRouter<ExecutorContext>(),
+      systemPrompt: 'custom brief for this run',
+    });
+    await collect(
+      executor.run({ plan: singleStepPlan(), document: doc, model: 'claude-opus-4-7' }),
+    );
+    const req = spy.mock.calls[0]?.[0] as LLMRequest;
+    expect(req.system).toBe('custom brief for this run');
+  });
+});
+
 describe('Executor — multi-step plans', () => {
   it('runs steps sequentially and threads the document through', async () => {
     const registry = new BundleRegistry();

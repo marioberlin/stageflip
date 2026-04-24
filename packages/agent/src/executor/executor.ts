@@ -88,9 +88,14 @@ async function* runPlan(
     try {
       for (const bundleName of step.bundles) loader.load(bundleName);
     } catch (error) {
-      if (error instanceof BundleLoadError) {
+      if (error instanceof BundleLoadError && error.kind === 'limit_exceeded') {
         bundleLoadStatus = 'bundle_limit_exceeded';
       } else {
+        // unknown_bundle / already_loaded are programmer errors — the
+        // Planner validates bundle names before emitting a plan and the
+        // loader is reset between steps, so these shouldn't happen. Throw
+        // so the caller (typically the /api/agent/execute route) sees
+        // them rather than silently reclassifying as a limit breach.
         throw error;
       }
     }
