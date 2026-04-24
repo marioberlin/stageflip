@@ -8,6 +8,7 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: [
+    '@stageflip/app-agent',
     '@stageflip/editor-shell',
     '@stageflip/profiles-video',
     '@stageflip/schema',
