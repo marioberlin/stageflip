@@ -52,3 +52,25 @@ export {
   stripUnusedCss,
   stripUnusedCssFromHtml,
 } from './optimize/index.js';
+
+export {
+  ALL_VALIDATION_RULES,
+  IAB_INITIAL_LOAD_BYTES,
+  type ValidateBannerZipOptions,
+  type ValidationContext,
+  type ValidationFinding,
+  type ValidationReport,
+  type ValidationRule,
+  type ValidationSeverity,
+  type ZipEntry,
+  bannerDeclaresClickTag,
+  bannerFileSizeWithinIabCap,
+  bannerHasFallbackPng,
+  bannerHasIndexHtml,
+  bannerNoDynamicCode,
+  bannerNoExternalResources,
+  bannerNoPathTraversal,
+  bannerNoXhrOrFetch,
+  runValidationRules,
+  validateBannerZip,
+} from './validate/index.js';
