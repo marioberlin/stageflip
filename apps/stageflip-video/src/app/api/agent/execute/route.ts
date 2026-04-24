@@ -1,27 +1,115 @@
 // apps/stageflip-video/src/app/api/agent/execute/route.ts
-// Phase-8 walking-skeleton agent endpoint. Gives the AI copilot a stable
-// URL to aim at before the real video orchestrator lands. Mirrors the
-// pattern slide-app used during T-122 (501 + phase sentinel). T-187b/c
-// will swap this for a real Planner/Executor/Validator pipeline, likely
-// by lifting the slide-app's orchestrator into a shared app-agent
-// package.
+// Phase-8 agent endpoint — wires Planner → Executor → Validator via the
+// shared `@stageflip/app-agent` package (T-187b/c). Mirrors
+// apps/stageflip-slide's route contract: Zod-validated strict body,
+// 200/400/503/500 error mapping, 503 when ANTHROPIC_API_KEY is absent.
 
+import { OrchestratorNotConfigured, runAgent } from '@stageflip/app-agent';
+import { documentSchema } from '@stageflip/schema';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+// Request body schema — strict, Zod-validated so untrusted payloads
+// never reach the orchestrator without shape guarantees.
+const executeRequestSchema = z
+  .object({
+    prompt: z.string().min(1).max(4000),
+    document: documentSchema,
+    selection: z
+      .object({
+        slideId: z.string().min(1).optional(),
+        elementIds: z.array(z.string().min(1)),
+      })
+      .strict()
+      .optional(),
+    plannerModel: z.string().min(1).optional(),
+    executorModel: z.string().min(1).optional(),
+    validatorModel: z.string().min(1).optional(),
+  })
+  .strict();
 
 export const runtime = 'nodejs';
 
-export function POST(): Response {
-  return NextResponse.json(
-    {
-      error: 'not_implemented',
-      phase: 'phase-8',
-      message:
-        'StageFlip.Video agent endpoint is scaffolded but not yet wired to an orchestrator. Pending: T-187b (shared orchestrator lift) / T-187c (UI wiring).',
-    },
-    { status: 501 },
-  );
+export async function POST(req: Request): Promise<NextResponse> {
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: 'invalid_json',
+        message: 'Request body must be valid JSON.',
+      },
+      { status: 400 },
+    );
+  }
+
+  const parsed = executeRequestSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: 'invalid_request',
+        message: 'Request body failed schema validation.',
+        issues: parsed.error.issues,
+      },
+      { status: 400 },
+    );
+  }
+
+  try {
+    // Reconstruct to avoid `undefined` on optional fields under
+    // `exactOptionalPropertyTypes`.
+    const data = parsed.data;
+    const request: Parameters<typeof runAgent>[0] = {
+      prompt: data.prompt,
+      document: data.document,
+    };
+    if (data.selection !== undefined) {
+      request.selection = {
+        elementIds: data.selection.elementIds,
+        ...(data.selection.slideId !== undefined ? { slideId: data.selection.slideId } : {}),
+      };
+    }
+    if (data.plannerModel !== undefined) request.plannerModel = data.plannerModel;
+    if (data.executorModel !== undefined) request.executorModel = data.executorModel;
+    if (data.validatorModel !== undefined) request.validatorModel = data.validatorModel;
+    const result = await runAgent(request);
+    return NextResponse.json(
+      {
+        ok: true,
+        plan: result.plan,
+        events: result.events,
+        finalDocument: result.finalDocument,
+        validation: result.validation,
+      },
+      { status: 200 },
+    );
+  } catch (err) {
+    if (err instanceof OrchestratorNotConfigured) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: 'not_configured',
+          message: 'Agent orchestrator is not configured. Set ANTHROPIC_API_KEY and retry.',
+          reason: err.reason,
+        },
+        { status: 503 },
+      );
+    }
+    const message = err instanceof Error ? err.message : 'unknown error';
+    return NextResponse.json({ ok: false, error: 'orchestrator_failed', message }, { status: 500 });
+  }
 }
 
-export function GET(): Response {
-  return NextResponse.json({ error: 'method_not_allowed' }, { status: 405 });
+export async function GET(): Promise<NextResponse> {
+  return NextResponse.json(
+    {
+      ok: false,
+      error: 'method_not_allowed',
+      message: 'Use POST to execute an agent tool call.',
+    },
+    { status: 405 },
+  );
 }
