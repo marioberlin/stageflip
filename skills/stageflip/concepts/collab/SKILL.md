@@ -7,6 +7,8 @@ last_updated: 2026-04-20
 owner_task: T-260
 related:
   - skills/stageflip/concepts/schema/SKILL.md
+  - skills/stageflip/concepts/auth/SKILL.md
+  - skills/stageflip/concepts/rate-limits/SKILL.md
 ---
 
 # Collaboration — CRDT + Presence

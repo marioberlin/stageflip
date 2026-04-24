@@ -60,6 +60,27 @@ an `isolation: isolate` container so they can't leak out of their slot.
 - Orchestrator: `packages/rir/src/compile/index.ts`
 - Golden fixtures: `packages/rir/fixtures/inputs/` paired with `fixtures/goldens/`
 
+## Compiling a document
+
+```ts
+import { compileRIR } from '@stageflip/rir';
+
+const { rir, diagnostics } = compileRIR(document, {
+  // Opt-in strict mode rejects any pass that produces warnings.
+  strict: true,
+});
+
+if (diagnostics.some((d) => d.severity === 'error')) {
+  throw new Error(`RIR compile failed: ${diagnostics.length} issues`);
+}
+
+// rir.meta is materialized (no refs); rir.elements have absolute timings
+// and assigned zIndex values; rir.fonts is a deduplicated
+// FontRequirement[] the renderer can hand straight to the FontManager.
+```
+
+Compile is pure — same `document` always produces byte-identical `rir`. That property is what makes the parity harness + prompt-caching model work.
+
 ## Related
 
 - Schema: `concepts/schema/SKILL.md`

@@ -7,6 +7,8 @@ last_updated: 2026-04-20
 owner_task: T-012
 related:
   - skills/stageflip/concepts/schema/SKILL.md
+  - skills/stageflip/concepts/tool-bundles/SKILL.md
+  - skills/stageflip/reference/schema/SKILL.md
 ---
 
 # The Skills Tree

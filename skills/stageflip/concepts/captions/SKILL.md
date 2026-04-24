@@ -63,6 +63,28 @@ support captions (budget-forbidden); see `concepts/display-budget`.
 - **Per-aspect bouncing** of packed segments is **T-185**; the packer
   already accepts the `maxCharsPerLine` that T-185 will vary per aspect.
 
+## Usage
+
+```ts
+import {
+  createOpenAIWhisperProvider,
+  defaultPackWords,
+  transcribeAndPack,
+} from '@stageflip/captions';
+
+const result = await transcribeAndPack({
+  source: audioBytes,
+  language: 'en',
+  pack: (words) => defaultPackWords(words, { maxCharsPerLine: 40, maxLines: 2 }),
+  provider: createOpenAIWhisperProvider({ apiKey: process.env.OPENAI_API_KEY }),
+});
+
+// result.segments: ReadonlyArray<CaptionSegment> — attach directly to
+// `VideoContent.captions` without further transformation.
+```
+
+The cache key is `sha256(audio-bytes || language-hint)`. Re-running with the same inputs hits the cache and skips the provider entirely.
+
 ## Related
 
 - Mode: `modes/stageflip-video/SKILL.md`
