@@ -8,6 +8,7 @@ owner_task: T-152
 related:
   - skills/stageflip/concepts/agent-planner/SKILL.md
   - skills/stageflip/concepts/tool-bundles/SKILL.md
+  - skills/stageflip/concepts/tool-router/SKILL.md
   - skills/stageflip/concepts/llm-abstraction/SKILL.md
   - skills/stageflip/concepts/rate-limits/SKILL.md
 ---

@@ -9,6 +9,7 @@ related:
   - skills/stageflip/concepts/agent-planner/SKILL.md
   - skills/stageflip/concepts/agent-executor/SKILL.md
   - skills/stageflip/concepts/llm-abstraction/SKILL.md
+  - skills/stageflip/concepts/tool-router/SKILL.md
 ---
 
 # Tool Bundles
