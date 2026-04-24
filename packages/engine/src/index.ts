@@ -51,3 +51,9 @@ export {
   CREATE_MUTATE_TOOL_DEFINITIONS,
   registerCreateMutateBundle,
 } from './handlers/create-mutate/register.js';
+export {
+  TIMING_BUNDLE_NAME,
+  TIMING_HANDLERS,
+  TIMING_TOOL_DEFINITIONS,
+  registerTimingBundle,
+} from './handlers/timing/register.js';
