@@ -69,3 +69,9 @@ export {
   VALIDATE_TOOL_DEFINITIONS,
   registerValidateBundle,
 } from './handlers/validate/register.js';
+export {
+  CLIP_ANIMATION_BUNDLE_NAME,
+  CLIP_ANIMATION_HANDLERS,
+  CLIP_ANIMATION_TOOL_DEFINITIONS,
+  registerClipAnimationBundle,
+} from './handlers/clip-animation/register.js';
