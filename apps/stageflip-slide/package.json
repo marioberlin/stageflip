@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@stageflip/agent": "workspace:*",
+    "@stageflip/app-agent": "workspace:*",
     "@stageflip/editor-shell": "workspace:*",
     "@stageflip/engine": "workspace:*",
     "@stageflip/frame-runtime": "workspace:*",

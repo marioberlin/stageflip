@@ -7,10 +7,10 @@
 // distinct failure mode the UI can surface differently from the old
 // 501 "not wired yet" message.
 
+import { OrchestratorNotConfigured, runAgent } from '@stageflip/app-agent';
 import { documentSchema } from '@stageflip/schema';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { OrchestratorNotConfigured, runAgent } from './orchestrator';
 
 // Request body schema — strict, Zod-validated so untrusted payloads
 // never reach the orchestrator without shape guarantees.
