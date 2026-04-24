@@ -27,6 +27,7 @@
     "@stageflip/engine": "workspace:*",
     "@stageflip/llm-abstraction": "workspace:*",
     "@stageflip/schema": "workspace:*",
+    "fast-json-patch": "3.1.1",
     "zod": "3.25.76"
   }
 }

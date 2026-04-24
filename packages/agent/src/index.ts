@@ -1,6 +1,6 @@
 // packages/agent/src/index.ts
-// Public barrel — Planner (T-151). Executor (T-152) + Validator (T-153)
-// populate further exports.
+// Public barrel — Planner (T-151) + Executor (T-152). Validator (T-153)
+// populates further exports.
 
 export type {
   BundleSummary,
@@ -35,3 +35,22 @@ export {
 } from './planner/prompt.js';
 
 export { type CreatePlannerOptions, createPlanner, PlannerError } from './planner/planner.js';
+
+// Executor (T-152)
+export type {
+  ExecutorContext,
+  ExecutorEvent,
+  JsonPatchOp,
+  PatchSink,
+  StepStatus,
+} from './executor/types.js';
+export { createPatchSink } from './executor/patch-sink.js';
+export {
+  type CreateExecutorOptions,
+  DEFAULT_EXECUTOR_MAX_TOKENS,
+  DEFAULT_MAX_ITERATIONS_PER_STEP,
+  type Executor,
+  type ExecutorCallOptions,
+  type ExecutorRequest,
+  createExecutor,
+} from './executor/executor.js';
