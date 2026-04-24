@@ -81,12 +81,21 @@ importers:
 
   apps/stageflip-slide:
     dependencies:
+      '@stageflip/agent':
+        specifier: workspace:*
+        version: link:../../packages/agent
       '@stageflip/editor-shell':
         specifier: workspace:*
         version: link:../../packages/editor-shell
+      '@stageflip/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
       '@stageflip/frame-runtime':
         specifier: workspace:*
         version: link:../../packages/frame-runtime
+      '@stageflip/llm-abstraction':
+        specifier: workspace:*
+        version: link:../../packages/llm-abstraction
       '@stageflip/runtimes-contract':
         specifier: workspace:*
         version: link:../../packages/runtimes/contract

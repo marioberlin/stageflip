@@ -199,7 +199,6 @@ function AssetCell({
     }
   };
   return (
-    // biome-ignore lint/a11y/useSemanticElements: Grid cells must be <li> children of the <ul> grid container for list semantics; the keyboard-interactive pattern (tabIndex + onKeyDown for Enter / Space) supplies button-like affordances without violating list-item structure.
     <li
       data-testid={`asset-browser-cell-${asset.id}`}
       data-stageflip-asset-cell="true"
@@ -223,7 +222,6 @@ function AssetCell({
 function AssetThumb({ asset }: { asset: Asset }): ReactElement {
   if (asset.kind === 'image') {
     return (
-      // biome-ignore lint/a11y/useAltText: decorative thumb — label is rendered next to it, and aria-hidden hides it from assistive tech.
       <img
         src={asset.thumbnailUrl ?? asset.url}
         alt=""

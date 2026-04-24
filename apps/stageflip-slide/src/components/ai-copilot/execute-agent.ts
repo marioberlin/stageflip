@@ -1,24 +1,37 @@
 // apps/stageflip-slide/src/components/ai-copilot/execute-agent.ts
-// Thin fetch wrapper around the walking-skeleton /api/agent/execute
-// endpoint. Returns a typed result so UI code branches on one discriminated
-// union rather than raw Response inspection.
+// Thin fetch wrapper around /api/agent/execute. Phase 7 returns real
+// orchestrator results on success; the route still distinguishes
+// `not_configured` (503 — API key missing) from transport errors so
+// the UI can surface a configuration hint separately.
 
 /**
- * Phase 6 contract: the route always returns 501 `not_implemented`. Phase 7
- * replaces the handler with a real planner/executor/validator; the UI's
- * branching stays the same — the `phase` discriminator flips from
- * `phase-7` to `ready` and the `message` string is replaced by a streamed
- * tool-call log. The response shape is deliberately narrow so Phase 7 can
- * extend it additively (add fields under `streamEvents`, `diff`, etc.)
- * without rewriting every call site.
+ * Result discriminator:
+ *   - `applied`       — orchestrator ran and returned a result.
+ *   - `not_configured`— 503 from the route: ANTHROPIC_API_KEY is unset.
+ *   - `pending`       — legacy 501 `phase-7` path, retained for
+ *                       backwards compatibility with any clients still
+ *                       talking to a pre-T-170 build.
+ *   - `error`         — 4xx / 5xx / network error the route didn't
+ *                       explicitly classify.
  */
 export type AgentExecuteResult =
+  | { kind: 'applied'; message: string; payload: AgentExecutePayload }
+  | { kind: 'not_configured'; message: string }
   | { kind: 'pending'; message: string; phase: string }
-  | { kind: 'applied'; message: string }
   | { kind: 'error'; message: string };
+
+/** Minimal shape the UI consumes; extend as more fields become useful. */
+export interface AgentExecutePayload {
+  plan: unknown;
+  events: unknown[] | undefined;
+  finalDocument: unknown;
+  validation: unknown;
+}
 
 export interface ExecuteAgentArgs {
   prompt: string;
+  document?: unknown;
+  selection?: { slideId?: string; elementIds: string[] };
   signal?: AbortSignal;
   /** Test seam — lets specs inject a fetch fake without patching globals. */
   fetchImpl?: typeof fetch;
@@ -26,13 +39,19 @@ export interface ExecuteAgentArgs {
 
 export async function executeAgent({
   prompt,
+  document,
+  selection,
   signal,
   fetchImpl = fetch,
 }: ExecuteAgentArgs): Promise<AgentExecuteResult> {
+  const body: Record<string, unknown> = { prompt };
+  if (document !== undefined) body.document = document;
+  if (selection !== undefined) body.selection = selection;
+
   const init: RequestInit = {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ prompt }),
+    body: JSON.stringify(body),
   };
   if (signal) init.signal = signal;
 
@@ -46,18 +65,43 @@ export async function executeAgent({
     };
   }
 
-  let payload: { error?: string; message?: string; phase?: string } = {};
+  let payload:
+    | {
+        ok?: boolean;
+        error?: string;
+        message?: string;
+        phase?: string;
+        plan?: unknown;
+        events?: unknown[];
+        finalDocument?: unknown;
+        validation?: unknown;
+      }
+    | undefined;
   let payloadOk = true;
   try {
     payload = (await response.json()) as typeof payload;
   } catch {
-    // Non-JSON body (e.g. upstream gateway crash with 501 text). We can't
-    // trust the status alone — surface it as an error rather than letting
-    // a malformed 501 masquerade as the Phase 6 "not wired" placeholder.
+    // Non-JSON body (e.g. upstream gateway crash). Treat as opaque error.
     payloadOk = false;
   }
 
-  if (response.status === 501 && payloadOk) {
+  if (!payloadOk || payload === undefined) {
+    return {
+      kind: 'error',
+      message: `Request failed (${response.status}; non-JSON body).`,
+    };
+  }
+
+  // 503 — new Phase-7 "not configured" signal.
+  if (response.status === 503 && payload.error === 'not_configured') {
+    return {
+      kind: 'not_configured',
+      message: payload.message ?? 'Agent is not configured.',
+    };
+  }
+
+  // Legacy 501 — pre-T-170 builds.
+  if (response.status === 501) {
     return {
       kind: 'pending',
       message: payload.message ?? 'Agent is not wired yet.',
@@ -65,8 +109,17 @@ export async function executeAgent({
     };
   }
 
-  if (response.ok && payloadOk) {
-    return { kind: 'applied', message: payload.message ?? 'Applied.' };
+  if (response.ok && payload.ok === true) {
+    return {
+      kind: 'applied',
+      message: 'Applied.',
+      payload: {
+        plan: payload.plan,
+        events: payload.events,
+        finalDocument: payload.finalDocument,
+        validation: payload.validation,
+      },
+    };
   }
 
   return {

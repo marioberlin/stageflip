@@ -14,8 +14,11 @@
     "e2e": "pnpm exec turbo run build --filter=@stageflip/app-slide && playwright test --config playwright.config.ts"
   },
   "dependencies": {
+    "@stageflip/agent": "workspace:*",
     "@stageflip/editor-shell": "workspace:*",
+    "@stageflip/engine": "workspace:*",
     "@stageflip/frame-runtime": "workspace:*",
+    "@stageflip/llm-abstraction": "workspace:*",
     "@stageflip/runtimes-contract": "workspace:*",
     "@stageflip/schema": "workspace:*",
     "next": "15.5.15",
