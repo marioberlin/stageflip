@@ -32,6 +32,26 @@ export {
   logoIntroPropsSchema,
 } from './logo-intro.js';
 
+// T-183a — StageFlip.Video profile clips (overlay tranche).
+export {
+  LowerThird,
+  type LowerThirdProps,
+  lowerThirdClip,
+  lowerThirdPropsSchema,
+} from './lower-third.js';
+export {
+  EndslateLogo,
+  type EndslateLogoProps,
+  endslateLogoClip,
+  endslateLogoPropsSchema,
+} from './endslate-logo.js';
+export {
+  TestimonialCard,
+  type TestimonialCardProps,
+  testimonialCardClip,
+  testimonialCardPropsSchema,
+} from './testimonial-card.js';
+
 export {
   ChartBuild,
   type ChartBuildProps,
@@ -279,6 +299,7 @@ import { chartBuildClip } from './chart-build.js';
 import { codeBlockClip } from './code-block.js';
 import { comparisonTableClip } from './comparison-table.js';
 import { counterClip } from './counter.js';
+import { endslateLogoClip } from './endslate-logo.js';
 import { financialStatementClip } from './financial-statement.js';
 import { gifPlayerClip } from './gif-player.js';
 import { hrDashboardClip } from './hr-dashboard.js';
@@ -288,6 +309,7 @@ import { kpiGridClip } from './kpi-grid.js';
 import { lightLeakClip } from './light-leak.js';
 import { lineChartDrawClip } from './line-chart-draw.js';
 import { logoIntroClip } from './logo-intro.js';
+import { lowerThirdClip } from './lower-third.js';
 import { marketingDashboardClip } from './marketing-dashboard.js';
 import { okrDashboardClip } from './okr-dashboard.js';
 import { particlesClip } from './particles.js';
@@ -298,6 +320,7 @@ import { salesDashboardClip } from './sales-dashboard.js';
 import { scene3dClip } from './scene-3d.js';
 import { stockTickerClip } from './stock-ticker.js';
 import { subtitleOverlayClip } from './subtitle-overlay.js';
+import { testimonialCardClip } from './testimonial-card.js';
 import { timelineMilestonesClip } from './timeline-milestones.js';
 import { typewriterClip } from './typewriter-clip.js';
 import { videoBackgroundClip } from './video-background.js';
@@ -366,4 +389,9 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // T-131d.4 — animated-map (SVG fallback only; mapbox-gl path deliberately
   // not ported — see clip header). Closes reference-clip coverage at 32/32.
   animatedMapClip,
+  // T-183a — StageFlip.Video profile clips: overlay tranche. The motion-heavy
+  // hook-moment / product-reveal / beat-synced-text clips land in T-183b.
+  lowerThirdClip,
+  endslateLogoClip,
+  testimonialCardClip,
 ];
