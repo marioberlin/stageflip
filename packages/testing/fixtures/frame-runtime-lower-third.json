@@ -1,0 +1,19 @@
+{
+  "name": "frame-runtime-lower-third",
+  "runtime": "frame-runtime",
+  "kind": "lower-third",
+  "description": "Video-profile speaker chyron — slides in from left, holds, slides out right (T-183a / T-188 video overlay).",
+  "composition": { "width": 1920, "height": 1080, "fps": 30, "durationInFrames": 90 },
+  "clip": {
+    "from": 0,
+    "durationInFrames": 90,
+    "props": { "name": "Ada Lovelace", "title": "Mathematician" }
+  },
+  "referenceFrames": [0, 14, 45, 75, 89],
+  "thresholds": {
+    "minPsnr": 32,
+    "minSsim": 0.95,
+    "maxFailingFrames": 0
+  },
+  "goldens": { "dir": "goldens/frame-runtime-lower-third" }
+}
