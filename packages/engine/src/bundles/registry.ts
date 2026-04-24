@@ -54,10 +54,15 @@ export class BundleRegistry {
 
 /**
  * Build a registry seeded with the 14 canonical bundles. Each call returns
- * an independent registry so tests can mutate without leaking state.
+ * an independent registry so tests can mutate without leaking state — the
+ * `tools` array is copied on register so a raw `registry.get(name).tools`
+ * mutation (not the supported `mergeTools` path) cannot leak across
+ * sibling registries.
  */
 export function createCanonicalRegistry(): BundleRegistry {
   const registry = new BundleRegistry();
-  for (const bundle of CANONICAL_BUNDLES) registry.register(bundle);
+  for (const bundle of CANONICAL_BUNDLES) {
+    registry.register({ ...bundle, tools: [...bundle.tools] });
+  }
   return registry;
 }

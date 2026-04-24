@@ -79,6 +79,15 @@ describe('createCanonicalRegistry', () => {
     expect(b.get('read')?.tools).toHaveLength(0);
   });
 
+  it('seeds each instance with its own tools array (raw push does not leak)', () => {
+    const a = createCanonicalRegistry();
+    const b = createCanonicalRegistry();
+    // Cast away readonly to simulate a caller who bypasses mergeTools.
+    (a.get('read')?.tools as LLMToolDefinition[]).push(tool('leak'));
+    expect(a.get('read')?.tools).toHaveLength(1);
+    expect(b.get('read')?.tools).toHaveLength(0);
+  });
+
   it('matches the canonical catalog exactly', () => {
     const r = createCanonicalRegistry();
     for (const bundle of CANONICAL_BUNDLES) {
