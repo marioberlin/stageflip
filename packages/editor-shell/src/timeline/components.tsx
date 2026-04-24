@@ -21,7 +21,12 @@
 import type { CSSProperties, ReactNode } from 'react';
 
 import { type TimelineScale, formatFrameLabel, frameToPx, rulerTickFrames } from './math';
-import type { ElementBlockPlacement, TimelineTrackKind, TrackRowPlacement } from './tracks';
+import {
+  type ElementBlockPlacement,
+  type TimelineTrackKind,
+  type TrackRowPlacement,
+  totalTrackStackHeight,
+} from './tracks';
 
 /* -------------------------------------------------------------------------- */
 /* <TimelineRuler>                                                            */
@@ -102,10 +107,7 @@ export interface TimelineStackProps {
  */
 export function TimelineStack(props: TimelineStackProps): ReactNode {
   const { rows, children, className, style } = props;
-  const totalHeight =
-    rows.length === 0
-      ? 0
-      : (rows[rows.length - 1]?.topPx ?? 0) + (rows[rows.length - 1]?.heightPx ?? 0);
+  const totalHeight = totalTrackStackHeight(rows);
   return (
     <div
       className={className}
