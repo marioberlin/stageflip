@@ -73,6 +73,29 @@ export {
   currentBeatIndex,
 } from './beat-synced-text.js';
 
+// T-202a — StageFlip.Display profile clips (attention tranche).
+export {
+  ClickOverlay,
+  type ClickOverlayProps,
+  clickOverlayClip,
+  clickOverlayPropsSchema,
+} from './click-overlay.js';
+export {
+  Countdown,
+  type CountdownProps,
+  countdownClip,
+  countdownPropsSchema,
+  formatCountdown,
+  secondsRemaining,
+} from './countdown.js';
+export {
+  CtaPulse,
+  type CtaPulseProps,
+  ctaPulseClip,
+  ctaPulsePropsSchema,
+  pulseScale,
+} from './cta-pulse.js';
+
 export {
   ChartBuild,
   type ChartBuildProps,
@@ -318,9 +341,12 @@ import { audioVisualizerReactiveClip } from './audio-visualizer-reactive.js';
 import { audioVisualizerClip } from './audio-visualizer.js';
 import { beatSyncedTextClip } from './beat-synced-text.js';
 import { chartBuildClip } from './chart-build.js';
+import { clickOverlayClip } from './click-overlay.js';
 import { codeBlockClip } from './code-block.js';
 import { comparisonTableClip } from './comparison-table.js';
+import { countdownClip } from './countdown.js';
 import { counterClip } from './counter.js';
+import { ctaPulseClip } from './cta-pulse.js';
 import { endslateLogoClip } from './endslate-logo.js';
 import { financialStatementClip } from './financial-statement.js';
 import { gifPlayerClip } from './gif-player.js';
@@ -421,4 +447,8 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   hookMomentClip,
   productRevealClip,
   beatSyncedTextClip,
+  // T-202a — StageFlip.Display profile clips: attention tranche.
+  clickOverlayClip,
+  countdownClip,
+  ctaPulseClip,
 ];
