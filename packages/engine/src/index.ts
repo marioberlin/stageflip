@@ -99,3 +99,9 @@ export {
   QC_EXPORT_BULK_TOOL_DEFINITIONS,
   registerQcExportBulkBundle,
 } from './handlers/qc-export-bulk/register.js';
+export {
+  FACT_CHECK_BUNDLE_NAME,
+  FACT_CHECK_HANDLERS,
+  FACT_CHECK_TOOL_DEFINITIONS,
+  registerFactCheckBundle,
+} from './handlers/fact-check/register.js';
