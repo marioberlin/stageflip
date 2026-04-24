@@ -37,7 +37,7 @@ jobs:
           fetch-depth: 1
 
       - name: Setup pnpm (from packageManager field)
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
@@ -115,7 +115,7 @@ jobs:
 
       - name: Setup pnpm
         if: steps.changed.outputs.rendering == 'true'
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node ${{ env.NODE_VERSION }}
         if: steps.changed.outputs.rendering == 'true'
@@ -151,7 +151,7 @@ jobs:
           fetch-depth: 1
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
@@ -236,7 +236,7 @@ jobs:
 
       - name: Setup pnpm
         if: steps.changed.outputs.rendering == 'true'
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node ${{ env.NODE_VERSION }}
         if: steps.changed.outputs.rendering == 'true'
@@ -394,7 +394,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
