@@ -1,7 +1,6 @@
 {
   "name": "@stageflip/skills-core",
   "version": "0.0.0",
-  "private": true,
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -26,5 +25,14 @@
   "dependencies": {
     "gray-matter": "4.0.3",
     "zod": "3.25.76"
+  },
+  "license": "BUSL-1.1",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marioberlin/stageflip.git",
+    "directory": "packages/skills-core"
   }
 }

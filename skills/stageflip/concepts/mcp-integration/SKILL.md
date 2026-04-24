@@ -87,7 +87,7 @@ skill file. Drift = CI failure.
   `reference/schema` (T-034), `reference/validation-rules` (T-107),
   `clips/catalog` (T-220), `tools/SKILL.md` (T-220),
   `runtimes/SKILL.md` (T-220), `reference/cli` (T-226 wires
-  `@stageflip/app-cli`'s `CLI_COMMAND_REGISTRY` through T-220's
+  `@stageflip/cli`'s `CLI_COMMAND_REGISTRY` through T-220's
   `generateCliReferenceSkill`).
 
 ## Calling a StageFlip tool over MCP

@@ -1,5 +1,5 @@
 // apps/cli/src/index.ts
-// @stageflip/app-cli — library-style exports. The executable shim
+// @stageflip/cli — library-style exports. The executable shim
 // is at src/bin/stageflip.ts. T-226 imports the registry from here
 // to generate `skills/stageflip/reference/cli/SKILL.md`.
 

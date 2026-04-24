@@ -1,8 +1,15 @@
 {
   "name": "@stageflip/plugin",
   "version": "0.0.0",
-  "private": true,
   "type": "module",
+  "description": "StageFlip Claude-plugin bundler — packages skills + MCP config + OAuth provider into a `claude plugin install`-ready directory.",
+  "license": "BUSL-1.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marioberlin/stageflip.git",
+    "directory": "packages/plugin"
+  },
+  "homepage": "https://stageflip.dev",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -14,8 +21,13 @@
   },
   "files": [
     "dist",
-    "src"
+    "src",
+    "README.md",
+    "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup src/index.ts --dts --format esm,cjs --clean",
     "dev": "tsup src/index.ts --dts --format esm,cjs --watch",
