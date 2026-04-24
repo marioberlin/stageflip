@@ -541,7 +541,27 @@ importers:
         specifier: 2.1.9
         version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.1)
 
-  packages/profiles/display: {}
+  packages/profiles/display:
+    dependencies:
+      '@stageflip/profiles-contract':
+        specifier: workspace:^
+        version: link:../contract
+      '@stageflip/schema':
+        specifier: workspace:^
+        version: link:../../schema
+      '@stageflip/validation':
+        specifier: workspace:^
+        version: link:../../validation
+    devDependencies:
+      '@stageflip/rir':
+        specifier: workspace:^
+        version: link:../../rir
+      '@vitest/coverage-v8':
+        specifier: 2.1.9
+        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.1))
+      vitest:
+        specifier: 2.1.9
+        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.1)
 
   packages/profiles/slide: {}
 
