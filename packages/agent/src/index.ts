@@ -10,13 +10,22 @@ export type {
   PlannerRequest,
   PlanStep,
 } from './planner/types.js';
-export {
-  bundleSummarySchema,
-  planSchema,
-  planStepSchema,
-} from './planner/types.js';
+export { bundleSummarySchema, planSchema, planStepSchema } from './planner/types.js';
 
-export { BUNDLE_NAMES, listBundles } from './planner/bundles.js';
+// Bundle registry + loader live in @stageflip/engine (T-151a). Re-export
+// the surfaces the Planner uses so consumers can stay on one import root.
+export {
+  BundleLoadError,
+  type BundleLoadErrorKind,
+  BundleLoader,
+  type BundleLoaderOptions,
+  BundleRegistry,
+  CANONICAL_BUNDLE_NAMES,
+  CANONICAL_BUNDLES,
+  createCanonicalRegistry,
+  DEFAULT_TOOL_LIMIT,
+  type ToolBundle,
+} from '@stageflip/engine';
 
 export {
   EMIT_PLAN_TOOL,
@@ -25,8 +34,4 @@ export {
   buildUserMessages,
 } from './planner/prompt.js';
 
-export {
-  type CreatePlannerOptions,
-  createPlanner,
-  PlannerError,
-} from './planner/planner.js';
+export { type CreatePlannerOptions, createPlanner, PlannerError } from './planner/planner.js';

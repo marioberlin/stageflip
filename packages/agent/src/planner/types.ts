@@ -1,16 +1,25 @@
 // packages/agent/src/planner/types.ts
-// Planner agent contracts — PlanStep, Plan, BundleSummary per the
-// concepts/agent-planner and concepts/tool-bundles skills.
+// Planner agent contracts — PlanStep, Plan per
+// `concepts/agent-planner/SKILL.md`. `BundleSummary` + `BundleRegistry`
+// live in `@stageflip/engine` (T-151a); this module re-exports the type
+// for callers who only need the Planner surface.
 
+import type { BundleSummary } from '@stageflip/engine';
 import type { Document } from '@stageflip/schema';
 import { z } from 'zod';
 
+export type { BundleSummary };
+
+/**
+ * Zod mirror of `BundleSummary` for runtime validation of registry entries
+ * supplied by callers (e.g. when a mode-specific profile hand-assembles a
+ * subset). The compile-time type is the engine's interface.
+ */
 export const bundleSummarySchema = z.object({
   name: z.string(),
   description: z.string(),
   toolCount: z.number().int().nonnegative(),
 });
-export type BundleSummary = z.infer<typeof bundleSummarySchema>;
 
 export const planStepSchema = z.object({
   id: z.string().min(1),

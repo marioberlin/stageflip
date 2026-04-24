@@ -3,11 +3,12 @@ title: Tool Bundles
 id: skills/stageflip/concepts/tool-bundles
 tier: concept
 status: substantive
-last_updated: 2026-04-20
+last_updated: 2026-04-24
 owner_task: T-151a
 related:
   - skills/stageflip/concepts/agent-planner/SKILL.md
   - skills/stageflip/concepts/agent-executor/SKILL.md
+  - skills/stageflip/concepts/llm-abstraction/SKILL.md
 ---
 
 # Tool Bundles
@@ -79,15 +80,41 @@ bundles.
 }
 ```
 
-## Current state (Phase 1 exit)
+## Current state (Phase 7, T-151a shipped)
 
-Not yet implemented. Phase 7 delivers:
-- Tool-bundle loader + meta-tools (T-151a)
-- Tool-router with Zod-validated I/O (T-154)
-- The 14 handler bundles (T-155–T-168)
-- Auto-generated `tools/*/SKILL.md` per bundle (T-169)
+`@stageflip/engine` ships the registry + loader:
 
-Skills under `tools/` today are placeholders authored in T-012.
+- `BundleRegistry` — `register(bundle)`, `mergeTools(name, tools)`,
+  `list()` (backs `list_bundles`), `get(name)` (backs `expand_scope`),
+  `has(name)`, `size`.
+- `createCanonicalRegistry()` — returns a fresh registry seeded with the
+  14 canonical entries from `CANONICAL_BUNDLES`. Each call is independent;
+  mutations do not leak between instances.
+- `BundleLoader` — stateful per-Executor-step context. `load(name)` is the
+  `load_bundle(name)` meta-tool. Refuses on `unknown_bundle`,
+  `already_loaded`, or `limit_exceeded` (via `BundleLoadError`); the
+  default cap is `DEFAULT_TOOL_LIMIT = 30` (invariant I-9). `reset()`
+  clears the loaded set between steps; `toolDefinitions()` flattens to the
+  exact `LLMToolDefinition[]` the Executor passes to the LLM.
+- Canonical tool arrays are empty today. T-155–T-168 populate each bundle
+  via `registry.mergeTools(name, tools)` from their handler packages; the
+  Planner sees the bundle catalog irrespective of handler readiness.
+
+Consumers:
+- Planner (`@stageflip/agent`, T-151) imports `createCanonicalRegistry()`
+  and feeds `registry.list()` into the system prompt.
+- Executor (T-152) will construct a `BundleLoader` per step, call
+  `load()` for each pinned bundle, pass `toolDefinitions()` to the
+  provider.
+
+Phase 7 follow-ups:
+- Tool-router with Zod-validated I/O (T-154) wires `BundleLoader` to the
+  dispatcher.
+- Handler bundles (T-155–T-168) land incrementally; each PR calls
+  `registry.mergeTools(bundleName, handlerTools)`.
+- Auto-generated `tools/*/SKILL.md` per bundle (T-169).
+
+Skills under `tools/` today remain placeholders authored in T-012.
 
 ## Related
 

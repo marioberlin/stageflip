@@ -4,8 +4,8 @@
 // `concepts/agent-planner/SKILL.md`; invariants in `concepts/tool-bundles`
 // (≤30 tools in context, enforced by the Executor at load time).
 
+import { type BundleRegistry, createCanonicalRegistry } from '@stageflip/engine';
 import type { LLMContentBlock, LLMProvider, LLMRequest } from '@stageflip/llm-abstraction';
-import { listBundles } from './bundles.js';
 import {
   EMIT_PLAN_TOOL,
   EMIT_PLAN_TOOL_NAME,
@@ -22,6 +22,12 @@ import {
 
 export interface CreatePlannerOptions {
   provider: LLMProvider;
+  /**
+   * Bundle registry backing `list_bundles` / `expand_scope`. Defaults to the
+   * canonical 14-bundle catalog from `@stageflip/engine`. Override only for
+   * mode-specific scoping or tests.
+   */
+  registry?: BundleRegistry;
 }
 
 export class PlannerError extends Error {
@@ -35,9 +41,11 @@ export class PlannerError extends Error {
 }
 
 export function createPlanner(options: CreatePlannerOptions): Planner {
+  const registry = options.registry ?? createCanonicalRegistry();
+
   return {
     async plan(request: PlannerRequest, callOptions?: PlannerCallOptions): Promise<Plan> {
-      const bundles = request.bundles ?? listBundles();
+      const bundles = request.bundles ?? registry.list();
       const bundleNames = new Set(bundles.map((b) => b.name));
 
       const llmRequest: LLMRequest = {
