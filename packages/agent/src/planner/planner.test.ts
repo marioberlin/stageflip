@@ -115,7 +115,7 @@ describe('createPlanner', () => {
     expect(completeSpy.mock.calls[0]?.[1]).toEqual({ signal: controller.signal });
   });
 
-  it('throws PlannerError(no_tool_call) when the LLM returns only text', async () => {
+  it('throws PlannerError(no_tool_call) with a text diagnostic when the LLM returns only text', async () => {
     const { provider } = fakeProvider({
       stop_reason: 'end_turn',
       content: [{ type: 'text', text: 'here is a plan...' }],
@@ -126,6 +126,8 @@ describe('createPlanner', () => {
 
     expect(err).toBeInstanceOf(PlannerError);
     expect(err.kind).toBe('no_tool_call');
+    expect(err.message).toContain('stop_reason=end_turn');
+    expect(err.message).toContain('here is a plan...');
   });
 
   it('throws PlannerError(invalid_plan) when emit_plan input fails schema', async () => {

@@ -59,9 +59,16 @@ export function createPlanner(options: CreatePlannerOptions): Planner {
           block.type === 'tool_use' && block.name === EMIT_PLAN_TOOL_NAME,
       );
       if (!toolUse) {
+        const textHint = response.content
+          .filter(
+            (block): block is Extract<LLMContentBlock, { type: 'text' }> => block.type === 'text',
+          )
+          .map((b) => b.text)
+          .join('')
+          .slice(0, 200);
         throw new PlannerError(
           'no_tool_call',
-          `Planner did not call ${EMIT_PLAN_TOOL_NAME}; stop_reason=${response.stop_reason}`,
+          `Planner did not call ${EMIT_PLAN_TOOL_NAME}; stop_reason=${response.stop_reason}${textHint.length > 0 ? `; returned text: "${textHint}"` : ''}`,
         );
       }
 

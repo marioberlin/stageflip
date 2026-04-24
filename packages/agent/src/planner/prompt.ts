@@ -26,6 +26,7 @@ export const EMIT_PLAN_TOOL: LLMToolDefinition = {
     properties: {
       justification: {
         type: 'string',
+        minLength: 1,
         description:
           'One or two sentences explaining how these steps collectively satisfy the prompt.',
       },
@@ -39,18 +40,20 @@ export const EMIT_PLAN_TOOL: LLMToolDefinition = {
           properties: {
             id: {
               type: 'string',
+              minLength: 1,
               description:
                 'Stable short id for this step (e.g. "s1"). Referenced by later steps in `dependsOn`.',
             },
             description: {
               type: 'string',
+              minLength: 1,
               description:
                 'One line; agent-readable, imperative (e.g. "Apply brand theme to all slides").',
             },
             bundles: {
               type: 'array',
               minItems: 1,
-              items: { type: 'string' },
+              items: { type: 'string', minLength: 1 },
               description:
                 'Bundle names the Executor will need for this step. Must be a subset of the bundles listed in the system prompt.',
             },
