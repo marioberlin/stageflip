@@ -10,7 +10,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   VIDEO_ALLOWED_ELEMENT_TYPES,
+  VIDEO_CLIP_KINDS,
   VIDEO_RULES,
+  VIDEO_TOOL_BUNDLES,
   videoAspectRatioRecognized,
   videoDurationWithinBudget,
   videoElementTypesAllowed,
@@ -215,6 +217,49 @@ describe('videoHasVisualElement', () => {
   });
 });
 
+describe('VIDEO_CLIP_KINDS', () => {
+  it('names the six T-183 video clip implementations', () => {
+    expect(new Set(VIDEO_CLIP_KINDS)).toEqual(
+      new Set([
+        'hook-moment',
+        'product-reveal',
+        'endslate-logo',
+        'lower-third',
+        'beat-synced-text',
+        'testimonial-card',
+      ]),
+    );
+  });
+
+  it('has no duplicate kinds', () => {
+    expect(new Set(VIDEO_CLIP_KINDS).size).toBe(VIDEO_CLIP_KINDS.length);
+  });
+});
+
+describe('VIDEO_TOOL_BUNDLES', () => {
+  it('includes mode-agnostic read + create-mutate + timing + layout + validate', () => {
+    for (const b of ['read', 'create-mutate', 'timing', 'layout', 'validate']) {
+      expect(VIDEO_TOOL_BUNDLES).toContain(b);
+    }
+  });
+
+  it('includes clip-animation + element-cm1 + qc-export-bulk + semantic-layout', () => {
+    for (const b of ['clip-animation', 'element-cm1', 'qc-export-bulk', 'semantic-layout']) {
+      expect(VIDEO_TOOL_BUNDLES).toContain(b);
+    }
+  });
+
+  it('excludes slide-oriented bundles (slide-cm1, table-cm1, domain composite)', () => {
+    for (const b of ['slide-cm1', 'table-cm1', 'domain-finance-sales-okr']) {
+      expect(VIDEO_TOOL_BUNDLES).not.toContain(b);
+    }
+  });
+
+  it('has no duplicate bundle names', () => {
+    expect(new Set(VIDEO_TOOL_BUNDLES).size).toBe(VIDEO_TOOL_BUNDLES.length);
+  });
+});
+
 describe('videoProfile', () => {
   it('is the video descriptor', () => {
     expect(videoProfile.mode).toBe('video');
@@ -224,10 +269,22 @@ describe('videoProfile', () => {
     expect([...videoProfile.rules]).toEqual([...VIDEO_RULES]);
   });
 
-  it('exposes the allowlist as a Set', () => {
+  it('exposes the element-type allowlist as a Set', () => {
     expect(videoProfile.allowedElementTypes).toBeInstanceOf(Set);
     expect(videoProfile.allowedElementTypes.has('shape')).toBe(true);
     expect(videoProfile.allowedElementTypes.has('chart')).toBe(false);
+  });
+
+  it('exposes the clip-kind catalog as a Set', () => {
+    expect(videoProfile.clipKinds).toBeInstanceOf(Set);
+    expect(videoProfile.clipKinds.has('hook-moment')).toBe(true);
+    expect(videoProfile.clipKinds.has('unknown-kind')).toBe(false);
+  });
+
+  it('exposes the tool-bundle allowlist as a Set', () => {
+    expect(videoProfile.toolBundles).toBeInstanceOf(Set);
+    expect(videoProfile.toolBundles.has('clip-animation')).toBe(true);
+    expect(videoProfile.toolBundles.has('slide-cm1')).toBe(false);
   });
 
   it('every rule has a stable id prefixed with video-', () => {
