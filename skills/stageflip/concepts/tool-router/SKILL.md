@@ -86,6 +86,13 @@ so the Executor can format them into a user-facing re-prompt.
 streaming events. Observer exceptions are swallowed — the audit trail is
 diagnostic, not contract.
 
+`call-start` is emitted as soon as the handler is resolved (i.e. after
+the `unknown_tool` check passes) and *before* the pre-start abort check
+or input validation. Observers therefore see `call-start → call-error`
+for pre-start-abort and `input_invalid` cases. State machines keyed on
+`start → (success | error)` work; state machines assuming start implies
+"handler ran" do not.
+
 ## Relationship with the bundle registry
 
 The router and the `BundleRegistry` (tool-bundles) are independent:

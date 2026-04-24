@@ -126,6 +126,19 @@ describe('ToolRouter.call — error kinds', () => {
     const err = await router.call('racy', { a: 1, b: 2 }, {}).catch((e) => e);
     expect((err as ToolRouterError).kind).toBe('aborted');
   });
+
+  it('aborted when the handler throws a native DOMException AbortError', async () => {
+    const router = new ToolRouter();
+    router.register({
+      ...addTool,
+      name: 'native-racy',
+      handle: () => {
+        throw new DOMException('cancelled by platform', 'AbortError');
+      },
+    });
+    const err = await router.call('native-racy', { a: 1, b: 2 }, {}).catch((e) => e);
+    expect((err as ToolRouterError).kind).toBe('aborted');
+  });
 });
 
 describe('ToolRouter observer', () => {
@@ -141,20 +154,43 @@ describe('ToolRouter observer', () => {
     });
   });
 
-  it('emits call-error for unknown_tool / input_invalid / handler_error', async () => {
+  it('emits call-error for every failure kind and populates issues for schema failures', async () => {
     const events: ToolCallEvent[] = [];
     const router = new ToolRouter({ observer: (e) => events.push(e) });
     router.register(addTool);
+    router.register({
+      ...addTool,
+      name: 'boom',
+      handle: () => {
+        throw new Error('handler crash');
+      },
+    });
+    router.register({
+      ...addTool,
+      name: 'bad-output',
+      handle: () => ({ sum: 'NaN' }) as unknown as { sum: number },
+    });
 
     await router.call('nope', {}, {}).catch(() => {});
     await router.call('add', { a: 'x', b: 2 }, {}).catch(() => {});
+    await router.call('boom', { a: 1, b: 2 }, {}).catch(() => {});
+    await router.call('bad-output', { a: 1, b: 2 }, {}).catch(() => {});
 
-    const errors = events.filter((e) => e.type === 'call-error');
-    expect(errors).toHaveLength(2);
-    const kinds = errors.map(
-      (e) => (e as Extract<ToolCallEvent, { type: 'call-error' }>).error.kind,
+    const errors = events.filter(
+      (e): e is Extract<ToolCallEvent, { type: 'call-error' }> => e.type === 'call-error',
     );
-    expect(kinds).toEqual(['unknown_tool', 'input_invalid']);
+    expect(errors.map((e) => e.error.kind)).toEqual([
+      'unknown_tool',
+      'input_invalid',
+      'handler_error',
+      'output_invalid',
+    ]);
+
+    // `issues` populated for schema failures, empty for the others.
+    expect(errors[0]?.error.issues).toBeUndefined();
+    expect(errors[1]?.error.issues?.length ?? 0).toBeGreaterThan(0);
+    expect(errors[2]?.error.issues).toBeUndefined();
+    expect(errors[3]?.error.issues?.length ?? 0).toBeGreaterThan(0);
   });
 
   it('swallows observer errors so the caller still sees the tool result', async () => {
