@@ -96,6 +96,23 @@ export {
   pulseScale,
 } from './cta-pulse.js';
 
+// T-202b — StageFlip.Display profile clips (data tranche).
+export {
+  PriceReveal,
+  type PriceRevealProps,
+  priceRevealClip,
+  priceRevealPropsSchema,
+} from './price-reveal.js';
+export {
+  type CarouselItem,
+  ProductCarousel,
+  type ProductCarouselProps,
+  carouselItemSchema,
+  carouselSlotsAtFrame,
+  productCarouselClip,
+  productCarouselPropsSchema,
+} from './product-carousel.js';
+
 export {
   ChartBuild,
   type ChartBuildProps,
@@ -363,6 +380,8 @@ import { marketingDashboardClip } from './marketing-dashboard.js';
 import { okrDashboardClip } from './okr-dashboard.js';
 import { particlesClip } from './particles.js';
 import { pieChartBuildClip } from './pie-chart-build.js';
+import { priceRevealClip } from './price-reveal.js';
+import { productCarouselClip } from './product-carousel.js';
 import { productDashboardClip } from './product-dashboard.js';
 import { productRevealClip } from './product-reveal.js';
 import { pullQuoteClip } from './pull-quote.js';
@@ -451,4 +470,7 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   clickOverlayClip,
   countdownClip,
   ctaPulseClip,
+  // T-202b — StageFlip.Display profile clips: data tranche.
+  priceRevealClip,
+  productCarouselClip,
 ];
