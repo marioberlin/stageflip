@@ -32,8 +32,8 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup src/index.ts src/bin/stageflip.ts --dts --format esm --clean",
-    "dev": "tsup src/index.ts src/bin/stageflip.ts --dts --format esm --watch",
+    "build": "tsup src/index.ts --dts --format esm --clean && tsup src/bin/stageflip.ts --format esm --out-dir dist/bin",
+    "dev": "tsup src/index.ts --dts --format esm --watch",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src",
     "test": "vitest run --passWithNoTests"
