@@ -1,0 +1,28 @@
+{
+  "name": "@stageflip/app-docs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "StageFlip docs site — Astro Starlight over skills/stageflip/** (T-228).",
+  "scripts": {
+    "prebuild": "tsx scripts/build-skill-pages.ts",
+    "predev": "tsx scripts/build-skill-pages.ts",
+    "build": "astro build",
+    "dev": "astro dev --port 3400",
+    "preview": "astro preview --port 3400",
+    "typecheck": "astro check",
+    "lint": "biome check src scripts",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "0.31.0",
+    "astro": "5.1.5"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.4",
+    "@types/node": "22.19.17",
+    "tsx": "4.21.0",
+    "typescript": "5.6.3",
+    "vitest": "2.1.9"
+  }
+}

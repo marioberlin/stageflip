@@ -1,0 +1,6 @@
+# apps/docs/.gitignore
+# Generated artifacts from build-skill-pages.ts + astro.
+dist/
+.astro/
+src/content/docs/skills/
+src/generated/
