@@ -44,6 +44,7 @@ import {
   registerTableCm1Bundle,
   registerTimingBundle,
   registerValidateBundle,
+  registerVideoModeBundle,
 } from '@stageflip/engine';
 import { type LLMProvider, createAnthropicProvider } from '@stageflip/llm-abstraction';
 import type { Document } from '@stageflip/schema';
@@ -104,6 +105,7 @@ function populate(registry: BundleRegistry, router: ToolRouter<ExecutorContext>)
   registerDomainBundle(registry, router);
   registerDataSourceBindingsBundle(registry, router);
   registerSemanticLayoutBundle(registry, router);
+  registerVideoModeBundle(registry, router);
 }
 
 /**

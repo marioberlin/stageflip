@@ -48,4 +48,6 @@ export const VIDEO_TOOL_BUNDLES: readonly string[] = [
   'semantic-layout',
   'data-source-bindings',
   'fact-check',
+  // T-185 — mode-specific bundle; ships `bounce_to_aspect_ratios` today.
+  'video-mode',
 ] as const;

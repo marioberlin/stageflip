@@ -123,3 +123,9 @@ export {
   SEMANTIC_LAYOUT_TOOL_DEFINITIONS,
   registerSemanticLayoutBundle,
 } from './handlers/semantic-layout/register.js';
+export {
+  VIDEO_MODE_BUNDLE_NAME,
+  VIDEO_MODE_HANDLERS,
+  VIDEO_MODE_TOOL_DEFINITIONS,
+  registerVideoModeBundle,
+} from './handlers/video-mode/register.js';
