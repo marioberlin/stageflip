@@ -1,0 +1,16 @@
+{
+  "projects": {
+    "default": "stageflip-prod"
+  },
+  "targets": {
+    "stageflip-prod": {
+      "hosting": {
+        "docs": ["stageflip-docs"],
+        "slide": ["stageflip-slide"],
+        "video": ["stageflip-video"],
+        "display": ["stageflip-display"]
+      }
+    }
+  },
+  "etags": {}
+}

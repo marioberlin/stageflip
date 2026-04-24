@@ -1,0 +1,16 @@
+{
+  "name": "@stageflip/firebase-config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Firebase hosting + firestore + storage rules (T-230). Not published; tests run in-repo via vitest.",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check tests",
+    "test": "vitest run --passWithNoTests"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.17",
+    "vitest": "2.1.9"
+  }
+}
