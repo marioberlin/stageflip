@@ -118,6 +118,19 @@ the run.
 Aborting between qualitative checks is supported — the signal is polled
 at each boundary; already-completed checks stay in the result.
 
+Mid-check errors that are abort-shaped (host `AbortError`, the signal
+fired during the call, or an `LLMError(kind: 'aborted')` propagating
+from the provider) break the iteration cleanly. Any other mid-check
+exception is recorded as a degraded qualitative entry (`verdict: "check
+errored: ..."`, no `suggestedFix`) so the completed checks before it
+still surface in the result.
+
+**Qualitative checks run in slide mode only today.** For video / display
+documents, each requested qualitative check returns a synthetic entry
+with `verdict: "skipped: mode=video is not supported for qualitative
+checks yet"` — no provider call, no "looks fine" noise. Extending
+coverage is a Phase 8 / Phase 9 concern.
+
 ## Related
 
 - Executor: `concepts/agent-executor/SKILL.md`

@@ -172,6 +172,18 @@ export async function runQualitativeCheck(
   checkName: QualitativeCheckName,
   options: RunQualitativeCheckOptions,
 ): Promise<QualitativeCheckResult> {
+  // Qualitative checks currently only reason over slide-mode copy. Video
+  // + display modes carry no consumable text surface through
+  // `extractTextSnippet` today; sending a near-empty payload to the LLM
+  // produces confidently-wrong "looks fine" verdicts. Skip cleanly.
+  if (document.content.mode !== 'slide') {
+    return {
+      name: checkName,
+      verdict: `skipped: mode=${document.content.mode} is not supported for qualitative checks yet`,
+      evidence: 'Validator qualitative-check coverage is slide-only (T-153).',
+    };
+  }
+
   const spec = QUALITATIVE_CHECKS[checkName];
   const request: LLMRequest = {
     model,

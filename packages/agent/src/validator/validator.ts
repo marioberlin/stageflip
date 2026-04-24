@@ -48,23 +48,37 @@ export function createValidator(options: CreateValidatorOptions): Validator {
       const qualitativeList = request.qualitativeChecks ?? [];
       for (const name of qualitativeList) {
         if (callOptions?.signal?.aborted) break;
-        const result = await runQualitativeCheck(
-          options.provider,
-          request.model,
-          request.document,
-          name,
-          {
-            ...(callOptions?.signal ? { signal: callOptions.signal } : {}),
-            maxTokens: request.maxTokens ?? DEFAULT_VALIDATOR_MAX_TOKENS,
-            temperature: request.temperature ?? 0,
-          },
-        );
-        qualitative.push(result);
+        try {
+          qualitative.push(
+            await runQualitativeCheck(options.provider, request.model, request.document, name, {
+              ...(callOptions?.signal ? { signal: callOptions.signal } : {}),
+              maxTokens: request.maxTokens ?? DEFAULT_VALIDATOR_MAX_TOKENS,
+              temperature: request.temperature ?? 0,
+            }),
+          );
+        } catch (error) {
+          // Mid-check error — abort-like errors stop the iteration;
+          // anything else is recorded as a degraded qualitative entry so
+          // already-completed checks in `qualitative` survive the call.
+          if (isAbortLike(error, callOptions?.signal)) break;
+          qualitative.push({
+            name,
+            verdict: `check errored: ${error instanceof Error ? error.message : String(error)}`,
+            evidence: 'Qualitative check threw before emitting a verdict.',
+          });
+        }
       }
 
       return buildResult(programmatic, qualitative);
     },
   };
+}
+
+function isAbortLike(error: unknown, signal: AbortSignal | undefined): boolean {
+  if (signal?.aborted) return true;
+  if (error instanceof Error && error.name === 'AbortError') return true;
+  const maybeKind = (error as { kind?: unknown }).kind;
+  return maybeKind === 'aborted';
 }
 
 function buildResult(

@@ -150,6 +150,104 @@ describe('createValidator', () => {
     expect(result.required_fixes).toEqual(['also consider X']);
   });
 
+  it('records a degraded qualitative entry when a check throws mid-run and keeps prior results', async () => {
+    // Script: first check succeeds; second check's provider.complete throws;
+    // validator should keep the first result and push a degraded entry for
+    // the second rather than dropping the whole run.
+    let call = 0;
+    const provider: LLMProvider = {
+      name: 'anthropic',
+      complete: (async () => {
+        call += 1;
+        if (call === 1) {
+          return {
+            id: 'msg',
+            model: 'claude-opus-4-7',
+            role: 'assistant',
+            content: [
+              {
+                type: 'tool_use',
+                id: 'tu_1',
+                name: EMIT_QUALITATIVE_VERDICT_TOOL_NAME,
+                input: { verdict: 'brand voice fine', evidence: 's1 el-a' },
+              },
+            ],
+            stop_reason: 'tool_use',
+            usage: { input_tokens: 1, output_tokens: 1 },
+          } as LLMResponse;
+        }
+        throw new Error('provider exploded');
+      }) as unknown as LLMProvider['complete'],
+      stream: (() => {
+        throw new Error('stream not used');
+      }) as unknown as (req: LLMRequest) => AsyncIterable<LLMStreamEvent>,
+    };
+
+    const validator = createValidator({ provider });
+    const result = await validator.validate({
+      document: validDoc(),
+      model: 'claude-opus-4-7',
+      qualitativeChecks: ['brand_voice', 'reading_level'],
+    });
+
+    expect(result.qualitative.map((q) => q.name)).toEqual(['brand_voice', 'reading_level']);
+    expect(result.qualitative[0]?.verdict).toBe('brand voice fine');
+    expect(result.qualitative[1]?.verdict).toContain('check errored');
+    expect(result.qualitative[1]?.verdict).toContain('provider exploded');
+    expect(result.tier).toBe('pass'); // no suggestedFix + no programmatic fail
+  });
+
+  it('bails out of qualitative iteration when a mid-check error is abort-shaped', async () => {
+    const controller = new AbortController();
+    const provider: LLMProvider = {
+      name: 'anthropic',
+      complete: (async () => {
+        controller.abort();
+        throw Object.assign(new Error('cancelled'), { name: 'AbortError' });
+      }) as unknown as LLMProvider['complete'],
+      stream: (() => {
+        throw new Error('stream not used');
+      }) as unknown as (req: LLMRequest) => AsyncIterable<LLMStreamEvent>,
+    };
+
+    const validator = createValidator({ provider });
+    const result = await validator.validate(
+      {
+        document: validDoc(),
+        model: 'claude-opus-4-7',
+        qualitativeChecks: ['brand_voice', 'reading_level'],
+      },
+      { signal: controller.signal },
+    );
+
+    expect(result.qualitative).toEqual([]);
+  });
+
+  it('skips qualitative checks cleanly for non-slide modes (no provider call, no "looks fine" noise)', async () => {
+    const { provider, spy } = scriptedProvider([]);
+    const videoDoc = {
+      ...validDoc(),
+      content: {
+        mode: 'video',
+        aspectRatio: '16:9',
+        durationMs: 30000,
+        frameRate: 30,
+        tracks: [{ id: 't1', kind: 'visual', clips: [] as never[] } as never],
+      },
+    } as Document;
+    const validator = createValidator({ provider });
+    const result = await validator.validate({
+      document: videoDoc,
+      model: 'claude-opus-4-7',
+      qualitativeChecks: ['brand_voice'],
+    });
+
+    expect(spy).not.toHaveBeenCalled();
+    expect(result.qualitative).toHaveLength(1);
+    expect(result.qualitative[0]?.verdict).toContain('skipped');
+    expect(result.qualitative[0]?.verdict).toContain('mode=video');
+  });
+
   it('stops iterating qualitative checks when signal is already aborted', async () => {
     const { provider, spy } = scriptedProvider([]);
     const validator = createValidator({ provider });
