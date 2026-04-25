@@ -157,13 +157,27 @@ describe('parsePptx — acceptance criteria', () => {
     expect(rect.shape).toBe('rect');
   });
 
-  // Bonus — preset geometry without schema mapping → unsupported-shape with code.
-  it('emits LF-PPTX-PRESET-GEOMETRY for unmapped preset shapes', async () => {
+  // Bonus — preset geometry outside T-242 coverage still surfaces a flag.
+  it('emits LF-PPTX-PRESET-GEOMETRY for presets outside T-242 coverage', async () => {
     const tree = await parsePptx(buildShapesFixture());
     const flag = tree.lossFlags.find(
-      (f) => f.code === 'LF-PPTX-PRESET-GEOMETRY' && f.originalSnippet === 'cloud',
+      (f) => f.code === 'LF-PPTX-PRESET-GEOMETRY' && f.originalSnippet === 'lightningBolt',
     );
     expect(flag).toBeDefined();
+  });
+
+  // Bonus — T-242-covered preset becomes a 'shape' element with a custom-path.
+  it('renders T-242 preset (cloud) as shape:custom-path with a non-empty d', async () => {
+    const tree = await parsePptx(buildShapesFixture());
+    const slide = tree.slides[0];
+    if (slide === undefined) throw new Error('expected slide_1');
+    const cloud = slide.elements.find(
+      (e) => e.type === 'shape' && (e as { shape: string }).shape === 'custom-path',
+    );
+    expect(cloud).toBeDefined();
+    if (cloud?.type !== 'shape') return;
+    expect(cloud.shape).toBe('custom-path');
+    expect(cloud.path).toMatch(/^M /);
   });
 
   // Determinism — same input -> same output (incl. flag ids).

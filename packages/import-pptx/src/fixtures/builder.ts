@@ -315,6 +315,15 @@ export function buildShapesFixture(): Uint8Array {
     }),
     spShape({ id: 5, name: 'Star5', prst: 'star5', x: 4500000, y: 0, cx: 1000000, cy: 1000000 }),
     spShape({ id: 6, name: 'Cloud', prst: 'cloud', x: 6000000, y: 0, cx: 1000000, cy: 1000000 }),
+    spShape({
+      id: 7,
+      name: 'LightningBolt',
+      prst: 'lightningBolt',
+      x: 7500000,
+      y: 0,
+      cx: 1000000,
+      cy: 1000000,
+    }),
   ].join('\n');
   return buildPptx([slideShell(children)]);
 }

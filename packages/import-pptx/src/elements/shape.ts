@@ -1,10 +1,11 @@
 // packages/import-pptx/src/elements/shape.ts
 // Convert <p:sp> into one of: TextElement (when <p:txBody> is present),
-// ShapeElement (when geometry maps to schema's `shapeKind`), or
-// UnsupportedShapeElement (preset-geom we cannot represent yet — T-242 / T-245
-// follow-up).
+// ShapeElement (structural kinds + T-242 path-generated `'custom-path'`), or
+// UnsupportedShapeElement (preset-geom outside T-242's coverage / unparseable
+// custGeom — T-245 rasterization fallback).
 
 import type { ShapeElement } from '@stageflip/schema';
+import { custGeomToSvgPath, geometryFor } from '../geometries/index.js';
 import { emitLossFlag } from '../loss-flags.js';
 import { makeElementId, readTransform } from '../parts/sp-tree.js';
 import type { LossFlag, ParsedElement, UnsupportedShapeElement } from '../types.js';
@@ -67,11 +68,28 @@ export function parseShape(
   const custGeom = pickRecord(spPr, 'a:custGeom');
 
   if (custGeom !== undefined) {
+    const path = custGeomToSvgPath(custGeom, { w: transform.width, h: transform.height });
+    if (path !== undefined) {
+      const element: ShapeElement = {
+        id,
+        transform,
+        visible: true,
+        locked: false,
+        animations: [],
+        type: 'shape',
+        shape: 'custom-path',
+        path,
+        ...(name !== undefined ? { name } : {}),
+      };
+      return { element, flags };
+    }
+    // Could not translate (unsupported command or empty path). Fall back to
+    // an unsupported-shape so T-245 rasterization can pick it up.
     flags.push(
       emitLossFlag({
         code: 'LF-PPTX-CUSTOM-GEOMETRY',
         location: { slideId: ctx.slideId, elementId: id, oocxmlPath: ctx.oocxmlPath },
-        message: 'custom geometry deferred to T-242 / T-245',
+        message: 'custom geometry uses unsupported commands; deferred to T-245',
         originalSnippet: 'a:custGeom',
       }),
     );
@@ -106,12 +124,32 @@ export function parseShape(
       return { element, flags };
     }
 
-    // Recognised PPTX preset but no schema mapping — emit info flag + placeholder.
+    // Try the T-242 geometry library before falling back to unsupported-shape.
+    if (prst !== undefined) {
+      const path = geometryFor(prst, { w: transform.width, h: transform.height });
+      if (path !== undefined) {
+        const element: ShapeElement = {
+          id,
+          transform,
+          visible: true,
+          locked: false,
+          animations: [],
+          type: 'shape',
+          shape: 'custom-path',
+          path,
+          ...(name !== undefined ? { name } : {}),
+        };
+        return { element, flags };
+      }
+    }
+
+    // Recognised PPTX preset but no schema mapping AND no T-242 generator —
+    // emit info flag + placeholder. T-245 rasterization will pick it up.
     flags.push(
       emitLossFlag({
         code: 'LF-PPTX-PRESET-GEOMETRY',
         location: { slideId: ctx.slideId, elementId: id, oocxmlPath: ctx.oocxmlPath },
-        message: `preset geometry "${prst ?? '<unknown>'}" deferred to T-242`,
+        message: `preset geometry "${prst ?? '<unknown>'}" outside T-242 coverage; deferred to T-245`,
         originalSnippet: prst ?? '<unknown>',
       }),
     );

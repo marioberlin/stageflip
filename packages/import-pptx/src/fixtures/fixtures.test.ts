@@ -52,8 +52,9 @@ const expectedSummaries: Record<FixtureName, ReturnType<typeof summarise>> = {
     perSlide: [
       {
         id: 'slide_1',
-        // rect, ellipse, hexagon→polygon, star5→star, cloud→unsupported.
-        elementTypes: ['shape', 'shape', 'shape', 'shape', 'unsupported-shape'],
+        // rect, ellipse, hexagon→polygon, star5→star, cloud→T-242 custom-path,
+        // lightningBolt→still-unsupported.
+        elementTypes: ['shape', 'shape', 'shape', 'shape', 'shape', 'unsupported-shape'],
       },
     ],
     flagCodes: ['LF-PPTX-PRESET-GEOMETRY'],

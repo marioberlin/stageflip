@@ -117,6 +117,7 @@ export type ParsedSlide = Omit<Slide, 'elements'> & {
 export type LossFlagCode =
   | 'LF-PPTX-CUSTOM-GEOMETRY'
   | 'LF-PPTX-PRESET-GEOMETRY'
+  | 'LF-PPTX-PRESET-ADJUSTMENT-IGNORED'
   | 'LF-PPTX-UNRESOLVED-ASSET'
   | 'LF-PPTX-MISSING-ASSET-BYTES'
   | 'LF-PPTX-UNSUPPORTED-ELEMENT'
