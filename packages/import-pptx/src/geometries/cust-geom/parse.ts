@@ -114,9 +114,9 @@ function pathToSvg(path: XmlNode, box: { w: number; h: number } | undefined): st
  * `preserveOrder: true` configurations — but our parser uses
  * `preserveOrder: false`, so the simpler approach is to walk each command
  * type and trust that path commands of the same kind run together. For
- * presets that mix kinds in a single path, this is wrong — but T-242a's
- * scope keeps custom geometries simple. T-242b can switch to preserveOrder
- * if needed.
+ * presets that mix kinds in a single path, this is wrong. Lifting the
+ * limitation needs a workspace-wide switch to `preserveOrder: true` in
+ * the shared XML parser; tracked as a separate follow-up.
  */
 function orderedChildren(path: XmlNode): { kind: CommandKey; node: XmlNode }[] {
   const flat: { kind: CommandKey; node: XmlNode }[] = [];
