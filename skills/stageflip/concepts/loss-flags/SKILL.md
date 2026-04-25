@@ -3,7 +3,7 @@ title: Loss Flags
 id: skills/stageflip/concepts/loss-flags
 tier: concept
 status: substantive
-last_updated: 2026-04-25
+last_updated: 2026-04-26
 owner_task: T-248
 related:
   - skills/stageflip/workflows/import-pptx/SKILL.md
@@ -79,10 +79,13 @@ PPTX codes (defined in `@stageflip/import-pptx`):
 - `LF-PPTX-CUSTOM-GEOMETRY` — `<a:custGeom>` shape → resolved by T-242 / T-245.
 - `LF-PPTX-PRESET-GEOMETRY` — preset shape outside the schema-mapped subset → T-242.
 - `LF-PPTX-UNRESOLVED-ASSET` — picture bytes deferred → T-243.
-- `LF-PPTX-NESTED-GROUP-TRANSFORM` — group transform not accumulated → T-241a.
 - `LF-PPTX-UNSUPPORTED-ELEMENT` — chart / OLE / connection placeholders → T-247 / T-248.
 - `LF-PPTX-UNSUPPORTED-FILL` — gradients / patterns → T-249.
 - `LF-PPTX-NOTES-DROPPED` — speaker notes → T-249 / T-250.
+
+T-241a (group transform accumulation) merged with no remaining loss flag —
+the structural parser folds group transforms into descendants as a
+post-walk pass.
 
 T-248 picks up the editor/export reporter UX. The schema does not yet carry
 flags on `Document` — they are produced at import time and surfaced

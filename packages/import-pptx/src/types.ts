@@ -62,13 +62,19 @@ export type UnsupportedShapeElement = ElementBase & {
 
 /**
  * Recursive group node mirroring schema's `GroupElement` but with
- * `children: ParsedElement[]`. Transforms on this group are NOT accumulated
- * into descendants — that is T-241a per acceptance criterion #5.
+ * `children: ParsedElement[]` plus parser-side fields the accumulator needs.
+ * `groupOrigin` and `groupExtent` capture the OOXML child-coordinate space
+ * (`<a:chOff>` / `<a:chExt>`) so T-241a's `accumulateGroupTransforms` can
+ * convert child positions from local to world coordinates.
  */
 export type ParsedGroupElement = ElementBase & {
   type: 'group';
   children: ParsedElement[];
   clip: boolean;
+  /** From `<a:chOff>`. Defaults to `{x:0, y:0}` when absent. EMU-derived px. */
+  groupOrigin: { x: number; y: number };
+  /** From `<a:chExt>`. Defaults to the group's own `transform.{width,height}` when absent. */
+  groupExtent: { width: number; height: number };
 };
 
 /**
@@ -112,7 +118,6 @@ export type LossFlagCode =
   | 'LF-PPTX-CUSTOM-GEOMETRY'
   | 'LF-PPTX-PRESET-GEOMETRY'
   | 'LF-PPTX-UNRESOLVED-ASSET'
-  | 'LF-PPTX-NESTED-GROUP-TRANSFORM'
   | 'LF-PPTX-UNSUPPORTED-ELEMENT'
   | 'LF-PPTX-UNSUPPORTED-FILL'
   | 'LF-PPTX-NOTES-DROPPED';
@@ -158,12 +163,18 @@ export interface LossFlag {
  * Parser output. Slides, layouts, and masters are kept separate so T-249
  * (theme learning) can later collapse master/layout inheritance. `lossFlags`
  * collects every diagnostic the parser raised.
+ *
+ * `transformsAccumulated` is the marker T-241a's `accumulateGroupTransforms`
+ * sets on its output. It is read on subsequent calls to short-circuit (the
+ * accumulator is idempotent — re-running on accumulated input must be a
+ * no-op).
  */
 export interface CanonicalSlideTree {
   slides: ParsedSlide[];
   layouts: Record<string, ParsedSlide>;
   masters: Record<string, ParsedSlide>;
   lossFlags: LossFlag[];
+  transformsAccumulated?: boolean;
 }
 
 /** Codes carried by `PptxParseError`. Stable surface for callers. */

@@ -1,7 +1,7 @@
 // packages/import-pptx/src/parts/sp-tree.ts
 // Walks `<p:spTree>` children and dispatches each to the right element
-// converter. Group nodes recurse via this same walker — note that group
-// transforms are deliberately NOT accumulated into descendants (T-241a).
+// converter. Group transforms are not accumulated here; the post-walk pass
+// `accumulateGroupTransforms` (T-241a) folds them into descendants.
 
 import { parsePicture } from '../elements/picture.js';
 import { parseShape } from '../elements/shape.js';
@@ -70,23 +70,7 @@ function parseGroup(
 ): { element?: ParsedGroupElement; flags: LossFlag[] } {
   if (!isRecord(grpSp)) return { flags: [] };
 
-  // Group's own transform is read but NOT pushed down into children — that's
-  // T-241a per acceptance criterion #5. Children carry their raw <a:xfrm>
-  // values verbatim.
-  const flags: LossFlag[] = [];
-
-  // T-241a placeholder flag — every group node hints at the transform-accum
-  // work the next task owns.
-  flags.push(
-    emitLossFlag({
-      code: 'LF-PPTX-NESTED-GROUP-TRANSFORM',
-      location: { slideId: ctx.slideId, oocxmlPath: ctx.oocxmlPath },
-      message: 'group transform not accumulated into descendants (T-241a follow-up)',
-    }),
-  );
-
   const inner = walkSpTree(grpSp, ctx);
-  flags.push(...inner.flags);
 
   const nv = pickRecord(grpSp, 'p:nvGrpSpPr');
   const cNvPr = pickRecord(nv, 'p:cNvPr');
@@ -97,19 +81,41 @@ function parseGroup(
   const xfrm = pickRecord(grpSpPr, 'a:xfrm');
   const transform = readTransform(xfrm);
 
-  const base = {
+  // <a:chOff> defaults to {0, 0} when absent; <a:chExt> defaults to the
+  // group's own extent. Stored in EMU-derived px so accumulation math stays
+  // unit-consistent with `transform`.
+  const chOff = pickRecord(xfrm, 'a:chOff');
+  const chExt = pickRecord(xfrm, 'a:chExt');
+  const groupOrigin = {
+    x: emuToPx(pickAttrNumber(chOff, 'x') ?? 0),
+    y: emuToPx(pickAttrNumber(chOff, 'y') ?? 0),
+  };
+  const groupExtent = {
+    width:
+      chExt !== undefined
+        ? emuToPx(pickAttrNumber(chExt, 'cx') ?? 0) || transform.width
+        : transform.width,
+    height:
+      chExt !== undefined
+        ? emuToPx(pickAttrNumber(chExt, 'cy') ?? 0) || transform.height
+        : transform.height,
+  };
+
+  const base: ParsedGroupElement = {
     id,
     transform,
     visible: true,
     locked: false,
     animations: [],
-    type: 'group' as const,
+    type: 'group',
     children: inner.elements,
     clip: false,
+    groupOrigin,
+    groupExtent,
   };
 
   const element: ParsedGroupElement = name === undefined ? base : { ...base, name };
-  return { element, flags };
+  return { element, flags: inner.flags };
 }
 
 /** Read `<a:xfrm><a:off>/<a:ext>` into a schema transform (in pixels). */

@@ -5,6 +5,7 @@
 import { readRels } from './opc.js';
 import { readPresentation } from './parts/presentation.js';
 import { parseSlidePart } from './parts/slide.js';
+import { accumulateGroupTransforms } from './transforms/accumulate.js';
 import type { CanonicalSlideTree, LossFlag, ParsedSlide } from './types.js';
 import { unpackPptx } from './zip.js';
 
@@ -65,5 +66,5 @@ export async function parsePptx(buffer: Uint8Array): Promise<CanonicalSlideTree>
     }
   }
 
-  return { slides, layouts, masters, lossFlags: flags };
+  return accumulateGroupTransforms({ slides, layouts, masters, lossFlags: flags });
 }
