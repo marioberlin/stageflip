@@ -30,7 +30,7 @@ export function readPresentation(entries: ZipEntries): { slides: PartRef[] } {
     );
   }
 
-  const presentation = xml['p:presentation'] ?? xml.presentation;
+  const presentation = xml['p:presentation'];
   if (!isRecord(presentation)) {
     throw new PptxParseError('INVALID_XML', 'missing <p:presentation> root', PRESENTATION_PART);
   }
@@ -39,7 +39,7 @@ export function readPresentation(entries: ZipEntries): { slides: PartRef[] } {
   const slideIdNodes = pickSldIdRows(presentation);
   const slides: PartRef[] = [];
   for (const node of slideIdNodes) {
-    const relId = pickAttr(node, 'r:id') ?? pickAttr(node, 'id');
+    const relId = pickAttr(node, 'r:id');
     if (relId === undefined) continue;
     const rel = rels[relId];
     if (rel === undefined) continue;
@@ -49,9 +49,9 @@ export function readPresentation(entries: ZipEntries): { slides: PartRef[] } {
 }
 
 function pickSldIdRows(presentation: Record<string, unknown>): unknown[] {
-  const list = presentation['p:sldIdLst'] ?? presentation.sldIdLst;
+  const list = presentation['p:sldIdLst'];
   if (!isRecord(list)) return [];
-  const rows = list['p:sldId'] ?? list.sldId;
+  const rows = list['p:sldId'];
   if (Array.isArray(rows)) return rows;
   if (rows !== undefined) return [rows];
   return [];

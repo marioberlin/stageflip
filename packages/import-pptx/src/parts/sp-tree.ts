@@ -85,8 +85,7 @@ function parseGroup(
     }),
   );
 
-  const nestedCtx: ElementContext = { ...ctx };
-  const inner = walkSpTree(grpSp, nestedCtx);
+  const inner = walkSpTree(grpSp, ctx);
   flags.push(...inner.flags);
 
   const nv = pickRecord(grpSp, 'p:nvGrpSpPr');

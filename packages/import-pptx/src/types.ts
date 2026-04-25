@@ -15,7 +15,6 @@ import type {
   ElementBase,
   EmbedElement,
   ImageElement,
-  Element as SchemaElement,
   ShapeElement,
   Slide,
   TableElement,
@@ -52,7 +51,10 @@ export type UnsupportedShapeElement = ElementBase & {
   type: 'unsupported-shape';
   /** PPTX preset enum name (e.g. `arrowCallout1`, `cloud`) when the source used `<a:prstGeom>`. */
   presetGeom?: string;
-  /** Raw `<a:custGeom>` XML serialized as a string when the source used a custom path. */
+  /**
+   * Marker indicating the source carried `<a:custGeom>`. T-240 does not
+   * preserve the path payload — T-242 must re-parse it from `oocxmlPath`.
+   */
   custGeom?: string;
   /** OOXML rel-path of the slide part this came from; useful for diagnostics. */
   oocxmlPath: string;
@@ -187,6 +189,3 @@ export class PptxParseError extends Error {
     if (oocxmlPath !== undefined) this.oocxmlPath = oocxmlPath;
   }
 }
-
-/** Re-export schema's `Element` under an alias so consumers don't double-import. */
-export type { SchemaElement };

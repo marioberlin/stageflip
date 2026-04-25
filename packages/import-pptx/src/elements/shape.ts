@@ -84,8 +84,8 @@ export function parseShape(
       type: 'unsupported-shape',
       custGeom: 'a:custGeom',
       oocxmlPath: ctx.oocxmlPath,
+      ...(name !== undefined ? { name } : {}),
     };
-    if (name !== undefined) (element as { name: string }).name = name;
     return { element, flags };
   }
 
@@ -101,8 +101,8 @@ export function parseShape(
         animations: [],
         type: 'shape',
         shape: schemaKind,
+        ...(name !== undefined ? { name } : {}),
       };
-      if (name !== undefined) element.name = name;
       return { element, flags };
     }
 
@@ -123,9 +123,9 @@ export function parseShape(
       animations: [],
       type: 'unsupported-shape',
       oocxmlPath: ctx.oocxmlPath,
+      ...(prst !== undefined ? { presetGeom: prst } : {}),
+      ...(name !== undefined ? { name } : {}),
     };
-    if (prst !== undefined) element.presetGeom = prst;
-    if (name !== undefined) (element as { name: string }).name = name;
     return { element, flags };
   }
 
@@ -145,8 +145,8 @@ export function parseShape(
     animations: [],
     type: 'unsupported-shape',
     oocxmlPath: ctx.oocxmlPath,
+    ...(name !== undefined ? { name } : {}),
   };
-  if (name !== undefined) (element as { name: string }).name = name;
   return { element, flags };
 }
 
