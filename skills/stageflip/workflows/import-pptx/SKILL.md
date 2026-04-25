@@ -3,7 +3,7 @@ title: Workflow — Import PPTX
 id: skills/stageflip/workflows/import-pptx
 tier: workflow
 status: substantive
-last_updated: 2026-04-26
+last_updated: 2026-04-27
 owner_task: T-250
 related:
   - skills/stageflip/concepts/loss-flags
@@ -15,6 +15,30 @@ related:
 T-240 ships the structural parser (`@stageflip/import-pptx`). Subsequent
 tasks fill the rest of the import surface; sections below mark which task
 owns each gap.
+
+## Image asset extraction (T-243)
+
+`resolveAssets(tree, entries, storage)` is the second post-walk pass. It
+visits every `ParsedAssetRef.unresolved` carried by image elements, hashes
+each payload via sha256, uploads through an abstract `AssetStorage`
+interface (concrete adapter wraps `@stageflip/storage-firebase`), and
+rewrites refs to the schema-typed `asset:<id>` form. Dedup is by
+content-hash, so identical bytes referenced from multiple slides upload
+once. Broken rels (path absent from the ZIP) emit `LF-PPTX-MISSING-ASSET-BYTES`
+(error severity) and leave the ref unresolved. Idempotent via
+`tree.assetsResolved`.
+
+Composition pattern:
+
+```ts
+const entries = unpackPptx(buffer);
+const tree = await parsePptx(buffer);
+const resolved = await resolveAssets(tree, entries, storage);
+```
+
+Videos (`<p:videoFile>`) and embedded fonts (`<p:embeddedFont>`) are not yet
+parsed by T-240; T-243b and T-243c follow-ups will surface them and add the
+matching `LF-PPTX-UNRESOLVED-VIDEO` / `LF-PPTX-UNRESOLVED-FONT` codes.
 
 ## Group transform accumulation (T-241a)
 
@@ -41,7 +65,8 @@ unsupported branch. The PPTX-specific `code` enum lives in
 
 - `LF-PPTX-CUSTOM-GEOMETRY` — `<a:custGeom>` → `unsupported-shape`. Resolved by T-242 / T-245.
 - `LF-PPTX-PRESET-GEOMETRY` — preset shape outside the schema-mapped subset. Resolved by T-242.
-- `LF-PPTX-UNRESOLVED-ASSET` — picture bytes deferred. Resolved by T-243.
+- `LF-PPTX-UNRESOLVED-ASSET` — picture bytes pending resolution by `resolveAssets` (T-243). Cleared once `resolveAssets` runs.
+- `LF-PPTX-MISSING-ASSET-BYTES` — `error` severity. Picture rel pointed at a path not present in the ZIP. Stays after `resolveAssets`; surfaces an actual import problem.
 - `LF-PPTX-UNSUPPORTED-ELEMENT` — connection / OLE / chart placeholders. Resolved by T-247 / T-248.
 - `LF-PPTX-UNSUPPORTED-FILL` — gradients, patterns. Resolved by T-249 (theme learning).
 - `LF-PPTX-NOTES-DROPPED` — speaker notes. Resolved by T-249 / T-250.
@@ -51,7 +76,8 @@ unsupported branch. The PPTX-specific `code` enum lives in
 | Task | Gap |
 |---|---|
 | T-242 | 50+ preset geometries + custom SVG paths → schema `ShapeElement`. |
-| T-243 | Asset extraction (images, videos, fonts) → Firebase Storage; resolve `ParsedAssetRef.unresolved` → schema's `AssetRef` (`asset:<id>`). |
+| T-243b | Video asset extraction — `<p:videoFile>` not yet parsed by T-240. |
+| T-243c | Font asset extraction — `<p:embeddedFont>` not yet parsed. |
 | T-245 | Shape rasterization fallback (crop from thumbnails) for unsupported shapes. |
 | T-246 | AI-QC loop (Gemini multimodal convergence). |
 | T-248 | Loss-flag reporter UI surface (editor panel + manifest). |
