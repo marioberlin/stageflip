@@ -85,6 +85,17 @@ const expectedSummaries: Record<FixtureName, ReturnType<typeof summarise>> = {
     ],
     flagCodes: ['LF-PPTX-CUSTOM-GEOMETRY'],
   },
+  adjusted: {
+    slideCount: 1,
+    layoutCount: 1,
+    masterCount: 1,
+    // Two shapes: roundRect (structural rect with cornerRadius) +
+    // wedgeRectCallout (custom-path with two ignored adjustments).
+    perSlide: [{ id: 'slide_1', elementTypes: ['shape', 'shape'] }],
+    // Two LF-PPTX-PRESET-ADJUSTMENT-IGNORED, one per ignored adj on the
+    // wedgeRectCallout (adj1 + adj2). roundRect.adj is honored.
+    flagCodes: ['LF-PPTX-PRESET-ADJUSTMENT-IGNORED', 'LF-PPTX-PRESET-ADJUSTMENT-IGNORED'],
+  },
 };
 
 describe('AC #8 — programmatic fixtures', () => {

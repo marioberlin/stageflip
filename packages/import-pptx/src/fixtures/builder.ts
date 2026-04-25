@@ -186,7 +186,7 @@ function spText(opts: {
 </p:sp>`;
 }
 
-/** Helper: a `<p:sp>` shape (no text). */
+/** Helper: a `<p:sp>` shape (no text). Optional `adjustments` populates `<a:avLst>`. */
 function spShape(opts: {
   id: number;
   name: string;
@@ -195,12 +195,18 @@ function spShape(opts: {
   y: number;
   cx: number;
   cy: number;
+  adjustments?: Record<string, number>;
 }): string {
+  const avLst = opts.adjustments
+    ? `<a:avLst>${Object.entries(opts.adjustments)
+        .map(([n, v]) => `<a:gd name="${n}" fmla="val ${v}"/>`)
+        .join('')}</a:avLst>`
+    : '';
   return `<p:sp>
 <p:nvSpPr><p:cNvPr id="${opts.id}" name="${opts.name}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
 <p:spPr>
 <a:xfrm><a:off x="${opts.x}" y="${opts.y}"/><a:ext cx="${opts.cx}" cy="${opts.cy}"/></a:xfrm>
-<a:prstGeom prst="${opts.prst}"/>
+<a:prstGeom prst="${opts.prst}">${avLst}</a:prstGeom>
 </p:spPr>
 </p:sp>`;
 }
@@ -405,6 +411,37 @@ export function buildMultiSlideFixture(): Uint8Array {
   return buildPptx([s1, s2, s3]);
 }
 
+/**
+ * Fixture 6 (T-242b): roundRect with adj1 + a wedgeRectCallout with adj
+ * values the generator does not honor. Exercises both the cornerRadius
+ * extraction path and the LF-PPTX-PRESET-ADJUSTMENT-IGNORED emit path.
+ */
+export function buildAdjustedShapesFixture(): Uint8Array {
+  const children = [
+    spShape({
+      id: 2,
+      name: 'RoundedBox',
+      prst: 'roundRect',
+      x: 0,
+      y: 0,
+      cx: 1000000,
+      cy: 1000000,
+      adjustments: { adj: 25000 },
+    }),
+    spShape({
+      id: 3,
+      name: 'CalloutWithIgnoredAdj',
+      prst: 'wedgeRectCallout',
+      x: 1500000,
+      y: 0,
+      cx: 1000000,
+      cy: 1000000,
+      adjustments: { adj1: -30000, adj2: 50000 },
+    }),
+  ].join('\n');
+  return buildPptx([slideShell(children)]);
+}
+
 /** All fixture builders, keyed by stable name. Preserves enumeration order. */
 export const FIXTURE_BUILDERS = {
   minimal: buildMinimalFixture,
@@ -412,6 +449,7 @@ export const FIXTURE_BUILDERS = {
   picture: buildPictureFixture,
   group: buildGroupFixture,
   'multi-slide': buildMultiSlideFixture,
+  adjusted: buildAdjustedShapesFixture,
 } as const;
 
 export type FixtureName = keyof typeof FIXTURE_BUILDERS;
