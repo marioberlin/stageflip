@@ -2,11 +2,11 @@
 title: Phase 11 mid — handover
 id: docs/handover-phase11-mid
 owner: orchestrator
-last_updated: 2026-05-01
+last_updated: 2026-04-26
 supersedes: docs/handover-phase10-complete.md
 ---
 
-# Handover — Phase 11 mid (2026-05-01)
+# Handover — Phase 11 mid (2026-04-26)
 
 If you are the next agent: read this top to bottom, then `CLAUDE.md`, then `docs/implementation-plan.md` (v1.20). Phase 11 is **in-flight**; Phase 10 ratified at P11 start. The PPTX importer pipeline runs end-to-end for image content (parse → group-transform accumulation → asset upload to Firebase Storage). Geometry coverage is partial; remaining importer kinds (videos, fonts) and the second importer (Google Slides) haven't started.
 
