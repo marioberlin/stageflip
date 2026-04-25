@@ -70,7 +70,8 @@ const expectedSummaries: Record<FixtureName, ReturnType<typeof summarise>> = {
     layoutCount: 1,
     masterCount: 1,
     perSlide: [{ id: 'slide_1', elementTypes: ['group[shape,shape]'] }],
-    flagCodes: ['LF-PPTX-NESTED-GROUP-TRANSFORM'],
+    // T-241a clears the placeholder flag — no remaining group-related codes.
+    flagCodes: [],
   },
   'multi-slide': {
     slideCount: 3,

@@ -91,8 +91,14 @@ function parseGroup(
     y: emuToPx(pickAttrNumberOn(chOff, 'y') ?? 0),
   };
   const groupExtent = {
-    width: chExt !== undefined ? emuToPx(pickAttrNumberOn(chExt, 'cx') ?? 0) || transform.width : transform.width,
-    height: chExt !== undefined ? emuToPx(pickAttrNumberOn(chExt, 'cy') ?? 0) || transform.height : transform.height,
+    width:
+      chExt !== undefined
+        ? emuToPx(pickAttrNumberOn(chExt, 'cx') ?? 0) || transform.width
+        : transform.width,
+    height:
+      chExt !== undefined
+        ? emuToPx(pickAttrNumberOn(chExt, 'cy') ?? 0) || transform.height
+        : transform.height,
   };
 
   const base: ParsedGroupElement = {
@@ -112,7 +118,10 @@ function parseGroup(
   return { element, flags: inner.flags };
 }
 
-function pickAttrNumberOn(node: Record<string, unknown> | undefined, name: string): number | undefined {
+function pickAttrNumberOn(
+  node: Record<string, unknown> | undefined,
+  name: string,
+): number | undefined {
   if (node === undefined) return undefined;
   const v = node[`@_${name}`];
   if (typeof v !== 'string') return undefined;

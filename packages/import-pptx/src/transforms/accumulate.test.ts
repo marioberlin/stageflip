@@ -3,8 +3,8 @@
 // every test below fails until `accumulateGroupTransforms` lands.
 
 import { describe, expect, it } from 'vitest';
-import { parsePptx } from '../parsePptx.js';
 import { buildGroupFixture } from '../fixtures/builder.js';
+import { parsePptx } from '../parsePptx.js';
 import type {
   CanonicalSlideTree,
   ParsedElement,

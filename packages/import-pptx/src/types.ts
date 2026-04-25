@@ -163,12 +163,18 @@ export interface LossFlag {
  * Parser output. Slides, layouts, and masters are kept separate so T-249
  * (theme learning) can later collapse master/layout inheritance. `lossFlags`
  * collects every diagnostic the parser raised.
+ *
+ * `transformsAccumulated` is the marker T-241a's `accumulateGroupTransforms`
+ * sets on its output. It is read on subsequent calls to short-circuit (the
+ * accumulator is idempotent — re-running on accumulated input must be a
+ * no-op).
  */
 export interface CanonicalSlideTree {
   slides: ParsedSlide[];
   layouts: Record<string, ParsedSlide>;
   masters: Record<string, ParsedSlide>;
   lossFlags: LossFlag[];
+  transformsAccumulated?: boolean;
 }
 
 /** Codes carried by `PptxParseError`. Stable surface for callers. */

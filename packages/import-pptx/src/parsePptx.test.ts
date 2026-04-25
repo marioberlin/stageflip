@@ -70,7 +70,7 @@ describe('parsePptx — acceptance criteria', () => {
   });
 
   // AC #5 — group transforms NOT accumulated into descendants.
-  it('groups expose children verbatim; no transform accumulation', async () => {
+  it('groups carry world-space children after T-241a accumulation', async () => {
     const tree = await parsePptx(buildGroupFixture());
     const slide = tree.slides[0];
     const group = slide?.elements[0];
@@ -78,14 +78,21 @@ describe('parsePptx — acceptance criteria', () => {
     if (group?.type !== 'group') return;
     const g = group as ParsedGroupElement;
     expect(g.children.length).toBe(2);
+    // Group at world (1000000/9525, 1000000/9525), ext (2000000/9525, 1000000/9525).
+    // Children's local origins are (100000/9525, 100000/9525) and (700000/9525, 100000/9525)
+    // inside groupOrigin=(0,0)/groupExtent=(2000000/9525, 1000000/9525) → identity scale.
+    // Accumulator translates each by group.transform.{x,y}: childA world x =
+    // (1000000 + 100000)/9525, childB world x = (1000000 + 700000)/9525.
     const [childA, childB] = g.children;
-    expect(childA?.transform.x).toBeCloseTo(100000 / 9525, 0); // raw, not group.x + child.x
-    expect(childB?.transform.x).toBeCloseTo(700000 / 9525, 0);
-    // Group's own transform is preserved.
+    expect(childA?.transform.x).toBeCloseTo(1100000 / 9525, 0);
+    expect(childB?.transform.x).toBeCloseTo(1700000 / 9525, 0);
+    // Group's own transform is preserved (AC #7).
     expect(g.transform.x).toBeCloseTo(1000000 / 9525, 0);
-    // Loss flag for the deferred T-241a work is emitted.
-    const flag = tree.lossFlags.find((f) => f.code === 'LF-PPTX-NESTED-GROUP-TRANSFORM');
-    expect(flag).toBeDefined();
+    // Placeholder flag is gone (AC #2).
+    expect(
+      tree.lossFlags.find((f) => f.code === ('LF-PPTX-NESTED-GROUP-TRANSFORM' as never)),
+    ).toBeUndefined();
+    expect(tree.transformsAccumulated).toBe(true);
   });
 
   // AC #6 — custom geometry → unsupported-shape + LF-PPTX-CUSTOM-GEOMETRY.
