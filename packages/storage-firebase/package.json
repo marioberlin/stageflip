@@ -21,6 +21,14 @@
     "dev": "tsup src/index.ts --dts --format esm,cjs --watch",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@stageflip/import-pptx": "workspace:^",
+    "firebase-admin": "13.0.1"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "2.1.9",
+    "vitest": "2.1.9"
   }
 }

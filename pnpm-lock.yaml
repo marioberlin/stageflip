@@ -1095,7 +1095,21 @@ importers:
         specifier: 3.25.76
         version: 3.25.76
 
-  packages/storage-firebase: {}
+  packages/storage-firebase:
+    dependencies:
+      '@stageflip/import-pptx':
+        specifier: workspace:^
+        version: link:../import-pptx
+      firebase-admin:
+        specifier: 13.0.1
+        version: 13.0.1
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: 2.1.9
+        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+      vitest:
+        specifier: 2.1.9
+        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/storage-postgres: {}
 

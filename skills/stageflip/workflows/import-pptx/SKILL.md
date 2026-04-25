@@ -3,7 +3,7 @@ title: Workflow — Import PPTX
 id: skills/stageflip/workflows/import-pptx
 tier: workflow
 status: substantive
-last_updated: 2026-04-27
+last_updated: 2026-04-28
 owner_task: T-250
 related:
   - skills/stageflip/concepts/loss-flags
@@ -31,10 +31,20 @@ once. Broken rels (path absent from the ZIP) emit `LF-PPTX-MISSING-ASSET-BYTES`
 Composition pattern:
 
 ```ts
+import { parsePptx, resolveAssets, unpackPptx } from '@stageflip/import-pptx';
+import { createFirebaseAssetStorage } from '@stageflip/storage-firebase';
+import { getStorage } from 'firebase-admin/storage';
+
 const entries = unpackPptx(buffer);
 const tree = await parsePptx(buffer);
+const storage = createFirebaseAssetStorage({ bucket: getStorage().bucket() });
 const resolved = await resolveAssets(tree, entries, storage);
 ```
+
+`createFirebaseAssetStorage` wraps a Firebase Admin Storage bucket; tests can
+substitute any object satisfying the structural `BucketLike` shape. Storage
+path is `pptx-imports/{contentHash[:21]}` by default (content-addressed
+dedup).
 
 Videos (`<p:videoFile>`) and embedded fonts (`<p:embeddedFont>`) are not yet
 parsed by T-240; T-243b and T-243c follow-ups will surface them and add the
