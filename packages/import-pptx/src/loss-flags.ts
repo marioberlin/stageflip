@@ -14,6 +14,7 @@ const CODE_DEFAULTS: Record<
   'LF-PPTX-CUSTOM-GEOMETRY': { severity: 'warn', category: 'shape' },
   'LF-PPTX-PRESET-GEOMETRY': { severity: 'info', category: 'shape' },
   'LF-PPTX-UNRESOLVED-ASSET': { severity: 'info', category: 'media' },
+  'LF-PPTX-MISSING-ASSET-BYTES': { severity: 'error', category: 'media' },
   'LF-PPTX-UNSUPPORTED-ELEMENT': { severity: 'warn', category: 'other' },
   'LF-PPTX-UNSUPPORTED-FILL': { severity: 'info', category: 'theme' },
   'LF-PPTX-NOTES-DROPPED': { severity: 'info', category: 'other' },

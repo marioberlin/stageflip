@@ -118,6 +118,7 @@ export type LossFlagCode =
   | 'LF-PPTX-CUSTOM-GEOMETRY'
   | 'LF-PPTX-PRESET-GEOMETRY'
   | 'LF-PPTX-UNRESOLVED-ASSET'
+  | 'LF-PPTX-MISSING-ASSET-BYTES'
   | 'LF-PPTX-UNSUPPORTED-ELEMENT'
   | 'LF-PPTX-UNSUPPORTED-FILL'
   | 'LF-PPTX-NOTES-DROPPED';
@@ -175,6 +176,12 @@ export interface CanonicalSlideTree {
   masters: Record<string, ParsedSlide>;
   lossFlags: LossFlag[];
   transformsAccumulated?: boolean;
+  /**
+   * Set by T-243's `resolveAssets` after every `ParsedAssetRef.unresolved`
+   * has been uploaded and rewritten. Re-running `resolveAssets` on a tree
+   * with this flag set is a no-op (idempotent).
+   */
+  assetsResolved?: boolean;
 }
 
 /** Codes carried by `PptxParseError`. Stable surface for callers. */
