@@ -38,6 +38,47 @@ describe('custGeomToSvgPath', () => {
     expect(custGeomToSvgPath(node)).toBe('M 0 0 L 50 100 L 100 0 Z');
   });
 
+  it('translates quadBezTo into a 2-point Q command', () => {
+    const node = singlePath({
+      'a:moveTo': PT(0, 50),
+      'a:quadBezTo': {
+        'a:pt': [
+          { '@_x': '50', '@_y': '0' },
+          { '@_x': '100', '@_y': '50' },
+        ],
+      },
+    });
+    const d = custGeomToSvgPath(node);
+    expect(d).toBe('M 0 50 Q 50 0 100 50');
+  });
+
+  it('skips quadBezTo with fewer than 2 points', () => {
+    const node = singlePath({
+      'a:moveTo': PT(0, 0),
+      'a:quadBezTo': { 'a:pt': [PT(50, 0)] },
+      'a:lnTo': PT(100, 100),
+    });
+    const d = custGeomToSvgPath(node);
+    expect(d).toBe('M 0 0 L 100 100');
+  });
+
+  it('scales quadBezTo control + endpoint by box ratio', () => {
+    const node = singlePath(
+      {
+        'a:moveTo': PT(0, 1000),
+        'a:quadBezTo': {
+          'a:pt': [
+            { '@_x': '500', '@_y': '0' },
+            { '@_x': '1000', '@_y': '1000' },
+          ],
+        },
+      },
+      { w: '1000', h: '1000' },
+    );
+    const d = custGeomToSvgPath(node, { w: 100, h: 100 });
+    expect(d).toBe('M 0 100 Q 50 0 100 100');
+  });
+
   it('translates cubicBezTo into a 3-point C command', () => {
     const node = singlePath({
       'a:moveTo': PT(0, 50),
