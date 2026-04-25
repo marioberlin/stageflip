@@ -3,7 +3,7 @@ title: Workflow — Import PPTX
 id: skills/stageflip/workflows/import-pptx
 tier: workflow
 status: substantive
-last_updated: 2026-04-29
+last_updated: 2026-04-30
 owner_task: T-250
 related:
   - skills/stageflip/concepts/loss-flags
@@ -21,9 +21,25 @@ owns each gap.
 T-240 maps a curated subset of `<a:prstGeom prst="X">` values to schema's
 structural `ShapeKind` (rect, ellipse, polygon, star, line). T-242 grows
 coverage to additional presets via `'custom-path'` with a generated SVG `d`
-attribute. T-242a (in this PR) ships infra + 6 representative presets across
-the six families (rightArrow, wedgeRectCallout, ribbon, parallelogram,
-leftBracket, cloud); T-242b adds the remaining 30 in spec-listed families.
+attribute. T-242a + T-242b first-wave (in this PR) ship infra + 16 presets:
+
+- **Arrows**: rightArrow, leftArrow, upArrow, downArrow.
+- **Callouts**: wedgeRectCallout.
+- **Banners**: ribbon.
+- **Basics**: parallelogram, trapezoid, chevron.
+- **Brackets / Braces**: leftBracket, rightBracket, leftBrace, rightBrace.
+- **Misc**: cloud, sun, heart.
+
+T-242c lands the remaining ~20 to reach the spec's 50-preset commitment
+(remaining arrows / callouts / banners / pie-donut-chord / lightningBolt /
+moon / noSmoking).
+
+`roundRect` honors its `adj1` adjustment: parsed as a 100000ths integer per
+ECMA-376; the resulting corner radius lands on the schema's existing
+`ShapeElement.cornerRadius` field. Other `<a:avLst>` adjustments are
+currently ignored — the parser emits `LF-PPTX-PRESET-ADJUSTMENT-IGNORED`
+(info severity) per ignored adjustment so the editor can surface "this
+preset has tuning we didn't apply".
 
 `<a:custGeom>` with the supported commands (`<a:moveTo>`, `<a:lnTo>`,
 `<a:cubicBezTo>`, `<a:close>`, multi-`<a:path>`) translates to SVG `d` via

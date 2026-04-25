@@ -3,7 +3,7 @@ title: Loss Flags
 id: skills/stageflip/concepts/loss-flags
 tier: concept
 status: substantive
-last_updated: 2026-04-29
+last_updated: 2026-04-30
 owner_task: T-248
 related:
   - skills/stageflip/workflows/import-pptx/SKILL.md

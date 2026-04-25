@@ -5,6 +5,7 @@
 import { strToU8, zipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
 import {
+  buildAdjustedShapesFixture,
   buildGroupFixture,
   buildMinimalFixture,
   buildMultiSlideFixture,
@@ -178,6 +179,37 @@ describe('parsePptx — acceptance criteria', () => {
     if (cloud?.type !== 'shape') return;
     expect(cloud.shape).toBe('custom-path');
     expect(cloud.path).toMatch(/^M /);
+  });
+
+  // T-242b — roundRect adj1 honored as schema cornerRadius on a structural rect.
+  it('honors roundRect.adj as cornerRadius on the structural rect element', async () => {
+    const tree = await parsePptx(buildAdjustedShapesFixture());
+    const slide = tree.slides[0];
+    if (slide === undefined) throw new Error('expected slide_1');
+    const rect = slide.elements[0];
+    expect(rect?.type).toBe('shape');
+    if (rect?.type !== 'shape') return;
+    expect(rect.shape).toBe('rect');
+    // adj=25000, w=h≈105 px (1000000 EMU / 9525). cornerRadius = adj * min(w,h) / 200000.
+    // ≈ 25000 * 105 / 200000 ≈ 13.1 px.
+    expect(rect.cornerRadius).toBeGreaterThan(0);
+    expect(rect.cornerRadius).toBeCloseTo(13.123, 1);
+    // No LF-PPTX-PRESET-ADJUSTMENT-IGNORED for the roundRect's `adj`.
+    const honoredFlag = tree.lossFlags.find(
+      (f) => f.code === 'LF-PPTX-PRESET-ADJUSTMENT-IGNORED' && f.location.elementId === 'pptx_2',
+    );
+    expect(honoredFlag).toBeUndefined();
+  });
+
+  // T-242b — non-honored preset adjustments emit LF-PPTX-PRESET-ADJUSTMENT-IGNORED.
+  it('emits LF-PPTX-PRESET-ADJUSTMENT-IGNORED for unhonored callout adjustments', async () => {
+    const tree = await parsePptx(buildAdjustedShapesFixture());
+    const ignored = tree.lossFlags.filter((f) => f.code === 'LF-PPTX-PRESET-ADJUSTMENT-IGNORED');
+    expect(ignored.length).toBe(2);
+    expect(ignored.every((f) => f.severity === 'info')).toBe(true);
+    expect(ignored.every((f) => f.category === 'shape')).toBe(true);
+    const snippets = ignored.map((f) => f.originalSnippet).sort();
+    expect(snippets).toEqual(['wedgeRectCallout.adj1=-30000', 'wedgeRectCallout.adj2=50000']);
   });
 
   // Determinism — same input -> same output (incl. flag ids).
