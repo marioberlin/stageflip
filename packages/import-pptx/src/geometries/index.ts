@@ -64,18 +64,20 @@ export function geometryFor(
 export const COVERED_PRESETS: readonly string[] = Object.keys(PRESET_GENERATORS);
 
 /**
- * Per-preset metadata: which `<a:avLst>` adjustment names the generator
- * actually honors. Empty arrays mean the preset uses spec defaults. Used by
- * the shape parser to decide whether to emit `LF-PPTX-PRESET-ADJUSTMENT-IGNORED`
- * when a fixture sets adjustments we don't read.
+ * Per-preset metadata: which `<a:avLst>` adjustment names are honored
+ * somewhere in the parser. Empty arrays mean the preset uses spec defaults.
+ * Used by the shape parser to decide whether to emit
+ * `LF-PPTX-PRESET-ADJUSTMENT-IGNORED` when a fixture sets adjustments we
+ * don't read.
  *
- * T-242b first-wave: every generator uses defaults; the only honored
- * adjustment in the workspace is `roundRect.adj` (handled outside this
- * registry, in `elements/shape.ts` via the structural-kind path).
+ * `roundRect` honoring lives in `elements/shape.ts` (it maps to a structural
+ * `'rect'`, not a custom-path generator) — but the registry still lists
+ * `roundRect: ['adj']` so the asymmetry is documented in one place.
  */
-export const HONORED_ADJUSTMENTS: Readonly<Record<string, readonly string[]>> = Object.fromEntries(
-  COVERED_PRESETS.map((name) => [name, [] as readonly string[]]),
-);
+export const HONORED_ADJUSTMENTS: Readonly<Record<string, readonly string[]>> = {
+  ...Object.fromEntries(COVERED_PRESETS.map((name) => [name, [] as readonly string[]])),
+  roundRect: ['adj'],
+};
 
 export { custGeomToSvgPath } from './cust-geom/parse.js';
 export type { AdjustmentMap, GeometryBox, PathGenerator } from './types.js';

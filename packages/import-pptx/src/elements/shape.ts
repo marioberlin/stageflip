@@ -130,7 +130,7 @@ export function parseShape(
         ...(cornerRadius !== undefined ? { cornerRadius } : {}),
         ...(name !== undefined ? { name } : {}),
       };
-      const honored = prst === 'roundRect' && cornerRadius !== undefined ? ['adj'] : [];
+      const honored = prst === undefined ? [] : (HONORED_ADJUSTMENTS[prst] ?? []);
       flags.push(...adjustmentIgnoredFlags(adjustments, honored, ctx, id, prst));
       return { element, flags };
     }

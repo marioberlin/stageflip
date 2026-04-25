@@ -8,6 +8,8 @@
 // Derived from the public OOXML spec (ECMA-376 §20.1.9.8 a:custGeom and
 // neighbours). Original implementation; no copied prior art.
 
+import { fmt } from '../format.js';
+
 const COMMAND_KEYS = ['a:moveTo', 'a:lnTo', 'a:cubicBezTo', 'a:close'] as const;
 type CommandKey = (typeof COMMAND_KEYS)[number];
 
@@ -150,12 +152,6 @@ function computeScale(
     x: pathW === 0 ? 1 : box.w / pathW,
     y: pathH === 0 ? 1 : box.h / pathH,
   };
-}
-
-function fmt(n: number): string {
-  // Trim trailing zeros without collapsing 0 → ''. Three decimal places is
-  // plenty for visual fidelity at typical box sizes.
-  return Number.isInteger(n) ? `${n}` : n.toFixed(3).replace(/\.?0+$/, '');
 }
 
 function numberAttr(node: unknown, name: string): number | undefined {

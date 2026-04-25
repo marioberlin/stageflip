@@ -3,6 +3,7 @@
 // shipped `cloud`. T-242b first-wave adds `sun` and `heart`. The remaining
 // miscellaneous presets (moon, lightningBolt, noSmoking) land in T-242c.
 
+import { fmt } from '../format.js';
 import type { PathGenerator } from '../types.js';
 
 /**
@@ -75,8 +76,3 @@ export const heart: PathGenerator = ({ w, h }) => {
     'Z',
   ].join(' ');
 };
-
-/** Trim trailing zeros without collapsing 0 → ''. Match cust-geom's formatter. */
-function fmt(n: number): string {
-  return Number.isInteger(n) ? `${n}` : n.toFixed(3).replace(/\.?0+$/, '');
-}
