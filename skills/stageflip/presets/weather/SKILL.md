@@ -6,7 +6,6 @@ status: substantive
 last_updated: 2026-04-25
 owner_task: T-347
 related:
-  - docs/decisions/ADR-004-preset-system.md
   - skills/stageflip/presets/data/SKILL.md
 ---
 

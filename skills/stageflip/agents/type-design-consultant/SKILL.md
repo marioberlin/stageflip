@@ -12,7 +12,6 @@ related:
   - skills/stageflip/presets/captions/SKILL.md
   - skills/stageflip/presets/ctas/SKILL.md
   - skills/stageflip/concepts/fonts/SKILL.md
-  - docs/decisions/ADR-004-preset-system.md
 ---
 
 # Type-design consultant

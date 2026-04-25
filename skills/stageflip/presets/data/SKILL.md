@@ -6,8 +6,6 @@ status: substantive
 last_updated: 2026-04-25
 owner_task: T-361
 related:
-  - docs/decisions/ADR-004-preset-system.md
-  - docs/decisions/ADR-005-frontier-clip-catalogue.md
   - skills/stageflip/presets/sports/SKILL.md
   - skills/stageflip/presets/news/SKILL.md
 ---

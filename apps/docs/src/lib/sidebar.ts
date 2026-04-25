@@ -27,7 +27,8 @@ export interface SidebarGroup {
  * Ordered map tier → group label. The order here is the sidebar
  * order: concepts first (the user's mental-model-entry), then
  * runtimes + modes + profiles (what exists), then tools + workflows
- * (how to do things), then reference + clips (lookup).
+ * (how to do things), then reference + clips (lookup), then cluster
+ * + agent (preset taste canon + AI-agent role specs added in P13).
  */
 const TIER_LABELS: ReadonlyArray<{ tier: string; label: string }> = [
   { tier: 'concept', label: 'Concepts' },
@@ -38,6 +39,8 @@ const TIER_LABELS: ReadonlyArray<{ tier: string; label: string }> = [
   { tier: 'workflow', label: 'Workflows' },
   { tier: 'reference', label: 'Reference' },
   { tier: 'clip', label: 'Clips' },
+  { tier: 'cluster', label: 'Preset Clusters' },
+  { tier: 'agent', label: 'Agents' },
 ];
 
 const KNOWN_TIERS = new Set(TIER_LABELS.map((t) => t.tier));
