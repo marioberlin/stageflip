@@ -11,7 +11,7 @@
 // isolation. Real-world generator fixtures land as a follow-up once their
 // redistribution rights are sorted.
 
-import { zipSync, strToU8 } from 'fflate';
+import { strToU8, zipSync } from 'fflate';
 
 /** A flat path -> bytes map ready for `fflate.zipSync` or comparison. */
 type Files = Record<string, Uint8Array>;
@@ -182,7 +182,7 @@ function spText(opts: {
 <a:xfrm><a:off x="${opts.x}" y="${opts.y}"/><a:ext cx="${opts.cx}" cy="${opts.cy}"/></a:xfrm>
 <a:prstGeom prst="rect"/>
 </p:spPr>
-<p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r>${rPr}<a:t>${escape(opts.text)}</a:t></a:r></a:p></p:txBody>
+<p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r>${rPr}<a:t>${xmlEscape(opts.text)}</a:t></a:r></a:p></p:txBody>
 </p:sp>`;
 }
 
@@ -261,7 +261,7 @@ ${opts.children}
 </p:grpSp>`;
 }
 
-function escape(s: string): string {
+function xmlEscape(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
@@ -295,8 +295,24 @@ export function buildMinimalFixture(): Uint8Array {
 export function buildShapesFixture(): Uint8Array {
   const children = [
     spShape({ id: 2, name: 'Rect1', prst: 'rect', x: 0, y: 0, cx: 1000000, cy: 1000000 }),
-    spShape({ id: 3, name: 'Ellipse1', prst: 'ellipse', x: 1500000, y: 0, cx: 1000000, cy: 1000000 }),
-    spShape({ id: 4, name: 'Hexagon1', prst: 'hexagon', x: 3000000, y: 0, cx: 1000000, cy: 1000000 }),
+    spShape({
+      id: 3,
+      name: 'Ellipse1',
+      prst: 'ellipse',
+      x: 1500000,
+      y: 0,
+      cx: 1000000,
+      cy: 1000000,
+    }),
+    spShape({
+      id: 4,
+      name: 'Hexagon1',
+      prst: 'hexagon',
+      x: 3000000,
+      y: 0,
+      cx: 1000000,
+      cy: 1000000,
+    }),
     spShape({ id: 5, name: 'Star5', prst: 'star5', x: 4500000, y: 0, cx: 1000000, cy: 1000000 }),
     spShape({ id: 6, name: 'Cloud', prst: 'cloud', x: 6000000, y: 0, cx: 1000000, cy: 1000000 }),
   ].join('\n');
@@ -362,11 +378,21 @@ export function buildMultiSlideFixture(): Uint8Array {
   );
   const s2 = slideShell(
     [
-      spText({ id: 2, name: 'Slide2Title', text: 'Slide Two', x: 0, y: 0, cx: 5000000, cy: 1000000 }),
+      spText({
+        id: 2,
+        name: 'Slide2Title',
+        text: 'Slide Two',
+        x: 0,
+        y: 0,
+        cx: 5000000,
+        cy: 1000000,
+      }),
       spShape({ id: 3, name: 'Underline', prst: 'line', x: 0, y: 1100000, cx: 5000000, cy: 0 }),
     ].join('\n'),
   );
-  const s3 = slideShell(spCustom({ id: 2, name: 'CustomShape', x: 0, y: 0, cx: 1000000, cy: 1000000 }));
+  const s3 = slideShell(
+    spCustom({ id: 2, name: 'CustomShape', x: 0, y: 0, cx: 1000000, cy: 1000000 }),
+  );
   return buildPptx([s1, s2, s3]);
 }
 
