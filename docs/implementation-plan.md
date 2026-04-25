@@ -1,9 +1,9 @@
-# StageFlip — Implementation Plan v1.16
+# StageFlip — Implementation Plan v1.18
 
 **Audience**: AI coding agents executing autonomously; human product owners ratifying at phase boundaries.
-**Scope**: 280+ tasks across 12 phases, from empty repo to first public beta.
+**Scope**: 390+ tasks across 13 phases, from empty repo to premium motion library + frontier runtime.
 **Format**: Every task is self-contained with references, prompts, acceptance criteria, and verification commands.
-**Last updated**: 2026-04-24 — Phase 9 **✅ Ratified 2026-04-24**. All 10 in-scope tasks merged (T-200–T-209) across 12 PRs (T-202 + T-203 each split a/b); `main` at `ec62013`. 2 new packages (`@stageflip/profiles-display`, `@stageflip/export-html5-zip`); canonical tool bundles 15 → 16 (`display-mode` added); 109 → 111 tools registered (`optimize_for_file_size` + `preview_at_sizes`); bridge clips 37 → 42 (5 display-profile clips: attention tranche `click-overlay` / `countdown` / `cta-pulse` + data tranche `price-reveal` / `product-carousel`). Parity fixtures unchanged at 47 (display manifests deferred to a non-blocking priming follow-up). All gates green. Next work: Phase 10 — Skills + MCP + Distribution. See `docs/handover-phase9-complete.md` + §C.10 changelog (v1.16).
+**Last updated**: 2026-04-25 — **Phase 13 ADRs ratified** (ADR-003 / 004 / 005, 2026-04-25); α primitives unblocked. Phase 10 (T-220–T-231) all merged; closeout handover at `docs/handover-phase10-complete.md`, ratification pending at **Phase 11 start**. **Phase 11 — Importers** is the active phase. Phase 13 runs structurally parallel but P11 takes capacity priority. Preset count is now **50** (added `espn-bottomline-flipper` as T-339a). All 10 in-scope tasks merged (T-200–T-209) across 12 PRs (T-202 + T-203 each split a/b); `main` at `ec62013`. 2 new packages (`@stageflip/profiles-display`, `@stageflip/export-html5-zip`); canonical tool bundles 15 → 16 (`display-mode` added); 109 → 111 tools registered (`optimize_for_file_size` + `preview_at_sizes`); bridge clips 37 → 42 (5 display-profile clips: attention tranche `click-overlay` / `countdown` / `cta-pulse` + data tranche `price-reveal` / `product-carousel`). Parity fixtures unchanged at 47 (display manifests deferred to a non-blocking priming follow-up). All gates green. Next work: Phase 10 — Skills + MCP + Distribution. See `docs/handover-phase9-complete.md` + §C.10 changelog (v1.16).
 
 ---
 
@@ -498,6 +498,7 @@ phase. Renumbered / carried as T-137 / T-138 in Phase 6.
 
 **Goal**: Publishable agent plugin.
 **Exit criteria**: `claude plugin install stageflip` installs + connects + usable.
+**Status**: ✅ **All 12 tasks merged** (T-220 → T-231) as of 2026-04-25, `main` at `e40ee8c`. Closeout handover at `docs/handover-phase10-complete.md`. Ratification pending at P11 start per CLAUDE.md §2 + memory:phase_closeout_timing.
 
 | ID | Task | Size |
 |---|---|---|
@@ -552,6 +553,240 @@ phase. Renumbered / carried as T-137 / T-138 in Phase 6.
 | T-271 | EU Firestore region for GDPR data residency | M |
 | T-272 | Backup + point-in-time recovery | M |
 | T-273 | BigQuery telemetry export | M |
+
+## Phase 13 — Premium Motion Library & Frontier Runtime (Three Parallel Tracks)
+
+115 tasks across three parallel tracks. Reference ADRs: ADR-003 (interactive runtime tier), ADR-004 (preset system), ADR-005 (frontier clip catalogue) — **all three ratified 2026-04-25**. PR template: `.github/pr-templates/phase-13.md`.
+
+**Capacity priority**: Phase 11 (Importers) takes precedence for active capacity. Phase 13 is structurally parallel but should not starve P11; Implementer agents picking up T-304+ should confirm with the Orchestrator that P11 is not blocked.
+
+**Hard gate**: T-301 / T-302 / T-303 (the three ADRs) — ratified 2026-04-25. After the ADR PRs merge to `main`, three tracks (A: frontier runtime, B: preset library, C: supporting plumbing) run in parallel.
+
+**Sign-off changes**: parity fixtures ship per cluster batch with **product-owner sign-off** (not Reviewer-only). Type-design-consultant agent (`skills/stageflip/agents/type-design-consultant/SKILL.md`) batch-reviews Clusters A / B / D / F / G fallback fonts; preset PRs in those clusters link to the batch.
+
+### Phase α — Primitives (Hard Gate)
+
+| ID | Task | Size |
+|---|---|---|
+| T-301 | ADR-003: Interactive Runtime Tier | S |
+| T-302 | ADR-004: Preset System | S |
+| T-303 | ADR-005: Frontier Clip Catalogue | S |
+| T-304 | `packages/schema/src/presets/` — preset schema primitive (loader + validator + frontmatter parser) | M |
+| T-305 | Interactive-clip contract — `staticFallback` + `liveMount` schema; export-matrix hooks | M |
+| T-306 | `packages/runtimes/interactive/` — runtime tier skeleton + permission shim + contract tests | M |
+| T-307 | Font-license registry — `packages/schema/src/presets/font-registry.ts` + `check-licenses` extension | M |
+| T-308 | `scripts/check-preset-integrity.ts` — new CI gate; green on main before any preset PR | M |
+| T-309 | Extended `check-determinism` — exempt interactive tier; add shader-uniform sub-rule | M |
+| T-310 | Extended `check-skill-drift` — covers presets + cluster skills | S |
+| T-311 | Type-design-consultant agent invocation tooling (Orchestrator-side) | M |
+| T-312 | CLAUDE.md §6 amendment — preset interpretation + type-design escalation paths (already landed in scaffold; this task verifies + adds tests) | S |
+| T-313 | Parity-fixture auto-generation pipeline + reviewer / user sign-off workflow | M |
+
+### Phase β — Preset Library (Track B, parallel with γ after α)
+
+**β-core (loader + ingest tooling)**
+
+| ID | Task | Size |
+|---|---|---|
+| T-314 | Compass ingest tooling (markdown → preset frontmatter generator) | S |
+| T-315 | Cluster-skill template + generator | S |
+
+**β-gap-clips (block dependent clusters; T-321 starts as soon as α4 (T-304) is done)**
+
+| ID | Task | Size | Blocks |
+|---|---|---|---|
+| T-316 | `CaptionClip` (word-level timed; highlight / stroke / bounce) | L | Cluster F presets |
+| T-317 | `SubscribeButton` | M | Cluster G |
+| T-318 | `FollowPrompt` | M | Cluster G |
+| T-319 | `QRCodeBounce` | M | Cluster G |
+| T-320 | `VARBanner` (sports breaking sub-type) | M | Cluster B sports presets |
+| T-321 | `TitleSequenceClip` (multi-shot compositor) — start at α4 done | L | Cluster D presets |
+| T-322 | `LyricsClip` (music-synced, distinct from caption) | M | Cluster F karaoke |
+
+**β-cluster-A (News, 8 presets + skill)**
+
+| ID | Task | Size |
+|---|---|---|
+| T-323 | Preset: `cnn-classic` (lowerThird) | M |
+| T-324 | Preset: `cnn-breaking` (breakingBanner, red block wipe) | M |
+| T-325 | Preset: `bbc-reith-dark` (lowerThird) | M |
+| T-326 | Preset: `al-jazeera-orange` (lowerThird, bilingual) | M |
+| T-327 | Preset: `fox-news-alert` (breakingBanner, vertical slide) | M |
+| T-328 | Preset: `msnbc-big-board` (fullScreen interactive) | L |
+| T-329 | Preset: `netflix-doc-lt` (no-bg lowerThird) | S |
+| T-330 | Preset: `apple-tv-lt` (minimalist lowerThird) | S |
+| T-331 | Cluster-A skill + `compose_breaking_news` / `compose_ongoing_update` / `compose_guest_intro` / `compose_documentary_title_card` | M |
+
+**β-cluster-B (Sports, 8 presets + skill)**
+
+| ID | Task | Size |
+|---|---|---|
+| T-332 | Preset: `f1-timing-tower` (scoreBug vertical) | L |
+| T-333 | Preset: `premier-league-field-of-play` (scoreBug) | M |
+| T-334 | Preset: `fox-nfl-no-chrome` (scoreBug) | M |
+| T-335 | Preset: `nbc-snf-possession-illuminated` (scoreBug) | M |
+| T-336 | Preset: `cricket-scorebug` (top scoreBug) | L |
+| T-337 | Preset: `wimbledon-green-purple` (scoreBug) | M |
+| T-338 | Preset: `masters-red-under-par` (standings) | M |
+| T-339 | Preset: `uefa-starball-refraction` (fullScreen) | L |
+| T-339a | Preset: `espn-bottomline-flipper` (newsTicker, persistent two-line flipper) — added v1.18 to bring cluster B to 9 presets and total to 50 | M |
+| T-340 | Cluster-B skill + `compose_sports_score` / `compose_player_intro` / `compose_var_call` / `compose_standings_table` | M |
+
+**β-cluster-C (Weather, 6 presets + skill)**
+
+| ID | Task | Size |
+|---|---|---|
+| T-341 | Preset: `twc-immersive-mixed-reality` (fullScreen, ThreeSceneClip) | L |
+| T-342 | Preset: `twc-retrocast-8bit` (fullScreen) | M |
+| T-343 | Preset: `bbc-mark-allen-clouds` (weatherMap) | M |
+| T-344 | Preset: `nhc-cone-of-uncertainty` (stormTracker, mandatory disclaimer) | M |
+| T-345 | Preset: `doppler-dbz-standard` (weatherMap) | M |
+| T-346 | Preset: `heat-map-cool-to-warm` (weatherMap) | M |
+| T-347 | Cluster-C skill + `compose_weather_alert` / `compose_forecast_map` / `compose_storm_track` / `compose_temperature_map` | M |
+
+**β-cluster-D (Titles, 6 presets + skill; depends on T-321)**
+
+| ID | Task | Size |
+|---|---|---|
+| T-348 | Preset: `stranger-things-benguiat` (titleSequence) | L |
+| T-349 | Preset: `got-trajan-clockwork` (titleSequence, ThreeSceneClip) | L |
+| T-350 | Preset: `squid-game-geometric` (titleSequence) | M |
+| T-351 | Preset: `true-detective-double-exposure` (titleSequence) | L |
+| T-352 | Preset: `succession-home-video` (titleSequence) | L |
+| T-353 | Preset: `severance-surreal-3d` (titleSequence, ThreeSceneClip) | L |
+| T-354 | Cluster-D skill + `compose_title_sequence` / `compose_segment_open` / `compose_end_credits` | M |
+
+**β-cluster-E (Data, 6 presets + skill; depends on T-406 chart family)**
+
+| ID | Task | Size |
+|---|---|---|
+| T-355 | Preset: `magic-wall-drilldown` (fullScreen, LiveDataClip) | L |
+| T-356 | Preset: `bloomberg-ticker` (newsTicker, LiveDataClip) | M |
+| T-357 | Preset: `olympic-medal-tracker` (standings, LiveDataClip) | M |
+| T-358 | Preset: `cricket-ball-by-ball-dots` (scoreBug annex) | S |
+| T-359 | Preset: `f1-sector-purple-green` (bigNumber) | S |
+| T-360 | Preset: `big-number-stat-impact` (bigNumber count-up) | M |
+| T-361 | Cluster-E skill + `compose_live_data` / `compose_market_ticker` / `compose_election_board` / `compose_big_number` / `compose_stat_callout` | M |
+
+**β-cluster-F (Captions, 6 presets + skill; depends on T-316 + T-322)**
+
+| ID | Task | Size |
+|---|---|---|
+| T-362 | Preset: `hormozi-montserrat-black` (caption) | M |
+| T-363 | Preset: `mrbeast-komika-axis` (caption) | M |
+| T-364 | Preset: `tiktok-rounded-box` (caption) | M |
+| T-365 | Preset: `ali-abdaal-opacity-karaoke` (caption) | M |
+| T-366 | Preset: `netflix-invisible` (caption, strict accessibility) | M |
+| T-367 | Preset: `karaoke-progressive-wipe` (lyrics; depends on T-322) | M |
+| T-368 | Cluster-F skill + `compose_creator_caption` / `compose_subtitle` / `compose_lyric_video` / `compose_keyword_highlight` | M |
+
+**β-cluster-G (CTAs, 5 presets + skill; depends on T-317 / T-318 / T-319)**
+
+| ID | Task | Size |
+|---|---|---|
+| T-369 | Preset: `youtube-subscribe-bounce` (subscribeButton) | M |
+| T-370 | Preset: `tiktok-follow-pulse` (followPrompt) | M |
+| T-371 | Preset: `instagram-link-sticker` (socialMedia) | M |
+| T-372 | Preset: `coinbase-dvd-qr` (qrCodeBounce) | M |
+| T-373 | Preset: `social-handle-lower-third` (lowerThird) | S |
+| T-374 | Cluster-G skill + `compose_cta` / `compose_subscribe_prompt` / `compose_social_handle` / `compose_qr_bounce` | M |
+
+**β-cluster-H (AR, 4 presets + skill; depends on `ThreeSceneClip` (T-384))**
+
+| ID | Task | Size |
+|---|---|---|
+| T-375 | Preset: `sky-sports-ar-formations` (arOverlay) | L |
+| T-376 | Preset: `hawkeye-var-3d-skeletal` (arOverlay) | L |
+| T-377 | Preset: `olympic-swim-lane-track` (arOverlay) | L |
+| T-378 | Preset: `nba-ar-replay` (arOverlay) | L |
+| T-379 | Cluster-H skill + `compose_ar_overlay` / `compose_var_skeletal` / `compose_swim_lane_track` | M |
+
+**β-closers (parity + type-design sign-off)**
+
+| ID | Task | Size |
+|---|---|---|
+| T-380 | Parity fixtures generated + signed off — Clusters A / B / C / D (user sign-off per cluster) | L |
+| T-381 | Parity fixtures generated + signed off — Clusters E / F / G / H (user sign-off per cluster) | L |
+| T-382 | Type-design-consultant batch reviews merged for Clusters A / B / D / F / G | M |
+
+### Phase γ — Frontier Runtime (Track A, parallel with β after α)
+
+**γ-core (shaders + 3D + permission + variant)**
+
+| ID | Task | Size |
+|---|---|---|
+| T-383 | `ShaderClip` primitive + uniform-updater determinism sub-rule | L |
+| T-384 | `ThreeSceneClip` wrapper (seeded PRNG, frame-tick, `rAF` shim) | L |
+| T-385 | Permission envelope (mic / network / camera UX + enforcement) | M |
+| T-386 | Fast variant-generation mode (size × message × locale matrix over RIR) | L |
+
+**γ-live (live clip pairs: liveMount + staticFallback per clip type)**
+
+| ID | Task | Size |
+|---|---|---|
+| T-387 | `VoiceClip` — `liveMount` (Web Audio + MediaRecorder + transcript) | M |
+| T-388 | `VoiceClip` — `staticFallback` (waveform poster) | S |
+| T-389 | `AiChatClip` — `liveMount` (scoped LLM) | M |
+| T-390 | `AiChatClip` — `staticFallback` (captured transcript) | S |
+| T-391 | `LiveDataClip` — `liveMount` (endpoint fetch + chart) | M |
+| T-392 | `LiveDataClip` — `staticFallback` (cached value via chart) | S |
+| T-393 | `WebEmbedClip` — `liveMount` (sandboxed iframe + allowlist) | M |
+| T-394 | `WebEmbedClip` — `staticFallback` (poster screenshot) | S |
+| T-395 | `AiGenerativeClip` — `liveMount` (playback-time prompt slot) | M |
+| T-396 | `AiGenerativeClip` — `staticFallback` (curated example) | S |
+
+**γ-deploy (three deployment targets)**
+
+| ID | Task | Size |
+|---|---|---|
+| T-397 | `renderer-cdp` interactive hosting | M |
+| T-398 | Browser live-preview integration | M |
+| T-399 | On-device display player — runtime shim | L |
+| T-400 | On-device display player — packaging + distribution | L |
+| T-401 | On-device display player — ops + telemetry | M |
+
+**γ-gating (flag + security)**
+
+| ID | Task | Size |
+|---|---|---|
+| T-402 | Feature flag + admin toggle (`features.interactive: disabled / preview / ga`) | M |
+| T-403 | Pre-preview security review (covers all of Track A) | L |
+| T-404 | Security hardening pass (response to T-403 findings) | L |
+| T-405 | Security sign-off for GA (recorded on ADR-005 ratification block) | S |
+
+### Phase γ-supporting (Track C, parallel)
+
+| ID | Task | Size |
+|---|---|---|
+| T-406 | Chart clip family (deterministic SVG, frame-driven) — blocks Cluster E | L |
+| T-407 | `arrange_reveal` semantic tool (staggered headline → body → media) | M |
+| T-408 | Export matrix routing — MP4 / PPTX → static; HTML / display-interactive → live | M |
+| T-409 | CI: preset × export parity job (cross-product matrix) | M |
+
+### Phase δ — Lock-in
+
+| ID | Task | Size |
+|---|---|---|
+| T-410 | GA readiness checklist pass | M |
+| T-411 | Enterprise admin flows (tenant-level frontier enablement) | M |
+| T-412 | Documentation pass (user-manual + skill index) | M |
+| T-413 | Phase 13 closeout handover (per memory: write at P14 start) | S |
+| T-414 | Phase 13 ratification checkpoint | S |
+
+### Dependency Gates (Phase 13)
+
+- **T-301 / T-302 / T-303** → block all of T-304+
+- **T-304** → T-321 (TitleSequenceClip)
+- **T-305** → all `liveMount` tasks (T-387 / T-389 / T-391 / T-393 / T-395)
+- **T-316** → T-362 → T-367 (Cluster F presets)
+- **T-320** → relevant Cluster B sports presets needing VAR sub-type
+- **T-321** → T-348 → T-353 (Cluster D presets)
+- **T-322** → T-367 (karaoke-progressive-wipe)
+- **T-384** → Cluster H presets (T-375 → T-378)
+- **T-406** → Cluster E presets (T-355 → T-360)
+- **T-403** → T-402 GA mode (preview mode does not gate on security review)
+- **T-380 / T-381** → cluster merge (user sign-off required)
+- **T-382** → preset PRs in Clusters A / B / D / F / G (PR fails `check-preset-integrity` without batch review link)
 
 ---
 
@@ -730,6 +965,8 @@ Phase 0 ──► Phase 1 ──► Phase 2 ──► Phase 3 ──┬──►
 
 ## C.10 Changelog
 
+- **v1.18** (2026-04-25): **Phase 13 ADRs ratified.** ADR-003 (Interactive Runtime Tier), ADR-004 (Preset System), ADR-005 (Frontier Clip Catalogue) all ratified by product owner 2026-04-25; product-owner sign-off recorded on each. Engineering signoffs deferred to their respective implementation tasks (T-304 / T-308 for ADR-004; T-306 / T-309 for ADR-003; T-383 → T-401 for ADR-005). Security review (T-403) gates ADR-005 GA promotion only; preview enablement is unblocked. Hard-gate cleared — α primitives may proceed once the ADR PRs land on `main`. **ESPN BottomLine added** as `espn-bottomline-flipper` preset under Cluster B (newsTicker clip kind, T-339a), bringing cluster B to 9 presets and total to 50 (closing the v1.17 49-vs-50 gap). **Phase 10 (Skills + MCP + Distribution) closeout** at `docs/handover-phase10-complete.md`; all 12 in-scope tasks (T-220 → T-231) merged on `main` at `e40ee8c`. Phase 11 ratification of Phase 10 pending per CLAUDE.md §2 + memory:phase_closeout_timing. Phase 13 marked as structurally parallel but Phase 11 takes capacity priority — added inline comment in the Phase 13 section header to prevent P11 starvation.
+- **v1.17** (2026-04-25): **Phase 13 scaffolded** (`plan/P13-scaffold` branch). 114 new tasks (T-301 → T-414) across three parallel tracks (A: frontier runtime, B: preset library 49 presets across 8 clusters + 7 gap clips, C: supporting plumbing). Three new ADRs proposed (ADR-003 Interactive Runtime Tier, ADR-004 Preset System, ADR-005 Frontier Clip Catalogue) form a hard gate before any code lands. New phase-13 PR template in `.github/pr-templates/`. New skill tree `skills/stageflip/presets/{news,sports,weather,titles,data,captions,ctas,ar}/` co-locating cluster `SKILL.md` + 49 preset stubs (frontmatter + compass-distilled bodies). New agent skill `skills/stageflip/agents/type-design-consultant/SKILL.md` batch-reviews font fallbacks for clusters A / B / D / F / G. CLAUDE.md §6 amended with two new escalation paths (preset compass disputes + "no adequate fallback"). Parity-fixture sign-off authority is the **product owner per cluster batch**, not Reviewer. Preset count is 49 (not 50 as initially scoped — A:8, B:8, C:6, D:6, E:6, F:6, G:5, H:4); discrepancy noted; can add a 50th in a follow-up if desired. No clip / runtime code lands in this scaffold; iteration 6 was scaffold-only. ADR ratification + Phase 13 implementation are separate PRs (one per ADR, then per-task as the standard three-agent workflow proceeds).
 - **v1.16** (2026-04-24): **Phase 9 ratified.** All 10 in-scope tasks merged (T-200–T-209) across 12 PRs (T-202 + T-203 each split a/b) per `docs/handover-phase9-complete.md`; `main` at `ec62013`. Exit criteria met: (1) three canonical IAB banner sizes planned from a single display document (`@stageflip/profiles-display` `DISPLAY_CANONICAL_SIZES` + editor-shell `<BannerSizeGrid>` + `@stageflip/export-html5-zip` one-ZIP-per-size emission); (2) 150 KB initial-load cap enforced per ZIP via `DISPLAY_FILE_SIZE_BUDGETS_KB` + the T-203b budget gate applied after the T-205 optimizer pipeline (unused-CSS stripper + inline-JS minifier + image-optimizer plug-in seam); (3) IAB/GDN validator (T-208) asserts clickTag, HTTPS-only asset URLs, ad.size meta, backup image, initial-load cap; (4) fallback assets (T-204 midpoint-frame PNG + deterministic animated GIF via `gifenc` with pre-computed palette) embedded in the ZIP. 2 new packages (`@stageflip/profiles-display`, `@stageflip/export-html5-zip`); canonical tool bundles 15 → 16 (`display-mode` added with `optimize_for_file_size` + `preview_at_sizes`); 109 → 111 registered tools; bridge clips 37 → 42 (`click-overlay`, `countdown`, `cta-pulse`, `price-reveal`, `product-carousel`). Parity fixture catalog unchanged at 47 — display-mode manifests deferred to a non-blocking priming follow-up shared with the Phase 7/8 goldens carry. All gates green. Zero escalations raised. Next work: Phase 10 — Skills + MCP + Distribution (T-220–T-231); T-220 (`@stageflip/skills-sync` generator set) is foundational.
 - **v1.15** (2026-04-24): **Phase 8 ratified** + **Phase 2 back-stamped.** Phase 8 (T-180–T-189) status flipped from implementation-complete per `docs/handover-phase8-complete.md` → ✅ Ratified 2026-04-24 after orchestrator verification: all 10 gates green on `main` at `b9b15bf`, prompt → 3-aspect render end-to-end, deterministic captions cache, 3 new packages (`@stageflip/captions` / `@stageflip/export-video` / `@stageflip/app-agent`), 15th canonical tool bundle (`video-mode`), 6 new video-profile clips + 6 new parity fixtures. Captions ±100 ms is methodology-complete (deterministic packing + SHA-256 cache); frame-by-frame CI measurement deferred to a non-blocking goldens-priming follow-up. **Phase 2 (Frame Runtime) back-stamp**: the ratification banner was never landed in the plan body despite `docs/handover-phase2-complete.md` documenting closeout + test + bundle evidence on `0463045` since 2026-04-21. Orchestrator directive (2026-04-24) explicitly waived the CLAUDE.md §2 human-ratification default for this single back-stamp; the banner is marked agent-ratified. Exit criteria confirmed with one documented caveat — dev-harness 60fps scrub is functionally complete but was never numerically measured (the FPS assertion was never wired). All 16 Phase 2 tasks (T-040–T-055, including T-043 [rev] + T-055 [new]) are on `main` and have been for three weeks of subsequent work; every downstream phase (3–8) treated Phase 2 as load-bearing with zero regressions. Phase 6's banner was stamped in v1.13 and is unchanged. Next work: Phase 9 — StageFlip.Display (T-200–T-209); T-200 in flight on PR #136.
 - **v1.14** (2026-04-24): **Phase 7 ratified.** All 21 in-scope tasks merged (T-150–T-170). Three-agent triad (Planner + Executor + Validator) runs end-to-end through `/api/agent/execute`; all 14 handler bundles populated for a total of 108 registered tools (target ≥80); I-9 (≤30 tools per loaded context) enforced by `BundleLoader` at runtime with a per-bundle drift-gate test. All 10 gates green on `main` at `7f02b50` — typecheck · lint · test, parity, render-e2e, e2e Playwright, check-licenses (495 deps), check-remotion-imports (637 files / 0 matches), check-determinism (57 files), check-skill-drift, skills-sync:check, **gen:tool-skills:check (new — T-169)**, size-limit (frame-runtime 19.52 kB, cdp-host-bundle 367.33 kB). Engine tests: 32 files / 340 cases. Agent tests: 8 / 67. App-slide tests: 40 / 322. Monorepo-wide: ~2678 tests across 224 test files. Zero escalations raised. Notable additions beyond the handover's mid-phase plan: `scripts/gen-tool-skills.ts` auto-generates every per-bundle SKILL.md from the registry (T-169 became stricter — now the canonical source rather than a migration); `orchestrator.ts` in `apps/stageflip-slide/src/app/api/agent/execute/` wires the full triad with an env-guarded provider factory (`buildProviderFromEnv` → 503 `not_configured` when `ANTHROPIC_API_KEY` is unset). Carries to Phase 8 (non-blocking for exit criteria per `docs/handover-phase7-complete.md`): streaming events from `/api/agent/execute`, copilot `document` plumbing, bake-tier dispatcher (§5.3 from Phase 6), parity-goldens priming (§5.2). Next work: Phase 8 — StageFlip.Video.

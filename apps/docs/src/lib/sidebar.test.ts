@@ -38,7 +38,7 @@ describe('buildSkillsSidebar', () => {
     expect(concepts?.items.map((i) => i.label)).toEqual(['Determinism', 'RIR']);
   });
 
-  it('maps the 8 known tiers to human-friendly group labels', () => {
+  it('maps the 10 known tiers to human-friendly group labels', () => {
     const tiers: Array<{ tier: string; label: string }> = [
       { tier: 'concept', label: 'Concepts' },
       { tier: 'runtime', label: 'Runtimes' },
@@ -48,6 +48,8 @@ describe('buildSkillsSidebar', () => {
       { tier: 'workflow', label: 'Workflows' },
       { tier: 'reference', label: 'Reference' },
       { tier: 'clip', label: 'Clips' },
+      { tier: 'cluster', label: 'Preset Clusters' },
+      { tier: 'agent', label: 'Agents' },
     ];
     for (const { tier, label } of tiers) {
       const sidebar = buildSkillsSidebar([entry('skills/stageflip/x/y', 'Y', tier)]);

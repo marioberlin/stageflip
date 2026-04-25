@@ -18,6 +18,8 @@ export const SKILL_TIERS = [
   'workflow',
   'reference',
   'clip',
+  'cluster',
+  'agent',
 ] as const;
 export type SkillTier = (typeof SKILL_TIERS)[number];
 
