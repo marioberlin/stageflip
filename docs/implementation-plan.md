@@ -1,4 +1,4 @@
-# StageFlip — Implementation Plan v1.21
+# StageFlip — Implementation Plan v1.22
 
 **Audience**: AI coding agents executing autonomously; human product owners ratifying at phase boundaries.
 **Scope**: 390+ tasks across 13 phases, from empty repo to premium motion library + frontier runtime.
@@ -793,6 +793,268 @@ phase. Renumbered / carried as T-137 / T-138 in Phase 6.
 - **T-380 / T-381** → cluster merge (user sign-off required)
 - **T-382** → preset PRs in Clusters A / B / D / F / G (PR fails `check-preset-integrity` without batch review link)
 
+## Phase 14 — Asset Generation (Adapter-Pattern Foundation + Per-Modality Build-out)
+
+35 tasks. Authoring-time generation of video / music / 3D / TTS / SFX assets via a uniform **Provider Seam Pattern** (ADR-006, meta) — the same shape as `@stageflip/runtimes/contract`, `TranscriptionProvider`, and storage interfaces. Distinct from the frontier `AiGenerativeClip` (ADR-005 §D1) which generates at playback time; this phase produces frozen files consumed by existing `MediaElement` schema slots.
+
+**Strategic context**: Adapter pattern means SOTA-tracking is incremental (each new provider = one ~3-task PR), license posture is per-adapter, and the community can ship adapters without touching core. Pairs with Phase 15 (which extends the same seam) and Phase 16 (which sells adapters as bundle content).
+
+**Hard gate**: T-415 / T-416 (the two ADRs) must merge before any code lands on T-417+.
+
+### Phase α — Provider Seam Foundation (Hard Gate)
+
+| ID | Task | Size |
+|---|---|---|
+| T-415 | ADR-006: Provider Seam Pattern (meta) — codifies adapter contract across modalities; `AdapterDescriptor`, capability descriptor, license-aware routing, sandbox model. Cross-references existing `@stageflip/runtimes/contract`, `TranscriptionProvider`, storage seams as canonical examples | S |
+| T-416 | ADR-007: Asset Generation — content-addressed cache key, `MediaElement.provenance` schema, voice-consent policy, modality-specific contracts | S |
+| T-417 | `skills/stageflip/concepts/provider-seam/SKILL.md` — concept skill for the meta-pattern | S |
+| T-418 | `@stageflip/adapters-core` — interfaces, registry, capability-descriptor parser, license-gate hooks, fallback-chain executor | M |
+| T-419 | `@stageflip/asset-gen-contract` — `VideoGenerationProvider` / `MusicGenerationProvider` / `ThreeDAssetProvider` / `TTSProvider` / `SFXProvider` interfaces | M |
+| T-420 | `@stageflip/asset-cache` — extracted from captions; content-addressed store with `sha256(prompt + model + voice + params + seed)` | M |
+| T-421 | Schema `MediaElement.provenance` — `{ kind, provider?, prompt?, cacheKey?, seed?, voiceProvider?, voiceId?, clonedFromConsent? }` | M |
+| T-422 | `check-asset-licenses` CI gate — adapter-aware license whitelist enforcement | M |
+| T-423 | `tools/asset-generation/SKILL.md` — semantic tools bundle (canonical bundle #18 after `display-mode`) | M |
+| T-424 | `reference/asset-providers/SKILL.md` — auto-generated catalog with capability / license / cost / latency table | M |
+| T-425 | `AdapterDescriptor` capability-routing engine — agent-side filter + rank | M |
+
+### Phase β — Reference Adapters (Parallelizable, Each Adapter ≈ 3 Tasks)
+
+Order by value: TTS first (Whisper-cost zeroing), then 3D (frontier ThreeSceneClip pairing), then Video (highest agent value), then Music (clean OSS license), then SFX (smallest).
+
+| ID | Task | Size |
+|---|---|---|
+| T-426 | `@stageflip/tts-kokoro` — Apache 2.0, 82M params, sub-0.3 s latency, edge-deployable | M |
+| T-427 | `@stageflip/tts-fish-speech` — Apache 2.0, voice cloning, 8 languages, MOS 4.1 | M |
+| T-428 | `@stageflip/3d-tripo` — Tripo3D adapter; characters with clean quad topology + auto-rigging | M |
+| T-429 | `@stageflip/3d-meshy` — props + environment; ~1 min/asset; direct GLB export | M |
+| T-430 | `@stageflip/video-seedance` — Seedance 2.0 via fal API; 15 s 1080p with native audio + lip-sync | M |
+| T-431 | `@stageflip/video-runway` — Runway Gen-4 production-tier API | M |
+| T-432 | `@stageflip/music-acestep` — MIT, beats Suno v4.5, 5-min track in <10 s on RTX 3090 | M |
+| T-433 | `@stageflip/music-yue` — Apache 2.0, full-song; attribution required; monetizable | M |
+| T-434 | `@stageflip/sfx-stable-audio` — Stable Audio Open or similar | M |
+| T-435 | Adapter regression test suite — recorded mocks per vendor; CI runs against snapshots | M |
+
+### Phase γ — Cross-cutting integrations (Parallel with β)
+
+| ID | Task | Size |
+|---|---|---|
+| T-436 | TTS → captions bypass-Whisper integration — synthesized audio's word timestamps populate `CaptionSegment[]` directly; updates `concepts/captions/SKILL.md` | M |
+| T-437 | 3D → ThreeSceneClip GLB consumer — generated GLB cached and mounted by ThreeSceneClip with `seedSrc` refs | M |
+| T-438 | Optimistic placeholder UX — async generation → placeholder element rendered immediately → progressive replacement on completion | M |
+| T-439 | Provenance-aware export — display IAB exporter auto-marks AI-generated content per FTC + EU AI Act | M |
+| T-440 | Provenance-aware export — video exporter watermarks if tenant requests | M |
+| T-441 | Provenance-aware export — slide exporter exposes provenance via `provenance` slot | S |
+| T-442 | Streaming agent events — SSE / `ReadableStream` for long-latency generation; resolves the P7 carry-forward | M |
+| T-443 | Cost-budget surfacing in tool results — agent sees remaining budget; can retry with cheaper provider | M |
+| T-444 | Adapter sandbox model — third-party adapters run in isolated context; credential scoping per-adapter | L |
+
+### Phase δ — Lock-in
+
+| ID | Task | Size |
+|---|---|---|
+| T-445 | Per-modality usage telemetry — track adapter selection / latency / cost per tenant | M |
+| T-446 | Per-provider data-flow security audit — what leaves the perimeter; PII handling | L |
+| T-447 | GA readiness checklist | S |
+| T-448 | Documentation pass — `apps/docs` Astro coverage; tutorial flow | M |
+| T-449 | Phase 14 closeout handover at `docs/handover-phase14-complete.md` (per memory: lands at P15 start) | S |
+
+### Phase 14 dependency gates (hard)
+
+- **T-415 / T-416** → block all of T-417+ (ADR hard gate)
+- **T-418** (`adapters-core`) → all reference adapters (T-426 → T-434)
+- **T-419** (`asset-gen-contract`) → all reference adapters
+- **T-420** (`asset-cache`) → T-435, T-436, T-437
+- **T-426 + T-427** → T-436 (TTS↔captions integration)
+- **T-428 + T-429** → T-437 (3D↔ThreeSceneClip integration)
+- **T-422** (`check-asset-licenses`) → adapter PRs
+- **T-444** (sandbox) → security audit T-446 → GA T-447
+
+---
+
+## Phase 15 — Live Audience (Native Primitives + Vendor Bridges via Adapter Pattern)
+
+40 tasks. Native interactive audience-engagement primitives (live polls, Q&A, quizzes, word clouds, surveys, leaderboards, plus motion-native differentiators) for stageflip-slide and stageflip-display, with Slido / Mentimeter / Poll Everywhere bridges via the same ADR-006 provider seam from P14. Frozen-fallback exports across MP4 / PPTX / display via the `staticFallback` contract (ADR-005 §D2).
+
+**Strategic context**: Slido is a plugin; we render to all three products. Differentiators (Heatmap, ReactionStream, AudienceAiPrompt) exploit the motion+3D+frontier stack — capabilities Slido structurally cannot reach.
+
+**Hard gate**: T-450 / T-451 (the two ADRs) must merge before any code lands on T-452+. P14 α (T-415 → T-419) must merge first — P15 builds on the provider seam.
+
+### Phase α — Audience Foundation (Hard Gate)
+
+| ID | Task | Size |
+|---|---|---|
+| T-450 | ADR-008: Audience Backend — cites ADR-006; native + vendor adapter contract; real-time persistence model; rate limits; SLA target (1000 concurrent voters v1) | S |
+| T-451 | ADR-009: Live Audience Clip Family — the 9 v1 clips; `staticFallback` snapshot semantics; `AudienceProvenance` schema | S |
+| T-452 | `@stageflip/audience-contract` — `AudienceBackendProvider` interface extending `AdapterDescriptor` | M |
+| T-453 | Audience backend service — extends `apps/api` with WebSocket support + dedicated Firestore audience-results collection | L |
+| T-454 | `packages/runtimes/audience/` — extension of `interactive` runtime tier per ADR-003 §D1 | M |
+| T-455 | `check-audience-permissions` CI rule — every Live Audience clip declares `permissions: ['audience-network']` | S |
+| T-456 | Audience-join UX — QR + code modal in editor preview; participant landing page | M |
+| T-457 | `tools/audience-engagement/SKILL.md` — semantic tools bundle (canonical bundle #19) | M |
+| T-458 | Rate-limit / spam protection — per-IP + per-session caps; abuse-flagging | M |
+| T-459 | Result-export — CSV / JSON post-event analytics download | S |
+| T-460 | Schema `AudienceProvenance` type — `{ snapshotFrame, voterCountAtCapture, sessionId }` | S |
+
+### Phase β — Native clip family (9 v1 clips)
+
+| ID | Task | Size |
+|---|---|---|
+| T-461 | `LivePollClip` — multi-choice variant (live aggregating bars / pie + frozen snapshot) | M |
+| T-462 | `LivePollClip` — open-text variant | M |
+| T-463 | `LivePollClip` — rating (Likert) variant | M |
+| T-464 | `LiveQAClip` — submit + upvote + display (live feed + frozen top-N snapshot) | M |
+| T-465 | `LiveQuizClip` — competitive scoring (live + final-round snapshot) | M |
+| T-466 | `LeaderboardClip` — paired with quiz (live ranking ticker + final standings snapshot) | M |
+| T-467 | `WordCloudClip` — live aggregating word weights + cloud snapshot | M |
+| T-468 | `SurveyClip` — pre/post non-realtime aggregate dashboards | M |
+| T-469 | `HeatmapClip` (marquee differentiator #1) — interactive image / chart / 3D scene tap; spatial input Slido cannot reach; deterministic raster snapshot | L |
+| T-470 | `ReactionStreamClip` (marquee differentiator #2) — emoji particle storm via ShaderClip; pure motion-platform showcase; peak-density snapshot | L |
+| T-471 | `AudienceAiPromptClip` (marquee differentiator #3) — vote-prompt → P14 generation; cross-product synergy; resulting asset embedded statically | L |
+| T-472 | Static-fallback paths consolidated for all 9 v1 clips — frame-snapshot at export time | M |
+| T-473 | Quiz fairness — tie-breaking (time-bonus, Kahoot canon), late-joiner (locked at question N), disconnect/reconnect (resume at current question) | M |
+| T-474 | Audience-data persistence — Firestore audience-results collection with TTL + EU residency posture | M |
+| T-475 | Live aggregation latency tests — p50 < 200 ms, p95 < 500 ms voter-tap → screen | M |
+| T-476 | Cluster I parity fixtures (static-fallback paths only) | L |
+| T-477 | Audience-backend SLA load test — 1000 concurrent voters v1 target via K6 | M |
+
+### Phase γ — Vendor adapters
+
+| ID | Task | Size |
+|---|---|---|
+| T-478 | `@stageflip/audience-native` — reference impl for our own backend | M |
+| T-479 | `@stageflip/audience-slido` — Slido API → render via our presets (not via embed) | M |
+| T-480 | `@stageflip/audience-mentimeter` — Mentimeter API adapter | M |
+| T-481 | `@stageflip/audience-polleverywhere` — Poll Everywhere adapter | M |
+| T-482 | `@stageflip/audience-vevox` — Vevox adapter (parity coverage) | M |
+| T-483 | `@stageflip/audience-wooclap` — Wooclap adapter (parity coverage) | M |
+| T-484 | WebEmbed allowlist update for audience origins — applies the ADR-005 amendment landed in T-393 | S |
+| T-485 | Vendor adapter regression suite | M |
+
+### Phase δ — Cluster I + lock-in
+
+| ID | Task | Size |
+|---|---|---|
+| T-486 | Cluster I preset cluster (~6 presets) — `slido-classic-poll`, `mentimeter-bar-vote`, `kahoot-competitive`, `bbc-question-time`, `conference-qa-upvote`, `classroom-quiz` | L |
+| T-487 | Cluster I `SKILL.md` + `compose_*` semantic tools — `compose_live_poll`, `compose_audience_qa`, `compose_quiz_round`, `compose_word_cloud`, `compose_survey`, `compose_leaderboard`, `compose_heatmap`, `compose_reaction_stream`, `compose_audience_ai_prompt` | M |
+| T-488 | GA readiness + security review — auth flow, websocket abuse vectors, voice-clone integration if AudienceAiPromptClip uses TTS | L |
+| T-489 | Phase 15 closeout handover at `docs/handover-phase15-complete.md` (per memory: lands at P16 start) | S |
+
+### Phase 15 dependency gates (hard)
+
+- **T-415 / T-416** (P14 α ADRs) → P15 α (provider seam must exist first)
+- **T-450 / T-451** → block all of T-452+
+- **T-453** (audience backend service) → all live-mount paths
+- **T-470** (`ReactionStreamClip`) depends on **T-383** (`ShaderClip` from P13 γ)
+- **T-471** (`AudienceAiPromptClip`) depends on **T-430** + **T-432** (P14 video + music adapters)
+- **T-484** (WebEmbed allowlist) depends on **T-393** (P13 `WebEmbedClip` `liveMount`)
+- **T-488** (security review) → GA only; preview can ship behind flag
+
+---
+
+## Phase 16 — Bundles & Marketplace (Open-Source Path Optionality)
+
+65 tasks. Turns the existing skill-tree + adapter architecture into a marketplace of paid content. Strategic optionality: if StageFlip's source goes Apache 2.0 (BSL change date 2030 or earlier), bundle revenue replaces source-level moat alongside hosted service and enterprise features.
+
+**Strategic context**: Each bundle is a discrete unit of value (preset packs, cluster extensions, adapter packs, asset packs, theme packs, composition templates). All distribute through one mechanism. License-gated at runtime so OSS core + paid content coexist. Pairs with the hosted Cloud Run topology landed in T-231.
+
+**Hard gate**: T-490 / T-491 / T-492 (the three ADRs) must merge before any code lands on T-493+.
+
+### Phase α — Bundle Foundation (Hard Gate)
+
+| ID | Task | Size |
+|---|---|---|
+| T-490 | ADR-011: Bundle Format & License Runtime — manifest spec, signature scheme, license-claim format, version compatibility, license-runtime enforcement | M |
+| T-491 | ADR-012: First-party Pack Catalogue & Pricing Tiers — what we sell, pricing logic, free / paid / enterprise tier structure | M |
+| T-492 | ADR-013: Marketplace — decision on dedicated registry vs npm + scoped + auth | S |
+| T-493 | `skills/stageflip/concepts/bundles/SKILL.md` — bundle concept skill | S |
+| T-494 | `@stageflip/pack-format` — manifest spec + signature scheme + Zod validators | M |
+| T-495 | `@stageflip/pack-loader` — extends skill-tree loader to discover `~/.stageflip/packs/**` | L |
+| T-496 | License runtime in `@stageflip/engine` — refuses to instantiate paywall-locked clips when license absent or expired | M |
+| T-497 | `stageflip pack` CLI commands — `install` / `list` / `info` / `remove` / `verify` | L |
+| T-498 | Pack signing tooling — first-party signing key + verifier | M |
+| T-499 | `check-pack-integrity` CI gate — validates pack manifests, signatures, license claims, version compatibility | M |
+
+### Phase β — Publishing Tooling
+
+| ID | Task | Size |
+|---|---|---|
+| T-500 | Pack publishing CLI for third parties — `validate` / `sign` / `publish` | M |
+| T-501 | License-template generator — boilerplate per tier (commercial / attribution / non-commercial) | S |
+| T-502 | Pack version compatibility matrix — engine version ↔ pack-format-version table | M |
+| T-503 | Pack telemetry — install / activation / usage tracking; opt-out per ADR-001 license posture | M |
+| T-504 | Pack discovery API — for editor surface listings + recommendations | M |
+| T-505 | Trial / demo mode — time-limited pack activation; watermarked output | M |
+
+### Phase γ — First-party Launch Packs
+
+Six launch packs to seed the catalogue. Each is a separate npm package + ~5 tasks.
+
+| ID | Task | Size |
+|---|---|---|
+| T-506 | News Pro Pack — `@stageflip/pack-news-pro` extends Cluster A | M |
+| T-507 | News Pro Pack — Sky News register | M |
+| T-508 | News Pro Pack — ITV register | M |
+| T-509 | News Pro Pack — RAI register | M |
+| T-510 | News Pro Pack — Premium News Ticker preset + integration | M |
+| T-511 | Sports Networks Pack — `@stageflip/pack-sports-networks` extends Cluster B | M |
+| T-512 | Sports Networks Pack — NBA Pro register | M |
+| T-513 | Sports Networks Pack — NFL Pro register | M |
+| T-514 | Sports Networks Pack — MLB register | M |
+| T-515 | Sports Networks Pack — F1 Pro register + AR formations bundle integration | M |
+| T-516 | Creator Style Pack — `@stageflip/pack-creator-style` extends Cluster F | M |
+| T-517 | Creator Style Pack — MKBHD-pro register | M |
+| T-518 | Creator Style Pack — Vox-deluxe register | M |
+| T-519 | Creator Style Pack — Linus-Tech-Tips-pro register | M |
+| T-520 | Creator Style Pack — prestige-creator preset | S |
+| T-521 | Earnings & Investor Pack — `@stageflip/pack-finance` finance-vertical cluster | M |
+| T-522 | Earnings & Investor Pack — earnings-call composition templates | M |
+| T-523 | Earnings & Investor Pack — investor-deck composition templates | M |
+| T-524 | Earnings & Investor Pack — Bloomberg-pro adapter premium tier | M |
+| T-525 | Earnings & Investor Pack — finance-domain semantic-tool extensions | M |
+| T-526 | Wedding & Events Pack — `@stageflip/pack-wedding-events` vertical use-case | M |
+| T-527 | Wedding & Events Pack — theme variants (rustic / modern / classic) | M |
+| T-528 | Wedding & Events Pack — composition templates | M |
+| T-529 | Wedding & Events Pack — wedding-specific transitions + bumpers | M |
+| T-530 | Wedding & Events Pack — pre-licensed audio bed library | M |
+| T-531 | Frontier Effects Pack — `@stageflip/pack-frontier-fx` premium effects | M |
+| T-532 | Frontier Effects Pack — premium shaders bundle | L |
+| T-533 | Frontier Effects Pack — pre-licensed 3D asset library (commercial-OK) | L |
+| T-534 | Frontier Effects Pack — premium ReactionStream particle physics presets | M |
+| T-535 | Frontier Effects Pack — premium TitleSequence templates | L |
+
+### Phase δ — Marketplace + Lock-in
+
+| ID | Task | Size |
+|---|---|---|
+| T-536 | Marketplace — registry server (if running our own per ADR-013) | L |
+| T-537 | Marketplace — Stripe payment integration | L |
+| T-538 | Marketplace — pack browsing / search UI in `apps/docs` | L |
+| T-539 | Marketplace — npm-based path: auth token management + license-claim verification | M |
+| T-540 | Pack upgrade / migration tooling — engine version bumps + pack compatibility | M |
+| T-541 | Pack telemetry dashboard — first-party packs only initially | M |
+| T-542 | Per-tenant pack inventory in `apps/api` admin surface | M |
+| T-543 | Tier system (free / paid / enterprise) per ADR-012 | M |
+| T-544 | Trial-to-paid conversion flow + churn recovery | M |
+| T-545 | Refund / dispute handling | M |
+| T-546 | Pack search / discovery UX in editor — recommendations based on cluster usage | M |
+| T-547 | CLAUDE.md §5 update — skill tree explicitly includes installed packs | S |
+| T-548 | `check-skill-drift` extension — packs are loaded but tier-coverage gate is core-only | S |
+| T-549 | Per-bundle parity fixture validation — pack-shipped fixtures must pass our PSNR thresholds | M |
+| T-550 | GA readiness + commercial-terms legal review | L |
+| T-551 | Documentation + pack-author guide | M |
+| T-552 | Per-pack release process docs (semantic versioning, changelog format) | S |
+| T-553 | Phase 16 closeout handover at `docs/handover-phase16-complete.md` (per memory: lands at P17 start, or at first pack-extension PR if no P17) | S |
+| T-554 | Phase 16 ratification checkpoint | S |
+
+### Phase 16 dependency gates (hard)
+
+- **T-490 / T-491 / T-492** → block all of T-493+
+- **T-494** (`pack-format`) → T-495 (loader), T-498 (signing), T-499 (CI gate)
+- **T-495** (loader) → all first-party packs (T-506+)
+- **T-496** (license runtime) → T-543 (tier system) → T-544 (conversion)
+- **T-549** (parity validation) → first-party packs that ship parity fixtures (Frontier Effects + Sports Networks)
+- **T-550** (legal review) → marketplace launch (T-543, T-544)
+
 ---
 
 # PART C — Reference Material
@@ -970,6 +1232,7 @@ Phase 0 ──► Phase 1 ──► Phase 2 ──► Phase 3 ──┬──►
 
 ## C.10 Changelog
 
+- **v1.22** (2026-04-26): **Phases 14, 15, 16 scoped.** 140 new tasks (T-415 → T-554) added across three downstream phases. **Phase 14 — Asset Generation** (35 tasks, T-415 → T-449): authoring-time generation of video / music / 3D / TTS / SFX assets via a uniform Provider Seam Pattern (ADR-006 meta + ADR-007 asset-gen contract). 9 reference adapters in v1 (Kokoro / Fish Speech / Tripo / Meshy / Seedance 2.0 / Runway / ACE-Step / YuE / Stable Audio Open). New canonical tool bundle #18 (`asset-generation`); cross-cutting integrations include TTS↔captions bypass-Whisper path (eliminates Whisper cost on synthesized audio) and 3D↔ThreeSceneClip GLB consumer. **Phase 15 — Live Audience** (40 tasks, T-450 → T-489): native interactive audience-engagement primitives — 6 standard clips (LivePoll / LiveQA / LiveQuiz / WordCloud / Survey / Leaderboard) + 3 marquee motion-native differentiators (Heatmap / ReactionStream / AudienceAiPrompt) Slido cannot structurally reach; vendor adapter bridges (Slido / Mentimeter / Poll Everywhere / Vevox / Wooclap) via the same ADR-006 seam; Cluster I preset cluster (~6 presets). New canonical tool bundle #19 (`audience-engagement`). Audience backend service extends `apps/api` with WebSockets + Firestore audience-results collection. **Phase 16 — Bundles & Marketplace** (65 tasks, T-490 → T-554): OSS-path optionality — turns the skill-tree + adapter architecture into a marketplace of paid content (preset packs / cluster extensions / adapter packs / asset packs / theme packs / composition templates). Six first-party launch packs (News Pro / Sports Networks / Creator Style / Earnings & Investor / Wedding & Events / Frontier Effects). License runtime gates paywall-locked clips at instantiation; OSS core + paid content coexist. **Provider Seam Pattern (ADR-006)** is the meta-ADR codifying the adapter pattern across all of P14, P15, P16, retroactively cross-referencing the existing `@stageflip/runtimes/contract`, `TranscriptionProvider`, storage seams as canonical examples. Total plan scope: 530+ tasks across 16 phases. **Plan-only changes; zero clip / runtime / package code in this PR.** P13–P16 are structurally parallel; P11 retains capacity priority. ADR ratification + per-phase implementation are separate PRs following the standard three-agent workflow.
 - **v1.21** (2026-04-26): **Phase 11 mid-session amendment.** Three structural additions surfaced by the Phase 11 mid handover (`docs/handover-phase11-mid.md`): (1) **`T-242d [new]`** added to the §Phase 11 table — `<a:arcTo>` support in the cust-geom parser plus the `preserveOrder: true` workspace XML-parser refactor it depends on; lands as two PRs (preserveOrder structural diff first, then arcTo on top). Closes the last `LF-PPTX-CUSTOM-GEOMETRY` emission case. (2) **`T-247-loss-flags [new]`** added — extracts `LossFlag` + `LossFlagCode` to a new `@stageflip/loss-flags` package so `editor-shell` can consume them without depending on `@stageflip/import-pptx`. Prerequisite for T-248. (3) `T-248` row text updated to reference the new dependency. T-243b/c rows already declared `LF-PPTX-UNRESOLVED-VIDEO` / `LF-PPTX-UNRESOLVED-FONT` codes in v1.20 — no further plan change needed for that decision. No code, fixture, or skill changes in this revision.
 - **v1.20** (2026-04-28): **Phase 11 progress + T-243 split.** T-240 (parser), T-241a (group-transform accumulator), T-243 (image asset extraction), and T-243-storage-adapter (Firebase wiring) merged. T-243 narrowed to images during implementation and split out: `T-243a` (images, ✅ in PR #172), `T-243b` (videos, pending — needs `<p:videoFile>` parsing in T-240), `T-243c` (fonts, pending — needs `<p:embeddedFont>` parsing). New row `T-243-storage-adapter` (✅ in PR #173) records the small follow-up that wired `@stageflip/storage-firebase`'s concrete `AssetStorage`. Plan now matches what landed on `main`. Spec docs at `docs/tasks/T-240.md`, `T-241a.md`, `T-243.md`.
 - **v1.19** (2026-04-25): **Phase 10 ratified at P11 start.** Plan banner on the Phase 10 section flipped from "All 12 tasks merged" to "Ratified 2026-04-25". Carrier PR is T-240 (`@stageflip/import-pptx`) — the first P11 PR — per the ratification protocol in `docs/handover-phase10-complete.md` §6 + memory:phase_closeout_timing. T-240 also adds a per-task spec at `docs/tasks/T-240.md` (a new directory) to flesh out an L-sized importer task with acceptance criteria, type-layer architecture, and out-of-scope sibling-task delineations.
@@ -995,4 +1258,4 @@ Phase 0 ──► Phase 1 ──► Phase 2 ──► Phase 3 ──┬──►
 
 ---
 
-**End of plan v1.21.** Start at T-001.
+**End of plan v1.22.** Start at T-001.
