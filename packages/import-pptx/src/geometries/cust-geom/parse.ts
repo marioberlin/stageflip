@@ -1,16 +1,18 @@
 // packages/import-pptx/src/geometries/cust-geom/parse.ts
 // Translate OOXML `<a:custGeom>` payloads into SVG path-data strings.
-// Coverage: <a:moveTo>, <a:lnTo>, <a:cubicBezTo>, <a:close>, multiple
-// <a:path> entries. <a:arcTo> and <a:quadBezTo> are deferred (loss-flag
-// at the caller); <a:custGeom> with only the supported commands round-
-// trips deterministically.
+// Coverage: <a:moveTo>, <a:lnTo>, <a:cubicBezTo>, <a:quadBezTo>, <a:close>,
+// multiple <a:path> entries. <a:arcTo> is deferred — its SVG translation
+// requires knowing the current pen position before the arc, which the
+// current walk-by-kind traversal can't reliably provide; lifting that
+// limitation requires switching the shared XML parser to preserveOrder:
+// true (workspace-wide refactor; tracked separately).
 //
 // Derived from the public OOXML spec (ECMA-376 §20.1.9.8 a:custGeom and
 // neighbours). Original implementation; no copied prior art.
 
 import { fmt } from '../format.js';
 
-const COMMAND_KEYS = ['a:moveTo', 'a:lnTo', 'a:cubicBezTo', 'a:close'] as const;
+const COMMAND_KEYS = ['a:moveTo', 'a:lnTo', 'a:cubicBezTo', 'a:quadBezTo', 'a:close'] as const;
 type CommandKey = (typeof COMMAND_KEYS)[number];
 
 /** Parsed-XML node shape (from fast-xml-parser; same convention as opc.ts). */
@@ -79,6 +81,18 @@ function pathToSvg(path: XmlNode, box: { w: number; h: number } | undefined): st
         out.push(
           `C ${fmt(c1.x * scale.x)} ${fmt(c1.y * scale.y)} ` +
             `${fmt(c2.x * scale.x)} ${fmt(c2.y * scale.y)} ` +
+            `${fmt(end.x * scale.x)} ${fmt(end.y * scale.y)}`,
+        );
+        break;
+      }
+      case 'a:quadBezTo': {
+        const pts = readPoints(child.node, 2);
+        if (pts === undefined) continue;
+        const c = pts[0];
+        const end = pts[1];
+        if (c === undefined || end === undefined) continue;
+        out.push(
+          `Q ${fmt(c.x * scale.x)} ${fmt(c.y * scale.y)} ` +
             `${fmt(end.x * scale.x)} ${fmt(end.y * scale.y)}`,
         );
         break;

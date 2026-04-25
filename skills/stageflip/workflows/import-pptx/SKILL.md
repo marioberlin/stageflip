@@ -3,7 +3,7 @@ title: Workflow — Import PPTX
 id: skills/stageflip/workflows/import-pptx
 tier: workflow
 status: substantive
-last_updated: 2026-04-30
+last_updated: 2026-05-01
 owner_task: T-250
 related:
   - skills/stageflip/concepts/loss-flags
@@ -42,10 +42,13 @@ currently ignored — the parser emits `LF-PPTX-PRESET-ADJUSTMENT-IGNORED`
 preset has tuning we didn't apply".
 
 `<a:custGeom>` with the supported commands (`<a:moveTo>`, `<a:lnTo>`,
-`<a:cubicBezTo>`, `<a:close>`, multi-`<a:path>`) translates to SVG `d` via
-`custGeomToSvgPath`. `<a:arcTo>` and `<a:quadBezTo>` are deferred — payloads
-using them fall back to `unsupported-shape` (T-245 rasterization picks them
-up).
+`<a:cubicBezTo>`, `<a:quadBezTo>`, `<a:close>`, multi-`<a:path>`) translates
+to SVG `d` via `custGeomToSvgPath`. `<a:arcTo>` is the remaining unsupported
+command — its SVG translation requires the current pen position, which the
+walk-by-kind traversal can't reliably provide; lifting that limitation
+needs a workspace-wide switch to `preserveOrder: true` in the shared XML
+parser. Payloads using `<a:arcTo>` fall back to `unsupported-shape` (T-245
+rasterization picks them up).
 
 ```ts
 import { geometryFor, custGeomToSvgPath, COVERED_PRESETS } from '@stageflip/import-pptx';
