@@ -1,4 +1,24 @@
 // packages/import-pptx/src/index.ts
-// import-pptx — stub entry. Populated by later tasks in docs/implementation-plan.md.
+// @stageflip/import-pptx — public surface. T-240 ships only the structural
+// parser; T-241a (group transforms), T-242 (geometries), T-243 (assets), and
+// T-245 (rasterization) progressively narrow parser-side types into schema
+// types.
 
-export {};
+export { parsePptx } from './parsePptx.js';
+export { emitLossFlag } from './loss-flags.js';
+export { PptxParseError } from './types.js';
+export type {
+  CanonicalSlideTree,
+  LossFlag,
+  LossFlagCategory,
+  LossFlagCode,
+  LossFlagSeverity,
+  ParsedAssetRef,
+  ParsedElement,
+  ParsedGroupElement,
+  ParsedImageElement,
+  ParsedSlide,
+  PptxParseErrorCode,
+  UnsupportedShapeElement,
+} from './types.js';
+export type { EmitLossFlagInput } from './loss-flags.js';

@@ -3,7 +3,7 @@ title: Loss Flags
 id: skills/stageflip/concepts/loss-flags
 tier: concept
 status: substantive
-last_updated: 2026-04-20
+last_updated: 2026-04-25
 owner_task: T-248
 related:
   - skills/stageflip/workflows/import-pptx/SKILL.md
@@ -66,11 +66,27 @@ Flag IDs are content-hash-derived (`sha256(source + category + location +
 originalSnippet).slice(0, 12)`) so re-importing the same file produces the
 same flag set.
 
-## Current state (Phase 1 exit)
+## Current state (Phase 11 — T-240 in)
 
-Not yet implemented. Phase 11 (T-248 reporter; T-240..T-247 importers) wires
-the LossFlag type and the editor/export UX. Phase 1's schema does not yet
-carry flags on `Document` — they are produced at import time.
+`@stageflip/import-pptx` (T-240) ships the first concrete `LossFlag`
+implementation. It carries an extra `code: LossFlagCode` field on top of the
+shape above so the editor and export manifest can filter by stable cause
+without parsing `message`. Sibling importers (T-244 Google Slides, T-247
+Hyperframes HTML) follow the same pattern with their own `LF-<SRC>-*` enums.
+
+PPTX codes (defined in `@stageflip/import-pptx`):
+
+- `LF-PPTX-CUSTOM-GEOMETRY` — `<a:custGeom>` shape → resolved by T-242 / T-245.
+- `LF-PPTX-PRESET-GEOMETRY` — preset shape outside the schema-mapped subset → T-242.
+- `LF-PPTX-UNRESOLVED-ASSET` — picture bytes deferred → T-243.
+- `LF-PPTX-NESTED-GROUP-TRANSFORM` — group transform not accumulated → T-241a.
+- `LF-PPTX-UNSUPPORTED-ELEMENT` — chart / OLE / connection placeholders → T-247 / T-248.
+- `LF-PPTX-UNSUPPORTED-FILL` — gradients / patterns → T-249.
+- `LF-PPTX-NOTES-DROPPED` — speaker notes → T-249 / T-250.
+
+T-248 picks up the editor/export reporter UX. The schema does not yet carry
+flags on `Document` — they are produced at import time and surfaced
+out-of-band by the reporter.
 
 ## Related
 
