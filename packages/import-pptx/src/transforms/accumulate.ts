@@ -146,6 +146,15 @@ function walkGroup(group: ParsedGroupElement, parentFrame: GroupFrame): ParsedGr
  * in. Composition order: parent's transform applies to the group's own offset
  * (giving the group's world placement), then the group's chOff/chExt define
  * the child-local coordinate system inside that.
+ *
+ * Known limitation — nested rotation: when both `parent.rotation` and
+ * `group.transform.rotation` are non-zero, the math here is approximate.
+ * Rotation around different centers does not generally compose into a single
+ * rotation around the cumulative center; doing it correctly requires affine
+ * matrix composition, which is out of scope for T-241a (M). The single-level
+ * rotation case (AC #5) and the pure-translation nested case (AC #6) are
+ * exact. Real PPTX content rarely nests rotated groups; if it surfaces, fix
+ * by switching this whole module to 2x3 affine matrices.
  */
 function composeFrame(parent: GroupFrame, group: ParsedGroupElement): GroupFrame {
   // Group's world offset = parent applied to group.transform.{x,y}.

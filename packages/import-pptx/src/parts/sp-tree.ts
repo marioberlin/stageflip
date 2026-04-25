@@ -1,7 +1,7 @@
 // packages/import-pptx/src/parts/sp-tree.ts
 // Walks `<p:spTree>` children and dispatches each to the right element
-// converter. Group nodes recurse via this same walker — note that group
-// transforms are deliberately NOT accumulated into descendants (T-241a).
+// converter. Group transforms are not accumulated here; the post-walk pass
+// `accumulateGroupTransforms` (T-241a) folds them into descendants.
 
 import { parsePicture } from '../elements/picture.js';
 import { parseShape } from '../elements/shape.js';
@@ -87,17 +87,17 @@ function parseGroup(
   const chOff = pickRecord(xfrm, 'a:chOff');
   const chExt = pickRecord(xfrm, 'a:chExt');
   const groupOrigin = {
-    x: emuToPx(pickAttrNumberOn(chOff, 'x') ?? 0),
-    y: emuToPx(pickAttrNumberOn(chOff, 'y') ?? 0),
+    x: emuToPx(pickAttrNumber(chOff, 'x') ?? 0),
+    y: emuToPx(pickAttrNumber(chOff, 'y') ?? 0),
   };
   const groupExtent = {
     width:
       chExt !== undefined
-        ? emuToPx(pickAttrNumberOn(chExt, 'cx') ?? 0) || transform.width
+        ? emuToPx(pickAttrNumber(chExt, 'cx') ?? 0) || transform.width
         : transform.width,
     height:
       chExt !== undefined
-        ? emuToPx(pickAttrNumberOn(chExt, 'cy') ?? 0) || transform.height
+        ? emuToPx(pickAttrNumber(chExt, 'cy') ?? 0) || transform.height
         : transform.height,
   };
 
@@ -116,17 +116,6 @@ function parseGroup(
 
   const element: ParsedGroupElement = name === undefined ? base : { ...base, name };
   return { element, flags: inner.flags };
-}
-
-function pickAttrNumberOn(
-  node: Record<string, unknown> | undefined,
-  name: string,
-): number | undefined {
-  if (node === undefined) return undefined;
-  const v = node[`@_${name}`];
-  if (typeof v !== 'string') return undefined;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : undefined;
 }
 
 /** Read `<a:xfrm><a:off>/<a:ext>` into a schema transform (in pixels). */
