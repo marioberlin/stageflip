@@ -3,7 +3,7 @@ title: Workflow — Import PPTX
 id: skills/stageflip/workflows/import-pptx
 tier: workflow
 status: substantive
-last_updated: 2026-04-28
+last_updated: 2026-04-29
 owner_task: T-250
 related:
   - skills/stageflip/concepts/loss-flags
@@ -15,6 +15,31 @@ related:
 T-240 ships the structural parser (`@stageflip/import-pptx`). Subsequent
 tasks fill the rest of the import surface; sections below mark which task
 owns each gap.
+
+## Geometry coverage (T-242)
+
+T-240 maps a curated subset of `<a:prstGeom prst="X">` values to schema's
+structural `ShapeKind` (rect, ellipse, polygon, star, line). T-242 grows
+coverage to additional presets via `'custom-path'` with a generated SVG `d`
+attribute. T-242a (in this PR) ships infra + 6 representative presets across
+the six families (rightArrow, wedgeRectCallout, ribbon, parallelogram,
+leftBracket, cloud); T-242b adds the remaining 30 in spec-listed families.
+
+`<a:custGeom>` with the supported commands (`<a:moveTo>`, `<a:lnTo>`,
+`<a:cubicBezTo>`, `<a:close>`, multi-`<a:path>`) translates to SVG `d` via
+`custGeomToSvgPath`. `<a:arcTo>` and `<a:quadBezTo>` are deferred — payloads
+using them fall back to `unsupported-shape` (T-245 rasterization picks them
+up).
+
+```ts
+import { geometryFor, custGeomToSvgPath, COVERED_PRESETS } from '@stageflip/import-pptx';
+
+const path = geometryFor('rightArrow', { w: 200, h: 100 });
+// → 'M 0 25 L 100 25 L 100 0 L 200 50 L 100 100 L 100 75 L 0 75 Z'
+```
+
+Adjustable handles (`<a:avLst>`) honored: `roundRect.adj1` (corner radius)
+in T-242b. Other adjustments emit `LF-PPTX-PRESET-ADJUSTMENT-IGNORED` (info).
 
 ## Image asset extraction (T-243)
 
@@ -73,8 +98,9 @@ Loss flags (`skills/stageflip/concepts/loss-flags`) are emitted at every
 unsupported branch. The PPTX-specific `code` enum lives in
 `@stageflip/import-pptx`:
 
-- `LF-PPTX-CUSTOM-GEOMETRY` — `<a:custGeom>` → `unsupported-shape`. Resolved by T-242 / T-245.
-- `LF-PPTX-PRESET-GEOMETRY` — preset shape outside the schema-mapped subset. Resolved by T-242.
+- `LF-PPTX-CUSTOM-GEOMETRY` — `<a:custGeom>` containing `<a:arcTo>` / `<a:quadBezTo>` (the unsupported commands). Cleared once T-242b extends `cust-geom/parse.ts` or T-245 rasterizes.
+- `LF-PPTX-PRESET-GEOMETRY` — preset shape outside the T-242 coverage set. Cleared as T-242b adds presets.
+- `LF-PPTX-PRESET-ADJUSTMENT-IGNORED` — `<a:avLst>` adjustment was present but not honored (T-242a uses defaults).
 - `LF-PPTX-UNRESOLVED-ASSET` — picture bytes pending resolution by `resolveAssets` (T-243). Cleared once `resolveAssets` runs.
 - `LF-PPTX-MISSING-ASSET-BYTES` — `error` severity. Picture rel pointed at a path not present in the ZIP. Stays after `resolveAssets`; surfaces an actual import problem.
 - `LF-PPTX-UNSUPPORTED-ELEMENT` — connection / OLE / chart placeholders. Resolved by T-247 / T-248.

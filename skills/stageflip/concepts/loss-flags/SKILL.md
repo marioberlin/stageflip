@@ -3,7 +3,7 @@ title: Loss Flags
 id: skills/stageflip/concepts/loss-flags
 tier: concept
 status: substantive
-last_updated: 2026-04-27
+last_updated: 2026-04-29
 owner_task: T-248
 related:
   - skills/stageflip/workflows/import-pptx/SKILL.md
@@ -76,8 +76,9 @@ Hyperframes HTML) follow the same pattern with their own `LF-<SRC>-*` enums.
 
 PPTX codes (defined in `@stageflip/import-pptx`):
 
-- `LF-PPTX-CUSTOM-GEOMETRY` — `<a:custGeom>` shape → resolved by T-242 / T-245.
-- `LF-PPTX-PRESET-GEOMETRY` — preset shape outside the schema-mapped subset → T-242.
+- `LF-PPTX-CUSTOM-GEOMETRY` — `<a:custGeom>` with unsupported commands (`<a:arcTo>` / `<a:quadBezTo>`); cleared by T-242b / T-245.
+- `LF-PPTX-PRESET-GEOMETRY` — preset shape outside the T-242 coverage set; cleared incrementally as T-242b lands.
+- `LF-PPTX-PRESET-ADJUSTMENT-IGNORED` — preset has an `<a:avLst>` adjustment T-242a doesn't honor (defaults used instead). Info severity.
 - `LF-PPTX-UNRESOLVED-ASSET` — picture bytes pending resolution. Cleared by T-243's `resolveAssets` post-walk pass.
 - `LF-PPTX-MISSING-ASSET-BYTES` — `error` severity. T-243 emits this when a picture rel points at a path not present in the PPTX ZIP.
 - `LF-PPTX-UNSUPPORTED-ELEMENT` — chart / OLE / connection placeholders → T-247 / T-248.
