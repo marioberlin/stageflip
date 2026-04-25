@@ -4,11 +4,7 @@
 
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import type {
-  CanonicalSlideTree,
-  ParsedImageElement,
-  ParsedSlide,
-} from '../types.js';
+import type { CanonicalSlideTree, ParsedImageElement, ParsedSlide } from '../types.js';
 import type { ZipEntries } from '../zip.js';
 import { resolveAssets } from './resolve.js';
 import { AssetResolutionError, type AssetStorage } from './types.js';
@@ -260,7 +256,7 @@ describe('resolveAssets — T-243 acceptance', () => {
   });
 
   // AC #2 (extra) — content-hash hint matches sha256 of bytes.
-  it('passes the bytes\' sha256 as contentHash to storage', async () => {
+  it("passes the bytes' sha256 as contentHash to storage", async () => {
     const tree = singleImageTree({ oocxmlPath: 'ppt/media/image1.png' });
     const entries: ZipEntries = { 'ppt/media/image1.png': BYTES_B };
     const storage = recordingStorage();
@@ -322,7 +318,11 @@ describe('resolveAssets — T-243 acceptance', () => {
           code: 'LF-PPTX-UNRESOLVED-ASSET',
           severity: 'info',
           category: 'media',
-          location: { slideId: 'slide_1', elementId: 'pptx_img1', oocxmlPath: 'ppt/media/image1.png' },
+          location: {
+            slideId: 'slide_1',
+            elementId: 'pptx_img1',
+            oocxmlPath: 'ppt/media/image1.png',
+          },
           message: 'image bytes deferred to T-243',
         },
       ],
