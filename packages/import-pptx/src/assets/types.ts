@@ -20,15 +20,14 @@ export interface AssetStorage {
 }
 
 /** Codes carried by `AssetResolutionError`. */
-export type AssetResolutionErrorCode = 'STORAGE_UPLOAD_FAILED' | 'BROKEN_REL';
+export type AssetResolutionErrorCode = 'STORAGE_UPLOAD_FAILED';
 
 /**
  * Typed error thrown by `resolveAssets`. Failures inside the storage adapter
  * (network, permission denied, quota) bubble up as `STORAGE_UPLOAD_FAILED`
- * with the original error attached as `cause`. `BROKEN_REL` is reserved for
- * the rare hard-fail case where a ZIP entry can't even be read; the common
- * "rel target not in entries" case emits `LF-PPTX-MISSING-ASSET-BYTES`
- * instead and does not throw.
+ * with the original error attached as `cause`. The "rel target not in
+ * entries" case is a flag (`LF-PPTX-MISSING-ASSET-BYTES`) rather than a
+ * throw, so the resolver only has one error code today.
  */
 export class AssetResolutionError extends Error {
   override readonly name = 'AssetResolutionError';

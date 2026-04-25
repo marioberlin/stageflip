@@ -303,6 +303,41 @@ describe('resolveAssets — T-243 acceptance', () => {
     expect(storage.records.map((r) => r.contentType).sort()).toEqual(['image/jpeg', 'image/png']);
   });
 
+  // Bonus — non-image, non-group elements (text, shape) pass through unchanged.
+  it('leaves non-image, non-group elements unchanged', async () => {
+    const tree = singleImageTree({ oocxmlPath: 'ppt/media/image1.png' });
+    const slide = tree.slides[0];
+    if (slide === undefined) throw new Error('seed slide missing');
+    slide.elements.push(
+      {
+        id: 'pptx_text1',
+        transform: { x: 0, y: 0, width: 100, height: 50, rotation: 0, opacity: 1 },
+        visible: true,
+        locked: false,
+        animations: [],
+        type: 'text',
+        text: 'hello',
+        align: 'left',
+      },
+      {
+        id: 'pptx_shape1',
+        transform: { x: 0, y: 0, width: 50, height: 50, rotation: 0, opacity: 1 },
+        visible: true,
+        locked: false,
+        animations: [],
+        type: 'shape',
+        shape: 'rect',
+      },
+    );
+
+    const entries: ZipEntries = { 'ppt/media/image1.png': BYTES_A };
+    const out = await resolveAssets(tree, entries, recordingStorage());
+
+    const els = out.slides[0]?.elements ?? [];
+    expect(els[1]).toEqual(slide.elements[1]); // text passthrough
+    expect(els[2]).toEqual(slide.elements[2]); // shape passthrough
+  });
+
   // Bonus — layouts and masters are walked.
   it('walks layouts and masters in addition to slides', async () => {
     const baseSlide = singleImageTree({ oocxmlPath: 'ppt/media/image1.png' }).slides[0];
