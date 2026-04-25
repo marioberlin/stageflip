@@ -1,4 +1,4 @@
-# StageFlip — Implementation Plan v1.18
+# StageFlip — Implementation Plan v1.21
 
 **Audience**: AI coding agents executing autonomously; human product owners ratifying at phase boundaries.
 **Scope**: 390+ tasks across 13 phases, from empty repo to premium motion library + frontier runtime.
@@ -524,6 +524,7 @@ phase. Renumbered / carried as T-137 / T-138 in Phase 6.
 | T-240 | `@stageflip/import-pptx` — ZIP + PresentationML parser | L |
 | **T-241a [new]** | **PPTX nested group transform accumulator** — walk group tree accumulating transforms; apply to leaf children. #1 source of OOXML parse failures | M |
 | T-242 | 50+ preset geometries + custom SVG paths | L |
+| **T-242d [new]** | **`<a:custGeom>` `<a:arcTo>` support + `preserveOrder: true` parser refactor** — workspace-wide XML parser flips to `preserveOrder: true` (own PR, structural-only diff); follow-up adds `<a:arcTo>` to `cust-geom/parse.ts` (computes the elliptical-arc endpoint per ECMA-376 §20.1.9.3, emits SVG `A` segments). Closes the last `LF-PPTX-CUSTOM-GEOMETRY` emission case | M |
 | **T-243a [split]** | **PPTX image asset extraction** — `resolveAssets` resolves `<p:pic>` refs through `AssetStorage`; content-hash dedup; `LF-PPTX-MISSING-ASSET-BYTES` for broken rels | M |
 | **T-243-storage-adapter [new]** | **Firebase `AssetStorage` adapter** in `@stageflip/storage-firebase` — wraps a Firebase Admin Storage bucket; content-addressed paths | S |
 | **T-243b [new]** | **PPTX video asset extraction** — `<p:videoFile>` parsing in T-240 + bytes resolution; new `LF-PPTX-UNRESOLVED-VIDEO` code | M |
@@ -532,7 +533,8 @@ phase. Renumbered / carried as T-137 / T-138 in Phase 6.
 | T-245 | Shape rasterization (crop from thumbnails for unsupported shapes) | M |
 | T-246 | AI-QC loop (Gemini multimodal convergence) | L |
 | T-247 | `@stageflip/import-hyperframes-html` — parse data-* → canonical; reverse direction too | M |
-| T-248 | Loss-flag reporter — every import emits flags; editor surfaces UI | M |
+| **T-247-loss-flags [new]** | **Extract `LossFlag` to `@stageflip/loss-flags`** — currently lives in `@stageflip/import-pptx`; `editor-shell` cannot depend on importers. New package owns the canonical type + `LossFlagCode` union. `import-pptx` re-imports. Prereq for T-248 | S |
+| T-248 | Loss-flag reporter — every import emits flags; editor surfaces UI. Depends on `@stageflip/loss-flags` (T-247-loss-flags) | M |
 | T-249 | `@stageflip/design-system` — 8-step theme learning pipeline | L |
 | T-250 | `skills/stageflip/workflows/import-*/SKILL.md` | M |
 
@@ -968,6 +970,7 @@ Phase 0 ──► Phase 1 ──► Phase 2 ──► Phase 3 ──┬──►
 
 ## C.10 Changelog
 
+- **v1.21** (2026-04-26): **Phase 11 mid-session amendment.** Three structural additions surfaced by the Phase 11 mid handover (`docs/handover-phase11-mid.md`): (1) **`T-242d [new]`** added to the §Phase 11 table — `<a:arcTo>` support in the cust-geom parser plus the `preserveOrder: true` workspace XML-parser refactor it depends on; lands as two PRs (preserveOrder structural diff first, then arcTo on top). Closes the last `LF-PPTX-CUSTOM-GEOMETRY` emission case. (2) **`T-247-loss-flags [new]`** added — extracts `LossFlag` + `LossFlagCode` to a new `@stageflip/loss-flags` package so `editor-shell` can consume them without depending on `@stageflip/import-pptx`. Prerequisite for T-248. (3) `T-248` row text updated to reference the new dependency. T-243b/c rows already declared `LF-PPTX-UNRESOLVED-VIDEO` / `LF-PPTX-UNRESOLVED-FONT` codes in v1.20 — no further plan change needed for that decision. No code, fixture, or skill changes in this revision.
 - **v1.20** (2026-04-28): **Phase 11 progress + T-243 split.** T-240 (parser), T-241a (group-transform accumulator), T-243 (image asset extraction), and T-243-storage-adapter (Firebase wiring) merged. T-243 narrowed to images during implementation and split out: `T-243a` (images, ✅ in PR #172), `T-243b` (videos, pending — needs `<p:videoFile>` parsing in T-240), `T-243c` (fonts, pending — needs `<p:embeddedFont>` parsing). New row `T-243-storage-adapter` (✅ in PR #173) records the small follow-up that wired `@stageflip/storage-firebase`'s concrete `AssetStorage`. Plan now matches what landed on `main`. Spec docs at `docs/tasks/T-240.md`, `T-241a.md`, `T-243.md`.
 - **v1.19** (2026-04-25): **Phase 10 ratified at P11 start.** Plan banner on the Phase 10 section flipped from "All 12 tasks merged" to "Ratified 2026-04-25". Carrier PR is T-240 (`@stageflip/import-pptx`) — the first P11 PR — per the ratification protocol in `docs/handover-phase10-complete.md` §6 + memory:phase_closeout_timing. T-240 also adds a per-task spec at `docs/tasks/T-240.md` (a new directory) to flesh out an L-sized importer task with acceptance criteria, type-layer architecture, and out-of-scope sibling-task delineations.
 - **v1.18** (2026-04-25): **Phase 13 ADRs ratified.** ADR-003 (Interactive Runtime Tier), ADR-004 (Preset System), ADR-005 (Frontier Clip Catalogue) all ratified by product owner 2026-04-25; product-owner sign-off recorded on each. Engineering signoffs deferred to their respective implementation tasks (T-304 / T-308 for ADR-004; T-306 / T-309 for ADR-003; T-383 → T-401 for ADR-005). Security review (T-403) gates ADR-005 GA promotion only; preview enablement is unblocked. Hard-gate cleared — α primitives may proceed once the ADR PRs land on `main`. **ESPN BottomLine added** as `espn-bottomline-flipper` preset under Cluster B (newsTicker clip kind, T-339a), bringing cluster B to 9 presets and total to 50 (closing the v1.17 49-vs-50 gap). **Phase 10 (Skills + MCP + Distribution) closeout** at `docs/handover-phase10-complete.md`; all 12 in-scope tasks (T-220 → T-231) merged on `main` at `e40ee8c`. Phase 11 ratification of Phase 10 pending per CLAUDE.md §2 + memory:phase_closeout_timing. Phase 13 marked as structurally parallel but Phase 11 takes capacity priority — added inline comment in the Phase 13 section header to prevent P11 starvation.
@@ -992,4 +995,4 @@ Phase 0 ──► Phase 1 ──► Phase 2 ──► Phase 3 ──┬──►
 
 ---
 
-**End of plan v1.20.** Start at T-001.
+**End of plan v1.21.** Start at T-001.
