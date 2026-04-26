@@ -163,7 +163,7 @@ exports `emitLossFlag` as a thin PPTX-defaulted wrapper that auto-fills
 | T-243c | Font asset extraction — `<p:embeddedFont>` not yet parsed. |
 | T-245 | Shape rasterization fallback (crop from thumbnails) for unsupported shapes. |
 | T-246 | AI-QC loop (Gemini multimodal convergence). |
-| T-248 | Loss-flag reporter UI surface (editor panel + manifest). |
+| T-248 | Loss-flag reporter UI surface in `apps/stageflip-slide` ships (status-bar badge + modal); see `skills/stageflip/concepts/loss-flags/SKILL.md` §"Reporter UI (T-248)". Wiring `parsePptx` → `importLossFlagsAtom` is a follow-up task. |
 | T-249 | Theme learning — fold master/layout inheritance into the schema's `theme`. |
 | T-250 | This skill plus the other `import-*` skills get substantive content. |
 

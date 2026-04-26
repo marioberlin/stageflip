@@ -1,14 +1,16 @@
 // apps/stageflip-slide/src/components/status-bar/status-bar.tsx
-// Bottom status bar (T-129): slide count + total element count.
+// Bottom status bar (T-129): slide count + total element count + import-
+// diagnostics badge (T-248).
 
 /**
  * Thin read-only strip that reports document-wide counts. Reads live
  * state via `useDocument()`; no mutations. Non-slide-mode documents and
  * unhydrated state resolve to zero so the bar never crashes on first paint.
  *
- * Future additions (deferred): import-diagnostics badge, save-state
- * indicator, connection status, font-preload progress. Each gets its
- * own slot to avoid re-layout churn.
+ * Shipped slots: slide count, element count, import-diagnostics badge
+ * (T-248 — opens the loss-flag reporter modal). Future additions
+ * (deferred): save-state indicator, connection status, font-preload
+ * progress. Each gets its own slot to avoid re-layout churn.
  */
 
 'use client';
@@ -16,6 +18,7 @@
 import { t, useDocument } from '@stageflip/editor-shell';
 import type { Document } from '@stageflip/schema';
 import type { CSSProperties, ReactElement } from 'react';
+import { LossFlagBadge } from './loss-flag-badge';
 
 export function StatusBar(): ReactElement {
   const { document } = useDocument();
@@ -29,6 +32,7 @@ export function StatusBar(): ReactElement {
       <span data-testid="status-element-count" style={cellStyle}>
         {elementCount} {t('status.elements')}
       </span>
+      <LossFlagBadge />
     </footer>
   );
 }

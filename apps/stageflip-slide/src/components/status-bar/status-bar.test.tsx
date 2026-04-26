@@ -1,8 +1,15 @@
 // apps/stageflip-slide/src/components/status-bar/status-bar.test.tsx
 
-import { DocumentProvider } from '@stageflip/editor-shell';
+import {
+  DocumentProvider,
+  EditorShell,
+  importLossFlagsAtom,
+  useEditorShellSetAtom,
+} from '@stageflip/editor-shell';
+import type { LossFlag } from '@stageflip/loss-flags';
 import type { Document } from '@stageflip/schema';
 import { cleanup, render, screen } from '@testing-library/react';
+import { useEffect } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { StatusBar } from './status-bar';
@@ -69,5 +76,33 @@ describe('<StatusBar>', () => {
     );
     expect(screen.getByTestId('status-slide-count').textContent).toContain('2');
     expect(screen.getByTestId('status-element-count').textContent).toContain('0');
+  });
+
+  it('renders the loss-flag badge in its status-bar slot when flags exist (T-248)', () => {
+    function Seed({ flags }: { flags: readonly LossFlag[] }): null {
+      const set = useEditorShellSetAtom(importLossFlagsAtom);
+      useEffect(() => {
+        set(flags);
+      }, [set, flags]);
+      return null;
+    }
+    const flag: LossFlag = {
+      id: 'f1',
+      source: 'pptx',
+      code: 'LF-PPTX-CUSTOM-GEOMETRY',
+      severity: 'warn',
+      category: 'shape',
+      location: {},
+      message: 'm',
+    };
+    render(
+      <DocumentProvider initialDocument={makeDoc(1, 0)}>
+        <EditorShell>
+          <Seed flags={[flag]} />
+          <StatusBar />
+        </EditorShell>
+      </DocumentProvider>,
+    );
+    expect(screen.getByTestId('loss-flag-badge')).toBeTruthy();
   });
 });
