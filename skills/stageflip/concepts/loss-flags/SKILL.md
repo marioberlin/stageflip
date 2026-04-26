@@ -109,6 +109,35 @@ T-248 picks up the editor/export reporter UX. The schema does not yet carry
 flags on `Document` — they are produced at import time and surfaced
 out-of-band by the reporter.
 
+## Reporter UI (T-248)
+
+`@stageflip/editor-shell` exposes the session-ephemeral atom triple that
+backs the reporter:
+
+- `importLossFlagsAtom: Atom<readonly LossFlag[]>` — raw flags from the
+  last import. Default `[]`.
+- `dismissedLossFlagIdsAtom: Atom<ReadonlySet<string>>` — per-session
+  dismissed ids. Survives `importLossFlagsAtom` rewrites (re-imports
+  respect prior dismissals).
+- `visibleLossFlagsAtom` — derived: `importLossFlagsAtom \ dismissedLossFlagIdsAtom`,
+  sorted severity-desc then source-asc then code-asc.
+
+`apps/stageflip-slide` consumes the atom triple via two components:
+
+- `<LossFlagBadge>` (in `apps/stageflip-slide/src/components/status-bar/`)
+  — status-bar slot. Returns `null` when there are no visible flags;
+  otherwise a button labelled with the count + worst-severity color.
+- `<LossFlagReporter>` + `<LossFlagRow>` (in
+  `apps/stageflip-slide/src/components/dialogs/loss-flag-reporter/`) —
+  modal listing every visible flag, grouped by severity, with per-row
+  dismiss + bulk dismiss + click-to-locate (writes `activeSlideIdAtom`
+  and `selectedElementIdsAtom`). Reuses `<ModalShell>` for chrome.
+
+**T-248 ships INERT**: the reporter is fully tested in isolation, but no
+in-app code path populates `importLossFlagsAtom` until the import-pipeline
+refactor lands. Future apps (`stageflip-video`, `stageflip-display`) wire
+their own badge + modal that share the same atom triple.
+
 ## Related
 
 - Reporter: T-248

@@ -8,6 +8,11 @@ export {
   elementByIdAtom,
   slideByIdAtom,
 } from './document';
+export {
+  dismissedLossFlagIdsAtom,
+  importLossFlagsAtom,
+  visibleLossFlagsAtom,
+} from './import-loss-flags';
 export { activeSlideIdAtom } from './ui';
 export {
   EMPTY_SELECTION,

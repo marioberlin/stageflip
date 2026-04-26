@@ -28,6 +28,7 @@
     "react-dom": "^19.0.0"
   },
   "dependencies": {
+    "@stageflip/loss-flags": "workspace:*",
     "@stageflip/schema": "workspace:*",
     "fast-json-patch": "3.1.1",
     "jotai": "2.19.1",

@@ -24,6 +24,11 @@ export {
 } from './atoms/document';
 export { activeSlideIdAtom } from './atoms/ui';
 export {
+  dismissedLossFlagIdsAtom,
+  importLossFlagsAtom,
+  visibleLossFlagsAtom,
+} from './atoms/import-loss-flags';
+export {
   EMPTY_SELECTION,
   selectedElementIdAtom,
   selectedElementIdsAtom,
