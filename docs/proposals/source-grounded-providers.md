@@ -46,6 +46,8 @@ export interface AdapterDescriptor {
 
 The capability-routing engine (planned T-425) reads `sourceGrounded` to bias provider selection: when `Document.research` is populated, prefer source-grounded adapters; when empty, fall back to creative-tier adapters.
 
+**Why a boolean flag + sibling field, not a discriminated union?** A more open shape (e.g., `grounding?: { kind: 'session'; provider: string } | { kind: 'per-call-context'; … }`) would accommodate future grounding kinds (fact-check-grounded, retrieval-grounded providers that ground per-call without a session). The boolean shape **deliberately defers** that generality: today, every known source-grounded provider in the StageFlip plan is session-scoped (NotebookLM, Perplexity Pro, Claude Projects). When a per-call-grounded provider lands, ADR-006 evolves the descriptor by **adding** a sibling field (e.g., `groundingMode?: 'per-call' | 'session'`) — additive, not breaking. See **D6** in §11 for the explicit ratification.
+
 ### 2.2 New meta-provider class: `ResearchSessionProvider` (ADR-007)
 
 Distinct from the per-modality provider interfaces (`TTSProvider`, `VideoGenerationProvider`, etc.), this is a **session-scoped** provider that owns a notebook lifecycle:
@@ -64,7 +66,17 @@ export interface ResearchSessionProvider {
   /** Add a source to an existing session. */
   addSource(sessionId: string, source: ResearchSource): Promise<ResearchSource>;
 
-  /** Replace an existing source's bytes (provenance preserved). */
+  /**
+   * Replace an existing source's bytes (provenance preserved).
+   *
+   * **In-flight call semantics**: generation calls that referenced
+   * `providerSourceId` BEFORE `replaceSource` returned observe the
+   * **post-replace bytes** (no snapshot). The asset's `MediaProvenance.sourceIds`
+   * + `contentHash` records the bytes the provider actually consumed at
+   * generation time, so the audit trail remains coherent. If consumers
+   * need snapshot semantics, they should `addSource()` a new versioned
+   * source and reference that instead. See §3.1 for refresh UX.
+   */
   replaceSource(sessionId: string, providerSourceId: string, source: ResearchSource): Promise<ResearchSource>;
 
   /** Remove a source from the session. */
@@ -191,7 +203,23 @@ When a generation tool fires:
 
 The capability-routing engine (T-425) implements this; the seam layer doesn't enumerate providers itself.
 
-### 3.4 Optional grounding — graceful degradation
+#### 3.3.1 Per-call grounding override
+
+The above default ("if `Document.research` populated, prefer source-grounded") is overridable per generation tool call. AI copilot tools that take a `groundingOverride` parameter:
+
+```ts
+type GroundingOverride =
+  | 'auto'             // default: routing engine decides per Document.research
+  | 'force-grounded'   // require source-grounded provider; error if none available
+  | 'force-creative';  // bypass source-grounded providers; use creative tier even when sources exist
+```
+
+Use cases for each:
+- `'auto'` (default) — most calls; routing engine picks based on session state.
+- `'force-grounded'` — user explicitly invokes "narrate using my sources" / "summarize my notebook"; failure (no source-grounded provider available) surfaces as an error.
+- `'force-creative'` — "give me a stock photo for this slide, ignore my sources" / "generate background music unrelated to my research" — common when grounded outputs would be tonally wrong.
+
+Tools advertise their default override behavior in their tool descriptor; the user-facing UI surfaces a toggle for the cases where users want to override the default. Implementation: agent tool router (T-154 family) reads the override and passes it to the routing engine.
 
 A user can opt out of grounding mid-project:
 - Project starts ungrounded. User adds sources later via the `ground_existing_project` AI tool. → `Document.research` populated; future generations grounded.
@@ -269,12 +297,13 @@ New `LossFlagCode`s in `@stageflip/loss-flags` (per session — the package owns
 | Code | Severity | Category | When |
 |---|---|---|---|
 | `LF-RESEARCH-SESSION-LOST` | error | other | `pingSession() === 'revoked'` AND reconnect failed |
-| `LF-RESEARCH-SESSION-RECONNECTED` | info | other | Plugin auto-reconnected; new sessionId persisted |
 | `LF-RESEARCH-SOURCE-UPLOAD-FAILED` | warn | media | One source in the manifest failed to upload during reconnect |
 | `LF-RESEARCH-PROVIDER-RATE-LIMITED` | warn | other | Provider returned 429; tool retried-and-succeeded or fell through to creative |
 | `LF-RESEARCH-CITATIONS-MISSING` | info | other | Generated asset's provenance lacks `sourceIds` despite session being present (provider didn't expose citations) |
 
 These surface in the existing loss-flag reporter UI (T-248, just shipped).
+
+**Not a loss flag**: successful auto-reconnect (`pingSession() === 'expired'` → `reconnectSession()` succeeded → new `sessionId` persisted) is a **UI toast notification**, not a loss event. Surfaced via the editor-shell notification channel, not via the loss-flag reporter. Per **D9** in §11.
 
 ## 6. UX surfaces this enables
 
@@ -345,3 +374,7 @@ These design choices are explicitly resolved here so ADR-006/007 don't need to r
 | D3 | Optional grounding | **Schema field is independently optional; routing engine handles both states** | Graceful upgrade path: ungrounded project can be grounded later via `ground_existing_project` tool. |
 | D4 | Multi-provider per project | **One provider per project for v1** | Multi-provider routing within a single project is a future generalization; not v1 complexity. |
 | D5 | Plugin contribution model | **Per-modality adapter declares `requiresResearchProvider`** | Linkage explicit at manifest time; routing engine doesn't have to infer relationships. |
+| D6 | Capability descriptor shape | **Boolean `sourceGrounded` + sibling `requiresResearchProvider` field** (NOT a discriminated `grounding: { kind, provider }` union) | Today's source-grounded providers are all session-scoped (NBLM, Perplexity Pro, Claude Projects). When a per-call-grounded provider lands (e.g., fact-check or retrieval-grounded), ADR-006 evolves the descriptor by **adding** a sibling field (`groundingMode?: 'session' \| 'per-call'`) — additive, not breaking. Defers generality to when a real second case exists. |
+| D7 | Per-call grounding override | **`groundingOverride: 'auto' \| 'force-grounded' \| 'force-creative'` parameter on every generation tool** | Default `'auto'` lets routing engine decide; users can force either tier per-call. See §3.3.1. |
+| D8 | `replaceSource` in-flight semantics | **Post-replace bytes; provenance records actual bytes consumed** (no snapshot) | Snapshot semantics would require provider-side bytes-versioning that NBLM doesn't expose. Provenance's `contentHash` records what was actually consumed. Consumers needing snapshot use `addSource()` with a versioned name. |
+| D9 | `LF-RESEARCH-SESSION-RECONNECTED` taxonomy | **Demoted from loss flag to UI toast notification** | Successful auto-reconnect is a notice, not a loss. Loss-flag inventory in §5 drops to 4 codes; toast surfaced via existing notification channel in editor-shell. |
