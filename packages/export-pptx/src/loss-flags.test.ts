@@ -13,6 +13,9 @@ describe('loss-flags', () => {
       'LF-PPTX-EXPORT-NOTES-DROPPED',
       'LF-PPTX-EXPORT-THEME-FLATTENED',
       'LF-PPTX-EXPORT-IMAGE-BACKGROUND-FALLBACK',
+      'LF-PPTX-EXPORT-LAYOUT-NOT-FOUND',
+      'LF-PPTX-EXPORT-PLACEHOLDER-NOT-FOUND',
+      'LF-PPTX-EXPORT-PLACEHOLDER-MISMATCH',
     ];
     for (const c of codes) {
       expect(CODE_DEFAULTS[c]).toBeDefined();

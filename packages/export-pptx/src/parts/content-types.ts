@@ -24,6 +24,10 @@ const IMAGE_MIME_TO_EXT: Record<string, string> = {
 const PRESENTATION_CT =
   'application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml';
 const SLIDE_CT = 'application/vnd.openxmlformats-officedocument.presentationml.slide+xml';
+const SLIDE_LAYOUT_CT =
+  'application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml';
+const SLIDE_MASTER_CT =
+  'application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml';
 const THEME_CT = 'application/vnd.openxmlformats-officedocument.theme+xml';
 const CORE_PROPS_CT = 'application/vnd.openxmlformats-package.core-properties+xml';
 const APP_PROPS_CT = 'application/vnd.openxmlformats-officedocument.extended-properties+xml';
@@ -33,6 +37,10 @@ export interface ContentTypesInput {
   slideCount: number;
   /** Distinct file extensions present in `ppt/media/*` (lowercase, no leading dot). */
   mediaExtensions: readonly string[];
+  /** T-253-rider: number of slide layouts. */
+  layoutCount?: number;
+  /** T-253-rider: number of slide masters. */
+  masterCount?: number;
 }
 
 /**
@@ -71,6 +79,22 @@ export function emitContentTypes(input: ContentTypesInput): string {
       emitSelfClosing('Override', {
         PartName: `/ppt/slides/slide${i}.xml`,
         ContentType: SLIDE_CT,
+      }),
+    );
+  }
+  for (let i = 1; i <= (input.layoutCount ?? 0); i++) {
+    overrideEntries.push(
+      emitSelfClosing('Override', {
+        PartName: `/ppt/slideLayouts/slideLayout${i}.xml`,
+        ContentType: SLIDE_LAYOUT_CT,
+      }),
+    );
+  }
+  for (let i = 1; i <= (input.masterCount ?? 0); i++) {
+    overrideEntries.push(
+      emitSelfClosing('Override', {
+        PartName: `/ppt/slideMasters/slideMaster${i}.xml`,
+        ContentType: SLIDE_MASTER_CT,
       }),
     );
   }

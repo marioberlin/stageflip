@@ -24,6 +24,9 @@ export const CODE_DEFAULTS: Record<
   'LF-PPTX-EXPORT-NOTES-DROPPED': { severity: 'info', category: 'other' },
   'LF-PPTX-EXPORT-THEME-FLATTENED': { severity: 'info', category: 'theme' },
   'LF-PPTX-EXPORT-IMAGE-BACKGROUND-FALLBACK': { severity: 'warn', category: 'media' },
+  'LF-PPTX-EXPORT-LAYOUT-NOT-FOUND': { severity: 'warn', category: 'shape' },
+  'LF-PPTX-EXPORT-PLACEHOLDER-NOT-FOUND': { severity: 'warn', category: 'shape' },
+  'LF-PPTX-EXPORT-PLACEHOLDER-MISMATCH': { severity: 'info', category: 'shape' },
 };
 
 /**
