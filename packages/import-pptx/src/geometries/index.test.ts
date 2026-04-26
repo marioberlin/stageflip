@@ -1,11 +1,12 @@
 // packages/import-pptx/src/geometries/index.test.ts
 // Pin the registry coverage and the contract every preset generator
-// upholds. T-242c adds rows; this file keeps the eventual count honest.
+// upholds. T-242c batch 1 grows the list to 25; batch 2 to 33; T-242d
+// closes out at 36.
 
 import { describe, expect, it } from 'vitest';
 import { COVERED_PRESETS, HONORED_ADJUSTMENTS, PRESET_GENERATORS, geometryFor } from './index.js';
 
-const T_242B_PRESETS = [
+const T_242C_BATCH1_PRESETS = [
   // T-242a (6)
   'rightArrow',
   'wedgeRectCallout',
@@ -24,11 +25,21 @@ const T_242B_PRESETS = [
   'rightBrace',
   'sun',
   'heart',
+  // T-242c batch 1 (9)
+  'leftRightArrow',
+  'upDownArrow',
+  'bentArrow',
+  'curvedRightArrow',
+  'wedgeRoundRectCallout',
+  'wedgeEllipseCallout',
+  'cloudCallout',
+  'borderCallout1',
+  'borderCallout2',
 ];
 
 describe('preset registry', () => {
-  it('covers exactly the T-242a + T-242b first-wave presets (16 total)', () => {
-    expect(COVERED_PRESETS.slice().sort()).toEqual(T_242B_PRESETS.slice().sort());
+  it('covers exactly the T-242a + T-242b first-wave + T-242c batch 1 presets (25 total)', () => {
+    expect(COVERED_PRESETS.slice().sort()).toEqual(T_242C_BATCH1_PRESETS.slice().sort());
   });
 
   it('every generator returns a non-empty SVG path string for a 100x100 box', () => {
@@ -168,5 +179,121 @@ describe('cloud', () => {
     const d = geometryFor('cloud', { w: 100, h: 80 });
     const cCount = (d?.match(/C /g) ?? []).length;
     expect(cCount).toBeGreaterThanOrEqual(6);
+  });
+});
+
+// --- T-242c batch 1 ---------------------------------------------------------
+
+describe('leftRightArrow', () => {
+  it('puts the left tip at (0, h/2) and right tip at (w, h/2)', () => {
+    const d = geometryFor('leftRightArrow', { w: 200, h: 100 });
+    expect(d).toBeDefined();
+    expect(d).toMatch(/^M /);
+    expect(d).toContain('M 0 50');
+    expect(d).toContain('L 200 50');
+  });
+
+  it('produces a 10-vertex closed polygon (M + 9 L + Z)', () => {
+    const d = geometryFor('leftRightArrow', { w: 200, h: 100 });
+    const lCount = (d?.match(/L /g) ?? []).length;
+    expect(lCount).toBe(9);
+    expect(d?.endsWith('Z')).toBe(true);
+  });
+});
+
+describe('upDownArrow', () => {
+  it('puts the top tip at (w/2, 0) and bottom tip at (w/2, h)', () => {
+    const d = geometryFor('upDownArrow', { w: 100, h: 200 });
+    expect(d).toBeDefined();
+    expect(d).toContain('M 50 0');
+    expect(d).toContain('L 50 200');
+  });
+
+  it('produces a 10-vertex closed polygon (M + 9 L + Z)', () => {
+    const d = geometryFor('upDownArrow', { w: 100, h: 200 });
+    const lCount = (d?.match(/L /g) ?? []).length;
+    expect(lCount).toBe(9);
+    expect(d?.endsWith('Z')).toBe(true);
+  });
+});
+
+describe('bentArrow', () => {
+  it('produces a closed polygon with the head tip at the right edge', () => {
+    const d = geometryFor('bentArrow', { w: 200, h: 200 });
+    expect(d).toBeDefined();
+    expect(d).toMatch(/^M /);
+    // Head tip at (w, h/2).
+    expect(d).toContain('L 200 100');
+    expect(d?.endsWith('Z')).toBe(true);
+  });
+});
+
+describe('curvedRightArrow', () => {
+  it('uses cubic-Bezier segments for the curved body and ends with the head tip on the right', () => {
+    const d = geometryFor('curvedRightArrow', { w: 200, h: 200 });
+    expect(d).toBeDefined();
+    const cCount = (d?.match(/C /g) ?? []).length;
+    expect(cCount).toBeGreaterThanOrEqual(2);
+    // Head tip lands at (w, h/2).
+    expect(d).toContain('L 200 100');
+  });
+});
+
+describe('wedgeRoundRectCallout', () => {
+  it('uses cubic-Bezier segments for the rounded corners and includes a triangular tail', () => {
+    const d = geometryFor('wedgeRoundRectCallout', { w: 200, h: 100 });
+    expect(d).toBeDefined();
+    expect(d).toMatch(/^M /);
+    // 4 rounded corners → 4 C commands minimum.
+    const cCount = (d?.match(/C /g) ?? []).length;
+    expect(cCount).toBeGreaterThanOrEqual(4);
+    expect(d?.endsWith('Z')).toBe(true);
+  });
+});
+
+describe('wedgeEllipseCallout', () => {
+  it('uses cubic-Bezier segments for the ellipse boundary and includes a tail', () => {
+    const d = geometryFor('wedgeEllipseCallout', { w: 200, h: 100 });
+    expect(d).toBeDefined();
+    expect(d).toMatch(/^M /);
+    // Ellipse-from-Bezier idiom = 4 C commands.
+    const cCount = (d?.match(/C /g) ?? []).length;
+    expect(cCount).toBeGreaterThanOrEqual(4);
+  });
+});
+
+describe('cloudCallout', () => {
+  it('reuses the cubic-Bezier lobed boundary pattern from cloud', () => {
+    const d = geometryFor('cloudCallout', { w: 200, h: 100 });
+    expect(d).toBeDefined();
+    expect(d).toMatch(/^M /);
+    const cCount = (d?.match(/C /g) ?? []).length;
+    // 6+ humps for the cloud body, more if the tail subpath uses curves.
+    expect(cCount).toBeGreaterThanOrEqual(6);
+  });
+});
+
+describe('borderCallout1', () => {
+  it('produces a rectangle plus a separate single-segment leader line subpath', () => {
+    const d = geometryFor('borderCallout1', { w: 200, h: 100 });
+    expect(d).toBeDefined();
+    expect(d).toMatch(/^M /);
+    // Two `M` commands → two subpaths (rectangle + leader).
+    const mCount = (d?.match(/M /g) ?? []).length;
+    expect(mCount).toBe(2);
+  });
+});
+
+describe('borderCallout2', () => {
+  it('produces a rectangle plus a separate two-segment (bent) leader line subpath', () => {
+    const d = geometryFor('borderCallout2', { w: 200, h: 100 });
+    expect(d).toBeDefined();
+    expect(d).toMatch(/^M /);
+    const mCount = (d?.match(/M /g) ?? []).length;
+    expect(mCount).toBe(2);
+    // Bent leader: one M + two L commands in the leader subpath.
+    // Rectangle has 3 L commands → total ≥ 5.
+    const lCount = (d?.match(/L /g) ?? []).length;
+    expect(lCount).toBeGreaterThanOrEqual(5);
   });
 });

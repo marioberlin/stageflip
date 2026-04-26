@@ -1,7 +1,8 @@
 // packages/import-pptx/src/geometries/presets/callouts.ts
-// Callout-family preset generators. T-242a ships `wedgeRectCallout`
-// (rectangular callout with a triangular tail); remaining callouts land in
-// T-242b.
+// Callout-family preset generators. T-242a shipped `wedgeRectCallout`
+// (rectangular callout with a triangular tail). T-242c batch 1 adds
+// `wedgeRoundRectCallout`, `wedgeEllipseCallout`, `cloudCallout`,
+// `borderCallout1`, `borderCallout2`.
 
 import type { PathGenerator } from '../types.js';
 
@@ -29,3 +30,18 @@ export const wedgeRectCallout: PathGenerator = ({ w, h }) => {
     'Z',
   ].join(' ');
 };
+
+/** STUB — T-242c batch 1 commit 1 (tests-first). Real geometry lands in commit 2. */
+export const wedgeRoundRectCallout: PathGenerator = () => '';
+
+/** STUB — T-242c batch 1 commit 1 (tests-first). Real geometry lands in commit 2. */
+export const wedgeEllipseCallout: PathGenerator = () => '';
+
+/** STUB — T-242c batch 1 commit 1 (tests-first). Real geometry lands in commit 2. */
+export const cloudCallout: PathGenerator = () => '';
+
+/** STUB — T-242c batch 1 commit 1 (tests-first). Real geometry lands in commit 2. */
+export const borderCallout1: PathGenerator = () => '';
+
+/** STUB — T-242c batch 1 commit 1 (tests-first). Real geometry lands in commit 2. */
+export const borderCallout2: PathGenerator = () => '';

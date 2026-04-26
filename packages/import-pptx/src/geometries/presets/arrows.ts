@@ -1,8 +1,9 @@
 // packages/import-pptx/src/geometries/presets/arrows.ts
 // Arrow-family preset path generators. Path math derived from ECMA-376
 // §20.1.9 preset shape definitions. T-242a shipped `rightArrow`; T-242b
-// first-wave adds the three orthogonal directions (left, up, down). The
-// remaining arrows (leftRight, upDown, bent, curvedRight) land in T-242c.
+// first-wave added the three orthogonal directions (left, up, down). T-242c
+// batch 1 adds `leftRightArrow`, `upDownArrow`, `bentArrow`,
+// `curvedRightArrow`.
 
 import type { PathGenerator } from '../types.js';
 
@@ -89,3 +90,15 @@ export const downArrow: PathGenerator = ({ w, h }) => {
     'Z',
   ].join(' ');
 };
+
+/** STUB — T-242c batch 1 commit 1 (tests-first). Real geometry lands in commit 2. */
+export const leftRightArrow: PathGenerator = () => '';
+
+/** STUB — T-242c batch 1 commit 1 (tests-first). Real geometry lands in commit 2. */
+export const upDownArrow: PathGenerator = () => '';
+
+/** STUB — T-242c batch 1 commit 1 (tests-first). Real geometry lands in commit 2. */
+export const bentArrow: PathGenerator = () => '';
+
+/** STUB — T-242c batch 1 commit 1 (tests-first). Real geometry lands in commit 2. */
+export const curvedRightArrow: PathGenerator = () => '';
