@@ -4,7 +4,12 @@
 
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import type { CanonicalSlideTree, ParsedImageElement, ParsedSlide } from '../types.js';
+import type {
+  CanonicalSlideTree,
+  ParsedImageElement,
+  ParsedSlide,
+  ParsedVideoElement,
+} from '../types.js';
 import type { ZipEntries } from '../zip.js';
 import { resolveAssets } from './resolve.js';
 import { AssetResolutionError, type AssetStorage } from './types.js';
@@ -336,6 +341,248 @@ describe('resolveAssets — T-243 acceptance', () => {
     const els = out.slides[0]?.elements ?? [];
     expect(els[1]).toEqual(slide.elements[1]); // text passthrough
     expect(els[2]).toEqual(slide.elements[2]); // shape passthrough
+  });
+
+  // T-243b AC #10 — video resolution rewrites src to schema-typed asset:<id>.
+  it('resolves a ParsedVideoElement: rewrites src to asset:<id> and uploads bytes', async () => {
+    const video: ParsedVideoElement = {
+      id: 'pptx_v1',
+      transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, opacity: 1 },
+      visible: true,
+      locked: false,
+      animations: [],
+      type: 'video',
+      src: { kind: 'unresolved', oocxmlPath: 'ppt/media/video1.mp4' },
+      muted: false,
+      loop: false,
+      playbackRate: 1,
+    };
+    const slide: ParsedSlide = { id: 'slide_1', elements: [video] };
+    const tree: CanonicalSlideTree = {
+      slides: [slide],
+      layouts: {},
+      masters: {},
+      lossFlags: [
+        {
+          id: 'flag-v1',
+          source: 'pptx',
+          code: 'LF-PPTX-UNRESOLVED-VIDEO',
+          severity: 'info',
+          category: 'media',
+          location: {
+            slideId: 'slide_1',
+            elementId: 'pptx_v1',
+            oocxmlPath: 'ppt/media/video1.mp4',
+          },
+          message: 'video bytes deferred to T-243b',
+        },
+      ],
+    };
+    const entries: ZipEntries = { 'ppt/media/video1.mp4': BYTES_A };
+    const storage = recordingStorage();
+
+    const out = await resolveAssets(tree, entries, storage);
+
+    expect(storage.hits).toBe(1);
+    expect(storage.records[0]?.contentType).toBe('video/mp4');
+    expect(storage.records[0]?.content).toEqual(BYTES_A);
+
+    const v = out.slides[0]?.elements[0];
+    expect(v?.type).toBe('video');
+    if (v?.type !== 'video') return;
+    expect(v.src.kind).toBe('resolved');
+    if (v.src.kind !== 'resolved') return;
+    expect(v.src.ref).toMatch(/^asset:[A-Za-z0-9_-]+$/);
+  });
+
+  // T-243b AC #11 — LF-PPTX-UNRESOLVED-VIDEO drops after resolution.
+  it('drops LF-PPTX-UNRESOLVED-VIDEO from lossFlags after a successful video resolution', async () => {
+    const video: ParsedVideoElement = {
+      id: 'pptx_v1',
+      transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, opacity: 1 },
+      visible: true,
+      locked: false,
+      animations: [],
+      type: 'video',
+      src: { kind: 'unresolved', oocxmlPath: 'ppt/media/video1.mp4' },
+      muted: false,
+      loop: false,
+      playbackRate: 1,
+    };
+    const tree: CanonicalSlideTree = {
+      slides: [{ id: 'slide_1', elements: [video] }],
+      layouts: {},
+      masters: {},
+      lossFlags: [
+        {
+          id: 'flag-v1',
+          source: 'pptx',
+          code: 'LF-PPTX-UNRESOLVED-VIDEO',
+          severity: 'info',
+          category: 'media',
+          location: {
+            slideId: 'slide_1',
+            elementId: 'pptx_v1',
+            oocxmlPath: 'ppt/media/video1.mp4',
+          },
+          message: 'video bytes deferred to T-243b',
+        },
+      ],
+    };
+    const entries: ZipEntries = { 'ppt/media/video1.mp4': BYTES_A };
+    const out = await resolveAssets(tree, entries, recordingStorage());
+    expect(out.lossFlags.find((f) => f.code === 'LF-PPTX-UNRESOLVED-VIDEO')).toBeUndefined();
+  });
+
+  // T-243b AC #12 — missing video bytes → LF-PPTX-MISSING-ASSET-BYTES, ref stays unresolved.
+  it('emits LF-PPTX-MISSING-ASSET-BYTES for absent video bytes (ref stays unresolved)', async () => {
+    const video: ParsedVideoElement = {
+      id: 'pptx_v1',
+      transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, opacity: 1 },
+      visible: true,
+      locked: false,
+      animations: [],
+      type: 'video',
+      src: { kind: 'unresolved', oocxmlPath: 'ppt/media/missing.mp4' },
+      muted: false,
+      loop: false,
+      playbackRate: 1,
+    };
+    const tree: CanonicalSlideTree = {
+      slides: [{ id: 'slide_1', elements: [video] }],
+      layouts: {},
+      masters: {},
+      lossFlags: [
+        {
+          id: 'flag-v1',
+          source: 'pptx',
+          code: 'LF-PPTX-UNRESOLVED-VIDEO',
+          severity: 'info',
+          category: 'media',
+          location: {
+            slideId: 'slide_1',
+            elementId: 'pptx_v1',
+            oocxmlPath: 'ppt/media/missing.mp4',
+          },
+          message: 'video bytes deferred to T-243b',
+        },
+      ],
+    };
+    const entries: ZipEntries = {};
+    const out = await resolveAssets(tree, entries, recordingStorage());
+
+    const missingFlag = out.lossFlags.find((f) => f.code === 'LF-PPTX-MISSING-ASSET-BYTES');
+    expect(missingFlag).toBeDefined();
+    expect(missingFlag?.severity).toBe('error');
+
+    // Unresolved-video flag stays (we couldn't resolve it).
+    const stillUnresolved = out.lossFlags.find(
+      (f) => f.code === 'LF-PPTX-UNRESOLVED-VIDEO' && f.location.elementId === 'pptx_v1',
+    );
+    expect(stillUnresolved).toBeDefined();
+
+    const v = out.slides[0]?.elements[0];
+    expect(v?.type).toBe('video');
+    if (v?.type !== 'video') return;
+    expect(v.src.kind).toBe('unresolved');
+  });
+
+  // T-243b AC #14 — idempotence on a video tree.
+  it('is idempotent across a second resolveAssets call (no extra video upload)', async () => {
+    const video: ParsedVideoElement = {
+      id: 'pptx_v1',
+      transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, opacity: 1 },
+      visible: true,
+      locked: false,
+      animations: [],
+      type: 'video',
+      src: { kind: 'unresolved', oocxmlPath: 'ppt/media/video1.mp4' },
+      muted: false,
+      loop: false,
+      playbackRate: 1,
+    };
+    const tree: CanonicalSlideTree = {
+      slides: [{ id: 'slide_1', elements: [video] }],
+      layouts: {},
+      masters: {},
+      lossFlags: [
+        {
+          id: 'flag-v1',
+          source: 'pptx',
+          code: 'LF-PPTX-UNRESOLVED-VIDEO',
+          severity: 'info',
+          category: 'media',
+          location: {
+            slideId: 'slide_1',
+            elementId: 'pptx_v1',
+            oocxmlPath: 'ppt/media/video1.mp4',
+          },
+          message: 'video bytes deferred to T-243b',
+        },
+      ],
+    };
+    const entries: ZipEntries = { 'ppt/media/video1.mp4': BYTES_A };
+    const storage = recordingStorage();
+
+    const once = await resolveAssets(tree, entries, storage);
+    expect(once.assetsResolved).toBe(true);
+    expect(storage.hits).toBe(1);
+
+    const twice = await resolveAssets(once, entries, storage);
+    expect(storage.hits).toBe(1);
+    expect(twice).toEqual(once);
+  });
+
+  // T-243b — videos inside groups still resolve.
+  it('walks videos nested inside <p:grpSp> groups', async () => {
+    const video: ParsedVideoElement = {
+      id: 'pptx_v1',
+      transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, opacity: 1 },
+      visible: true,
+      locked: false,
+      animations: [],
+      type: 'video',
+      src: { kind: 'unresolved', oocxmlPath: 'ppt/media/video1.mp4' },
+      muted: false,
+      loop: false,
+      playbackRate: 1,
+    };
+    const tree: CanonicalSlideTree = {
+      slides: [
+        {
+          id: 'slide_1',
+          elements: [
+            {
+              id: 'pptx_g1',
+              transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, opacity: 1 },
+              visible: true,
+              locked: false,
+              animations: [],
+              type: 'group',
+              children: [video],
+              clip: false,
+              groupOrigin: { x: 0, y: 0 },
+              groupExtent: { width: 100, height: 100 },
+            },
+          ],
+        },
+      ],
+      layouts: {},
+      masters: {},
+      lossFlags: [],
+    };
+    const entries: ZipEntries = { 'ppt/media/video1.mp4': BYTES_A };
+    const storage = recordingStorage();
+    const out = await resolveAssets(tree, entries, storage);
+
+    expect(storage.hits).toBe(1);
+    const group = out.slides[0]?.elements[0];
+    expect(group?.type).toBe('group');
+    if (group?.type !== 'group') return;
+    const child = group.children[0];
+    expect(child?.type).toBe('video');
+    if (child?.type !== 'video') return;
+    expect(child.src.kind).toBe('resolved');
   });
 
   // Bonus — layouts and masters are walked.

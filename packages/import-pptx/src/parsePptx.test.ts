@@ -4,6 +4,8 @@
 
 import { strToU8, zipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
+import { resolveAssets } from './assets/resolve.js';
+import type { AssetStorage } from './assets/types.js';
 import {
   buildAdjustedShapesFixture,
   buildGroupFixture,
@@ -11,10 +13,13 @@ import {
   buildMultiSlideFixture,
   buildPictureFixture,
   buildShapesFixture,
+  buildVideoAndImageFixture,
+  buildVideoFixture,
 } from './fixtures/builder.js';
 import { parsePptx } from './parsePptx.js';
 import { PptxParseError } from './types.js';
-import type { ParsedGroupElement, ParsedImageElement } from './types.js';
+import type { ParsedGroupElement, ParsedImageElement, ParsedVideoElement } from './types.js';
+import { unpackPptx } from './zip.js';
 
 describe('parsePptx — acceptance criteria', () => {
   // AC #1
@@ -216,5 +221,49 @@ describe('parsePptx — acceptance criteria', () => {
     const a = await parsePptx(buildPictureFixture());
     const b = await parsePptx(buildPictureFixture());
     expect(a.lossFlags.map((f) => f.id)).toEqual(b.lossFlags.map((f) => f.id));
+  });
+
+  // T-243b — video fixture parses and emits a single ParsedVideoElement.
+  it('emits ParsedVideoElement for a <p:videoFile> fixture (T-243b)', async () => {
+    const tree = await parsePptx(buildVideoFixture());
+    const slide = tree.slides[0];
+    expect(slide).toBeDefined();
+    const v = slide?.elements[0];
+    expect(v?.type).toBe('video');
+    if (v?.type !== 'video') return;
+    const video = v as ParsedVideoElement;
+    expect(video.src.kind).toBe('unresolved');
+    if (video.src.kind !== 'unresolved') return;
+    expect(video.src.oocxmlPath).toBe('ppt/media/video1.mp4');
+    const flag = tree.lossFlags.find((f) => f.code === 'LF-PPTX-UNRESOLVED-VIDEO');
+    expect(flag).toBeDefined();
+  });
+
+  // T-243b AC #15 — full pipeline emits zero unresolved-asset flags after resolveAssets.
+  it('parsePptx → resolveAssets clears every unresolved-asset flag for an image+video fixture', async () => {
+    const buf = buildVideoAndImageFixture();
+    const tree = await parsePptx(buf);
+
+    // Pre-resolve: both flags are present.
+    expect(tree.lossFlags.find((f) => f.code === 'LF-PPTX-UNRESOLVED-ASSET')).toBeDefined();
+    expect(tree.lossFlags.find((f) => f.code === 'LF-PPTX-UNRESOLVED-VIDEO')).toBeDefined();
+
+    const storage: AssetStorage = {
+      async put(_bytes, opts) {
+        return { id: opts.contentHash.slice(0, 16) };
+      },
+    };
+    const resolved = await resolveAssets(tree, unpackPptx(buf), storage);
+
+    expect(resolved.lossFlags.find((f) => f.code === 'LF-PPTX-UNRESOLVED-ASSET')).toBeUndefined();
+    expect(resolved.lossFlags.find((f) => f.code === 'LF-PPTX-UNRESOLVED-VIDEO')).toBeUndefined();
+    expect(resolved.lossFlags.find((f) => f.code === 'LF-PPTX-MISSING-ASSET-BYTES')).toBeUndefined();
+
+    // And the elements themselves are resolved.
+    const slide = resolved.slides[0];
+    const img = slide?.elements.find((e) => e.type === 'image');
+    const vid = slide?.elements.find((e) => e.type === 'video');
+    expect(img?.type === 'image' && img.src.kind === 'resolved').toBe(true);
+    expect(vid?.type === 'video' && vid.src.kind === 'resolved').toBe(true);
   });
 });

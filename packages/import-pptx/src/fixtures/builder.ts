@@ -26,11 +26,33 @@ const REL_TYPE_SLIDE_MASTER = `${NS_R}/slideMaster`;
 const REL_TYPE_THEME = `${NS_R}/theme`;
 const REL_TYPE_OFFICE_DOC = `${NS_R}/officeDocument`;
 const REL_TYPE_IMAGE = `${NS_R}/image`;
+const REL_TYPE_VIDEO = `${NS_R}/video`;
 
 const xmlHeader = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
 
+/**
+ * Configurable per-slide rels (T-243b): the picture-only fixture path keeps
+ * a default that emits an image rel per `ppt/media/*` extra, while the
+ * video / mixed fixtures pass an explicit list of typed relationships
+ * including `TargetMode="External"` for the linked-URL case.
+ */
+type ExplicitRel = {
+  /** Rel id; must match what the slide XML references via `r:embed` / `r:link`. */
+  id: string;
+  /** Relationship type — image / video / etc. */
+  type: string;
+  /** OPC-relative target (e.g. `../media/video1.mp4`). */
+  target: string;
+  /** OPC `TargetMode`. Defaults to Internal when omitted. */
+  targetMode?: 'Internal' | 'External';
+};
+
 /** Build the full PPTX byte buffer from a slide XML list. */
-function buildPptx(slideXmls: string[], extraImages: Record<string, Uint8Array> = {}): Uint8Array {
+function buildPptx(
+  slideXmls: string[],
+  extraAssets: Record<string, Uint8Array> = {},
+  perSlideExplicitRels?: ExplicitRel[][],
+): Uint8Array {
   const files: Files = {};
 
   // _rels/.rels — package-level: doc root → ppt/presentation.xml
@@ -44,7 +66,10 @@ function buildPptx(slideXmls: string[], extraImages: Record<string, Uint8Array> 
   for (let i = 0; i < slideXmls.length; i++) {
     const idx = i + 1;
     files[`ppt/slides/slide${idx}.xml`] = strToU8(slideXmls[i] ?? '');
-    files[`ppt/slides/_rels/slide${idx}.xml.rels`] = strToU8(slideRels(idx, extraImages));
+    const explicit = perSlideExplicitRels?.[i];
+    files[`ppt/slides/_rels/slide${idx}.xml.rels`] = strToU8(
+      explicit !== undefined ? slideRelsExplicit(explicit) : slideRels(idx, extraAssets),
+    );
   }
 
   // One slide layout + one slide master + theme — minimal but valid.
@@ -54,8 +79,8 @@ function buildPptx(slideXmls: string[], extraImages: Record<string, Uint8Array> 
   files['ppt/slideMasters/_rels/slideMaster1.xml.rels'] = strToU8(masterRels());
   files['ppt/theme/theme1.xml'] = strToU8(themeXml());
 
-  // Embedded images, if any.
-  for (const [path, bytes] of Object.entries(extraImages)) {
+  // Embedded asset bytes (images / videos), if any.
+  for (const [path, bytes] of Object.entries(extraAssets)) {
     files[path] = bytes;
   }
 
@@ -107,6 +132,27 @@ function slideRels(_slideIndex: number, extraImages: Record<string, Uint8Array>)
       `<Relationship Id="rIdImg${imgIdx}" Type="${REL_TYPE_IMAGE}" Target="../media/${path.slice('ppt/media/'.length)}"/>`,
     );
     imgIdx++;
+  }
+  return `${xmlHeader}
+<Relationships xmlns="${NS_R}/package/2006/relationships">
+${rows.join('\n')}
+</Relationships>`;
+}
+
+/**
+ * Explicit-rel variant for fixtures that need typed relationships beyond the
+ * image-only auto-derived form (videos, external `TargetMode="External"`
+ * cases). Always emits the layout rel first.
+ */
+function slideRelsExplicit(rels: readonly ExplicitRel[]): string {
+  const rows: string[] = [
+    `<Relationship Id="rIdLayout" Type="${REL_TYPE_SLIDE_LAYOUT}" Target="../slideLayouts/slideLayout1.xml"/>`,
+  ];
+  for (const r of rels) {
+    const tm = r.targetMode === undefined ? '' : ` TargetMode="${r.targetMode}"`;
+    rows.push(
+      `<Relationship Id="${r.id}" Type="${r.type}" Target="${r.target}"${tm}/>`,
+    );
   }
   return `${xmlHeader}
 <Relationships xmlns="${NS_R}/package/2006/relationships">
@@ -248,6 +294,47 @@ function spCustom(opts: {
 </p:sp>`;
 }
 
+/**
+ * Helper: a `<p:sp>` whose `<p:nvSpPr><p:nvPr>` carries a `<p:videoFile>`
+ * extension. ECMA-376 §19.5.41 — the relId attribute may be either
+ * `r:embed` or `r:link`. Optional `body` injects a non-empty `<p:txBody>` /
+ * `<a:custGeom>` so the walker-dispatch tests can verify the body is
+ * dropped on the video extension.
+ */
+function spVideo(opts: {
+  id: number;
+  name: string;
+  /** Carry the video relId as `r:embed` (default) or `r:link`. */
+  relAttr?: 'r:embed' | 'r:link';
+  relId: string;
+  x: number;
+  y: number;
+  cx: number;
+  cy: number;
+  /** Inject extra `<p:sp>` children (text body + custom geom) for AC #3. */
+  withBody?: boolean;
+}): string {
+  const relAttr = opts.relAttr ?? 'r:embed';
+  const body = opts.withBody === true
+    ? `<p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>caption</a:t></a:r></a:p></p:txBody>`
+    : '';
+  const geom = opts.withBody === true
+    ? `<a:custGeom><a:pathLst/></a:custGeom>`
+    : '';
+  return `<p:sp>
+<p:nvSpPr>
+<p:cNvPr id="${opts.id}" name="${opts.name}"/>
+<p:cNvSpPr/>
+<p:nvPr><p:videoFile ${relAttr}="${opts.relId}"/></p:nvPr>
+</p:nvSpPr>
+<p:spPr>
+<a:xfrm><a:off x="${opts.x}" y="${opts.y}"/><a:ext cx="${opts.cx}" cy="${opts.cy}"/></a:xfrm>
+${geom}
+</p:spPr>
+${body}
+</p:sp>`;
+}
+
 /** Helper: a `<p:grpSp>` with nested children. */
 function spGroup(opts: {
   id: number;
@@ -278,6 +365,16 @@ const ONE_PIXEL_PNG = new Uint8Array([
   0x89, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c, 0x62, 0x00, 0x01, 0x00, 0x00,
   0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae,
   0x42, 0x60, 0x82,
+]);
+
+/**
+ * Stand-in MP4 byte payload. Bytes are deterministic but not a valid MP4
+ * stream — the parser only looks at the path's extension for MIME inference
+ * and uploads bytes through the abstract `AssetStorage` adapter. Tests don't
+ * decode the payload, so a fixed 16-byte buffer suffices.
+ */
+const STUB_MP4_BYTES = new Uint8Array([
+  0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x6d, 0x70, 0x34, 0x32, 0x00, 0x00, 0x00, 0x00,
 ]);
 
 /** Fixture 1: minimal — one slide, one text shape. */
@@ -433,6 +530,92 @@ export function buildAdjustedShapesFixture(): Uint8Array {
   return buildPptx([slideShell(children)]);
 }
 
+/**
+ * Fixture 7 (T-243b): one slide with a single `<p:videoFile>` extension on
+ * a `<p:sp>`. The relId is `r:embed`, target is `../media/video1.mp4`,
+ * `TargetMode` defaults to Internal — the in-ZIP video happy path.
+ */
+export function buildVideoFixture(): Uint8Array {
+  const slide = slideShell(
+    spVideo({
+      id: 2,
+      name: 'Video1',
+      relAttr: 'r:embed',
+      relId: 'rIdVid1',
+      x: 0,
+      y: 0,
+      cx: 4000000,
+      cy: 3000000,
+    }),
+  );
+  return buildPptx(
+    [slide],
+    { 'ppt/media/video1.mp4': STUB_MP4_BYTES },
+    [
+      [
+        {
+          id: 'rIdVid1',
+          type: REL_TYPE_VIDEO,
+          target: '../media/video1.mp4',
+          targetMode: 'Internal',
+        },
+      ],
+    ],
+  );
+}
+
+/**
+ * Fixture 8 (T-243b): mixed slide carrying one image + one video, exercising
+ * the end-to-end pipeline (`parsePptx → resolveAssets`). Used by AC #15.
+ */
+export function buildVideoAndImageFixture(): Uint8Array {
+  const slide = slideShell(
+    [
+      spPic({
+        id: 2,
+        name: 'Pic1',
+        embedRelId: 'rIdImg1',
+        x: 0,
+        y: 0,
+        cx: 1000000,
+        cy: 1000000,
+      }),
+      spVideo({
+        id: 3,
+        name: 'Video1',
+        relAttr: 'r:embed',
+        relId: 'rIdVid1',
+        x: 1500000,
+        y: 0,
+        cx: 4000000,
+        cy: 3000000,
+      }),
+    ].join('\n'),
+  );
+  return buildPptx(
+    [slide],
+    {
+      'ppt/media/image1.png': ONE_PIXEL_PNG,
+      'ppt/media/video1.mp4': STUB_MP4_BYTES,
+    },
+    [
+      [
+        {
+          id: 'rIdImg1',
+          type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image',
+          target: '../media/image1.png',
+        },
+        {
+          id: 'rIdVid1',
+          type: REL_TYPE_VIDEO,
+          target: '../media/video1.mp4',
+          targetMode: 'Internal',
+        },
+      ],
+    ],
+  );
+}
+
 /** All fixture builders, keyed by stable name. Preserves enumeration order. */
 export const FIXTURE_BUILDERS = {
   minimal: buildMinimalFixture,
@@ -441,6 +624,8 @@ export const FIXTURE_BUILDERS = {
   group: buildGroupFixture,
   'multi-slide': buildMultiSlideFixture,
   adjusted: buildAdjustedShapesFixture,
+  video: buildVideoFixture,
+  'video-and-image': buildVideoAndImageFixture,
 } as const;
 
 export type FixtureName = keyof typeof FIXTURE_BUILDERS;

@@ -16,9 +16,22 @@ describe('inferContentType', () => {
     expect(inferContentType(path)).toBe(expected);
   });
 
+  // T-243b AC #13 — pin every added video extension to its IANA MIME.
+  it.each([
+    ['ppt/media/clip.mp4', 'video/mp4'],
+    ['ppt/media/clip.MP4', 'video/mp4'],
+    ['ppt/media/clip.m4v', 'video/mp4'],
+    ['ppt/media/clip.mov', 'video/quicktime'],
+    ['ppt/media/clip.webm', 'video/webm'],
+    ['ppt/media/clip.avi', 'video/x-msvideo'],
+    ['ppt/media/clip.wmv', 'video/x-ms-wmv'],
+  ])('maps video %s → %s', (path, expected) => {
+    expect(inferContentType(path)).toBe(expected);
+  });
+
   it('returns application/octet-stream for unknown extensions', () => {
-    expect(inferContentType('ppt/media/clip.mp4')).toBe('application/octet-stream');
     expect(inferContentType('ppt/embeddings/data.bin')).toBe('application/octet-stream');
+    expect(inferContentType('ppt/media/clip.flv')).toBe('application/octet-stream');
   });
 
   it('returns application/octet-stream when there is no extension', () => {

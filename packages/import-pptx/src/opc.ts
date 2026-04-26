@@ -55,6 +55,12 @@ export interface OpcRel {
   target: string;
   /** Resolved absolute path within the package. */
   resolvedTarget: string;
+  /**
+   * `TargetMode` attribute. Defaults to Internal when absent (per OOXML
+   * spec). T-243b reads this to disambiguate in-ZIP video relationships
+   * from external-URL `r:link` references.
+   */
+  targetMode?: 'Internal' | 'External';
 }
 
 /** Map of relId -> rel for a single source part. */
@@ -230,11 +236,17 @@ export function readRels(entries: ZipEntries, partPath: string): OpcRelMap {
     const type = attr(row, 'Type');
     const target = attr(row, 'Target');
     if (id === undefined || type === undefined || target === undefined) continue;
+    const targetMode = attr(row, 'TargetMode');
+    const isExternal = targetMode === 'External';
     map[id] = {
       id,
       type,
       target,
-      resolvedTarget: resolveRelTarget(partPath, target),
+      // External targets are URLs, not in-package paths — keep them verbatim.
+      resolvedTarget: isExternal ? target : resolveRelTarget(partPath, target),
+      ...(targetMode === 'External' || targetMode === 'Internal'
+        ? { targetMode }
+        : {}),
     };
   }
   return map;
