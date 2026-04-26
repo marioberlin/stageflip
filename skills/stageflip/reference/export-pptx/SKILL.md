@@ -65,7 +65,8 @@ type ExportPptxLossFlagCode =
   | 'LF-PPTX-EXPORT-CUSTOM-GEOMETRY-DEGRADED'
   | 'LF-PPTX-EXPORT-ANIMATIONS-DROPPED'
   | 'LF-PPTX-EXPORT-NOTES-DROPPED'
-  | 'LF-PPTX-EXPORT-THEME-FLATTENED';
+  | 'LF-PPTX-EXPORT-THEME-FLATTENED'
+  | 'LF-PPTX-EXPORT-IMAGE-BACKGROUND-FALLBACK';
 ```
 
 The canonical `LossFlag.code` field is `string` (open); this writer-local
@@ -109,3 +110,11 @@ non-determinism are pinned:
 | `<a:custGeom>` real path write-back | future task |
 | Animations / transitions / notesSlide | future tasks |
 | Theme write-back from `Document.theme` | future T-253-theme rider |
+
+## References
+
+When the topic comes up mid-task, read the relevant doc:
+
+- [references/pptx-constraints.md](references/pptx-constraints.md) — searchable Q&A on what the writer can / can't emit, with file_path:line citations and links to the relevant loss flags. Read before extending the writer or filing a Reviewer comment about a degraded path.
+
+The `references/` tier convention is documented at [skills/stageflip/concepts/references-tier/SKILL.md](../../concepts/references-tier/SKILL.md).
