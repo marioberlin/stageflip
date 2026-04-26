@@ -5,9 +5,10 @@
 // with `chOff`/`chExt` set to the group's own offset/extent — the no-op
 // composition that's the inverse of the importer's accumulator.
 
-import type { GroupElement } from '@stageflip/schema';
+import { compareToPlaceholder } from '@stageflip/schema';
+import type { Element, GroupElement } from '@stageflip/schema';
 import type { SlideEmitContext } from './shared.js';
-import { pxToEmu, renderXfrm } from './shared.js';
+import { pxToEmu, renderNvPr, renderXfrm, resolveAndFlagInheritsFrom } from './shared.js';
 
 /**
  * Emit `<p:grpSp>` for a `GroupElement`. Children dispatch is provided by
@@ -21,6 +22,13 @@ export function emitGroupElement(
 ): string {
   const idAttr = escapeAttr(el.id);
   const nameAttr = escapeAttr(el.name ?? el.id);
+  const resolution = resolveAndFlagInheritsFrom(el, ctx);
+  const suppress =
+    resolution !== null && resolution.kind === 'resolved'
+      ? new Set(compareToPlaceholder(el as Element, resolution.placeholder).suppressKeys)
+      : new Set<string>();
+  const nvPr = renderNvPr(resolution);
+  const isPlaceholderRef = resolution !== null && resolution.kind === 'resolved';
   const xfrm = renderXfrm(el.transform);
   // chOff / chExt: the group's own offset/extent in EMU; identity composition
   // means children's world-space coordinates pass through unchanged.
@@ -40,10 +48,11 @@ export function emitGroupElement(
     '</a:xfrm>',
     `<a:chOff x="${chOffX}" y="${chOffY}"/><a:chExt cx="${chExtCx}" cy="${chExtCy}"/></a:xfrm>`,
   );
+  const grpSpPrInner = isPlaceholderRef && suppress.has('transform') ? '' : xfrmWithChild;
 
   return `<p:grpSp>\
-<p:nvGrpSpPr><p:cNvPr id="${idAttr}" name="${nameAttr}"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>\
-<p:grpSpPr>${xfrmWithChild}</p:grpSpPr>\
+<p:nvGrpSpPr><p:cNvPr id="${idAttr}" name="${nameAttr}"/><p:cNvGrpSpPr/>${nvPr}</p:nvGrpSpPr>\
+<p:grpSpPr>${grpSpPrInner}</p:grpSpPr>\
 ${childXmls.join('')}\
 </p:grpSp>`;
 }

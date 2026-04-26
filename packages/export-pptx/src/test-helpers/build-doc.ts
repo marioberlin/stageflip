@@ -12,11 +12,16 @@ export interface BuildDocInput {
     id: string;
     title?: string;
     notes?: string;
+    layoutId?: string;
     background?: { kind: 'color'; value: string } | { kind: 'asset'; value: string };
     elements: unknown[];
   }>;
   theme?: { tokens?: Record<string, string | number>; palette?: Record<string, string> };
   meta?: { title?: string };
+  /** T-253-rider: deck-level layouts. */
+  layouts?: unknown[];
+  /** T-253-rider: deck-level masters. */
+  masters?: unknown[];
 }
 
 /** Build a slide-mode Document with terse boilerplate. */
@@ -33,14 +38,15 @@ export function buildDoc(input: BuildDocInput): Document {
     theme: input.theme ?? { tokens: {} },
     variables: {},
     components: {},
-    masters: [],
-    layouts: [],
+    masters: input.masters ?? [],
+    layouts: input.layouts ?? [],
     content: {
       mode: 'slide',
       slides: input.slides.map((s) => {
         const slide: Record<string, unknown> = { id: s.id, elements: s.elements };
         if (s.title !== undefined) slide.title = s.title;
         if (s.notes !== undefined) slide.notes = s.notes;
+        if (s.layoutId !== undefined) slide.layoutId = s.layoutId;
         if (s.background !== undefined) slide.background = s.background;
         return slide;
       }),

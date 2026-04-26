@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "id": "deck-1",
+    "version": 1,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  "theme": { "tokens": {} },
+  "variables": {},
+  "components": {},
+  "masters": [
+    {
+      "id": "master-default",
+      "name": "Default Master",
+      "placeholders": [
+        {
+          "id": "mp-title",
+          "name": "Title",
+          "type": "text",
+          "transform": { "x": 50, "y": 50, "width": 800, "height": 100 },
+          "text": "Master title placeholder"
+        },
+        {
+          "id": "mp-body",
+          "name": "Body",
+          "type": "text",
+          "transform": { "x": 50, "y": 200, "width": 800, "height": 400 },
+          "text": "Master body placeholder"
+        }
+      ]
+    }
+  ],
+  "layouts": [
+    {
+      "id": "layout-title",
+      "name": "Title Layout",
+      "masterId": "master-default",
+      "placeholders": [
+        {
+          "id": "lp-title",
+          "name": "Layout Title",
+          "type": "text",
+          "transform": { "x": 50, "y": 80, "width": 800, "height": 120 },
+          "text": "Layout title placeholder"
+        }
+      ]
+    },
+    {
+      "id": "layout-content",
+      "name": "Content Layout",
+      "masterId": "master-default",
+      "placeholders": [
+        {
+          "id": "cp-title",
+          "name": "Content Title",
+          "type": "text",
+          "transform": { "x": 50, "y": 50, "width": 800, "height": 80 },
+          "text": "Content title placeholder"
+        }
+      ]
+    }
+  ],
+  "content": {
+    "mode": "slide",
+    "slides": [
+      {
+        "id": "slide_1",
+        "layoutId": "layout-title",
+        "elements": [
+          {
+            "id": "s1-title",
+            "type": "text",
+            "transform": { "x": 50, "y": 80, "width": 800, "height": 120 },
+            "text": "Real first slide title",
+            "inheritsFrom": { "templateId": "layout-title", "placeholderIdx": 0 }
+          }
+        ]
+      },
+      {
+        "id": "slide_2",
+        "layoutId": "layout-content",
+        "elements": [
+          {
+            "id": "s2-title",
+            "type": "text",
+            "transform": { "x": 50, "y": 50, "width": 800, "height": 80 },
+            "text": "Second slide title",
+            "inheritsFrom": { "templateId": "layout-content", "placeholderIdx": 0 }
+          },
+          {
+            "id": "s2-body",
+            "type": "text",
+            "transform": { "x": 50, "y": 200, "width": 800, "height": 400 },
+            "text": "Second slide body (transitive: layout has no idx 1, master does)",
+            "inheritsFrom": { "templateId": "layout-content", "placeholderIdx": 1 }
+          }
+        ]
+      },
+      {
+        "id": "slide_3",
+        "layoutId": "layout-title",
+        "elements": [
+          {
+            "id": "s3-only",
+            "type": "text",
+            "transform": { "x": 100, "y": 100, "width": 600, "height": 100 },
+            "text": "Slide without inheritance"
+          }
+        ]
+      }
+    ]
+  }
+}

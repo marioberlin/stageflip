@@ -5,7 +5,7 @@
 // when `Slide.background` is present.
 
 import type { LossFlag } from '@stageflip/loss-flags';
-import type { Element, Slide } from '@stageflip/schema';
+import type { Element, Slide, SlideLayout, SlideMaster } from '@stageflip/schema';
 import type { CollectedAsset } from '../assets/collect.js';
 import { emitGroupElement } from '../elements/group.js';
 import { emitImageElement, parseAssetId } from '../elements/image.js';
@@ -20,6 +20,7 @@ const NS_A = 'http://schemas.openxmlformats.org/drawingml/2006/main';
 const NS_R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const REL_NS = 'http://schemas.openxmlformats.org/package/2006/relationships';
 const TYPE_IMAGE = `${NS_R}/image`;
+const TYPE_SLIDE_LAYOUT = `${NS_R}/slideLayout`;
 
 export interface EmitSlideInput {
   slide: Slide;
@@ -29,6 +30,12 @@ export interface EmitSlideInput {
   resolvedAssets: Map<string, CollectedAsset>;
   /** Asset ids that the asset reader could not resolve. */
   missingAssets: Set<string>;
+  /** T-253-rider: deck-level layouts indexed by id. */
+  layoutsById?: ReadonlyMap<string, SlideLayout>;
+  /** T-253-rider: deck-level masters indexed by id. */
+  mastersById?: ReadonlyMap<string, SlideMaster>;
+  /** T-253-rider: 1-based index of the slide's layout in `Document.layouts`, or undefined. */
+  layoutIndex?: number;
 }
 
 export interface EmitSlideResult {
@@ -66,6 +73,9 @@ export function emitSlide(input: EmitSlideInput): EmitSlideResult {
       imageRels.push({ relId, targetPath: relTarget });
       return relId;
     },
+    ...(input.layoutsById !== undefined ? { layoutsById: input.layoutsById } : {}),
+    ...(input.mastersById !== undefined ? { mastersById: input.mastersById } : {}),
+    emitMode: 'slide',
   };
 
   // Emit per-element XMLs.
@@ -121,6 +131,15 @@ ${elementXmls.join('')}\
   const relRows = imageRels.map(
     (r) => `<Relationship Id="${r.relId}" Type="${TYPE_IMAGE}" Target="${r.targetPath}"/>`,
   );
+  // T-253-rider: emit a slide-layout rel when the slide's layoutId resolves
+  // to one of `Document.layouts`. The rel comes after image rels so existing
+  // image rId allocations are unchanged.
+  if (input.layoutIndex !== undefined && input.layoutIndex >= 1) {
+    const layoutRelId = `rId${relCounter++}`;
+    relRows.push(
+      `<Relationship Id="${layoutRelId}" Type="${TYPE_SLIDE_LAYOUT}" Target="../slideLayouts/slideLayout${input.layoutIndex}.xml"/>`,
+    );
+  }
   const relsXml = `${XML_PROLOG}<Relationships xmlns="${REL_NS}">${relRows.join('')}</Relationships>`;
 
   // Collect media bytes the slide pulled in.

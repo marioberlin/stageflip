@@ -66,8 +66,21 @@ type ExportPptxLossFlagCode =
   | 'LF-PPTX-EXPORT-ANIMATIONS-DROPPED'
   | 'LF-PPTX-EXPORT-NOTES-DROPPED'
   | 'LF-PPTX-EXPORT-THEME-FLATTENED'
-  | 'LF-PPTX-EXPORT-IMAGE-BACKGROUND-FALLBACK';
+  | 'LF-PPTX-EXPORT-IMAGE-BACKGROUND-FALLBACK'
+  // T-253-rider — placeholder-inheritance write-back:
+  | 'LF-PPTX-EXPORT-LAYOUT-NOT-FOUND'
+  | 'LF-PPTX-EXPORT-PLACEHOLDER-NOT-FOUND'
+  | 'LF-PPTX-EXPORT-PLACEHOLDER-MISMATCH';
 ```
+
+T-253-rider adds three codes around the layout / master / per-element
+placeholder-reference path:
+
+| Code | Severity | Category | When |
+|---|---|---|---|
+| `LF-PPTX-EXPORT-LAYOUT-NOT-FOUND` | warn | shape | An element's `inheritsFrom.templateId` doesn't match any `Document.layouts` or `Document.masters` entry. Writer falls back to materialized geometry. |
+| `LF-PPTX-EXPORT-PLACEHOLDER-NOT-FOUND` | warn | shape | The `templateId` resolved but `placeholderIdx` doesn't exist on the layout (or transitively on its master). Same fallback. |
+| `LF-PPTX-EXPORT-PLACEHOLDER-MISMATCH` | info | shape | Reserved for structural divergence between slide-side fields and the placeholder's. Today's element schemas keep top-level shape consistent so this is rare. |
 
 The canonical `LossFlag.code` field is `string` (open); this writer-local
 enum narrows the per-export surface for type-safe consumers. See
@@ -103,7 +116,7 @@ non-determinism are pinned:
 
 | Item | Owner |
 |---|---|
-| `<p:sldLayout>` / `<p:sldMaster>` parts; per-element `<p:ph>` refs | T-253-rider |
+| `<p:sldLayout>` / `<p:sldMaster>` parts; per-element `<p:ph>` refs | **T-253-rider — landed** |
 | `<a:tbl>` write-back | future T-253-tables rider |
 | `<p:videoFile>` write-back | future T-253-videos rider |
 | `<p:embeddedFontLst>` write-back | future T-253-fonts rider |

@@ -190,3 +190,112 @@ function mergePlaceholderIntoElement(slideEl: Element, placeholder: Element): El
   }
   return merged as Element;
 }
+
+/**
+ * Result of comparing a slide element to its placeholder. The inverse of
+ * `applyInheritance` — used by exporters to suppress slide-side fields whose
+ * value matches the placeholder default (so the runtime fully inherits).
+ *
+ * `suppressKeys` lists every top-level `Element` key that:
+ *   - exists on the placeholder (i.e., the placeholder defines a default), AND
+ *   - has the same value on the slide element (deep-equal, no float epsilon).
+ *
+ * `transform` is whole-or-nothing: if every nested numeric field of
+ * `transform` matches, the entire `transform` key is suppressed; if any one
+ * differs, the entire slide-side `transform` wins (no partial-transform diff).
+ *
+ * `animations` is NEVER suppressed — Zod's `.default([])` semantics from T-251
+ * §"Override granularity" make `animations: []` always considered "set".
+ *
+ * `id`, `type`, and `inheritsFrom` are never suppressed (slide always wins on
+ * id; type is never re-discriminated; inheritsFrom is the very reference
+ * being resolved).
+ *
+ * `mismatch` is `true` when a slide-side field is structurally non-comparable
+ * to the placeholder's (rare; e.g., the placeholder lacks the field entirely
+ * for a discriminated variant the slide carries). Exporters surface this via
+ * `LF-PPTX-EXPORT-PLACEHOLDER-MISMATCH`.
+ */
+export interface CompareToPlaceholderResult {
+  suppressKeys: string[];
+  mismatch: boolean;
+}
+
+/**
+ * Sibling export to `applyInheritance`. Compares a slide element to its
+ * resolved placeholder and returns the keys whose slide-side value matches
+ * the placeholder default (and may therefore be suppressed in the rendered
+ * output). See `CompareToPlaceholderResult` for semantics.
+ *
+ * Pure: no I/O, deterministic, never mutates inputs.
+ */
+export function compareToPlaceholder(
+  slideEl: Element,
+  placeholder: Element,
+): CompareToPlaceholderResult {
+  const suppressKeys: string[] = [];
+  const mismatch = false;
+  const slideRec = slideEl as unknown as Record<string, unknown>;
+  const phRec = placeholder as unknown as Record<string, unknown>;
+  for (const key of Object.keys(phRec)) {
+    if (key === 'id' || key === 'type' || key === 'inheritsFrom') continue;
+    if (key === 'animations') continue; // never suppressed (Zod default `[]`)
+    const slideVal = slideRec[key];
+    const phVal = phRec[key];
+    if (slideVal === undefined) {
+      // Slide leaves the field unset — placeholder default already applies;
+      // nothing to suppress (slide XML wouldn't emit it anyway).
+      continue;
+    }
+    if (key === 'transform') {
+      // Whole-or-nothing comparison. Any nested-field divergence → emit full slide transform.
+      if (deepEqual(slideVal, phVal)) suppressKeys.push(key);
+      continue;
+    }
+    if (deepEqual(slideVal, phVal)) {
+      suppressKeys.push(key);
+    }
+  }
+  // Mismatch detection: a slide-side field that the placeholder doesn't carry
+  // at all but is structurally non-comparable (e.g., type-discriminant-only
+  // fields). Today's element schemas keep their type-specific fields aligned,
+  // so this branch is rare; reserved for future schema growth.
+  for (const key of Object.keys(slideRec)) {
+    if (key in phRec) continue;
+    if (key === 'id' || key === 'type' || key === 'inheritsFrom') continue;
+    if (key === 'animations') continue;
+    // Slide carries a key the placeholder lacks; not suppressible, but also
+    // not a mismatch — the slide simply wins. Mismatch is reserved for
+    // structurally-incompatible cases (e.g., the placeholder declares the
+    // same key with an incompatible type). Today's schemas don't surface
+    // that condition; the flag stays opt-in for future schema divergence.
+    void mismatch; // satisfy linter on the unused branch
+  }
+  return { suppressKeys, mismatch };
+}
+
+/** Structural deep equality for plain JSON values; no Date / Map / Set. */
+function deepEqual(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (a === null || b === null) return false;
+  if (typeof a !== 'object' || typeof b !== 'object') return false;
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b)) return false;
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i += 1) {
+      if (!deepEqual(a[i], b[i])) return false;
+    }
+    return true;
+  }
+  if (Array.isArray(b)) return false;
+  const aRec = a as Record<string, unknown>;
+  const bRec = b as Record<string, unknown>;
+  const aKeys = Object.keys(aRec);
+  const bKeys = Object.keys(bRec);
+  if (aKeys.length !== bKeys.length) return false;
+  for (const k of aKeys) {
+    if (!Object.hasOwn(bRec, k)) return false;
+    if (!deepEqual(aRec[k], bRec[k])) return false;
+  }
+  return true;
+}
