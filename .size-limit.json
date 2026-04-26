@@ -28,5 +28,13 @@
     "limit": "50 KB",
     "gzip": true,
     "ignore": ["crypto", "node:crypto"]
+  },
+  {
+    "name": "@stageflip/import-google-slides (ESM, gzipped, all exports)",
+    "path": "packages/import-google-slides/dist/index.js",
+    "import": "*",
+    "limit": "60 KB",
+    "gzip": true,
+    "ignore": ["crypto", "node:crypto", "@stageflip/import-pptx", "@stageflip/loss-flags", "@stageflip/schema"]
   }
 ]

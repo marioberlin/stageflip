@@ -1,0 +1,83 @@
+{
+  "presentationId": "placeholder-inheritance",
+  "pageSize": {
+    "width": { "magnitude": 9144000 },
+    "height": { "magnitude": 5143500 }
+  },
+  "masters": [
+    {
+      "objectId": "master-1",
+      "pageType": "MASTER",
+      "pageElements": [
+        {
+          "objectId": "master-ph-1",
+          "size": {
+            "width": { "magnitude": 8000000 },
+            "height": { "magnitude": 1000000 }
+          },
+          "transform": { "scaleX": 1, "scaleY": 1, "translateX": 500000, "translateY": 4000000 },
+          "shape": {
+            "shapeType": "TEXT_BOX",
+            "placeholder": { "type": "BODY", "index": 1 }
+          }
+        }
+      ]
+    }
+  ],
+  "layouts": [
+    {
+      "objectId": "layout-1",
+      "pageType": "LAYOUT",
+      "layoutProperties": { "masterObjectId": "master-1", "name": "TITLE" },
+      "pageElements": [
+        {
+          "objectId": "layout-ph-0",
+          "size": {
+            "width": { "magnitude": 8000000 },
+            "height": { "magnitude": 1000000 }
+          },
+          "transform": { "scaleX": 1, "scaleY": 1, "translateX": 500000, "translateY": 500000 },
+          "shape": {
+            "shapeType": "TEXT_BOX",
+            "placeholder": { "type": "TITLE", "index": 0 }
+          }
+        }
+      ]
+    }
+  ],
+  "slides": [
+    {
+      "objectId": "slide-1",
+      "pageType": "SLIDE",
+      "slideProperties": { "layoutObjectId": "layout-1" },
+      "pageElements": [
+        {
+          "objectId": "el-title",
+          "size": {
+            "width": { "magnitude": 8000000 },
+            "height": { "magnitude": 1000000 }
+          },
+          "transform": { "scaleX": 1, "scaleY": 1, "translateX": 500000, "translateY": 500000 },
+          "shape": {
+            "shapeType": "TEXT_BOX",
+            "text": { "textElements": [{ "textRun": { "content": "Resolves to layout" } }] },
+            "placeholder": { "type": "TITLE", "index": 0, "parentObjectId": "layout-1" }
+          }
+        },
+        {
+          "objectId": "el-body",
+          "size": {
+            "width": { "magnitude": 8000000 },
+            "height": { "magnitude": 1000000 }
+          },
+          "transform": { "scaleX": 1, "scaleY": 1, "translateX": 500000, "translateY": 4000000 },
+          "shape": {
+            "shapeType": "TEXT_BOX",
+            "text": { "textElements": [{ "textRun": { "content": "Body text" } }] },
+            "placeholder": { "type": "BODY", "index": 1, "parentObjectId": "layout-1" }
+          }
+        }
+      ]
+    }
+  ]
+}

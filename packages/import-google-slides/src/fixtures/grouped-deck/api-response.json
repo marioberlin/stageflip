@@ -1,0 +1,73 @@
+{
+  "presentationId": "grouped-deck",
+  "pageSize": {
+    "width": { "magnitude": 9144000, "unit": "EMU" },
+    "height": { "magnitude": 5143500, "unit": "EMU" }
+  },
+  "masters": [{ "objectId": "master-1", "pageType": "MASTER", "pageElements": [] }],
+  "layouts": [
+    {
+      "objectId": "layout-1",
+      "pageType": "LAYOUT",
+      "layoutProperties": { "masterObjectId": "master-1", "name": "BLANK" },
+      "pageElements": []
+    }
+  ],
+  "slides": [
+    {
+      "objectId": "slide-1",
+      "pageType": "SLIDE",
+      "slideProperties": { "layoutObjectId": "layout-1" },
+      "pageElements": [
+        {
+          "objectId": "outer-group",
+          "size": {
+            "width": { "magnitude": 4000000 },
+            "height": { "magnitude": 2000000 }
+          },
+          "transform": {
+            "scaleX": 1,
+            "scaleY": 1,
+            "translateX": 1000000,
+            "translateY": 1000000
+          },
+          "elementGroup": {
+            "children": [
+              {
+                "objectId": "inner-group",
+                "size": {
+                  "width": { "magnitude": 2000000 },
+                  "height": { "magnitude": 1000000 }
+                },
+                "transform": {
+                  "scaleX": 1,
+                  "scaleY": 1,
+                  "translateX": 100000,
+                  "translateY": 100000
+                },
+                "elementGroup": {
+                  "children": [
+                    {
+                      "objectId": "leaf-rect",
+                      "size": {
+                        "width": { "magnitude": 500000 },
+                        "height": { "magnitude": 500000 }
+                      },
+                      "transform": {
+                        "scaleX": 1,
+                        "scaleY": 1,
+                        "translateX": 50000,
+                        "translateY": 50000
+                      },
+                      "shape": { "shapeType": "RECTANGLE" }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
