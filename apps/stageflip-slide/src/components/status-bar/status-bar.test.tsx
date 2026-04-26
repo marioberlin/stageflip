@@ -42,6 +42,8 @@ function makeDoc(slideCount: number, elementCount: number): Document {
     theme: { tokens: {} },
     variables: {},
     components: {},
+    masters: [],
+    layouts: [],
     content: { mode: 'slide', slides },
   };
 }

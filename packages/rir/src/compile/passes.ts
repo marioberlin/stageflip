@@ -87,8 +87,12 @@ export function mapElements<E extends Element>(elements: readonly E[], fn: (el: 
 export function applyInheritancePass(doc: Document, sink: DiagnosticSink): Document {
   const materialized = applyInheritance(doc);
 
-  // Fast path — no templates, nothing to validate.
-  if (doc.layouts.length === 0 && doc.masters.length === 0) {
+  // Fast path — no templates, nothing to validate. Tolerate documents that
+  // bypassed `documentSchema.parse` (e.g., unit-test literals) by treating
+  // missing `layouts` / `masters` as empty.
+  const layouts = doc.layouts ?? [];
+  const masters = doc.masters ?? [];
+  if (layouts.length === 0 && masters.length === 0) {
     return materialized;
   }
   if (doc.content.mode !== 'slide') {
@@ -96,9 +100,9 @@ export function applyInheritancePass(doc: Document, sink: DiagnosticSink): Docum
   }
 
   const layoutsById = new Map<string, SlideLayout>();
-  for (const layout of doc.layouts) layoutsById.set(layout.id, layout);
+  for (const layout of layouts) layoutsById.set(layout.id, layout);
   const mastersById = new Map<string, SlideMaster>();
-  for (const master of doc.masters) mastersById.set(master.id, master);
+  for (const master of masters) mastersById.set(master.id, master);
 
   for (const slide of doc.content.slides) {
     if (slide.layoutId !== undefined && !layoutsById.has(slide.layoutId)) {

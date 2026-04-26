@@ -107,6 +107,8 @@ export function importLegacyDocument(input: unknown): ImportResult {
     theme: { tokens: {} },
     variables: {},
     components: {},
+    masters: [],
+    layouts: [],
     content,
   };
 

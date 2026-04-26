@@ -17,9 +17,12 @@ export type { Shortcut, ShortcutCategory, ShortcutHandler } from './shortcuts/ty
 // T-121b — atoms + context
 export {
   __clearElementByIdCacheForTest,
+  __clearMaterializedSlideByIdCacheForTest,
   __clearSlideByIdCacheForTest,
   documentAtom,
   elementByIdAtom,
+  materializedDocumentAtom,
+  materializedSlideByIdAtom,
   slideByIdAtom,
 } from './atoms/document';
 export { activeSlideIdAtom } from './atoms/ui';

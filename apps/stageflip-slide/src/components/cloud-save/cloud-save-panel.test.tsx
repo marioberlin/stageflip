@@ -23,6 +23,8 @@ function makeDoc(): Document {
     theme: { tokens: {} },
     variables: {},
     components: {},
+    masters: [],
+    layouts: [],
     content: { mode: 'slide', slides: [{ id: 's1', elements: [] }] },
   };
 }

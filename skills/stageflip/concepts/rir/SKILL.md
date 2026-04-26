@@ -23,6 +23,7 @@ tree.
 
 | Pass | Input | Output |
 |---|---|---|
+| Apply inheritance | per-element `inheritsFrom` | placeholder fields filled from layout / master (T-251) |
 | Theme resolve | raw token refs | literal values |
 | Variable resolve | `{{x}}` placeholders | bound values from `variables` |
 | Component expand | `<MyCallout/>` refs | inline element trees |
@@ -31,6 +32,12 @@ tree.
 | zIndex assign | array order | `zIndex = arrayIndex * 10` |
 | Stacking context | three/shader/embed runtimes | `isolation: isolate` wrappers |
 | Font aggregate | per-element font use | `FontRequirement[]` for FontManager |
+
+The `apply-inheritance` pass runs **first** so theme tokens / variables / component bodies on placeholder values resolve through the standard pipeline. It can emit two diagnostic codes (both `severity: 'warn'`):
+- `LF-RIR-LAYOUT-NOT-FOUND` — a slide carries a `layoutId` that does not resolve in `Document.layouts`.
+- `LF-RIR-PLACEHOLDER-NOT-FOUND` — an element carries `inheritsFrom.placeholderIdx` that does not match any placeholder on the layout (or transitively on its master), or `inheritsFrom.templateId` that does not resolve.
+
+Materialization is implemented as a pure helper `applyInheritance(doc): Document` exported from `@stageflip/schema`; the RIR pass is a thin wrapper that delegates to the helper and walks the slides a second time to emit diagnostics. The same helper is consumed by the editor canvas via `materializedDocumentAtom` so editor reads see the same materialized fields.
 
 Output: a pure, determinism-safe `RIR` tree + a `StackingMap` (for parity
 verifiers) + a `FontRequirementSet`.

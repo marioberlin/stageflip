@@ -73,9 +73,7 @@ describe('slideLayoutSchema', () => {
   });
 
   it('requires masterId', () => {
-    expect(() =>
-      slideLayoutSchema.parse({ id: 'layout-1', name: 'Title' } as unknown),
-    ).toThrow();
+    expect(() => slideLayoutSchema.parse({ id: 'layout-1', name: 'Title' } as unknown)).toThrow();
   });
 
   it('accepts an ImageElement placeholder (AC #6)', () => {
@@ -83,9 +81,7 @@ describe('slideLayoutSchema', () => {
       id: 'layout-1',
       name: 'Cover Layout',
       masterId: 'master-1',
-      placeholders: [
-        { id: 'ph-0', type: 'image', transform: TRANSFORM, src: 'asset:hero' },
-      ],
+      placeholders: [{ id: 'ph-0', type: 'image', transform: TRANSFORM, src: 'asset:hero' }],
     });
     expect(parsed.placeholders[0]?.type).toBe('image');
   });
@@ -95,9 +91,7 @@ describe('slideLayoutSchema', () => {
       id: 'layout-1',
       name: 'Geo Layout',
       masterId: 'master-1',
-      placeholders: [
-        { id: 'ph-0', type: 'shape', transform: TRANSFORM, shape: 'rect' },
-      ],
+      placeholders: [{ id: 'ph-0', type: 'shape', transform: TRANSFORM, shape: 'rect' }],
     });
     expect(parsed.placeholders[0]?.type).toBe('shape');
   });

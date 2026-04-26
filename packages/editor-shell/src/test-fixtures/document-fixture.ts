@@ -56,6 +56,8 @@ export function makeSlideDoc({
     theme: { tokens: {} },
     variables: {},
     components: {},
+    masters: [],
+    layouts: [],
     content: { mode: 'slide', slides },
   } satisfies Document;
 }

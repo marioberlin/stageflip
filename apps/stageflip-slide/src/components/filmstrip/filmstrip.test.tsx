@@ -34,6 +34,8 @@ function makeDoc(slideIds: string[]): Document {
     theme: { tokens: {} },
     variables: {},
     components: {},
+    masters: [],
+    layouts: [],
     content: { mode: 'slide', slides },
   } as Document;
 }
@@ -171,6 +173,8 @@ describe('<Filmstrip> — non-slide document modes', () => {
       theme: { tokens: {} },
       variables: {},
       components: {},
+      masters: [],
+      layouts: [],
       content: { mode: 'video', tracks: [] as unknown[] },
     } as unknown as Document;
     render(

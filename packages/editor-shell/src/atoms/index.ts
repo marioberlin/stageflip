@@ -3,9 +3,12 @@
 
 export {
   __clearElementByIdCacheForTest,
+  __clearMaterializedSlideByIdCacheForTest,
   __clearSlideByIdCacheForTest,
   documentAtom,
   elementByIdAtom,
+  materializedDocumentAtom,
+  materializedSlideByIdAtom,
   slideByIdAtom,
 } from './document';
 export {

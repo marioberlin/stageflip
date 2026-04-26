@@ -300,9 +300,7 @@ describe('applyInheritance — slide-side id preservation (AC #12)', () => {
           id: 'layout-1',
           name: 'L',
           masterId: 'master-1',
-          placeholders: [
-            { id: 'PLACEHOLDER-ID', type: 'text', transform: TRANSFORM, text: 'P' },
-          ],
+          placeholders: [{ id: 'PLACEHOLDER-ID', type: 'text', transform: TRANSFORM, text: 'P' }],
         },
       ],
       content: {
@@ -434,9 +432,7 @@ describe('applyInheritance — purity (AC #14)', () => {
           id: 'layout-1',
           name: 'L',
           masterId: 'master-1',
-          placeholders: [
-            { id: 'p', name: 'PName', type: 'text', transform: TRANSFORM, text: 'P' },
-          ],
+          placeholders: [{ id: 'p', name: 'PName', type: 'text', transform: TRANSFORM, text: 'P' }],
         },
       ],
       content: {
@@ -475,9 +471,7 @@ describe('applyInheritance — purity (AC #14)', () => {
           id: 'layout-1',
           name: 'L',
           masterId: 'master-1',
-          placeholders: [
-            { id: 'p', name: 'PName', type: 'text', transform: TRANSFORM, text: 'P' },
-          ],
+          placeholders: [{ id: 'p', name: 'PName', type: 'text', transform: TRANSFORM, text: 'P' }],
         },
       ],
       content: {
@@ -506,7 +500,7 @@ describe('applyInheritance — purity (AC #14)', () => {
 });
 
 describe('applyInheritance — output is a valid Document (AC #15)', () => {
-  it("output passes documentSchema.parse without throwing", () => {
+  it('output passes documentSchema.parse without throwing', () => {
     const doc = documentSchema.parse({
       meta: { id: 'd1', version: 1, createdAt: NOW, updatedAt: NOW },
       theme: { tokens: {} },
@@ -516,9 +510,7 @@ describe('applyInheritance — output is a valid Document (AC #15)', () => {
           id: 'layout-1',
           name: 'L',
           masterId: 'master-1',
-          placeholders: [
-            { id: 'p', name: 'PName', type: 'text', transform: TRANSFORM, text: 'P' },
-          ],
+          placeholders: [{ id: 'p', name: 'PName', type: 'text', transform: TRANSFORM, text: 'P' }],
         },
       ],
       content: {

@@ -40,6 +40,8 @@ function docWith(element: TextElement): Document {
     theme: { tokens: {} },
     variables: {},
     components: {},
+    masters: [],
+    layouts: [],
     content: { mode: 'slide', slides: [slide] },
   } as Document;
 }

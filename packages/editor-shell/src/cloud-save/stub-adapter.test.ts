@@ -19,6 +19,8 @@ function makeDoc(id: string): Document {
     theme: { tokens: {} },
     variables: {},
     components: {},
+    masters: [],
+    layouts: [],
     content: {
       mode: 'slide',
       slides: [{ id: 's1', elements: [] }],

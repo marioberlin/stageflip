@@ -24,8 +24,14 @@ A **Document** has:
 - `theme`: design tokens (colors, fonts, spacing, radii, shadows)
 - `variables`: named inputs bound into elements (`{{company_name}}`)
 - `components`: reusable element compositions
+- `masters`: deck-level `SlideMaster[]` — top-tier templates owning placeholder
+  elements (T-251). Defaults to `[]`.
+- `layouts`: deck-level `SlideLayout[]` — second-tier templates that extend a
+  master and own placeholder elements (T-251). Defaults to `[]`.
 - `content`: mode-discriminated (`slide` | `video` | `display`); shape differs
   per mode
+
+Slides carry an optional `layoutId` pointing at one of `Document.layouts`. Per-element `inheritsFrom: { templateId, placeholderIdx }` opts an element into placeholder inheritance — at compile/read time the matching placeholder fills any unset top-level field on the slide element. Slide values always win on fields that are explicitly set; `transform` and `animations` are never overridden. The schema-level pure helper `applyInheritance(doc): Document` materializes the inheritance and is the single source of truth — the RIR `apply-inheritance` pass and the editor's `materializedDocumentAtom` both call it. PPTX (T-244 / T-243d) and Google Slides (T-244) importers populate `masters` / `layouts` / `inheritsFrom`; the matching exporter is T-253.
 
 Every element is one of **11 discriminated types**:
 

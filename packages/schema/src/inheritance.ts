@@ -41,8 +41,14 @@ import type { SlideLayout, SlideMaster } from './templates.js';
  *      discarded.
  */
 export function applyInheritance(doc: Document): Document {
-  // Fast path — no templates declared, no work.
-  if (doc.layouts.length === 0 && doc.masters.length === 0) {
+  // Fast path — no templates declared, no work. Tolerate the
+  // pre-T-251 Document shape (missing `layouts` / `masters`) so unit tests
+  // that construct documents as plain literals (without Zod defaults
+  // materializing) don't crash here. Production reads always go through
+  // `documentSchema.parse`, which materializes the defaults.
+  const layouts = doc.layouts ?? [];
+  const masters = doc.masters ?? [];
+  if (layouts.length === 0 && masters.length === 0) {
     return doc;
   }
 
@@ -53,12 +59,14 @@ export function applyInheritance(doc: Document): Document {
   }
 
   const layoutsById = new Map<string, SlideLayout>();
-  for (const layout of doc.layouts) layoutsById.set(layout.id, layout);
+  for (const layout of layouts) layoutsById.set(layout.id, layout);
   const mastersById = new Map<string, SlideMaster>();
-  for (const master of doc.masters) mastersById.set(master.id, master);
+  for (const master of masters) mastersById.set(master.id, master);
 
   const newSlides = doc.content.slides.map((slide) => {
-    const newElements = slide.elements.map((el) => materializeElement(el, layoutsById, mastersById));
+    const newElements = slide.elements.map((el) =>
+      materializeElement(el, layoutsById, mastersById),
+    );
     // Reference-equality on the element list: only allocate a new slide if
     // any element actually changed.
     let changed = newElements.length !== slide.elements.length;

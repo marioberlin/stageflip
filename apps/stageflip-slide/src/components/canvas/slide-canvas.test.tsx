@@ -37,6 +37,8 @@ function makeDoc(): Document {
     theme: { tokens: {} },
     variables: {},
     components: {},
+    masters: [],
+    layouts: [],
     content: {
       mode: 'slide',
       slides: [
@@ -58,6 +60,72 @@ function makeDoc(): Document {
         {
           id: 'slide-1',
           elements: [],
+        },
+      ],
+    },
+  } as Document;
+}
+
+/**
+ * T-251 — A document carrying one SlideMaster + SlideLayout where the slide
+ * element leaves `fontSize` unset and inherits it from the placeholder. The
+ * canvas reads the materialized atom, so the rendered DOM shows the
+ * inherited fontSize.
+ */
+function makeDocWithInheritance(): Document {
+  return {
+    meta: {
+      id: 'doc-template',
+      version: 0,
+      createdAt: '2026-04-26T00:00:00.000Z',
+      updatedAt: '2026-04-26T00:00:00.000Z',
+      locale: 'en',
+      schemaVersion: 1,
+    },
+    theme: { tokens: {} },
+    variables: {},
+    components: {},
+    masters: [{ id: 'master-1', name: 'M', placeholders: [] }],
+    layouts: [
+      {
+        id: 'layout-1',
+        name: 'L',
+        masterId: 'master-1',
+        placeholders: [
+          {
+            id: 'ph-0',
+            type: 'text',
+            transform: { x: 0, y: 0, width: 100, height: 40, rotation: 0, opacity: 1 },
+            visible: true,
+            locked: false,
+            animations: [],
+            text: 'PLACEHOLDER',
+            fontSize: 64,
+            align: 'left',
+          },
+        ],
+      },
+    ],
+    content: {
+      mode: 'slide',
+      slides: [
+        {
+          id: 'slide-0',
+          layoutId: 'layout-1',
+          elements: [
+            {
+              id: 'el-inherits',
+              type: 'text',
+              transform: { x: 10, y: 20, width: 200, height: 80, rotation: 0, opacity: 1 },
+              visible: true,
+              locked: false,
+              animations: [],
+              text: 'Slide text',
+              align: 'left',
+              // No `fontSize` — should inherit 64 from the placeholder.
+              inheritsFrom: { templateId: 'layout-1', placeholderIdx: 0 },
+            },
+          ],
         },
       ],
     },
@@ -170,5 +238,20 @@ describe('<SlideCanvas>', () => {
     const plane = screen.getByTestId('slide-canvas-plane');
     expect(plane.style.width).toBe(`${CANVAS_WIDTH}px`);
     expect(plane.style.height).toBe(`${CANVAS_HEIGHT}px`);
+  });
+
+  it('AC #22 — renders placeholder fills (fontSize) for an element with inheritsFrom', () => {
+    render(
+      <Harness initialDoc={makeDocWithInheritance()} activate="slide-0">
+        <SlideCanvas viewportSizeForTest={{ width: 1920, height: 1080 }} />
+      </Harness>,
+    );
+    // Slide-side text wins.
+    expect(screen.getByText('Slide text')).toBeTruthy();
+    // The TextContent component sets style.fontSize from element.fontSize;
+    // if inheritance materialized correctly, the placeholder's 64px is in
+    // the rendered DOM.
+    const span = screen.getByText('Slide text');
+    expect(span.style.fontSize).toBe('64px');
   });
 });
