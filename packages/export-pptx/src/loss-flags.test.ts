@@ -12,6 +12,7 @@ describe('loss-flags', () => {
       'LF-PPTX-EXPORT-ANIMATIONS-DROPPED',
       'LF-PPTX-EXPORT-NOTES-DROPPED',
       'LF-PPTX-EXPORT-THEME-FLATTENED',
+      'LF-PPTX-EXPORT-IMAGE-BACKGROUND-FALLBACK',
     ];
     for (const c of codes) {
       expect(CODE_DEFAULTS[c]).toBeDefined();

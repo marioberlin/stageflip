@@ -98,6 +98,16 @@ export function emitSlide(input: EmitSlideInput): EmitSlideResult {
   }
 
   const bgXml = renderBackground(slide);
+  if (slide.background?.kind === 'asset') {
+    flags.push(
+      emitLossFlag({
+        code: 'LF-PPTX-EXPORT-IMAGE-BACKGROUND-FALLBACK',
+        location: { slideId: slide.id, oocxmlPath },
+        message:
+          'image-fill slide background degraded to solid white; <a:blipFill> emission deferred to a follow-on rider',
+      }),
+    );
+  }
 
   const xml = `${XML_PROLOG}<p:sld xmlns:p="${NS_P}" xmlns:a="${NS_A}" xmlns:r="${NS_R}">\
 <p:cSld>${bgXml}<p:spTree>\

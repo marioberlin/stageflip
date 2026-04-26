@@ -17,7 +17,8 @@ export type ExportPptxLossFlagCode =
   | 'LF-PPTX-EXPORT-CUSTOM-GEOMETRY-DEGRADED'
   | 'LF-PPTX-EXPORT-ANIMATIONS-DROPPED'
   | 'LF-PPTX-EXPORT-NOTES-DROPPED'
-  | 'LF-PPTX-EXPORT-THEME-FLATTENED';
+  | 'LF-PPTX-EXPORT-THEME-FLATTENED'
+  | 'LF-PPTX-EXPORT-IMAGE-BACKGROUND-FALLBACK';
 
 /** Result of a successful `exportPptx` invocation. */
 export interface ExportPptxResult {

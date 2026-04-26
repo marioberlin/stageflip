@@ -23,6 +23,7 @@ export const CODE_DEFAULTS: Record<
   'LF-PPTX-EXPORT-ANIMATIONS-DROPPED': { severity: 'info', category: 'animation' },
   'LF-PPTX-EXPORT-NOTES-DROPPED': { severity: 'info', category: 'other' },
   'LF-PPTX-EXPORT-THEME-FLATTENED': { severity: 'info', category: 'theme' },
+  'LF-PPTX-EXPORT-IMAGE-BACKGROUND-FALLBACK': { severity: 'warn', category: 'media' },
 };
 
 /**

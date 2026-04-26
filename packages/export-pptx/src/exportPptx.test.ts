@@ -6,6 +6,7 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { Document } from '@stageflip/schema';
 import { unzipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
 import type { AssetReader } from './assets/types.js';
@@ -325,6 +326,82 @@ describe('exportPptx — slide background (AC #17a / #17b)', () => {
     const entries = unzipSync(bytes);
     const xml = new TextDecoder().decode(entries['ppt/slides/slide1.xml']);
     expect(xml).not.toContain('<p:bg>');
+  });
+
+  it('emits LF-PPTX-EXPORT-IMAGE-BACKGROUND-FALLBACK when background.kind === asset', async () => {
+    // Image-fill backgrounds emit a placeholder solid-white <p:bg> (real
+    // <a:blipFill> emission deferred to a follow-on rider). The fallback
+    // breadcrumb flag tells consumers fidelity was lost.
+    const doc = buildDoc({
+      slides: [
+        {
+          id: 's1',
+          background: { kind: 'asset', value: 'asset:bg-image-id' },
+          elements: [{ id: 'e1', type: 'text', transform: TRANSFORM, text: 'a' }],
+        },
+      ],
+    });
+    const { lossFlags } = await exportPptx(doc);
+    const fallbackFlags = lossFlags.filter(
+      (f) => f.code === 'LF-PPTX-EXPORT-IMAGE-BACKGROUND-FALLBACK',
+    );
+    expect(fallbackFlags).toHaveLength(1);
+    expect(fallbackFlags[0]?.location.slideId).toBe('s1');
+    expect(fallbackFlags[0]?.severity).toBe('warn');
+    expect(fallbackFlags[0]?.category).toBe('media');
+  });
+});
+
+describe('exportPptx — non-slide-mode early-return (coverage gap)', () => {
+  // Covers the doc.content.mode !== 'slide' branch in exportPptx.ts.
+  // Base writer only emits slide-mode docs; video/display return an
+  // intentionally empty shell with a single LF-PPTX-EXPORT-UNSUPPORTED-ELEMENT
+  // flag carrying the unsupported mode in originalSnippet.
+
+  it('video-mode doc returns shell + 1 unsupported-element flag', async () => {
+    const doc: Document = {
+      meta: { title: 'video', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
+      theme: { tokens: {} },
+      variables: {},
+      components: {},
+      masters: [],
+      layouts: [],
+      content: {
+        mode: 'video',
+        aspectRatio: '16:9',
+        durationMs: 1000,
+        frameRate: 30,
+        tracks: [{ id: 't1', kind: 'visual', muted: false, elements: [] }],
+      },
+    };
+    const { bytes, lossFlags } = await exportPptx(doc);
+    expect(bytes).toBeInstanceOf(Uint8Array);
+    expect(bytes.length).toBeGreaterThan(0);
+    const unsupported = lossFlags.filter((f) => f.code === 'LF-PPTX-EXPORT-UNSUPPORTED-ELEMENT');
+    expect(unsupported).toHaveLength(1);
+    expect(unsupported[0]?.originalSnippet).toBe('video');
+  });
+
+  it('display-mode doc returns shell + 1 unsupported-element flag', async () => {
+    const doc: Document = {
+      meta: { title: 'display', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
+      theme: { tokens: {} },
+      variables: {},
+      components: {},
+      masters: [],
+      layouts: [],
+      content: {
+        mode: 'display',
+        aspectRatio: '16:9',
+        canonicalSizes: ['300x250'],
+        durationMs: 1000,
+        elements: [],
+      } as never,
+    };
+    const { lossFlags } = await exportPptx(doc);
+    const unsupported = lossFlags.filter((f) => f.code === 'LF-PPTX-EXPORT-UNSUPPORTED-ELEMENT');
+    expect(unsupported).toHaveLength(1);
+    expect(unsupported[0]?.originalSnippet).toBe('display');
   });
 });
 
