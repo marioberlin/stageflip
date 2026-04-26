@@ -3,7 +3,7 @@ title: Workflow — Import PPTX
 id: skills/stageflip/workflows/import-pptx
 tier: workflow
 status: substantive
-last_updated: 2026-05-01
+last_updated: 2026-04-26
 owner_task: T-250
 related:
   - skills/stageflip/concepts/loss-flags
@@ -21,8 +21,7 @@ owns each gap.
 T-240 maps a curated subset of `<a:prstGeom prst="X">` values to schema's
 structural `ShapeKind` (rect, ellipse, polygon, star, line). T-242 grows
 coverage to additional presets via `'custom-path'` with a generated SVG `d`
-attribute. T-242a + T-242b first-wave + T-242c (batch 1 + batch 2) ship
-infra + **33 presets**:
+attribute. T-242a–T-242d ship infra + **36 presets**:
 
 - **Arrows**: rightArrow, leftArrow, upArrow, downArrow, leftRightArrow,
   upDownArrow, bentArrow, curvedRightArrow.
@@ -30,13 +29,15 @@ infra + **33 presets**:
   wedgeEllipseCallout, cloudCallout, borderCallout1, borderCallout2.
 - **Banners / Scrolls / High-point stars**: ribbon, ribbon2,
   verticalScroll, horizontalScroll, star10, star12.
-- **Basics**: parallelogram, trapezoid, chevron.
+- **Basics**: parallelogram, trapezoid, chevron, **chord**, **pie**, **donut**.
 - **Brackets / Braces**: leftBracket, rightBracket, leftBrace, rightBrace.
 - **Misc**: cloud, sun, heart, moon, lightningBolt, noSmoking.
 
-T-242d ships the trailing 3 arc-bearing presets (`chord`, `pie`, `donut`)
-to close out the spec's 50-preset commitment (50 = 14 structural + 33
-custom-path + 3 arc).
+T-242d closes out the parent T-242 commitment: 36/36 custom-path + 14
+structural = 50/50 presets. The arc-bearing trio (`chord`, `pie`, `donut`)
+ships built on real SVG `A` commands; `noSmoking` retains its earlier
+cubic-Bezier ellipse approximation (replacement is non-blocking follow-up
+work, paired with `cloud` / `cloudCallout` re-derivation).
 
 `roundRect` honors its `adj1` adjustment: parsed as a 100000ths integer per
 ECMA-376; the resulting corner radius lands on the schema's existing
@@ -46,14 +47,15 @@ currently ignored — the parser emits `LF-PPTX-PRESET-ADJUSTMENT-IGNORED`
 preset has tuning we didn't apply".
 
 `<a:custGeom>` with the supported commands (`<a:moveTo>`, `<a:lnTo>`,
-`<a:cubicBezTo>`, `<a:quadBezTo>`, `<a:close>`, multi-`<a:path>`) translates
-to SVG `d` via `custGeomToSvgPath`. `<a:arcTo>` is the remaining unsupported
-command; payloads using it currently fall back to `unsupported-shape` (T-245
-rasterization picks them up). T-242d Sub-PR 1 has flipped the shared XML
-parser to `preserveOrder: true` so the walker can interleave heterogeneous
-commands in document order — the precondition `<a:arcTo>` needs. Sub-PR 2
-adds the actual `<a:arcTo>` translation + the `chord` / `pie` / `donut`
-preset generators.
+`<a:cubicBezTo>`, `<a:quadBezTo>`, `<a:arcTo>`, `<a:close>`,
+multi-`<a:path>`) translates to SVG `d` via `custGeomToSvgPath`. T-242d
+Sub-PR 2 closed out `<a:arcTo>` translation by combining the
+`preserveOrder: true` parser shape (Sub-PR 1) with a pen-position-aware
+walker that converts each OOXML arc to an SVG `A rx ry 0 large-arc sweep
+endX endY` segment. ECMA-376 §20.1.9.3 sign convention: positive `swAng`
+is clockwise → SVG `sweep-flag = 1` in y-down coordinates. The supported
+command set now covers every documented `<a:custGeom>` primitive; the
+`LF-PPTX-CUSTOM-GEOMETRY` flag is no longer emitted from the parser.
 
 ### Parsed XML shape
 
@@ -83,7 +85,9 @@ const path = geometryFor('rightArrow', { w: 200, h: 100 });
 ```
 
 Adjustable handles (`<a:avLst>`) honored: `roundRect.adj1` (corner radius)
-in T-242b. Other adjustments emit `LF-PPTX-PRESET-ADJUSTMENT-IGNORED` (info).
+in T-242b; `pie` / `chord` start-angle (`adj1`) and sweep-angle (`adj2`),
+plus `donut` ring-thickness (`adj1`) in T-242d. Other adjustments emit
+`LF-PPTX-PRESET-ADJUSTMENT-IGNORED` (info).
 
 ## Image asset extraction (T-243)
 
@@ -145,8 +149,8 @@ exports `emitLossFlag` as a thin PPTX-defaulted wrapper that auto-fills
 `source: 'pptx'` and the per-code severity / category. The PPTX-specific
 `code` enum lives in `@stageflip/import-pptx`:
 
-- `LF-PPTX-CUSTOM-GEOMETRY` — `<a:custGeom>` containing `<a:arcTo>` / `<a:quadBezTo>` (the unsupported commands). Cleared once T-242b extends `cust-geom/parse.ts` or T-245 rasterizes.
-- `LF-PPTX-PRESET-GEOMETRY` — preset shape outside the T-242 coverage set. Cleared as T-242b adds presets.
+- `LF-PPTX-CUSTOM-GEOMETRY` — historically emitted for `<a:custGeom>` payloads using `<a:arcTo>` / `<a:quadBezTo>`. T-242b added `<a:quadBezTo>` (PR #178) and T-242d added `<a:arcTo>` (Sub-PR 2); the parser now translates every documented command in the supported set, so this code is no longer emitted.
+- `LF-PPTX-PRESET-GEOMETRY` — historically emitted for preset shapes outside the T-242 coverage set. After T-242d every committed preset is covered (50/50); the long-tail (~140 OOXML presets outside the commitment) is owned by T-245's rasterization fallback and surfaces under its own loss code.
 - `LF-PPTX-PRESET-ADJUSTMENT-IGNORED` — `<a:avLst>` adjustment was present but not honored (T-242a uses defaults).
 - `LF-PPTX-UNRESOLVED-ASSET` — picture bytes pending resolution by `resolveAssets` (T-243). Cleared once `resolveAssets` runs.
 - `LF-PPTX-MISSING-ASSET-BYTES` — `error` severity. Picture rel pointed at a path not present in the ZIP. Stays after `resolveAssets`; surfaces an actual import problem.
@@ -158,7 +162,6 @@ exports `emitLossFlag` as a thin PPTX-defaulted wrapper that auto-fills
 
 | Task | Gap |
 |---|---|
-| T-242 | 50+ preset geometries + custom SVG paths → schema `ShapeElement`. |
 | T-243b | Video asset extraction — `<p:videoFile>` not yet parsed by T-240. |
 | T-243c | Font asset extraction — `<p:embeddedFont>` not yet parsed. |
 | T-245 | Shape rasterization fallback (crop from thumbnails) for unsupported shapes. |

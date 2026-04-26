@@ -88,8 +88,8 @@ Hyperframes HTML) follow the same pattern with their own `LF-<SRC>-*` enums.
 
 PPTX codes (defined in `@stageflip/import-pptx`):
 
-- `LF-PPTX-CUSTOM-GEOMETRY` — `<a:custGeom>` with unsupported commands (`<a:arcTo>` / `<a:quadBezTo>`); cleared by T-242b / T-245.
-- `LF-PPTX-PRESET-GEOMETRY` — preset shape outside the T-242 coverage set; cleared incrementally as T-242c batches land. Batch 1 cleared the 9 arrow + callout presets; batch 2 (this PR) clears: `ribbon2`, `verticalScroll`, `horizontalScroll`, `star10`, `star12`, `moon`, `lightningBolt`, `noSmoking`. Still emits for: `chord`, `pie`, `donut` (T-242d, arc-bearing).
+- `LF-PPTX-CUSTOM-GEOMETRY` — historically emitted for `<a:custGeom>` payloads using commands the parser couldn't translate. T-242b added `<a:quadBezTo>` (PR #178) and T-242d added `<a:arcTo>` (Sub-PR 2). The parser now translates every documented command in the supported set; this code is no longer emitted from the parser. Still-emits-for: ∅ (any future unsupported command would re-introduce an emit; T-245's rasterization fallback owns shape coverage beyond `cust-geom` translation).
+- `LF-PPTX-PRESET-GEOMETRY` — historically emitted for preset shapes outside the T-242 coverage set. T-242c batch 1 cleared the 9 arrow + callout presets; batch 2 cleared `ribbon2`, `verticalScroll`, `horizontalScroll`, `star10`, `star12`, `moon`, `lightningBolt`, `noSmoking`; T-242d cleared the trailing arc-bearing trio (`chord`, `pie`, `donut`). After T-242d every committed preset is covered (50/50). Still-emits-for: ∅ committed presets; the long-tail (~140 OOXML presets outside the commitment) is owned by T-245's rasterization fallback under its own loss code.
 - `LF-PPTX-PRESET-ADJUSTMENT-IGNORED` — preset has an `<a:avLst>` adjustment T-242a doesn't honor (defaults used instead). Info severity.
 - `LF-PPTX-UNRESOLVED-ASSET` — picture bytes pending resolution. Cleared by T-243's `resolveAssets` post-walk pass.
 - `LF-PPTX-MISSING-ASSET-BYTES` — `error` severity. T-243 emits this when a picture rel points at a path not present in the PPTX ZIP.

@@ -52,12 +52,14 @@ const expectedSummaries: Record<FixtureName, ReturnType<typeof summarise>> = {
     perSlide: [
       {
         id: 'slide_1',
-        // rect, ellipse, hexagon→polygon, star5→star, cloud→T-242 custom-path,
-        // chord→still-unsupported (lands in T-242d with <a:arcTo>).
-        elementTypes: ['shape', 'shape', 'shape', 'shape', 'shape', 'unsupported-shape'],
+        // rect, ellipse, hexagon→polygon, star5→star, cloud→T-242 custom-path.
+        // T-242d closed the LF-PPTX-PRESET-GEOMETRY rotation; the fixture no
+        // longer carries a still-uncovered preset (T-245 owns long-tail
+        // rasterization fallback).
+        elementTypes: ['shape', 'shape', 'shape', 'shape', 'shape'],
       },
     ],
-    flagCodes: ['LF-PPTX-PRESET-GEOMETRY'],
+    flagCodes: [],
   },
   picture: {
     slideCount: 1,

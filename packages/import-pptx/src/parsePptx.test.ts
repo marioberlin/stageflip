@@ -158,17 +158,13 @@ describe('parsePptx — acceptance criteria', () => {
     expect(rect.shape).toBe('rect');
   });
 
-  // Bonus — preset geometry outside T-242 coverage still surfaces a flag.
-  // `chord` lands in T-242d (needs <a:arcTo> support); until then the
-  // shapes fixture pins one still-uncovered preset to keep this assertion
-  // meaningful.
-  it('emits LF-PPTX-PRESET-GEOMETRY for presets outside T-242 coverage', async () => {
-    const tree = await parsePptx(buildShapesFixture());
-    const flag = tree.lossFlags.find(
-      (f) => f.code === 'LF-PPTX-PRESET-GEOMETRY' && f.originalSnippet === 'chord',
-    );
-    expect(flag).toBeDefined();
-  });
+  // T-242d: deleted the LF-PPTX-PRESET-GEOMETRY rotation assertion. The
+  // smoke fixture rotated through still-uncovered presets as T-242c batches
+  // landed (`lightningBolt` → `chord`); after T-242d every committed preset
+  // (50 = 14 structural + 36 custom-path) is covered. T-245 owns the
+  // rasterization-fallback path for the long-tail (~140 OOXML presets
+  // outside the 50-commitment), and will introduce its own fixtures —
+  // continuing the rotation here is a maintenance tax with no signal.
 
   // Bonus — T-242-covered preset becomes a 'shape' element with a custom-path.
   it('renders T-242 preset (cloud) as shape:custom-path with a non-empty d', async () => {

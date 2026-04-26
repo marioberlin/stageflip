@@ -2,12 +2,12 @@
 // Public registry mapping OOXML preset names to path generators. T-242a
 // shipped 6; T-242b first-wave added 10 more (3 orthogonal arrows, 2
 // basics, 3 brackets/braces, 2 misc shapes). T-242c batch 1 added 9 (4
-// arrows + 5 callouts), bringing the total to 25. T-242c batch 2 adds the
-// remaining 8 (5 banners/scrolls/stars + 3 misc shapes) to reach 33. The
+// arrows + 5 callouts), bringing the total to 25. T-242c batch 2 added the
+// remaining 8 (5 banners/scrolls/stars + 3 misc shapes) to reach 33. T-242d
+// closes out at 36 with the arc-bearing trio (`chord`, `pie`, `donut`). The
 // 14 already-mapped-to-structural-kinds presets from T-240 (rect, ellipse,
 // line, polygon, star variants) are NOT in this registry — they continue
-// to emit `'shape'` with structural kinds. T-242d ships the trailing 3
-// arc-bearing presets (`chord`, `pie`, `donut`).
+// to emit `'shape'` with structural kinds.
 
 import {
   bentArrow,
@@ -27,7 +27,7 @@ import {
   star12,
   verticalScroll,
 } from './presets/banners.js';
-import { chevron, parallelogram, trapezoid } from './presets/basics.js';
+import { chevron, chord, donut, parallelogram, pie, trapezoid } from './presets/basics.js';
 import { leftBrace, leftBracket, rightBrace, rightBracket } from './presets/brackets.js';
 import {
   borderCallout1,
@@ -69,6 +69,9 @@ export const PRESET_GENERATORS: Readonly<Record<string, PathGenerator>> = {
   parallelogram,
   trapezoid,
   chevron,
+  chord,
+  pie,
+  donut,
   // brackets / braces
   leftBracket,
   rightBracket,
