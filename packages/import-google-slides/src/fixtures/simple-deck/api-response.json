@@ -1,0 +1,124 @@
+{
+  "presentationId": "simple-deck",
+  "pageSize": {
+    "width": { "magnitude": 9144000, "unit": "EMU" },
+    "height": { "magnitude": 5143500, "unit": "EMU" }
+  },
+  "masters": [
+    {
+      "objectId": "master-1",
+      "pageType": "MASTER",
+      "pageElements": []
+    }
+  ],
+  "layouts": [
+    {
+      "objectId": "layout-1",
+      "pageType": "LAYOUT",
+      "layoutProperties": { "masterObjectId": "master-1", "name": "TITLE_AND_BODY" },
+      "pageElements": [
+        {
+          "objectId": "ph-title",
+          "size": {
+            "width": { "magnitude": 8000000, "unit": "EMU" },
+            "height": { "magnitude": 1000000, "unit": "EMU" }
+          },
+          "transform": {
+            "scaleX": 1,
+            "scaleY": 1,
+            "translateX": 500000,
+            "translateY": 500000,
+            "unit": "EMU"
+          },
+          "shape": {
+            "shapeType": "TEXT_BOX",
+            "placeholder": { "type": "TITLE", "index": 0 }
+          }
+        }
+      ]
+    }
+  ],
+  "slides": [
+    {
+      "objectId": "slide-1",
+      "pageType": "SLIDE",
+      "slideProperties": { "layoutObjectId": "layout-1" },
+      "pageElements": [
+        {
+          "objectId": "el-title-1",
+          "size": {
+            "width": { "magnitude": 8000000, "unit": "EMU" },
+            "height": { "magnitude": 1000000, "unit": "EMU" }
+          },
+          "transform": {
+            "scaleX": 1,
+            "scaleY": 1,
+            "translateX": 500000,
+            "translateY": 500000,
+            "unit": "EMU"
+          },
+          "shape": {
+            "shapeType": "TEXT_BOX",
+            "text": {
+              "textElements": [{ "textRun": { "content": "Slide 1 Title" } }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "objectId": "slide-2",
+      "pageType": "SLIDE",
+      "slideProperties": { "layoutObjectId": "layout-1" },
+      "pageElements": [
+        {
+          "objectId": "el-title-2",
+          "size": {
+            "width": { "magnitude": 8000000, "unit": "EMU" },
+            "height": { "magnitude": 1000000, "unit": "EMU" }
+          },
+          "transform": {
+            "scaleX": 1,
+            "scaleY": 1,
+            "translateX": 500000,
+            "translateY": 500000,
+            "unit": "EMU"
+          },
+          "shape": {
+            "shapeType": "TEXT_BOX",
+            "text": {
+              "textElements": [{ "textRun": { "content": "Slide 2 Title" } }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "objectId": "slide-3",
+      "pageType": "SLIDE",
+      "slideProperties": { "layoutObjectId": "layout-1" },
+      "pageElements": [
+        {
+          "objectId": "el-title-3",
+          "size": {
+            "width": { "magnitude": 8000000, "unit": "EMU" },
+            "height": { "magnitude": 1000000, "unit": "EMU" }
+          },
+          "transform": {
+            "scaleX": 1,
+            "scaleY": 1,
+            "translateX": 500000,
+            "translateY": 500000,
+            "unit": "EMU"
+          },
+          "shape": {
+            "shapeType": "TEXT_BOX",
+            "text": {
+              "textElements": [{ "textRun": { "content": "Slide 3 Title" } }]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

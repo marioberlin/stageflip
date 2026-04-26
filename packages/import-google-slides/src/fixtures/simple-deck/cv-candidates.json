@@ -1,0 +1,32 @@
+{
+  "slide-1": {
+    "textLines": [
+      {
+        "polygonPx": [[80, 80], [1500, 80], [1500, 270], [80, 270]],
+        "text": "Slide 1 Title",
+        "confidence": 0.99
+      }
+    ],
+    "contours": []
+  },
+  "slide-2": {
+    "textLines": [
+      {
+        "polygonPx": [[80, 80], [1500, 80], [1500, 270], [80, 270]],
+        "text": "Slide 2 Title",
+        "confidence": 0.99
+      }
+    ],
+    "contours": []
+  },
+  "slide-3": {
+    "textLines": [
+      {
+        "polygonPx": [[80, 80], [1500, 80], [1500, 270], [80, 270]],
+        "text": "Slide 3 Title",
+        "confidence": 0.99
+      }
+    ],
+    "contours": []
+  }
+}

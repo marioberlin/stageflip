@@ -1,0 +1,13 @@
+{
+  "slide-1": {
+    "textLines": [],
+    "contours": [
+      {
+        "bboxPx": { "x": 195, "y": 195, "width": 110, "height": 110 },
+        "shapeKind": "rect",
+        "fillSample": [255, 0, 0, 255],
+        "confidence": 0.95
+      }
+    ]
+  }
+}

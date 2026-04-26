@@ -1,0 +1,17 @@
+{
+  "slide-1": {
+    "textLines": [
+      {
+        "polygonPx": [[80, 80], [1500, 80], [1500, 270], [80, 270]],
+        "text": "Resolves to layout",
+        "confidence": 0.99
+      },
+      {
+        "polygonPx": [[80, 690], [1500, 690], [1500, 880], [80, 880]],
+        "text": "Body text",
+        "confidence": 0.99
+      }
+    ],
+    "contours": []
+  }
+}
