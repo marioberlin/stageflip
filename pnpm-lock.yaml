@@ -475,6 +475,9 @@ importers:
 
   packages/editor-shell:
     dependencies:
+      '@stageflip/loss-flags':
+        specifier: workspace:*
+        version: link:../loss-flags
       '@stageflip/schema':
         specifier: workspace:*
         version: link:../schema

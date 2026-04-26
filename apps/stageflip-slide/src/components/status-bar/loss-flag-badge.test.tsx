@@ -1,10 +1,6 @@
 // apps/stageflip-slide/src/components/status-bar/loss-flag-badge.test.tsx
 
-import {
-  EditorShell,
-  importLossFlagsAtom,
-  useEditorShellSetAtom,
-} from '@stageflip/editor-shell';
+import { EditorShell, importLossFlagsAtom, useEditorShellSetAtom } from '@stageflip/editor-shell';
 import type { LossFlag } from '@stageflip/loss-flags';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useEffect } from 'react';
@@ -15,7 +11,7 @@ afterEach(() => cleanup());
 
 function makeFlag(overrides: Partial<LossFlag> = {}): LossFlag {
   return {
-    id: 'id-' + Math.random().toString(36).slice(2, 10),
+    id: `id-${Math.random().toString(36).slice(2, 10)}`,
     source: 'pptx',
     code: 'LF-PPTX-CUSTOM-GEOMETRY',
     severity: 'info',

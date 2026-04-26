@@ -66,11 +66,7 @@ export function LossFlagRow({
           data-testid="loss-flag-row-locate"
           aria-disabled={locateAvailable ? undefined : 'true'}
           aria-label={t('lossFlags.row.locate')}
-          title={
-            locateAvailable
-              ? t('lossFlags.row.locate')
-              : t('lossFlags.row.locateUnavailable')
-          }
+          title={locateAvailable ? t('lossFlags.row.locate') : t('lossFlags.row.locateUnavailable')}
           onClick={handleLocateClick}
           style={locateBtnStyle(locateAvailable)}
         >

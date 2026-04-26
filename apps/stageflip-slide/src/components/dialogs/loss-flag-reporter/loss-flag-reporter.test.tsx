@@ -1,7 +1,6 @@
 // apps/stageflip-slide/src/components/dialogs/loss-flag-reporter/loss-flag-reporter.test.tsx
 
 import {
-  DocumentProvider,
   EditorShell,
   activeSlideIdAtom,
   importLossFlagsAtom,
@@ -21,7 +20,7 @@ afterEach(() => cleanup());
 
 function makeFlag(overrides: Partial<LossFlag> = {}): LossFlag {
   return {
-    id: 'id-' + Math.random().toString(36).slice(2, 10),
+    id: `id-${Math.random().toString(36).slice(2, 10)}`,
     source: 'pptx',
     code: 'LF-PPTX-CUSTOM-GEOMETRY',
     severity: 'info',
@@ -82,12 +81,10 @@ interface MountOptions {
 
 function mount({ flags, document = null, onClose }: MountOptions) {
   return render(
-    <DocumentProvider initialDocument={document}>
-      <EditorShell>
-        <Seed flags={flags} />
-        <LossFlagReporter open={true} onClose={onClose ?? (() => undefined)} />
-      </EditorShell>
-    </DocumentProvider>,
+    <EditorShell initialDocument={document}>
+      <Seed flags={flags} />
+      <LossFlagReporter open={true} onClose={onClose ?? (() => undefined)} />
+    </EditorShell>,
   );
 }
 
@@ -120,33 +117,23 @@ describe('<LossFlagReporter />', () => {
     });
     const headers = screen.getAllByTestId(/loss-flag-reporter-group-/);
     // Order matters — error first, info last.
-    expect(headers.map((h) => h.getAttribute('data-severity'))).toEqual([
-      'error',
-      'warn',
-      'info',
-    ]);
+    expect(headers.map((h) => h.getAttribute('data-severity'))).toEqual(['error', 'warn', 'info']);
   });
 
   it('per-row dismiss removes the row from the modal (AC #15)', () => {
     mount({
-      flags: [
-        makeFlag({ id: 'a', code: 'LF-A' }),
-        makeFlag({ id: 'b', code: 'LF-B' }),
-      ],
+      flags: [makeFlag({ id: 'a', code: 'LF-A' }), makeFlag({ id: 'b', code: 'LF-B' })],
     });
     expect(screen.getAllByTestId('loss-flag-row').length).toBe(2);
-    const buttons = screen.getAllByTestId('loss-flag-row-dismiss');
-    fireEvent.click(buttons[0]!);
+    const [firstDismiss] = screen.getAllByTestId('loss-flag-row-dismiss');
+    if (!firstDismiss) throw new Error('expected dismiss button');
+    fireEvent.click(firstDismiss);
     expect(screen.getAllByTestId('loss-flag-row').length).toBe(1);
   });
 
   it('"Dismiss all" empties the visible list (AC #16)', () => {
     mount({
-      flags: [
-        makeFlag({ id: 'a' }),
-        makeFlag({ id: 'b' }),
-        makeFlag({ id: 'c' }),
-      ],
+      flags: [makeFlag({ id: 'a' }), makeFlag({ id: 'b' }), makeFlag({ id: 'c' })],
     });
     fireEvent.click(screen.getByTestId('loss-flag-reporter-dismiss-all'));
     expect(screen.getByTestId('loss-flag-reporter-empty')).toBeTruthy();
@@ -170,20 +157,18 @@ describe('<LossFlagReporter />', () => {
       return null;
     }
     render(
-      <DocumentProvider initialDocument={doc}>
-        <EditorShell>
-          <Spy />
-          <Seed
-            flags={[
-              makeFlag({
-                id: 'a',
-                location: { slideId: 's1', elementId: 's1-el-1' },
-              }),
-            ]}
-          />
-          <LossFlagReporter open={true} onClose={onClose} />
-        </EditorShell>
-      </DocumentProvider>,
+      <EditorShell initialDocument={doc}>
+        <Spy />
+        <Seed
+          flags={[
+            makeFlag({
+              id: 'a',
+              location: { slideId: 's1', elementId: 's1-el-1' },
+            }),
+          ]}
+        />
+        <LossFlagReporter open={true} onClose={onClose} />
+      </EditorShell>,
     );
     fireEvent.click(screen.getByTestId('loss-flag-row-locate'));
     const w = window as unknown as Record<string, unknown>;

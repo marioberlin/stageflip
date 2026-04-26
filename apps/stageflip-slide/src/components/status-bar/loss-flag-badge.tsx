@@ -6,11 +6,7 @@
 
 'use client';
 
-import {
-  t,
-  useEditorShellAtomValue,
-  visibleLossFlagsAtom,
-} from '@stageflip/editor-shell';
+import { t, useEditorShellAtomValue, visibleLossFlagsAtom } from '@stageflip/editor-shell';
 import type { LossFlag } from '@stageflip/loss-flags';
 import type { CSSProperties, ReactElement } from 'react';
 import { useState } from 'react';

@@ -30,7 +30,10 @@ export const dismissedLossFlagIdsAtom = atom<ReadonlySet<string>>(new Set<string
 export const visibleLossFlagsAtom = atom((get) => {
   const flags = get(importLossFlagsAtom);
   const dismissed = get(dismissedLossFlagIdsAtom);
-  return flags.filter((f) => !dismissed.has(f.id)).slice().sort(compareFlags);
+  return flags
+    .filter((f) => !dismissed.has(f.id))
+    .slice()
+    .sort(compareFlags);
 });
 
 const SEVERITY_RANK: Readonly<Record<LossFlag['severity'], number>> = {
