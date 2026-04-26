@@ -8,6 +8,7 @@
 export { parsePptx } from './parsePptx.js';
 export { emitLossFlag } from './loss-flags.js';
 export { accumulateGroupTransforms } from './transforms/accumulate.js';
+export { readEmbeddedFonts } from './parts/embedded-fonts.js';
 export {
   AssetResolutionError,
   inferContentType,
@@ -29,6 +30,7 @@ export type {
   LossFlagSource,
   ParsedAssetRef,
   ParsedElement,
+  ParsedEmbeddedFont,
   ParsedGroupElement,
   ParsedImageElement,
   ParsedSlide,

@@ -29,9 +29,22 @@ describe('inferContentType', () => {
     expect(inferContentType(path)).toBe(expected);
   });
 
+  // T-243c AC #11 — pin every added font extension to its IANA / Microsoft MIME.
+  it.each([
+    ['ppt/fonts/font1.ttf', 'font/ttf'],
+    ['ppt/fonts/font1.TTF', 'font/ttf'],
+    ['ppt/fonts/font1.otf', 'font/otf'],
+    ['ppt/fonts/font1.eot', 'application/vnd.ms-fontobject'],
+    ['ppt/fonts/font1.woff', 'font/woff'],
+    ['ppt/fonts/font1.woff2', 'font/woff2'],
+  ])('maps font %s → %s', (path, expected) => {
+    expect(inferContentType(path)).toBe(expected);
+  });
+
   it('returns application/octet-stream for unknown extensions', () => {
     expect(inferContentType('ppt/embeddings/data.bin')).toBe('application/octet-stream');
     expect(inferContentType('ppt/media/clip.flv')).toBe('application/octet-stream');
+    expect(inferContentType('ppt/fonts/font.fon')).toBe('application/octet-stream');
   });
 
   it('returns application/octet-stream when there is no extension', () => {

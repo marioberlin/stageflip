@@ -89,17 +89,18 @@ in T-242b; `pie` / `chord` start-angle (`adj1`) and sweep-angle (`adj2`),
 plus `donut` ring-thickness (`adj1`) in T-242d. Other adjustments emit
 `LF-PPTX-PRESET-ADJUSTMENT-IGNORED` (info).
 
-## Image / video asset extraction (T-243 / T-243b)
+## Image / video / font asset extraction (T-243 / T-243b / T-243c)
 
 `resolveAssets(tree, entries, storage)` is the second post-walk pass. It
 visits every `ParsedAssetRef.unresolved` carried by image **and video**
-elements, hashes each payload via sha256, uploads through an abstract
-`AssetStorage` interface (concrete adapter wraps `@stageflip/storage-firebase`),
-and rewrites refs to the schema-typed `asset:<id>` form. Dedup is by
-content-hash, so identical bytes referenced from multiple slides upload
-once. Broken rels (path absent from the ZIP) emit `LF-PPTX-MISSING-ASSET-BYTES`
-(error severity) and leave the ref unresolved. Idempotent via
-`tree.assetsResolved`.
+elements **and the deck-level `embeddedFonts` collection**, hashes each
+payload via sha256, uploads through an abstract `AssetStorage` interface
+(concrete adapter wraps `@stageflip/storage-firebase`), and rewrites refs
+to the schema-typed `asset:<id>` form. Dedup is by content-hash, so
+identical bytes referenced from multiple slides — or shared across image,
+video, and font kinds — upload once. Broken rels (path absent from the
+ZIP) emit `LF-PPTX-MISSING-ASSET-BYTES` (error severity) and leave the
+ref unresolved. Idempotent via `tree.assetsResolved`.
 
 Video extraction (T-243b) lands `<p:videoFile>` parsing on the same
 pipeline. A `<p:sp>` whose `<p:nvSpPr><p:nvPr>` carries a `<p:videoFile>`
@@ -117,8 +118,9 @@ Loss flag inventory after the resolve pass:
 
 - `LF-PPTX-UNRESOLVED-ASSET` (cleared by T-243).
 - `LF-PPTX-UNRESOLVED-VIDEO` (cleared by T-243b).
+- `LF-PPTX-UNRESOLVED-FONT` (cleared by T-243c).
 - `LF-PPTX-MISSING-ASSET-BYTES` (error; emitted for any unresolved-asset
-  path absent from the ZIP — image or video).
+  path absent from the ZIP — image, video, or font face).
 
 Composition pattern:
 
@@ -138,8 +140,21 @@ substitute any object satisfying the structural `BucketLike` shape. Storage
 path is `pptx-imports/{contentHash[:21]}` by default (content-addressed
 dedup).
 
-Embedded fonts (`<p:embeddedFont>`) are not yet parsed; T-243c follow-up
-surfaces them and adds the matching `LF-PPTX-UNRESOLVED-FONT` code.
+Embedded font extraction (T-243c) lands `<p:embeddedFontLst>` parsing on
+the same pipeline. Embedded fonts are deck-level (not per-element): the
+parser reads `ppt/presentation.xml`'s `<p:embeddedFontLst>` and attaches
+one `ParsedEmbeddedFont` per `<p:embeddedFont>` to
+`CanonicalSlideTree.embeddedFonts`. Each font carries a `family` (from
+`<p:font typeface="…">`), an opaque `panose`, and up to four typeface
+variants — `regular` / `bold` / `italic` / `boldItalic` — each pointing
+at an in-ZIP byte path through its `r:id`. Faces whose relId is broken
+or carries `TargetMode="External"` drop at parse time. The
+`resolveAssets` font branch uploads each populated face's bytes
+(content-typed `font/ttf` / `font/otf` / `application/vnd.ms-fontobject`
+/ `font/woff` / `font/woff2`) and rewrites face refs to schema-typed
+`asset:<id>`. Schema integration (binding `Document.embeddedFonts` and
+wiring text elements' `fontFamily` to resolved font assets) is a
+follow-up after T-251.
 
 ## Group transform accumulation (T-241a)
 
@@ -180,7 +195,6 @@ exports `emitLossFlag` as a thin PPTX-defaulted wrapper that auto-fills
 
 | Task | Gap |
 |---|---|
-| T-243c | Font asset extraction — `<p:embeddedFont>` not yet parsed. |
 | T-245 | Shape rasterization fallback (crop from thumbnails) for unsupported shapes. |
 | T-246 | AI-QC loop (Gemini multimodal convergence). |
 | T-248 | Loss-flag reporter UI surface in `apps/stageflip-slide` ships (status-bar badge + modal); see `skills/stageflip/concepts/loss-flags/SKILL.md` §"Reporter UI (T-248)". Wiring `parsePptx` → `importLossFlagsAtom` is a follow-up task. |

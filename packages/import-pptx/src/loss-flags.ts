@@ -26,6 +26,7 @@ const CODE_DEFAULTS: Record<
   'LF-PPTX-PRESET-ADJUSTMENT-IGNORED': { severity: 'info', category: 'shape' },
   'LF-PPTX-UNRESOLVED-ASSET': { severity: 'info', category: 'media' },
   'LF-PPTX-UNRESOLVED-VIDEO': { severity: 'info', category: 'media' },
+  'LF-PPTX-UNRESOLVED-FONT': { severity: 'info', category: 'font' },
   'LF-PPTX-MISSING-ASSET-BYTES': { severity: 'error', category: 'media' },
   'LF-PPTX-UNSUPPORTED-ELEMENT': { severity: 'warn', category: 'other' },
   'LF-PPTX-UNSUPPORTED-FILL': { severity: 'info', category: 'theme' },

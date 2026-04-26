@@ -13,6 +13,7 @@ import type {
   LossFlag,
   ParsedAssetRef,
   ParsedElement,
+  ParsedEmbeddedFont,
   ParsedGroupElement,
   ParsedImageElement,
   ParsedSlide,
@@ -22,6 +23,9 @@ import type { ZipEntries } from '../zip.js';
 import { inferContentType } from './content-type.js';
 import type { AssetStorage } from './types.js';
 import { AssetResolutionError } from './types.js';
+
+const FACE_KEYS = ['regular', 'bold', 'italic', 'boldItalic'] as const;
+type FaceKey = (typeof FACE_KEYS)[number];
 
 /**
  * Walk a tree and resolve every unresolved asset ref. See file header for
@@ -39,6 +43,7 @@ export async function resolveAssets(
       masters: tree.masters,
       lossFlags: tree.lossFlags,
       ...(tree.transformsAccumulated === true ? { transformsAccumulated: true } : {}),
+      ...(tree.embeddedFonts !== undefined ? { embeddedFonts: tree.embeddedFonts } : {}),
       assetsResolved: true,
     };
   }
@@ -51,6 +56,7 @@ export async function resolveAssets(
   const resolvedByPath = new Map<string, ParsedAssetRef>();
 
   collectPaths(tree, pathToRef);
+  collectFontPaths(tree, pathToRef);
 
   // Pass 2: hash + upload distinct paths. Dedup by content-hash so two
   // distinct paths that happen to share bytes still produce one upload.
@@ -86,14 +92,33 @@ export async function resolveAssets(
   const newSlides = tree.slides.map((s) => rewriteSlide(s, resolvedByPath));
   const newLayouts = mapRecord(tree.layouts, (s) => rewriteSlide(s, resolvedByPath));
   const newMasters = mapRecord(tree.masters, (s) => rewriteSlide(s, resolvedByPath));
+  const newEmbeddedFonts =
+    tree.embeddedFonts !== undefined
+      ? tree.embeddedFonts.map((f) => rewriteFont(f, resolvedByPath))
+      : undefined;
+
+  // Families whose every populated face is resolved → drop the family's
+  // LF-PPTX-UNRESOLVED-FONT flag. Families with a broken-rel face or
+  // missing bytes keep the flag so the editor can surface the gap.
+  const fullyResolvedFamilies = new Set<string>();
+  if (tree.embeddedFonts !== undefined) {
+    for (const f of tree.embeddedFonts) {
+      if (allFacesResolvable(f, resolvedByPath)) fullyResolvedFamilies.add(f.family);
+    }
+  }
 
   const flagsAfterDrop = tree.lossFlags.filter((flag) => {
-    if (flag.code !== 'LF-PPTX-UNRESOLVED-ASSET' && flag.code !== 'LF-PPTX-UNRESOLVED-VIDEO') {
-      return true;
+    if (flag.code === 'LF-PPTX-UNRESOLVED-ASSET' || flag.code === 'LF-PPTX-UNRESOLVED-VIDEO') {
+      const path = flag.location.oocxmlPath;
+      if (path === undefined) return true;
+      return !resolvedByPath.has(path);
     }
-    const path = flag.location.oocxmlPath;
-    if (path === undefined) return true;
-    return !resolvedByPath.has(path);
+    if (flag.code === 'LF-PPTX-UNRESOLVED-FONT') {
+      const family = flag.originalSnippet;
+      if (family === undefined) return true;
+      return !fullyResolvedFamilies.has(family);
+    }
+    return true;
   });
   const missingFlags: LossFlag[] = [];
   for (const path of missingPaths) {
@@ -113,6 +138,7 @@ export async function resolveAssets(
     masters: newMasters,
     lossFlags: [...flagsAfterDrop, ...missingFlags],
     ...(tree.transformsAccumulated === true ? { transformsAccumulated: true } : {}),
+    ...(newEmbeddedFonts !== undefined ? { embeddedFonts: newEmbeddedFonts } : {}),
     assetsResolved: true,
   };
 }
@@ -178,4 +204,66 @@ function mapRecord<T>(record: Record<string, T>, fn: (v: T) => T): Record<string
   const out: Record<string, T> = {};
   for (const [k, v] of Object.entries(record)) out[k] = fn(v);
   return out;
+}
+
+/**
+ * T-243c — collect every unresolved face path from `tree.embeddedFonts` into
+ * the same `pathToRef` map the per-element walk uses. Sharing the map means
+ * fonts go through the same dedup-by-content-hash + storage upload pipeline
+ * as image / video bytes.
+ */
+function collectFontPaths(tree: CanonicalSlideTree, out: Map<string, ParsedAssetRef>): void {
+  if (tree.embeddedFonts === undefined) return;
+  for (const font of tree.embeddedFonts) {
+    for (const key of FACE_KEYS) {
+      const ref = font.faces[key];
+      if (ref === undefined) continue;
+      if (ref.kind === 'unresolved') out.set(ref.oocxmlPath, ref);
+    }
+  }
+}
+
+/** Rewrite a single font's face refs; missing bytes leave the slot untouched. */
+function rewriteFont(
+  font: ParsedEmbeddedFont,
+  resolvedByPath: Map<string, ParsedAssetRef>,
+): ParsedEmbeddedFont {
+  const faces: ParsedEmbeddedFont['faces'] = {};
+  for (const key of FACE_KEYS) {
+    const ref = font.faces[key];
+    if (ref === undefined) continue;
+    if (ref.kind !== 'unresolved') {
+      assignFace(faces, key, ref);
+      continue;
+    }
+    const resolved = resolvedByPath.get(ref.oocxmlPath);
+    assignFace(faces, key, resolved ?? ref);
+  }
+  const out: ParsedEmbeddedFont = { family: font.family, faces };
+  if (font.panose !== undefined) out.panose = font.panose;
+  return out;
+}
+
+function assignFace(faces: ParsedEmbeddedFont['faces'], key: FaceKey, ref: ParsedAssetRef): void {
+  faces[key] = ref;
+}
+
+/**
+ * Family is "fully resolvable" iff every face it ships has bytes in the
+ * resolvedByPath map. Faces dropped at parse time (relId broken / external)
+ * are absent from `font.faces` and don't block the resolve.
+ */
+function allFacesResolvable(
+  font: ParsedEmbeddedFont,
+  resolvedByPath: Map<string, ParsedAssetRef>,
+): boolean {
+  let any = false;
+  for (const key of FACE_KEYS) {
+    const ref = font.faces[key];
+    if (ref === undefined) continue;
+    any = true;
+    if (ref.kind === 'resolved') continue;
+    if (!resolvedByPath.has(ref.oocxmlPath)) return false;
+  }
+  return any;
 }

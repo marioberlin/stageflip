@@ -1,12 +1,16 @@
 // packages/import-pptx/src/assets/content-type.ts
 // Map an OOXML asset path to a MIME type. Coverage is deliberately narrow —
 // the importer only uploads what the parser surfaces (image variants from
-// T-243; videos from T-243b; fonts arrive with T-243c). Anything outside the
-// table falls back to `application/octet-stream` so storage adapters can
-// still write the bytes.
+// T-243; videos from T-243b; embedded fonts from T-243c). Anything outside
+// the table falls back to `application/octet-stream` so storage adapters
+// can still write the bytes.
 //
 // Video MIME entries pin the IANA media-type registry values:
 //   https://www.iana.org/assignments/media-types/media-types.xhtml#video
+// Font MIME entries pin the IANA media-type registry values:
+//   https://www.iana.org/assignments/media-types/media-types.xhtml#font
+// `.eot` is not registered with IANA; the de-facto MIME is
+// `application/vnd.ms-fontobject` (Microsoft).
 
 const EXTENSION_TYPES: Record<string, string> = {
   png: 'image/png',
@@ -25,6 +29,14 @@ const EXTENSION_TYPES: Record<string, string> = {
   webm: 'video/webm',
   avi: 'video/x-msvideo',
   wmv: 'video/x-ms-wmv',
+  // T-243c — embedded font MIME map. PPTX typically embeds TTF; the rest
+  // cover the long tail (legacy EOT, web-only WOFF/WOFF2 occasionally
+  // packaged through Office add-ins).
+  ttf: 'font/ttf',
+  otf: 'font/otf',
+  eot: 'application/vnd.ms-fontobject',
+  woff: 'font/woff',
+  woff2: 'font/woff2',
 };
 
 /**

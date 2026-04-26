@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import type {
   CanonicalSlideTree,
+  ParsedEmbeddedFont,
   ParsedImageElement,
   ParsedSlide,
   ParsedVideoElement,
@@ -617,5 +618,217 @@ describe('resolveAssets — T-243 acceptance', () => {
     expect(layoutImg?.type === 'image' && layoutImg.src.kind === 'resolved').toBe(true);
     const masterImg = out.masters.M1?.elements[0];
     expect(masterImg?.type === 'image' && masterImg.src.kind === 'resolved').toBe(true);
+  });
+
+  // ── T-243c: deck-level embedded font resolution ────────────────────────
+
+  /** Helper: build a minimal tree carrying one embedded font with the given faces. */
+  function fontTree(args: {
+    family: string;
+    faces: Partial<{ regular: string; bold: string; italic: string; boldItalic: string }>;
+    panose?: string;
+  }): CanonicalSlideTree {
+    const faces: ParsedEmbeddedFont['faces'] = {};
+    if (args.faces.regular !== undefined) {
+      faces.regular = { kind: 'unresolved', oocxmlPath: args.faces.regular };
+    }
+    if (args.faces.bold !== undefined) {
+      faces.bold = { kind: 'unresolved', oocxmlPath: args.faces.bold };
+    }
+    if (args.faces.italic !== undefined) {
+      faces.italic = { kind: 'unresolved', oocxmlPath: args.faces.italic };
+    }
+    if (args.faces.boldItalic !== undefined) {
+      faces.boldItalic = { kind: 'unresolved', oocxmlPath: args.faces.boldItalic };
+    }
+    const font: ParsedEmbeddedFont = { family: args.family, faces };
+    if (args.panose !== undefined) font.panose = args.panose;
+    return {
+      slides: [],
+      layouts: {},
+      masters: {},
+      lossFlags: [
+        {
+          id: `flag-font-${args.family}`,
+          source: 'pptx',
+          code: 'LF-PPTX-UNRESOLVED-FONT',
+          severity: 'info',
+          category: 'font',
+          location: { oocxmlPath: 'ppt/presentation.xml' },
+          message: `embedded font "${args.family}" bytes deferred`,
+          originalSnippet: args.family,
+        },
+      ],
+      embeddedFonts: [font],
+    };
+  }
+
+  // T-243c AC #9 — face refs rewrite to schema-typed asset:<id> with font/ttf MIME.
+  it('resolves font face refs: rewrites to asset:<id> with font/ttf contentType', async () => {
+    const tree = fontTree({
+      family: 'CustomTTF',
+      faces: { regular: 'ppt/fonts/font-r.ttf' },
+    });
+    const entries: ZipEntries = { 'ppt/fonts/font-r.ttf': BYTES_A };
+    const storage = recordingStorage();
+
+    const out = await resolveAssets(tree, entries, storage);
+
+    expect(storage.hits).toBe(1);
+    expect(storage.records[0]?.contentType).toBe('font/ttf');
+    expect(storage.records[0]?.content).toEqual(BYTES_A);
+
+    const f = out.embeddedFonts?.[0];
+    expect(f?.family).toBe('CustomTTF');
+    expect(f?.faces.regular?.kind).toBe('resolved');
+    if (f?.faces.regular?.kind !== 'resolved') return;
+    expect(f.faces.regular.ref).toMatch(/^asset:[A-Za-z0-9_-]+$/);
+  });
+
+  // T-243c AC #9 (extra) — every populated face uploads.
+  it('uploads every populated face (regular + bold + italic + boldItalic)', async () => {
+    const tree = fontTree({
+      family: 'Quad',
+      faces: {
+        regular: 'ppt/fonts/q-r.ttf',
+        bold: 'ppt/fonts/q-b.ttf',
+        italic: 'ppt/fonts/q-i.otf',
+        boldItalic: 'ppt/fonts/q-bi.eot',
+      },
+    });
+    const entries: ZipEntries = {
+      'ppt/fonts/q-r.ttf': BYTES_A,
+      'ppt/fonts/q-b.ttf': BYTES_B,
+      'ppt/fonts/q-i.otf': new Uint8Array([0x00, 0x01]),
+      'ppt/fonts/q-bi.eot': new Uint8Array([0x02, 0x03]),
+    };
+    const storage = recordingStorage();
+
+    const out = await resolveAssets(tree, entries, storage);
+
+    expect(storage.hits).toBe(4);
+    const types = storage.records.map((r) => r.contentType).sort();
+    expect(types).toEqual(['application/vnd.ms-fontobject', 'font/otf', 'font/ttf', 'font/ttf']);
+
+    const faces = out.embeddedFonts?.[0]?.faces;
+    expect(faces?.regular?.kind).toBe('resolved');
+    expect(faces?.bold?.kind).toBe('resolved');
+    expect(faces?.italic?.kind).toBe('resolved');
+    expect(faces?.boldItalic?.kind).toBe('resolved');
+  });
+
+  // T-243c AC #10 — flag drops once every face of the family resolves.
+  it('drops LF-PPTX-UNRESOLVED-FONT after every face resolves', async () => {
+    const tree = fontTree({
+      family: 'Bibo',
+      faces: { regular: 'ppt/fonts/bibo.ttf' },
+    });
+    const entries: ZipEntries = { 'ppt/fonts/bibo.ttf': BYTES_A };
+    const out = await resolveAssets(tree, entries, recordingStorage());
+
+    expect(out.lossFlags.find((f) => f.code === 'LF-PPTX-UNRESOLVED-FONT')).toBeUndefined();
+  });
+
+  // T-243c AC #10 — partial resolution: family flag stays + per-face MISSING flag.
+  it('keeps LF-PPTX-UNRESOLVED-FONT and emits LF-PPTX-MISSING-ASSET-BYTES when one face is missing', async () => {
+    const tree = fontTree({
+      family: 'PartialMiss',
+      faces: { regular: 'ppt/fonts/pm-r.ttf', bold: 'ppt/fonts/pm-b.ttf' },
+    });
+    // Bold bytes absent.
+    const entries: ZipEntries = { 'ppt/fonts/pm-r.ttf': BYTES_A };
+    const out = await resolveAssets(tree, entries, recordingStorage());
+
+    const familyFlag = out.lossFlags.find(
+      (f) => f.code === 'LF-PPTX-UNRESOLVED-FONT' && f.originalSnippet === 'PartialMiss',
+    );
+    expect(familyFlag).toBeDefined();
+    const missing = out.lossFlags.find((f) => f.code === 'LF-PPTX-MISSING-ASSET-BYTES');
+    expect(missing).toBeDefined();
+    expect(missing?.severity).toBe('error');
+
+    // Regular resolves; bold stays unresolved.
+    const faces = out.embeddedFonts?.[0]?.faces;
+    expect(faces?.regular?.kind).toBe('resolved');
+    expect(faces?.bold?.kind).toBe('unresolved');
+  });
+
+  // T-243c AC #12 — idempotence on a font tree.
+  it('is idempotent across a second resolveAssets call (no extra font upload)', async () => {
+    const tree = fontTree({
+      family: 'IdemFont',
+      faces: { regular: 'ppt/fonts/idem.ttf' },
+    });
+    const entries: ZipEntries = { 'ppt/fonts/idem.ttf': BYTES_A };
+    const storage = recordingStorage();
+
+    const once = await resolveAssets(tree, entries, storage);
+    expect(once.assetsResolved).toBe(true);
+    expect(storage.hits).toBe(1);
+    expect(once.embeddedFonts?.[0]?.faces.regular?.kind).toBe('resolved');
+
+    const twice = await resolveAssets(once, entries, storage);
+    expect(storage.hits).toBe(1);
+    expect(twice).toEqual(once);
+  });
+
+  // T-243c AC #13 — empty-fonts fast path (undefined): no storage calls.
+  it('skips the font walk entirely when embeddedFonts is undefined', async () => {
+    const tree: CanonicalSlideTree = {
+      slides: [],
+      layouts: {},
+      masters: {},
+      lossFlags: [],
+    };
+    const storage = recordingStorage();
+    const out = await resolveAssets(tree, {}, storage);
+    expect(storage.hits).toBe(0);
+    expect(out.embeddedFonts).toBeUndefined();
+  });
+
+  // T-243c — preserves panose across resolution.
+  it('preserves the panose field across resolution', async () => {
+    const tree = fontTree({
+      family: 'Panose',
+      faces: { regular: 'ppt/fonts/panose.ttf' },
+      panose: '020B0604020202020204',
+    });
+    const entries: ZipEntries = { 'ppt/fonts/panose.ttf': BYTES_A };
+    const out = await resolveAssets(tree, entries, recordingStorage());
+    expect(out.embeddedFonts?.[0]?.panose).toBe('020B0604020202020204');
+  });
+
+  // T-243c — content-hash dedup across font + image bytes.
+  it('dedups upload when a font face shares content-hash with an image', async () => {
+    const tree: CanonicalSlideTree = {
+      ...singleImageTree({ oocxmlPath: 'ppt/media/image1.png' }),
+      embeddedFonts: [
+        {
+          family: 'Shared',
+          faces: { regular: { kind: 'unresolved', oocxmlPath: 'ppt/fonts/shared.ttf' } },
+        },
+      ],
+    };
+    tree.lossFlags = [
+      ...tree.lossFlags,
+      {
+        id: 'flag-font-shared',
+        source: 'pptx',
+        code: 'LF-PPTX-UNRESOLVED-FONT',
+        severity: 'info',
+        category: 'font',
+        location: { oocxmlPath: 'ppt/presentation.xml' },
+        message: 'embedded font "Shared" bytes deferred',
+        originalSnippet: 'Shared',
+      },
+    ];
+    const entries: ZipEntries = {
+      'ppt/media/image1.png': BYTES_A,
+      'ppt/fonts/shared.ttf': BYTES_A, // identical content
+    };
+    const storage = recordingStorage();
+    await resolveAssets(tree, entries, storage);
+    // Two distinct paths but one shared content hash → one upload.
+    expect(storage.hits).toBe(1);
   });
 });

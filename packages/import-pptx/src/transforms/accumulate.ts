@@ -62,6 +62,8 @@ export function accumulateGroupTransforms(tree: CanonicalSlideTree): CanonicalSl
       masters: tree.masters,
       lossFlags: tree.lossFlags,
       transformsAccumulated: true,
+      ...(tree.embeddedFonts !== undefined ? { embeddedFonts: tree.embeddedFonts } : {}),
+      ...(tree.assetsResolved === true ? { assetsResolved: true } : {}),
     };
   }
   return {
@@ -70,6 +72,8 @@ export function accumulateGroupTransforms(tree: CanonicalSlideTree): CanonicalSl
     masters: mapRecord(tree.masters, walkSlide),
     lossFlags: tree.lossFlags,
     transformsAccumulated: true,
+    ...(tree.embeddedFonts !== undefined ? { embeddedFonts: tree.embeddedFonts } : {}),
+    ...(tree.assetsResolved === true ? { assetsResolved: true } : {}),
   };
 }
 

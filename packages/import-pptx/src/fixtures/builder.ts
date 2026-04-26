@@ -27,6 +27,7 @@ const REL_TYPE_THEME = `${NS_R}/theme`;
 const REL_TYPE_OFFICE_DOC = `${NS_R}/officeDocument`;
 const REL_TYPE_IMAGE = `${NS_R}/image`;
 const REL_TYPE_VIDEO = `${NS_R}/video`;
+const REL_TYPE_FONT = `${NS_R}/font`;
 
 const xmlHeader = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
 
@@ -47,20 +48,40 @@ type ExplicitRel = {
   targetMode?: 'Internal' | 'External';
 };
 
+/**
+ * One PPTX-embedded font (T-243c). The fixture builder writes a
+ * `<p:embeddedFontLst>` block + matching presentation.xml.rels rows + the
+ * underlying byte payloads at `extraAssets[<facePath>]`.
+ */
+type FixtureEmbeddedFont = {
+  family: string;
+  panose?: string;
+  /** Per-face byte refs. Keys are the four typeface variant names. */
+  faces: Partial<{
+    regular: { relId: string; targetPath: string };
+    bold: { relId: string; targetPath: string };
+    italic: { relId: string; targetPath: string };
+    boldItalic: { relId: string; targetPath: string };
+  }>;
+};
+
 /** Build the full PPTX byte buffer from a slide XML list. */
 function buildPptx(
   slideXmls: string[],
   extraAssets: Record<string, Uint8Array> = {},
   perSlideExplicitRels?: ExplicitRel[][],
+  embeddedFonts?: FixtureEmbeddedFont[],
 ): Uint8Array {
   const files: Files = {};
 
   // _rels/.rels — package-level: doc root → ppt/presentation.xml
   files['_rels/.rels'] = strToU8(rootRels());
 
-  // ppt/presentation.xml — declare slide ids
-  files['ppt/presentation.xml'] = strToU8(presentationXml(slideXmls.length));
-  files['ppt/_rels/presentation.xml.rels'] = strToU8(presentationRels(slideXmls.length));
+  // ppt/presentation.xml — declare slide ids + optional embedded font list.
+  files['ppt/presentation.xml'] = strToU8(presentationXml(slideXmls.length, embeddedFonts));
+  files['ppt/_rels/presentation.xml.rels'] = strToU8(
+    presentationRels(slideXmls.length, embeddedFonts),
+  );
 
   // Slide parts
   for (let i = 0; i < slideXmls.length; i++) {
@@ -94,18 +115,35 @@ function rootRels(): string {
 </Relationships>`;
 }
 
-function presentationXml(slideCount: number): string {
+function presentationXml(slideCount: number, embeddedFonts?: FixtureEmbeddedFont[]): string {
   const ids: string[] = [];
   for (let i = 0; i < slideCount; i++) {
     ids.push(`<p:sldId id="${256 + i}" r:id="rId${i + 1}"/>`);
   }
+
+  let lst = '';
+  if (embeddedFonts !== undefined && embeddedFonts.length > 0) {
+    const blocks: string[] = [];
+    for (const f of embeddedFonts) {
+      const panoseAttr = f.panose !== undefined ? ` panose="${f.panose}"` : '';
+      const lines = [`<p:font typeface="${f.family}"${panoseAttr}/>`];
+      if (f.faces.regular) lines.push(`<p:regular r:id="${f.faces.regular.relId}"/>`);
+      if (f.faces.bold) lines.push(`<p:bold r:id="${f.faces.bold.relId}"/>`);
+      if (f.faces.italic) lines.push(`<p:italic r:id="${f.faces.italic.relId}"/>`);
+      if (f.faces.boldItalic) lines.push(`<p:boldItalic r:id="${f.faces.boldItalic.relId}"/>`);
+      blocks.push(`<p:embeddedFont>${lines.join('')}</p:embeddedFont>`);
+    }
+    lst = `<p:embeddedFontLst>${blocks.join('')}</p:embeddedFontLst>`;
+  }
+
   return `${xmlHeader}
 <p:presentation xmlns:p="${NS_P}" xmlns:r="${NS_R}">
 <p:sldIdLst>${ids.join('')}</p:sldIdLst>
+${lst}
 </p:presentation>`;
 }
 
-function presentationRels(slideCount: number): string {
+function presentationRels(slideCount: number, embeddedFonts?: FixtureEmbeddedFont[]): string {
   const rows: string[] = [];
   for (let i = 0; i < slideCount; i++) {
     rows.push(
@@ -115,6 +153,16 @@ function presentationRels(slideCount: number): string {
   rows.push(
     `<Relationship Id="rIdMaster" Type="${REL_TYPE_SLIDE_MASTER}" Target="slideMasters/slideMaster1.xml"/>`,
   );
+  if (embeddedFonts !== undefined) {
+    for (const f of embeddedFonts) {
+      for (const face of [f.faces.regular, f.faces.bold, f.faces.italic, f.faces.boldItalic]) {
+        if (face === undefined) continue;
+        rows.push(
+          `<Relationship Id="${face.relId}" Type="${REL_TYPE_FONT}" Target="${face.targetPath}"/>`,
+        );
+      }
+    }
+  }
   return `${xmlHeader}
 <Relationships xmlns="${NS_R}/package/2006/relationships">
 ${rows.join('\n')}
@@ -609,6 +657,102 @@ export function buildVideoAndImageFixture(): Uint8Array {
   );
 }
 
+/**
+ * Stand-in TTF byte payload (T-243c). Bytes are deterministic but not a
+ * valid TrueType stream — the parser only looks at the path's extension
+ * for MIME inference and uploads bytes through the abstract `AssetStorage`
+ * adapter. A 16-byte buffer suffices for tests that don't decode glyphs.
+ */
+const STUB_TTF_BYTES = new Uint8Array([
+  0x00, 0x01, 0x00, 0x00, 0x00, 0x0a, 0x00, 0x80, 0x00, 0x03, 0x00, 0x20, 0x4f, 0x53, 0x2f, 0x32,
+]);
+
+/**
+ * Fixture 9 (T-243c): a deck with one embedded font carrying a single
+ * `<p:regular>` face. Exercises the parser-side `<p:embeddedFontLst>` walk
+ * and the resolveAssets font branch.
+ */
+export function buildEmbeddedFontFixture(): Uint8Array {
+  const slide = slideShell(
+    spText({
+      id: 2,
+      name: 'Title',
+      text: 'Embedded font deck',
+      x: 0,
+      y: 0,
+      cx: 5000000,
+      cy: 1000000,
+    }),
+  );
+  return buildPptx([slide], { 'ppt/fonts/font1.ttf': STUB_TTF_BYTES }, undefined, [
+    {
+      family: 'CustomEmbedded',
+      faces: { regular: { relId: 'rIdF1', targetPath: 'fonts/font1.ttf' } },
+    },
+  ]);
+}
+
+/**
+ * Fixture 10 (T-243c): one slide with one image + one embedded video + one
+ * embedded font (regular face only). End-to-end pipeline test for AC #14:
+ * `parsePptx → resolveAssets` should clear every unresolved-asset/video/font
+ * flag.
+ */
+export function buildImageVideoFontFixture(): Uint8Array {
+  const slide = slideShell(
+    [
+      spPic({
+        id: 2,
+        name: 'Pic1',
+        embedRelId: 'rIdImg1',
+        x: 0,
+        y: 0,
+        cx: 1000000,
+        cy: 1000000,
+      }),
+      spVideo({
+        id: 3,
+        name: 'Video1',
+        relAttr: 'r:embed',
+        relId: 'rIdVid1',
+        x: 1500000,
+        y: 0,
+        cx: 4000000,
+        cy: 3000000,
+      }),
+    ].join('\n'),
+  );
+  return buildPptx(
+    [slide],
+    {
+      'ppt/media/image1.png': ONE_PIXEL_PNG,
+      'ppt/media/video1.mp4': STUB_MP4_BYTES,
+      'ppt/fonts/font1.ttf': STUB_TTF_BYTES,
+    },
+    [
+      [
+        {
+          id: 'rIdImg1',
+          type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image',
+          target: '../media/image1.png',
+        },
+        {
+          id: 'rIdVid1',
+          type: REL_TYPE_VIDEO,
+          target: '../media/video1.mp4',
+          targetMode: 'Internal',
+        },
+      ],
+    ],
+    [
+      {
+        family: 'CustomMixed',
+        faces: { regular: { relId: 'rIdF1', targetPath: 'fonts/font1.ttf' } },
+      },
+    ],
+  );
+}
+
 /** All fixture builders, keyed by stable name. Preserves enumeration order. */
 export const FIXTURE_BUILDERS = {
   minimal: buildMinimalFixture,
@@ -619,6 +763,8 @@ export const FIXTURE_BUILDERS = {
   adjusted: buildAdjustedShapesFixture,
   video: buildVideoFixture,
   'video-and-image': buildVideoAndImageFixture,
+  'embedded-font': buildEmbeddedFontFixture,
+  'image-video-font': buildImageVideoFontFixture,
 } as const;
 
 export type FixtureName = keyof typeof FIXTURE_BUILDERS;
