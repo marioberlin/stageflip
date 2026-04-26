@@ -40,8 +40,13 @@ export interface RasterizeOptions {
    */
   compressionLevel?: number;
   /**
-   * PNG filter type for the re-encode. Default `pngjs.constants.PNG_ALL_FILTERS`
-   * (4) — per-row adaptive. Different filter types produce different bytes.
+   * PNG filter type for the re-encode. Default `-1` — pngjs's documented
+   * sentinel for "use all filters / per-row adaptive" (per
+   * `pngjs/lib/filter-pack.js:132-135`). Note: pngjs 7.0.0 does NOT export a
+   * named `PNG_ALL_FILTERS` constant; `-1` is byte-identical to the bare
+   * `PNG.sync.write(png)` call (the `@stageflip/export-html5-zip` precedent).
+   * Different filter types produce different bytes; consumers depending on
+   * byte-stable hashes should not override unless they pin the value.
    */
   filterType?: number;
 }
