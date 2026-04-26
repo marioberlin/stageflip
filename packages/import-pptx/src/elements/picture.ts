@@ -4,30 +4,31 @@
 // the OOXML relationship target.
 
 import { emitLossFlag } from '../loss-flags.js';
+import type { OrderedXmlNode } from '../opc.js';
 import { makeElementId, readTransform } from '../parts/sp-tree.js';
 import type { LossFlag, ParsedImageElement } from '../types.js';
-import { isRecord, pickAttr, pickRecord } from './shared.js';
+import { attr, firstChild } from './shared.js';
 import type { ElementContext } from './shared.js';
 
 export function parsePicture(
-  pic: unknown,
+  pic: OrderedXmlNode | undefined,
   ctx: ElementContext,
 ): { element?: ParsedImageElement; flags: LossFlag[] } {
-  if (!isRecord(pic)) return { flags: [] };
+  if (pic === undefined) return { flags: [] };
   const flags: LossFlag[] = [];
 
-  const nvPicPr = pickRecord(pic, 'p:nvPicPr');
-  const cNvPr = pickRecord(nvPicPr, 'p:cNvPr');
-  const id = makeElementId(pickAttr(cNvPr, 'id'));
-  const name = pickAttr(cNvPr, 'name');
+  const nvPicPr = firstChild(pic, 'p:nvPicPr');
+  const cNvPr = firstChild(nvPicPr, 'p:cNvPr');
+  const id = makeElementId(attr(cNvPr, 'id'));
+  const name = attr(cNvPr, 'name');
 
-  const spPr = pickRecord(pic, 'p:spPr');
-  const xfrm = pickRecord(spPr, 'a:xfrm');
+  const spPr = firstChild(pic, 'p:spPr');
+  const xfrm = firstChild(spPr, 'a:xfrm');
   const transform = readTransform(xfrm);
 
-  const blipFill = pickRecord(pic, 'p:blipFill');
-  const blip = pickRecord(blipFill, 'a:blip');
-  const embedRelId = pickAttr(blip, 'r:embed');
+  const blipFill = firstChild(pic, 'p:blipFill');
+  const blip = firstChild(blipFill, 'a:blip');
+  const embedRelId = attr(blip, 'r:embed');
 
   let oocxmlPath = ctx.oocxmlPath;
   if (embedRelId !== undefined) {

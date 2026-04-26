@@ -1,25 +1,21 @@
 // packages/import-pptx/src/geometries/cust-geom/parse.ts
 // Translate OOXML `<a:custGeom>` payloads into SVG path-data strings.
 // Coverage: <a:moveTo>, <a:lnTo>, <a:cubicBezTo>, <a:quadBezTo>, <a:close>,
-// multiple <a:path> entries. <a:arcTo> is deferred — its SVG translation
-// requires knowing the current pen position before the arc, which the
-// current walk-by-kind traversal can't reliably provide; lifting that
-// limitation requires switching the shared XML parser to preserveOrder:
-// true (workspace-wide refactor; tracked separately).
+// multiple <a:path> entries. The walker reads the ordered XML shape from
+// `opc.ts` directly (T-242d switched the workspace parser to
+// `preserveOrder: true`), so heterogeneous commands interleave in document
+// order — this is the precondition `<a:arcTo>` will need in Sub-PR 2.
 //
 // Derived from the public OOXML spec (ECMA-376 §20.1.9.8 a:custGeom and
 // neighbours). Original implementation; no copied prior art.
 
+import { type OrderedXmlNode, allChildren, attr, children, firstChild, tagOf } from '../../opc.js';
 import { fmt } from '../format.js';
 
-const COMMAND_KEYS = ['a:moveTo', 'a:lnTo', 'a:cubicBezTo', 'a:quadBezTo', 'a:close'] as const;
-type CommandKey = (typeof COMMAND_KEYS)[number];
-
-/** Parsed-XML node shape (from fast-xml-parser; same convention as opc.ts). */
-type XmlNode = Record<string, unknown>;
+const COMMAND_KEYS = new Set(['a:moveTo', 'a:lnTo', 'a:cubicBezTo', 'a:quadBezTo', 'a:close']);
 
 /**
- * Translate a parsed `<a:custGeom>` node (from fast-xml-parser) into an SVG
+ * Translate a parsed `<a:custGeom>` node (ordered XML shape) into an SVG
  * `d` attribute. Returns `undefined` when the node has no usable paths or
  * when an unsupported command appears in every path (caller should emit a
  * loss flag and fall back to `unsupported-shape`).
@@ -28,19 +24,18 @@ type XmlNode = Record<string, unknown>;
  * coords (`<a:path w="..." h="...">`). Without it, we emit raw coordinates.
  */
 export function custGeomToSvgPath(
-  custGeom: XmlNode,
+  custGeom: OrderedXmlNode,
   box?: { w: number; h: number },
 ): string | undefined {
-  const pathLst = pickRecord(custGeom, 'a:pathLst');
+  const pathLst = firstChild(custGeom, 'a:pathLst');
   if (pathLst === undefined) return undefined;
 
   // `<a:pathLst>` contains one or more `<a:path>` entries.
-  const pathEntries = asArray(pathLst['a:path']);
+  const pathEntries = children(pathLst, 'a:path');
   if (pathEntries.length === 0) return undefined;
 
   const segments: string[] = [];
   for (const entry of pathEntries) {
-    if (!isRecord(entry)) continue;
     const seg = pathToSvg(entry, box);
     if (seg !== '') segments.push(seg);
   }
@@ -51,28 +46,30 @@ export function custGeomToSvgPath(
 }
 
 /** Convert a single `<a:path>` to SVG. */
-function pathToSvg(path: XmlNode, box: { w: number; h: number } | undefined): string {
+function pathToSvg(path: OrderedXmlNode, box: { w: number; h: number } | undefined): string {
   const pathW = numberAttr(path, 'w');
   const pathH = numberAttr(path, 'h');
   const scale = computeScale(pathW, pathH, box);
 
   const out: string[] = [];
-  for (const child of orderedChildren(path)) {
-    switch (child.kind) {
+  for (const child of allChildren(path)) {
+    const kind = tagOf(child);
+    if (kind === undefined || !COMMAND_KEYS.has(kind)) continue;
+    switch (kind) {
       case 'a:moveTo': {
-        const pt = readPoint(child.node);
+        const pt = readPoint(child);
         if (pt === undefined) continue;
         out.push(`M ${fmt(pt.x * scale.x)} ${fmt(pt.y * scale.y)}`);
         break;
       }
       case 'a:lnTo': {
-        const pt = readPoint(child.node);
+        const pt = readPoint(child);
         if (pt === undefined) continue;
         out.push(`L ${fmt(pt.x * scale.x)} ${fmt(pt.y * scale.y)}`);
         break;
       }
       case 'a:cubicBezTo': {
-        const pts = readPoints(child.node, 3);
+        const pts = readPoints(child, 3);
         if (pts === undefined) continue;
         const c1 = pts[0];
         const c2 = pts[1];
@@ -86,7 +83,7 @@ function pathToSvg(path: XmlNode, box: { w: number; h: number } | undefined): st
         break;
       }
       case 'a:quadBezTo': {
-        const pts = readPoints(child.node, 2);
+        const pts = readPoints(child, 2);
         if (pts === undefined) continue;
         const c = pts[0];
         const end = pts[1];
@@ -106,31 +103,8 @@ function pathToSvg(path: XmlNode, box: { w: number; h: number } | undefined): st
   return out.join(' ');
 }
 
-/**
- * Walk a path entry's children in document order. fast-xml-parser groups
- * them by tag; `<a:moveTo>`, `<a:lnTo>`, etc. each become a possibly-
- * arrayed entry on the parent. We reconstruct order by interleaving via the
- * synthetic `:@` order attribute fast-xml-parser preserves on
- * `preserveOrder: true` configurations — but our parser uses
- * `preserveOrder: false`, so the simpler approach is to walk each command
- * type and trust that path commands of the same kind run together. For
- * presets that mix kinds in a single path, this is wrong. Lifting the
- * limitation needs a workspace-wide switch to `preserveOrder: true` in
- * the shared XML parser; tracked as a separate follow-up.
- */
-function orderedChildren(path: XmlNode): { kind: CommandKey; node: XmlNode }[] {
-  const flat: { kind: CommandKey; node: XmlNode }[] = [];
-  for (const key of COMMAND_KEYS) {
-    for (const node of asArray(path[key])) {
-      if (isRecord(node)) flat.push({ kind: key, node });
-      else if (key === 'a:close') flat.push({ kind: key, node: {} });
-    }
-  }
-  return flat;
-}
-
-function readPoint(node: XmlNode): { x: number; y: number } | undefined {
-  const pt = pickRecord(node, 'a:pt');
+function readPoint(node: OrderedXmlNode): { x: number; y: number } | undefined {
+  const pt = firstChild(node, 'a:pt');
   if (pt === undefined) return undefined;
   const x = numberAttr(pt, 'x');
   const y = numberAttr(pt, 'y');
@@ -138,13 +112,13 @@ function readPoint(node: XmlNode): { x: number; y: number } | undefined {
   return { x, y };
 }
 
-function readPoints(node: XmlNode, count: number): { x: number; y: number }[] | undefined {
-  const pts = asArray(node['a:pt']);
+function readPoints(node: OrderedXmlNode, count: number): { x: number; y: number }[] | undefined {
+  const pts = children(node, 'a:pt');
   if (pts.length < count) return undefined;
   const result: { x: number; y: number }[] = [];
   for (let i = 0; i < count; i++) {
     const pt = pts[i];
-    if (!isRecord(pt)) return undefined;
+    if (pt === undefined) return undefined;
     const x = numberAttr(pt, 'x');
     const y = numberAttr(pt, 'y');
     if (x === undefined || y === undefined) return undefined;
@@ -168,26 +142,9 @@ function computeScale(
   };
 }
 
-function numberAttr(node: unknown, name: string): number | undefined {
-  if (!isRecord(node)) return undefined;
-  const v = node[`@_${name}`];
-  if (typeof v !== 'string') return undefined;
+function numberAttr(node: OrderedXmlNode, name: string): number | undefined {
+  const v = attr(node, name);
+  if (v === undefined) return undefined;
   const n = Number(v);
   return Number.isFinite(n) ? n : undefined;
-}
-
-function isRecord(v: unknown): v is XmlNode {
-  return typeof v === 'object' && v !== null && !Array.isArray(v);
-}
-
-function asArray(v: unknown): unknown[] {
-  if (Array.isArray(v)) return v;
-  if (v === undefined) return [];
-  return [v];
-}
-
-function pickRecord(node: unknown, name: string): XmlNode | undefined {
-  if (!isRecord(node)) return undefined;
-  const v = node[name];
-  return isRecord(v) ? v : undefined;
 }

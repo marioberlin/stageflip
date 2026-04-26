@@ -5,7 +5,7 @@
 
 import type { ElementContext } from '../elements/shared.js';
 import { emitLossFlag } from '../loss-flags.js';
-import { parseXml, readRels } from '../opc.js';
+import { type OrderedXmlNode, attr, firstChild, parseXml, readRels } from '../opc.js';
 import type { LossFlag, ParsedSlide } from '../types.js';
 import { PptxParseError } from '../types.js';
 import type { ZipEntries } from '../zip.js';
@@ -20,13 +20,12 @@ export function parseSlidePart(
   slideId: string,
 ): { slide: ParsedSlide; flags: LossFlag[] } {
   const xml = parseXml(entries, oocxmlPath);
-  if (typeof xml !== 'object' || xml === null) {
-    throw new PptxParseError('INVALID_XML', 'slide root is not an object', oocxmlPath);
-  }
 
-  const root = SLIDE_ROOTS.map((tag) => (xml as Record<string, unknown>)[tag]).find(
-    (v) => v !== undefined,
-  );
+  let root: OrderedXmlNode | undefined;
+  for (const tag of SLIDE_ROOTS) {
+    root = firstChild(xml, tag);
+    if (root !== undefined) break;
+  }
   if (root === undefined) {
     throw new PptxParseError(
       'INVALID_XML',
@@ -37,11 +36,11 @@ export function parseSlidePart(
 
   const flags: LossFlag[] = [];
 
-  const cSld = pickRecord(root, 'p:cSld');
+  const cSld = firstChild(root, 'p:cSld');
   if (cSld === undefined) {
     throw new PptxParseError('INVALID_XML', 'missing <p:cSld> in slide part', oocxmlPath);
   }
-  const spTree = pickRecord(cSld, 'p:spTree');
+  const spTree = firstChild(cSld, 'p:spTree');
   if (spTree === undefined) {
     throw new PptxParseError('INVALID_XML', 'missing <p:spTree> in <p:cSld>', oocxmlPath);
   }
@@ -83,15 +82,7 @@ function findNotesRelPath(
   return undefined;
 }
 
-function readSlideTitle(cSld: Record<string, unknown>): string | undefined {
-  const v = cSld['@_name'];
-  return typeof v === 'string' && v.length > 0 ? v : undefined;
-}
-
-function pickRecord(node: unknown, name: string): Record<string, unknown> | undefined {
-  if (typeof node !== 'object' || node === null) return undefined;
-  const v = (node as Record<string, unknown>)[name];
-  return typeof v === 'object' && v !== null && !Array.isArray(v)
-    ? (v as Record<string, unknown>)
-    : undefined;
+function readSlideTitle(cSld: OrderedXmlNode): string | undefined {
+  const v = attr(cSld, 'name');
+  return v !== undefined && v.length > 0 ? v : undefined;
 }

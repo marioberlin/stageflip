@@ -8,9 +8,10 @@ import type { ShapeElement } from '@stageflip/schema';
 import { HONORED_ADJUSTMENTS, custGeomToSvgPath, geometryFor } from '../geometries/index.js';
 import type { AdjustmentMap } from '../geometries/index.js';
 import { emitLossFlag } from '../loss-flags.js';
+import type { OrderedXmlNode } from '../opc.js';
 import { makeElementId, readTransform } from '../parts/sp-tree.js';
 import type { LossFlag, ParsedElement, UnsupportedShapeElement } from '../types.js';
-import { asArray, isRecord, pickAttr, pickRecord } from './shared.js';
+import { attr, children, firstChild, textContent } from './shared.js';
 import type { ElementContext } from './shared.js';
 import { buildText } from './text.js';
 
@@ -38,22 +39,22 @@ const PRESET_TO_SCHEMA: Record<string, ShapeElement['shape']> = {
 };
 
 export function parseShape(
-  sp: unknown,
+  sp: OrderedXmlNode | undefined,
   ctx: ElementContext,
 ): { element?: ParsedElement; flags: LossFlag[] } {
-  if (!isRecord(sp)) return { flags: [] };
+  if (sp === undefined) return { flags: [] };
   const flags: LossFlag[] = [];
 
-  const nv = pickRecord(sp, 'p:nvSpPr');
-  const cNvPr = pickRecord(nv, 'p:cNvPr');
-  const id = makeElementId(pickAttr(cNvPr, 'id'));
-  const name = pickAttr(cNvPr, 'name');
+  const nv = firstChild(sp, 'p:nvSpPr');
+  const cNvPr = firstChild(nv, 'p:cNvPr');
+  const id = makeElementId(attr(cNvPr, 'id'));
+  const name = attr(cNvPr, 'name');
 
-  const spPr = pickRecord(sp, 'p:spPr');
-  const xfrm = pickRecord(spPr, 'a:xfrm');
+  const spPr = firstChild(sp, 'p:spPr');
+  const xfrm = firstChild(spPr, 'a:xfrm');
   const transform = readTransform(xfrm);
 
-  const txBody = pickRecord(sp, 'p:txBody');
+  const txBody = firstChild(sp, 'p:txBody');
   if (txBody !== undefined && hasAnyText(txBody)) {
     const element = buildText({
       txBody,
@@ -65,8 +66,8 @@ export function parseShape(
   }
 
   // No text body — interpret geometry.
-  const prstGeom = pickRecord(spPr, 'a:prstGeom');
-  const custGeom = pickRecord(spPr, 'a:custGeom');
+  const prstGeom = firstChild(spPr, 'a:prstGeom');
+  const custGeom = firstChild(spPr, 'a:custGeom');
 
   if (custGeom !== undefined) {
     const path = custGeomToSvgPath(custGeom, { w: transform.width, h: transform.height });
@@ -109,8 +110,8 @@ export function parseShape(
   }
 
   if (prstGeom !== undefined) {
-    const prst = pickAttr(prstGeom, 'prst');
-    const adjustments = readAdjustments(pickRecord(prstGeom, 'a:avLst'));
+    const prst = attr(prstGeom, 'prst');
+    const adjustments = readAdjustments(firstChild(prstGeom, 'a:avLst'));
     const schemaKind = prst === undefined ? undefined : PRESET_TO_SCHEMA[prst];
     if (schemaKind !== undefined) {
       // Compute cornerRadius for `roundRect` from adj1; honored only on the
@@ -203,16 +204,12 @@ export function parseShape(
 }
 
 /** True when the txBody actually contains at least one non-empty `<a:t>`. */
-function hasAnyText(txBody: Record<string, unknown>): boolean {
-  for (const p of asArray(txBody['a:p'])) {
-    if (!isRecord(p)) continue;
-    for (const r of asArray(p['a:r'])) {
-      if (!isRecord(r)) continue;
-      const t = r['a:t'];
-      if (typeof t === 'string' && t.length > 0) return true;
-      if (isRecord(t) && typeof t['#text'] === 'string' && (t['#text'] as string).length > 0) {
-        return true;
-      }
+function hasAnyText(txBody: OrderedXmlNode): boolean {
+  for (const p of children(txBody, 'a:p')) {
+    for (const r of children(p, 'a:r')) {
+      const tNode = firstChild(r, 'a:t');
+      const text = tNode === undefined ? undefined : textContent(tNode);
+      if (text !== undefined && text.length > 0) return true;
     }
   }
   return false;
@@ -223,13 +220,12 @@ function hasAnyText(txBody: Record<string, unknown>): boolean {
  * name → integer map. Non-`val` formulas are skipped — full formula
  * evaluation is out of scope for T-242 (escalation trigger).
  */
-function readAdjustments(avLst: Record<string, unknown> | undefined): AdjustmentMap {
+function readAdjustments(avLst: OrderedXmlNode | undefined): AdjustmentMap {
   const out: AdjustmentMap = {};
   if (avLst === undefined) return out;
-  for (const gd of asArray(avLst['a:gd'])) {
-    if (!isRecord(gd)) continue;
-    const name = pickAttr(gd, 'name');
-    const fmla = pickAttr(gd, 'fmla');
+  for (const gd of children(avLst, 'a:gd')) {
+    const name = attr(gd, 'name');
+    const fmla = attr(gd, 'fmla');
     if (name === undefined || fmla === undefined) continue;
     const match = fmla.match(/^val\s+(-?\d+)$/);
     if (match === null || match[1] === undefined) continue;
