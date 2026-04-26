@@ -7,6 +7,7 @@ import { parsePicture } from '../elements/picture.js';
 import { parseShape } from '../elements/shape.js';
 import type { ElementContext } from '../elements/shared.js';
 import { attrNumber } from '../elements/shared.js';
+import { parseVideo } from '../elements/video.js';
 import { emitLossFlag } from '../loss-flags.js';
 import { type OrderedXmlNode, allChildren, attr, children, firstChild, tagOf } from '../opc.js';
 import type { LossFlag, ParsedElement, ParsedGroupElement } from '../types.js';
@@ -27,11 +28,53 @@ export function walkSpTree(
 
   if (spTree === undefined) return { elements, flags };
 
-  // PPTX shapes
+  // PPTX shapes — disambiguate <p:videoFile>-bearing shapes (T-243b) from
+  // ordinary shapes. A shape carrying a <p:nvPr><p:videoFile> child whose
+  // relationship resolves to in-ZIP bytes is dispatched to parseVideo and
+  // its body (text / geometry) is dropped with an info flag. External-URL
+  // r:link videos fall through to parseShape with an UNSUPPORTED flag —
+  // a future task adds LF-PPTX-LINKED-VIDEO.
   for (const sp of children(spTree, 'p:sp')) {
+    const dispatch = classifyShape(sp, ctx);
+    if (dispatch.kind === 'video') {
+      const r = parseVideo(sp, ctx);
+      if (r.element !== undefined) elements.push(r.element);
+      flags.push(...r.flags);
+      if (dispatch.bodyDropped) {
+        const elementId = r.element?.id;
+        flags.push(
+          emitLossFlag({
+            code: 'LF-PPTX-UNSUPPORTED-ELEMENT',
+            location: {
+              slideId: ctx.slideId,
+              oocxmlPath: ctx.oocxmlPath,
+              ...(elementId !== undefined ? { elementId } : {}),
+            },
+            message: 'shape body dropped on video extension; only the video survives',
+            originalSnippet: 'shape body dropped on video extension',
+          }),
+        );
+      }
+      continue;
+    }
     const r = parseShape(sp, ctx);
     if (r.element !== undefined) elements.push(r.element);
     flags.push(...r.flags);
+    if (dispatch.kind === 'shape-with-external-video') {
+      const elementId = r.element?.id;
+      flags.push(
+        emitLossFlag({
+          code: 'LF-PPTX-UNSUPPORTED-ELEMENT',
+          location: {
+            slideId: ctx.slideId,
+            oocxmlPath: ctx.oocxmlPath,
+            ...(elementId !== undefined ? { elementId } : {}),
+          },
+          message: 'external video URL referenced by <p:videoFile r:link> not yet supported',
+          originalSnippet: 'external video URL',
+        }),
+      );
+    }
   }
 
   // Pictures
@@ -69,6 +112,52 @@ export function walkSpTree(
   }
 
   return { elements, flags };
+}
+
+/**
+ * Decide whether a `<p:sp>` should be dispatched to `parseVideo` or
+ * `parseShape`. T-243b §"Architecture / Parser-side" pins the rules:
+ *
+ * - No `<p:videoFile>` child → 'shape' (existing path; no behavior change).
+ * - `<p:videoFile>` + Internal rel (or `r:embed`, or `TargetMode` absent)
+ *   → 'video' (in-ZIP bytes; parseVideo emits the element).
+ * - `<p:videoFile>` + External rel → 'shape-with-external-video'
+ *   (parseShape runs unchanged; LF-PPTX-UNSUPPORTED-ELEMENT emits with
+ *   originalSnippet="external video URL" until LF-PPTX-LINKED-VIDEO ships).
+ *
+ * `bodyDropped` is set when the `<p:sp>` ALSO carries a `<p:txBody>` or
+ * a `<p:spPr><a:custGeom>` / `<p:spPr><a:prstGeom>` — i.e., real shape
+ * content that the video dispatch is overriding.
+ */
+function classifyShape(
+  sp: OrderedXmlNode,
+  ctx: ElementContext,
+):
+  | { kind: 'shape' }
+  | { kind: 'video'; bodyDropped: boolean }
+  | { kind: 'shape-with-external-video' } {
+  const nvSpPr = firstChild(sp, 'p:nvSpPr');
+  const nvPr = firstChild(nvSpPr, 'p:nvPr');
+  const videoFile = firstChild(nvPr, 'p:videoFile');
+  if (videoFile === undefined) return { kind: 'shape' };
+
+  const relId = attr(videoFile, 'r:embed') ?? attr(videoFile, 'r:link');
+  if (relId === undefined) {
+    // No relId at all — defensively treat as a shape; the video extension
+    // is malformed and parseShape's normal path will run.
+    return { kind: 'shape' };
+  }
+  const rel = ctx.rels[relId];
+  // Per OOXML, TargetMode defaults to Internal when absent. Only an
+  // explicit "External" diverts to the fall-through branch.
+  if (rel?.targetMode === 'External') return { kind: 'shape-with-external-video' };
+
+  const spPr = firstChild(sp, 'p:spPr');
+  const txBody = firstChild(sp, 'p:txBody');
+  const custGeom = firstChild(spPr, 'a:custGeom');
+  const prstGeom = firstChild(spPr, 'a:prstGeom');
+  const bodyDropped = txBody !== undefined || custGeom !== undefined || prstGeom !== undefined;
+  return { kind: 'video', bodyDropped };
 }
 
 function parseGroup(

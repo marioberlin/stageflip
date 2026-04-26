@@ -47,12 +47,11 @@ function spVideoXml(args: {
   const y = args.y ?? 0;
   const cx = args.cx ?? 4000000;
   const cy = args.cy ?? 3000000;
-  const body = args.withBody === true
-    ? `<p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>caption</a:t></a:r></a:p></p:txBody>`
-    : '';
-  const geom = args.withBody === true
-    ? `<a:custGeom><a:pathLst/></a:custGeom>`
-    : '';
+  const body =
+    args.withBody === true
+      ? '<p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>caption</a:t></a:r></a:p></p:txBody>'
+      : '';
+  const geom = args.withBody === true ? '<a:custGeom><a:pathLst/></a:custGeom>' : '';
   return `<p:sp>
 <p:nvSpPr>
 <p:cNvPr id="${args.id}" name="${args.name}"/>
@@ -167,7 +166,9 @@ describe('parseVideo / walkSpTree video dispatch — T-243b ACs #1–#9', () => 
     const out = walkSpTree(tree, ctxWith(RELS_INTERNAL_LINK));
 
     const videos = out.elements.filter((e) => e.type === 'video');
-    const shapes = out.elements.filter((e) => e.type === 'shape' || e.type === 'text' || e.type === 'unsupported-shape');
+    const shapes = out.elements.filter(
+      (e) => e.type === 'shape' || e.type === 'text' || e.type === 'unsupported-shape',
+    );
     expect(videos.length).toBe(1);
     expect(shapes.length).toBe(0);
 
@@ -189,9 +190,7 @@ describe('parseVideo / walkSpTree video dispatch — T-243b ACs #1–#9', () => 
     expect(videos.length).toBe(0);
 
     const externalFlag = out.flags.find(
-      (f) =>
-        f.code === 'LF-PPTX-UNSUPPORTED-ELEMENT' &&
-        f.originalSnippet === 'external video URL',
+      (f) => f.code === 'LF-PPTX-UNSUPPORTED-ELEMENT' && f.originalSnippet === 'external video URL',
     );
     expect(externalFlag).toBeDefined();
   });

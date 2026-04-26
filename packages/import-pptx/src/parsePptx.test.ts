@@ -257,7 +257,9 @@ describe('parsePptx — acceptance criteria', () => {
 
     expect(resolved.lossFlags.find((f) => f.code === 'LF-PPTX-UNRESOLVED-ASSET')).toBeUndefined();
     expect(resolved.lossFlags.find((f) => f.code === 'LF-PPTX-UNRESOLVED-VIDEO')).toBeUndefined();
-    expect(resolved.lossFlags.find((f) => f.code === 'LF-PPTX-MISSING-ASSET-BYTES')).toBeUndefined();
+    expect(
+      resolved.lossFlags.find((f) => f.code === 'LF-PPTX-MISSING-ASSET-BYTES'),
+    ).toBeUndefined();
 
     // And the elements themselves are resolved.
     const slide = resolved.slides[0];

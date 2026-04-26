@@ -110,7 +110,9 @@ const expectedSummaries: Record<FixtureName, ReturnType<typeof summarise>> = {
     slideCount: 1,
     layoutCount: 1,
     masterCount: 1,
-    perSlide: [{ id: 'slide_1', elementTypes: ['image', 'video'] }],
+    // walkSpTree dispatches <p:sp> before <p:pic>; the video extension on
+    // the <p:sp> surfaces first regardless of the source XML order.
+    perSlide: [{ id: 'slide_1', elementTypes: ['video', 'image'] }],
     flagCodes: ['LF-PPTX-UNRESOLVED-ASSET', 'LF-PPTX-UNRESOLVED-VIDEO'],
   },
 };

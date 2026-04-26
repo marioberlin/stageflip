@@ -150,9 +150,7 @@ function slideRelsExplicit(rels: readonly ExplicitRel[]): string {
   ];
   for (const r of rels) {
     const tm = r.targetMode === undefined ? '' : ` TargetMode="${r.targetMode}"`;
-    rows.push(
-      `<Relationship Id="${r.id}" Type="${r.type}" Target="${r.target}"${tm}/>`,
-    );
+    rows.push(`<Relationship Id="${r.id}" Type="${r.type}" Target="${r.target}"${tm}/>`);
   }
   return `${xmlHeader}
 <Relationships xmlns="${NS_R}/package/2006/relationships">
@@ -315,12 +313,11 @@ function spVideo(opts: {
   withBody?: boolean;
 }): string {
   const relAttr = opts.relAttr ?? 'r:embed';
-  const body = opts.withBody === true
-    ? `<p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>caption</a:t></a:r></a:p></p:txBody>`
-    : '';
-  const geom = opts.withBody === true
-    ? `<a:custGeom><a:pathLst/></a:custGeom>`
-    : '';
+  const body =
+    opts.withBody === true
+      ? '<p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>caption</a:t></a:r></a:p></p:txBody>'
+      : '';
+  const geom = opts.withBody === true ? '<a:custGeom><a:pathLst/></a:custGeom>' : '';
   return `<p:sp>
 <p:nvSpPr>
 <p:cNvPr id="${opts.id}" name="${opts.name}"/>
@@ -548,20 +545,16 @@ export function buildVideoFixture(): Uint8Array {
       cy: 3000000,
     }),
   );
-  return buildPptx(
-    [slide],
-    { 'ppt/media/video1.mp4': STUB_MP4_BYTES },
+  return buildPptx([slide], { 'ppt/media/video1.mp4': STUB_MP4_BYTES }, [
     [
-      [
-        {
-          id: 'rIdVid1',
-          type: REL_TYPE_VIDEO,
-          target: '../media/video1.mp4',
-          targetMode: 'Internal',
-        },
-      ],
+      {
+        id: 'rIdVid1',
+        type: REL_TYPE_VIDEO,
+        target: '../media/video1.mp4',
+        targetMode: 'Internal',
+      },
     ],
-  );
+  ]);
 }
 
 /**

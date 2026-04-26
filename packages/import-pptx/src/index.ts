@@ -32,6 +32,7 @@ export type {
   ParsedGroupElement,
   ParsedImageElement,
   ParsedSlide,
+  ParsedVideoElement,
   PptxParseErrorCode,
   UnsupportedShapeElement,
 } from './types.js';

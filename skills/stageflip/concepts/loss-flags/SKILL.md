@@ -92,7 +92,8 @@ PPTX codes (defined in `@stageflip/import-pptx`):
 - `LF-PPTX-PRESET-GEOMETRY` — historically emitted for preset shapes outside the T-242 coverage set. T-242c batch 1 cleared the 9 arrow + callout presets; batch 2 cleared `ribbon2`, `verticalScroll`, `horizontalScroll`, `star10`, `star12`, `moon`, `lightningBolt`, `noSmoking`; T-242d cleared the trailing arc-bearing trio (`chord`, `pie`, `donut`). After T-242d every committed preset is covered (50/50). Still-emits-for: ∅ committed presets; the long-tail (~140 OOXML presets outside the commitment) is owned by T-245's rasterization fallback under its own loss code.
 - `LF-PPTX-PRESET-ADJUSTMENT-IGNORED` — preset has an `<a:avLst>` adjustment T-242a doesn't honor (defaults used instead). Info severity.
 - `LF-PPTX-UNRESOLVED-ASSET` — picture bytes pending resolution. Cleared by T-243's `resolveAssets` post-walk pass.
-- `LF-PPTX-MISSING-ASSET-BYTES` — `error` severity. T-243 emits this when a picture rel points at a path not present in the PPTX ZIP.
+- `LF-PPTX-UNRESOLVED-VIDEO` — video bytes pending resolution. Cleared by T-243b's `resolveAssets` extension. Severity `info`, category `media`. Same in-ZIP semantics as `LF-PPTX-UNRESOLVED-ASSET`; emitted by `<p:videoFile>` extensions on shapes whose relationship resolves to in-package bytes (`r:embed` or `r:link` with `TargetMode="Internal"`). External-URL `r:link` videos fall through to `LF-PPTX-UNSUPPORTED-ELEMENT` (`originalSnippet: 'external video URL'`) until a future task introduces `LF-PPTX-LINKED-VIDEO`.
+- `LF-PPTX-MISSING-ASSET-BYTES` — `error` severity. T-243 emits this when a picture rel points at a path not present in the PPTX ZIP. T-243b reuses the same code for missing video bytes (the underlying handling is identical).
 - `LF-PPTX-UNSUPPORTED-ELEMENT` — chart / OLE / connection placeholders → T-247 / T-248.
 - `LF-PPTX-UNSUPPORTED-FILL` — gradients / patterns → T-249.
 - `LF-PPTX-NOTES-DROPPED` — speaker notes → T-249 / T-250.
@@ -104,6 +105,11 @@ post-walk pass.
 T-243 (image asset resolution) merged: `LF-PPTX-UNRESOLVED-ASSET` is cleared
 once `resolveAssets` runs against an `AssetStorage` adapter; broken rels
 surface as `LF-PPTX-MISSING-ASSET-BYTES` (`error`).
+
+T-243b (video asset resolution) merged: extends the same `resolveAssets`
+post-walk pass with a `'video'` branch. `LF-PPTX-UNRESOLVED-VIDEO` is
+cleared once the video bytes upload through the storage adapter; broken
+rels reuse the existing `LF-PPTX-MISSING-ASSET-BYTES` code.
 
 T-248 picks up the editor/export reporter UX. The schema does not yet carry
 flags on `Document` — they are produced at import time and surfaced

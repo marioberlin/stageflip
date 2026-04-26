@@ -244,9 +244,7 @@ export function readRels(entries: ZipEntries, partPath: string): OpcRelMap {
       target,
       // External targets are URLs, not in-package paths — keep them verbatim.
       resolvedTarget: isExternal ? target : resolveRelTarget(partPath, target),
-      ...(targetMode === 'External' || targetMode === 'Internal'
-        ? { targetMode }
-        : {}),
+      ...(targetMode === 'External' || targetMode === 'Internal' ? { targetMode } : {}),
     };
   }
   return map;
