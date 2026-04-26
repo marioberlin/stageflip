@@ -159,10 +159,13 @@ describe('parsePptx — acceptance criteria', () => {
   });
 
   // Bonus — preset geometry outside T-242 coverage still surfaces a flag.
+  // `chord` lands in T-242d (needs <a:arcTo> support); until then the
+  // shapes fixture pins one still-uncovered preset to keep this assertion
+  // meaningful.
   it('emits LF-PPTX-PRESET-GEOMETRY for presets outside T-242 coverage', async () => {
     const tree = await parsePptx(buildShapesFixture());
     const flag = tree.lossFlags.find(
-      (f) => f.code === 'LF-PPTX-PRESET-GEOMETRY' && f.originalSnippet === 'lightningBolt',
+      (f) => f.code === 'LF-PPTX-PRESET-GEOMETRY' && f.originalSnippet === 'chord',
     );
     expect(flag).toBeDefined();
   });

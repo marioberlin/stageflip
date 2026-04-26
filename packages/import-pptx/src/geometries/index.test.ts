@@ -1,12 +1,12 @@
 // packages/import-pptx/src/geometries/index.test.ts
 // Pin the registry coverage and the contract every preset generator
-// upholds. T-242c batch 1 grows the list to 25; batch 2 to 33; T-242d
-// closes out at 36.
+// upholds. T-242c batch 1 grew the list to 25; batch 2 takes it to 33;
+// T-242d closes out at 36.
 
 import { describe, expect, it } from 'vitest';
 import { COVERED_PRESETS, HONORED_ADJUSTMENTS, PRESET_GENERATORS, geometryFor } from './index.js';
 
-const T_242C_BATCH1_PRESETS = [
+const T_242C_BATCH2_PRESETS = [
   // T-242a (6)
   'rightArrow',
   'wedgeRectCallout',
@@ -35,11 +35,20 @@ const T_242C_BATCH1_PRESETS = [
   'cloudCallout',
   'borderCallout1',
   'borderCallout2',
+  // T-242c batch 2 (8)
+  'ribbon2',
+  'verticalScroll',
+  'horizontalScroll',
+  'star10',
+  'star12',
+  'moon',
+  'lightningBolt',
+  'noSmoking',
 ];
 
 describe('preset registry', () => {
-  it('covers exactly the T-242a + T-242b first-wave + T-242c batch 1 presets (25 total)', () => {
-    expect(COVERED_PRESETS.slice().sort()).toEqual(T_242C_BATCH1_PRESETS.slice().sort());
+  it('covers exactly the T-242a + T-242b first-wave + T-242c (batch 1 + batch 2) presets (33 total)', () => {
+    expect(COVERED_PRESETS.slice().sort()).toEqual(T_242C_BATCH2_PRESETS.slice().sort());
   });
 
   it('every generator returns a non-empty SVG path string for a 100x100 box', () => {
@@ -60,8 +69,10 @@ describe('preset registry', () => {
   });
 
   it('returns undefined for an unmapped preset name', () => {
-    expect(geometryFor('lightningBolt', { w: 100, h: 100 })).toBeUndefined();
-    expect(geometryFor('moon', { w: 100, h: 100 })).toBeUndefined();
+    // `chord`, `pie`, `donut` ship in T-242d (need <a:arcTo> / SVG `A`).
+    expect(geometryFor('chord', { w: 100, h: 100 })).toBeUndefined();
+    expect(geometryFor('pie', { w: 100, h: 100 })).toBeUndefined();
+    expect(geometryFor('donut', { w: 100, h: 100 })).toBeUndefined();
   });
 
   it('every generator is callable directly', () => {
@@ -295,5 +306,104 @@ describe('borderCallout2', () => {
     // Rectangle has 3 L commands → total ≥ 5.
     const lCount = (d?.match(/L /g) ?? []).length;
     expect(lCount).toBeGreaterThanOrEqual(5);
+  });
+});
+
+// --- T-242c batch 2 ---------------------------------------------------------
+
+describe('ribbon2', () => {
+  it('mirrors `ribbon` with the tabs at the top instead of the bottom', () => {
+    const d = geometryFor('ribbon2', { w: 200, h: 100 });
+    expect(d).toBeDefined();
+    expect(d).toMatch(/^M /);
+    expect(d?.endsWith('Z')).toBe(true);
+    // 8-vertex closed polygon mirroring `ribbon`'s topology (M + 7 L + Z).
+    const lCount = (d?.match(/L /g) ?? []).length;
+    expect(lCount).toBe(7);
+  });
+});
+
+describe('verticalScroll', () => {
+  it('uses cubic Béziers to approximate the two rolled-paper curls', () => {
+    const d = geometryFor('verticalScroll', { w: 100, h: 200 });
+    expect(d).toBeDefined();
+    expect(d).toMatch(/^M /);
+    expect(d?.endsWith('Z')).toBe(true);
+    const cCount = (d?.match(/C /g) ?? []).length;
+    // Two curls (top-left + bottom-right), each a half-circle built from
+    // two cubic-Bezier quarters → 4 cubic segments total.
+    expect(cCount).toBe(4);
+  });
+});
+
+describe('horizontalScroll', () => {
+  it('uses cubic Béziers to approximate the two rolled-paper curls', () => {
+    const d = geometryFor('horizontalScroll', { w: 200, h: 100 });
+    expect(d).toBeDefined();
+    expect(d).toMatch(/^M /);
+    expect(d?.endsWith('Z')).toBe(true);
+    const cCount = (d?.match(/C /g) ?? []).length;
+    expect(cCount).toBe(4);
+  });
+});
+
+describe('star10', () => {
+  it('produces a 20-vertex alternating polygon (10 outer + 10 inner)', () => {
+    const d = geometryFor('star10', { w: 100, h: 100 });
+    expect(d).toBeDefined();
+    expect(d).toMatch(/^M /);
+    const total = (d?.match(/[ML] /g) ?? []).length;
+    expect(total).toBe(20);
+    expect(d?.endsWith('Z')).toBe(true);
+  });
+});
+
+describe('star12', () => {
+  it('produces a 24-vertex alternating polygon (12 outer + 12 inner)', () => {
+    const d = geometryFor('star12', { w: 100, h: 100 });
+    expect(d).toBeDefined();
+    expect(d).toMatch(/^M /);
+    const total = (d?.match(/[ML] /g) ?? []).length;
+    expect(total).toBe(24);
+    expect(d?.endsWith('Z')).toBe(true);
+  });
+});
+
+describe('moon', () => {
+  it('uses cubic Béziers for the outer + inner crescent arcs', () => {
+    const d = geometryFor('moon', { w: 100, h: 100 });
+    expect(d).toBeDefined();
+    expect(d).toMatch(/^M /);
+    const cCount = (d?.match(/C /g) ?? []).length;
+    // Two arcs (outer convex + inner concave) → 2 cubic-Bezier segments
+    // each at minimum (semicircle = 2 cubic Béziers per side).
+    expect(cCount).toBeGreaterThanOrEqual(4);
+    expect(d?.endsWith('Z')).toBe(true);
+  });
+});
+
+describe('lightningBolt', () => {
+  it('produces a closed multi-segment zigzag polygon', () => {
+    const d = geometryFor('lightningBolt', { w: 100, h: 200 });
+    expect(d).toBeDefined();
+    expect(d).toMatch(/^M /);
+    expect(d?.endsWith('Z')).toBe(true);
+    const lCount = (d?.match(/L /g) ?? []).length;
+    // ECMA-376 §20.1.9 lightningBolt: 12-vertex polygon (M + 11 L + Z).
+    expect(lCount).toBe(11);
+  });
+});
+
+describe('noSmoking', () => {
+  it('produces an outer ring + inner cutout + diagonal bar (3 subpaths, all cubic Bézier circles)', () => {
+    const d = geometryFor('noSmoking', { w: 100, h: 100 });
+    expect(d).toBeDefined();
+    expect(d).toMatch(/^M /);
+    // 3 subpaths: outer circle, inner circle (hole), prohibition bar.
+    const mCount = (d?.match(/M /g) ?? []).length;
+    expect(mCount).toBe(3);
+    // 2 circles × 4 cubic Béziers each = 8 minimum.
+    const cCount = (d?.match(/C /g) ?? []).length;
+    expect(cCount).toBeGreaterThanOrEqual(8);
   });
 });

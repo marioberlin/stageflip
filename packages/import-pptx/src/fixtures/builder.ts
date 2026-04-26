@@ -321,10 +321,13 @@ export function buildShapesFixture(): Uint8Array {
     }),
     spShape({ id: 5, name: 'Star5', prst: 'star5', x: 4500000, y: 0, cx: 1000000, cy: 1000000 }),
     spShape({ id: 6, name: 'Cloud', prst: 'cloud', x: 6000000, y: 0, cx: 1000000, cy: 1000000 }),
+    // `chord` stays uncovered until T-242d lands `<a:arcTo>` support; using
+    // it keeps the LF-PPTX-PRESET-GEOMETRY assertion in `parsePptx.test.ts`
+    // meaningful as more presets join the geometry registry.
     spShape({
       id: 7,
-      name: 'LightningBolt',
-      prst: 'lightningBolt',
+      name: 'Chord',
+      prst: 'chord',
       x: 7500000,
       y: 0,
       cx: 1000000,

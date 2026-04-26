@@ -1,12 +1,13 @@
 // packages/import-pptx/src/geometries/index.ts
 // Public registry mapping OOXML preset names to path generators. T-242a
 // shipped 6; T-242b first-wave added 10 more (3 orthogonal arrows, 2
-// basics, 3 brackets/braces, 2 misc shapes). T-242c batch 1 adds 9 (4
-// arrows + 5 callouts), bringing the total to 25. The 14 already-mapped-
-// to-structural-kinds presets from T-240 (rect, ellipse, line, polygon,
-// star variants) are NOT in this registry — they continue to emit
-// `'shape'` with structural kinds. T-242c batch 2 adds the remaining 8 to
-// reach 33; T-242d ships the trailing 3 arc-bearing presets.
+// basics, 3 brackets/braces, 2 misc shapes). T-242c batch 1 added 9 (4
+// arrows + 5 callouts), bringing the total to 25. T-242c batch 2 adds the
+// remaining 8 (5 banners/scrolls/stars + 3 misc shapes) to reach 33. The
+// 14 already-mapped-to-structural-kinds presets from T-240 (rect, ellipse,
+// line, polygon, star variants) are NOT in this registry — they continue
+// to emit `'shape'` with structural kinds. T-242d ships the trailing 3
+// arc-bearing presets (`chord`, `pie`, `donut`).
 
 import {
   bentArrow,
@@ -18,7 +19,14 @@ import {
   upArrow,
   upDownArrow,
 } from './presets/arrows.js';
-import { ribbon } from './presets/banners.js';
+import {
+  horizontalScroll,
+  ribbon,
+  ribbon2,
+  star10,
+  star12,
+  verticalScroll,
+} from './presets/banners.js';
 import { chevron, parallelogram, trapezoid } from './presets/basics.js';
 import { leftBrace, leftBracket, rightBrace, rightBracket } from './presets/brackets.js';
 import {
@@ -29,7 +37,7 @@ import {
   wedgeRectCallout,
   wedgeRoundRectCallout,
 } from './presets/callouts.js';
-import { cloud, heart, sun } from './presets/misc.js';
+import { cloud, heart, lightningBolt, moon, noSmoking, sun } from './presets/misc.js';
 import type { AdjustmentMap, GeometryBox, PathGenerator } from './types.js';
 
 /** Stable order keeps test snapshots deterministic + the eventual coverage list visible. */
@@ -52,6 +60,11 @@ export const PRESET_GENERATORS: Readonly<Record<string, PathGenerator>> = {
   borderCallout2,
   // banners
   ribbon,
+  ribbon2,
+  verticalScroll,
+  horizontalScroll,
+  star10,
+  star12,
   // basics
   parallelogram,
   trapezoid,
@@ -65,6 +78,9 @@ export const PRESET_GENERATORS: Readonly<Record<string, PathGenerator>> = {
   cloud,
   sun,
   heart,
+  moon,
+  lightningBolt,
+  noSmoking,
 };
 
 /**
