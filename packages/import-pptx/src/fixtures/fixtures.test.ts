@@ -98,6 +98,23 @@ const expectedSummaries: Record<FixtureName, ReturnType<typeof summarise>> = {
     // wedgeRectCallout (adj1 + adj2). roundRect.adj is honored.
     flagCodes: ['LF-PPTX-PRESET-ADJUSTMENT-IGNORED', 'LF-PPTX-PRESET-ADJUSTMENT-IGNORED'],
   },
+  video: {
+    slideCount: 1,
+    layoutCount: 1,
+    masterCount: 1,
+    // One <p:sp> with <p:videoFile> → ParsedVideoElement, no shape.
+    perSlide: [{ id: 'slide_1', elementTypes: ['video'] }],
+    flagCodes: ['LF-PPTX-UNRESOLVED-VIDEO'],
+  },
+  'video-and-image': {
+    slideCount: 1,
+    layoutCount: 1,
+    masterCount: 1,
+    // walkSpTree dispatches <p:sp> before <p:pic>; the video extension on
+    // the <p:sp> surfaces first regardless of the source XML order.
+    perSlide: [{ id: 'slide_1', elementTypes: ['video', 'image'] }],
+    flagCodes: ['LF-PPTX-UNRESOLVED-ASSET', 'LF-PPTX-UNRESOLVED-VIDEO'],
+  },
 };
 
 describe('AC #8 — programmatic fixtures', () => {

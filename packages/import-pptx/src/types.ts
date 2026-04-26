@@ -21,6 +21,8 @@ import type {
   TextElement,
   VideoElement,
 } from '@stageflip/schema';
+// VideoElement is the schema-typed shape; ParsedVideoElement (below) loosens
+// `src` to `ParsedAssetRef` for the parser's structural pass.
 
 /**
  * Where an asset reference came from. Resolved variants carry a schema-typed
@@ -37,6 +39,17 @@ export type ParsedAssetRef =
  * picture relationships can flow through the structural pass.
  */
 export type ParsedImageElement = Omit<ImageElement, 'src'> & {
+  src: ParsedAssetRef;
+};
+
+/**
+ * Video element coming out of the parser. Mirrors `VideoElement` from
+ * `@stageflip/schema` but loosens `src` to `ParsedAssetRef` so unresolved
+ * `<p:videoFile>` relationships can flow through the structural pass.
+ * T-243b's `resolveAssets` pass rewrites these refs to the schema-typed
+ * `asset:<id>` form.
+ */
+export type ParsedVideoElement = Omit<VideoElement, 'src'> & {
   src: ParsedAssetRef;
 };
 
@@ -86,7 +99,7 @@ export type ParsedGroupElement = ElementBase & {
 export type ParsedElement =
   | TextElement
   | ParsedImageElement
-  | VideoElement
+  | ParsedVideoElement
   | AudioElement
   | ShapeElement
   | ParsedGroupElement
@@ -118,6 +131,7 @@ export type LossFlagCode =
   | 'LF-PPTX-PRESET-GEOMETRY'
   | 'LF-PPTX-PRESET-ADJUSTMENT-IGNORED'
   | 'LF-PPTX-UNRESOLVED-ASSET'
+  | 'LF-PPTX-UNRESOLVED-VIDEO'
   | 'LF-PPTX-MISSING-ASSET-BYTES'
   | 'LF-PPTX-UNSUPPORTED-ELEMENT'
   | 'LF-PPTX-UNSUPPORTED-FILL'

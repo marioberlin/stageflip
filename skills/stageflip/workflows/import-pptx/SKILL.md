@@ -89,17 +89,36 @@ in T-242b; `pie` / `chord` start-angle (`adj1`) and sweep-angle (`adj2`),
 plus `donut` ring-thickness (`adj1`) in T-242d. Other adjustments emit
 `LF-PPTX-PRESET-ADJUSTMENT-IGNORED` (info).
 
-## Image asset extraction (T-243)
+## Image / video asset extraction (T-243 / T-243b)
 
 `resolveAssets(tree, entries, storage)` is the second post-walk pass. It
-visits every `ParsedAssetRef.unresolved` carried by image elements, hashes
-each payload via sha256, uploads through an abstract `AssetStorage`
-interface (concrete adapter wraps `@stageflip/storage-firebase`), and
-rewrites refs to the schema-typed `asset:<id>` form. Dedup is by
+visits every `ParsedAssetRef.unresolved` carried by image **and video**
+elements, hashes each payload via sha256, uploads through an abstract
+`AssetStorage` interface (concrete adapter wraps `@stageflip/storage-firebase`),
+and rewrites refs to the schema-typed `asset:<id>` form. Dedup is by
 content-hash, so identical bytes referenced from multiple slides upload
 once. Broken rels (path absent from the ZIP) emit `LF-PPTX-MISSING-ASSET-BYTES`
 (error severity) and leave the ref unresolved. Idempotent via
 `tree.assetsResolved`.
+
+Video extraction (T-243b) lands `<p:videoFile>` parsing on the same
+pipeline. A `<p:sp>` whose `<p:nvSpPr><p:nvPr>` carries a `<p:videoFile>`
+child is dispatched to `parseVideo` (not `parseShape`) when the relId
+resolves to in-ZIP bytes (`r:embed`, or `r:link` with `TargetMode="Internal"`).
+The shape's text body and geometry are dropped on the video extension —
+documented by an info `LF-PPTX-UNSUPPORTED-ELEMENT` flag with
+`originalSnippet: 'shape body dropped on video extension'`. External-URL
+`r:link` videos (e.g., YouTube) fall through to `parseShape` and emit a
+matching `LF-PPTX-UNSUPPORTED-ELEMENT` with `originalSnippet: 'external
+video URL'`; a future task introduces `LF-PPTX-LINKED-VIDEO` for the
+linked-URL case.
+
+Loss flag inventory after the resolve pass:
+
+- `LF-PPTX-UNRESOLVED-ASSET` (cleared by T-243).
+- `LF-PPTX-UNRESOLVED-VIDEO` (cleared by T-243b).
+- `LF-PPTX-MISSING-ASSET-BYTES` (error; emitted for any unresolved-asset
+  path absent from the ZIP — image or video).
 
 Composition pattern:
 
@@ -119,9 +138,8 @@ substitute any object satisfying the structural `BucketLike` shape. Storage
 path is `pptx-imports/{contentHash[:21]}` by default (content-addressed
 dedup).
 
-Videos (`<p:videoFile>`) and embedded fonts (`<p:embeddedFont>`) are not yet
-parsed by T-240; T-243b and T-243c follow-ups will surface them and add the
-matching `LF-PPTX-UNRESOLVED-VIDEO` / `LF-PPTX-UNRESOLVED-FONT` codes.
+Embedded fonts (`<p:embeddedFont>`) are not yet parsed; T-243c follow-up
+surfaces them and adds the matching `LF-PPTX-UNRESOLVED-FONT` code.
 
 ## Group transform accumulation (T-241a)
 
@@ -162,7 +180,6 @@ exports `emitLossFlag` as a thin PPTX-defaulted wrapper that auto-fills
 
 | Task | Gap |
 |---|---|
-| T-243b | Video asset extraction — `<p:videoFile>` not yet parsed by T-240. |
 | T-243c | Font asset extraction — `<p:embeddedFont>` not yet parsed. |
 | T-245 | Shape rasterization fallback (crop from thumbnails) for unsupported shapes. |
 | T-246 | AI-QC loop (Gemini multimodal convergence). |

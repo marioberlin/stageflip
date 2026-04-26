@@ -16,6 +16,7 @@ import type {
   ParsedGroupElement,
   ParsedImageElement,
   ParsedSlide,
+  ParsedVideoElement,
 } from '../types.js';
 import type { ZipEntries } from '../zip.js';
 import { inferContentType } from './content-type.js';
@@ -87,7 +88,9 @@ export async function resolveAssets(
   const newMasters = mapRecord(tree.masters, (s) => rewriteSlide(s, resolvedByPath));
 
   const flagsAfterDrop = tree.lossFlags.filter((flag) => {
-    if (flag.code !== 'LF-PPTX-UNRESOLVED-ASSET') return true;
+    if (flag.code !== 'LF-PPTX-UNRESOLVED-ASSET' && flag.code !== 'LF-PPTX-UNRESOLVED-VIDEO') {
+      return true;
+    }
     const path = flag.location.oocxmlPath;
     if (path === undefined) return true;
     return !resolvedByPath.has(path);
@@ -114,12 +117,17 @@ export async function resolveAssets(
   };
 }
 
-/** Visit every element and record unresolved-image paths into `out`. */
+/** Visit every element and record unresolved-asset paths into `out`. */
 function collectPaths(tree: CanonicalSlideTree, out: Map<string, ParsedAssetRef>): void {
   const visit = (e: ParsedElement): void => {
     if (e.type === 'image') {
       const img = e as ParsedImageElement;
       if (img.src.kind === 'unresolved') out.set(img.src.oocxmlPath, img.src);
+      return;
+    }
+    if (e.type === 'video') {
+      const vid = e as ParsedVideoElement;
+      if (vid.src.kind === 'unresolved') out.set(vid.src.oocxmlPath, vid.src);
       return;
     }
     if (e.type === 'group') {
@@ -148,6 +156,13 @@ function rewriteElement(
     const resolved = resolvedByPath.get(img.src.oocxmlPath);
     if (resolved === undefined) return img; // missing-asset-bytes: leave as-is
     return { ...img, src: resolved };
+  }
+  if (element.type === 'video') {
+    const vid = element as ParsedVideoElement;
+    if (vid.src.kind !== 'unresolved') return vid;
+    const resolved = resolvedByPath.get(vid.src.oocxmlPath);
+    if (resolved === undefined) return vid; // missing-asset-bytes: leave as-is
+    return { ...vid, src: resolved };
   }
   if (element.type === 'group') {
     const grp = element as ParsedGroupElement;
