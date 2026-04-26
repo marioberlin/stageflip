@@ -66,6 +66,18 @@ Flag IDs are content-hash-derived (`sha256(source + category + location +
 originalSnippet).slice(0, 12)`) so re-importing the same file produces the
 same flag set.
 
+## Where the canonical type lives
+
+`@stageflip/loss-flags` (T-247-loss-flags) owns the canonical `LossFlag`
+shape, the severity / category vocabulary, and the deterministic-id emitter
+(`emitLossFlag`). Editor-shell, the T-248 reporter UI, and every importer
+depend on this package directly — none of them reach through
+`@stageflip/import-pptx` for the type. Each importer extends the shape with
+its own `LF-<SRC>-*` `code` union (a string-narrowing type) and provides a
+thin wrapper around `emitLossFlag` that auto-fills `source` and the per-code
+default severity / category. Adding a new importer never touches
+`@stageflip/loss-flags`.
+
 ## Current state (Phase 11 — T-240 in)
 
 `@stageflip/import-pptx` (T-240) ships the first concrete `LossFlag`

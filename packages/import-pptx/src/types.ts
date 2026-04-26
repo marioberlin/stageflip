@@ -109,10 +109,9 @@ export type ParsedSlide = Omit<Slide, 'elements'> & {
 /**
  * Stable machine-readable identifiers for every PPTX-specific lossy
  * situation. Sibling importers (T-244 Google Slides, T-247 Hyperframes HTML)
- * define their own `LF-<SRC>-*` codes. The `LossFlag.code` field is a
- * parser-side extension to the canonical `LossFlag` shape in
- * `skills/stageflip/concepts/loss-flags/SKILL.md` — it lets the editor and
- * the export manifest filter by stable cause without parsing `message`.
+ * define their own `LF-<SRC>-*` codes locally. The `LossFlag.code` field on
+ * the canonical shape (defined in `@stageflip/loss-flags`) is typed as
+ * `string`; this PPTX-local union narrows it for parser-side type safety.
  */
 export type LossFlagCode =
   | 'LF-PPTX-CUSTOM-GEOMETRY'
@@ -124,42 +123,23 @@ export type LossFlagCode =
   | 'LF-PPTX-UNSUPPORTED-FILL'
   | 'LF-PPTX-NOTES-DROPPED';
 
-/** Severity bands per the loss-flags concept skill. */
-export type LossFlagSeverity = 'info' | 'warn' | 'error';
-
-/** Categories per the loss-flags concept skill. */
-export type LossFlagCategory =
-  | 'shape'
-  | 'animation'
-  | 'font'
-  | 'media'
-  | 'theme'
-  | 'script'
-  | 'other';
-
 /**
- * Canonical loss-flag record. Shape matches
- * `skills/stageflip/concepts/loss-flags/SKILL.md`; `code` is a parser-side
- * extension. `id` is content-hash derived (sha256-12) so re-imports produce
- * stable identifiers.
+ * Re-exports of the canonical `LossFlag` shape and its severity / category
+ * vocabulary. The types live in `@stageflip/loss-flags` (T-247-loss-flags) so
+ * the editor reporter UI (T-248) and sibling importers (T-244 Google Slides,
+ * T-247 Hyperframes HTML) can share one shape without depending on this
+ * importer. Re-exported here under the same names for backward compatibility
+ * with existing `@stageflip/import-pptx` consumers. Also imported below for
+ * use in `CanonicalSlideTree.lossFlags`.
  */
-export interface LossFlag {
-  /** sha256(source + category + location + originalSnippet).slice(0, 12). */
-  id: string;
-  source: 'pptx';
-  code: LossFlagCode;
-  severity: LossFlagSeverity;
-  category: LossFlagCategory;
-  location: {
-    slideId?: string;
-    elementId?: string;
-    /** OPC part the flag was raised from. */
-    oocxmlPath?: string;
-  };
-  message: string;
-  recovery?: string;
-  originalSnippet?: string;
-}
+import type { LossFlag } from '@stageflip/loss-flags';
+
+export type {
+  LossFlag,
+  LossFlagCategory,
+  LossFlagSeverity,
+  LossFlagSource,
+} from '@stageflip/loss-flags';
 
 /**
  * Parser output. Slides, layouts, and masters are kept separate so T-249

@@ -24,6 +24,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@stageflip/loss-flags": "workspace:^",
     "@stageflip/schema": "workspace:^",
     "fast-xml-parser": "5.7.2",
     "fflate": "0.8.2"

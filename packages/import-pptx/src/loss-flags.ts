@@ -1,10 +1,20 @@
 // packages/import-pptx/src/loss-flags.ts
-// Emits LossFlag records keyed by deterministic content-hash ids per the
-// concept skill. Pure: no Date, no random, no I/O. Hash uses node's
-// `node:crypto` createHash, which is deterministic.
+// PPTX-flavored wrapper around the generic `emitLossFlag` from
+// `@stageflip/loss-flags`. Holds the per-LossFlagCode default severity +
+// category, auto-fills `source: 'pptx'`, and forwards everything else
+// verbatim. The wrapper's `EmitLossFlagInput` is *narrower* than the
+// generic emitter's input (it omits `source` / `severity` / `category`), so
+// IDE auto-imports between this and `@stageflip/loss-flags`'s `emitLossFlag`
+// will be caught by the typechecker rather than silently flipping callsites
+// onto the generic emitter.
 
-import { createHash } from 'node:crypto';
-import type { LossFlag, LossFlagCategory, LossFlagCode, LossFlagSeverity } from './types.js';
+import {
+  type LossFlag,
+  type LossFlagCategory,
+  type LossFlagSeverity,
+  emitLossFlag as emitLossFlagGeneric,
+} from '@stageflip/loss-flags';
+import type { LossFlagCode } from './types.js';
 
 /** Lookup table for the default severity + category bound to each code. */
 const CODE_DEFAULTS: Record<
@@ -21,7 +31,12 @@ const CODE_DEFAULTS: Record<
   'LF-PPTX-NOTES-DROPPED': { severity: 'info', category: 'other' },
 };
 
-/** Inputs accepted by `emitLossFlag`. Required fields stay tight. */
+/**
+ * Inputs accepted by the PPTX `emitLossFlag` wrapper. `source` /
+ * `severity` / `category` are filled by the wrapper; PPTX callsites only
+ * supply the `code` (which selects the defaults) plus the message and
+ * location.
+ */
 export interface EmitLossFlagInput {
   code: LossFlagCode;
   message: string;
@@ -39,38 +54,24 @@ export interface EmitLossFlagInput {
 }
 
 /**
- * Build a `LossFlag` with a deterministic id. Formula:
- *
- *   sha256("pptx" + code + slideId + elementId + oocxmlPath + originalSnippet).slice(0, 12)
- *
- * The id stays stable across re-imports of the same PPTX, which the concept
- * skill calls out as a non-negotiable.
+ * Build a PPTX `LossFlag` with a deterministic id. Thin wrapper: looks up
+ * the per-code default severity + category, then delegates the actual hash
+ * + record build to `@stageflip/loss-flags`'s generic `emitLossFlag`. The
+ * id formula (sha256-12 of source/code/location/originalSnippet, joined by
+ * U+0001) is unchanged from the pre-extraction implementation; the
+ * T-247-loss-flags PR pins 8 byte-identical fixtures (one per LossFlagCode)
+ * to guarantee no drift.
  */
 export function emitLossFlag(input: EmitLossFlagInput): LossFlag {
   const defaults = CODE_DEFAULTS[input.code];
-  const severity: LossFlagSeverity = input.severity ?? defaults.severity;
-  const category: LossFlagCategory = input.category ?? defaults.category;
-
-  const idMaterial = [
-    'pptx',
-    input.code,
-    input.location.slideId ?? '',
-    input.location.elementId ?? '',
-    input.location.oocxmlPath ?? '',
-    input.originalSnippet ?? '',
-  ].join('\u0001');
-  const id = createHash('sha256').update(idMaterial).digest('hex').slice(0, 12);
-
-  const flag: LossFlag = {
-    id,
+  return emitLossFlagGeneric({
     source: 'pptx',
     code: input.code,
-    severity,
-    category,
-    location: input.location,
+    severity: input.severity ?? defaults.severity,
+    category: input.category ?? defaults.category,
     message: input.message,
-  };
-  if (input.recovery !== undefined) flag.recovery = input.recovery;
-  if (input.originalSnippet !== undefined) flag.originalSnippet = input.originalSnippet;
-  return flag;
+    location: input.location,
+    ...(input.recovery !== undefined ? { recovery: input.recovery } : {}),
+    ...(input.originalSnippet !== undefined ? { originalSnippet: input.originalSnippet } : {}),
+  });
 }

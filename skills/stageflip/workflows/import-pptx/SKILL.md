@@ -118,8 +118,11 @@ parser-only types (`UnsupportedShapeElement`, `ParsedAssetRef`) for the rest.
 `docs/tasks/T-240.md` §"Type-layer architecture" pins this contract.
 
 Loss flags (`skills/stageflip/concepts/loss-flags`) are emitted at every
-unsupported branch. The PPTX-specific `code` enum lives in
-`@stageflip/import-pptx`:
+unsupported branch. The canonical `LossFlag` shape and the deterministic-id
+emitter live in `@stageflip/loss-flags` (T-247-loss-flags); `@stageflip/import-pptx`
+exports `emitLossFlag` as a thin PPTX-defaulted wrapper that auto-fills
+`source: 'pptx'` and the per-code severity / category. The PPTX-specific
+`code` enum lives in `@stageflip/import-pptx`:
 
 - `LF-PPTX-CUSTOM-GEOMETRY` — `<a:custGeom>` containing `<a:arcTo>` / `<a:quadBezTo>` (the unsupported commands). Cleared once T-242b extends `cust-geom/parse.ts` or T-245 rasterizes.
 - `LF-PPTX-PRESET-GEOMETRY` — preset shape outside the T-242 coverage set. Cleared as T-242b adds presets.

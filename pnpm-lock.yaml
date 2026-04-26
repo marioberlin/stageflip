@@ -239,6 +239,9 @@ importers:
       '@stageflip/llm-abstraction':
         specifier: workspace:*
         version: link:../../packages/llm-abstraction
+      '@stageflip/loss-flags':
+        specifier: workspace:*
+        version: link:../../packages/loss-flags
       '@stageflip/runtimes-contract':
         specifier: workspace:*
         version: link:../../packages/runtimes/contract
@@ -637,6 +640,9 @@ importers:
 
   packages/import-pptx:
     dependencies:
+      '@stageflip/loss-flags':
+        specifier: workspace:^
+        version: link:../loss-flags
       '@stageflip/schema':
         specifier: workspace:^
         version: link:../schema
