@@ -5,9 +5,11 @@
 // predicate (with `riderActive: false`). Pins AC #26, #27.
 
 import { parsePptx } from '@stageflip/import-pptx';
+import { documentSchema } from '@stageflip/schema';
 import { describe, expect, it } from 'vitest';
 import type { AssetReader } from './assets/types.js';
 import { exportPptx } from './exportPptx.js';
+import placeholderInheritanceDeck from './fixtures/placeholder-inheritance-deck.json';
 import { buildDoc } from './test-helpers/build-doc.js';
 import { diffRoundTrip } from './test-helpers/round-trip.js';
 
@@ -132,6 +134,32 @@ describe('roundtrip — hand-authored fixtures (AC #26, #27)', () => {
     const before = await exportThenParse(doc, reader);
     const after = await exportThenParse(doc, reader);
     expect(diffRoundTrip(before, after, { riderActive: false })).toBeNull();
+  });
+
+  it('T-253-rider AC #17/#18: placeholder-inheritance-deck.json round-trips with layouts/masters preserved', async () => {
+    const doc = documentSchema.parse(placeholderInheritanceDeck);
+    const { bytes, lossFlags } = await exportPptx(doc);
+    // No new rider loss flags expected on the clean fixture.
+    const newLossCodes = lossFlags
+      .map((f) => f.code)
+      .filter(
+        (c) =>
+          c === 'LF-PPTX-EXPORT-LAYOUT-NOT-FOUND' ||
+          c === 'LF-PPTX-EXPORT-PLACEHOLDER-NOT-FOUND' ||
+          c === 'LF-PPTX-EXPORT-PLACEHOLDER-MISMATCH',
+      );
+    expect(newLossCodes).toEqual([]);
+    const tree = await parsePptx(bytes);
+    // The importer reads layouts/masters via slide rels. The fixture
+    // declares 1 master + 2 layouts; both must be discoverable in the tree.
+    expect(Object.keys(tree.layouts).length).toBe(2);
+    expect(Object.keys(tree.masters).length).toBe(1);
+    // Every slide whose elements declared `inheritsFrom` carries a `<p:ph>`
+    // marker in the slide XML — verified at the bytes level by the rider
+    // suite. Round-trip predicate with `riderActive: true` must hold.
+    const before = await parsePptx((await exportPptx(doc)).bytes);
+    const after = await parsePptx((await exportPptx(doc)).bytes);
+    expect(diffRoundTrip(before, after, { riderActive: true })).toBeNull();
   });
 
   it('AC #27 hand-authored deck (text + shape + group) round-trips with zero loss flags', async () => {

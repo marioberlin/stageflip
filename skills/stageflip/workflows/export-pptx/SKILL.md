@@ -64,8 +64,22 @@ docProps/{app,core}.xml                          # creator, last-modified
 ```
 
 T-253-rider adds `ppt/slideLayouts/` and `ppt/slideMasters/` plus
-`<p:sldMasterIdLst>` content in `presentation.xml`. T-253-base does NOT
-emit those.
+`<p:sldMasterIdLst>` content in `presentation.xml`:
+
+```
+ppt/
+  slideLayouts/
+    slideLayout1.xml                               # one per Document.layouts[i]
+    _rels/slideLayout1.xml.rels                    # → slideMasters/slideMasterK.xml
+    ...
+  slideMasters/
+    slideMaster1.xml                               # one per Document.masters[i]
+    _rels/slideMaster1.xml.rels                    # → theme + every owned layout
+    ...
+```
+
+The presentation rels list every master at top level; layouts are reached
+transitively via each master's `<p:sldLayoutIdLst>`.
 
 ## Element dispatch
 
@@ -80,7 +94,7 @@ emit those.
 
 ## Loss flags
 
-Six codes, all `source: 'pptx-export'`:
+Ten codes, all `source: 'pptx-export'`:
 
 | Code | Severity | Category | Emitted when |
 |---|---|---|---|
@@ -90,6 +104,10 @@ Six codes, all `source: 'pptx-export'`:
 | `LF-PPTX-EXPORT-ANIMATIONS-DROPPED` | info | animation | One per slide whose elements (or descendants) carry animations |
 | `LF-PPTX-EXPORT-NOTES-DROPPED` | info | other | One per slide with non-empty `notes` |
 | `LF-PPTX-EXPORT-THEME-FLATTENED` | info | theme | Once per export when `Document.theme` is non-default |
+| `LF-PPTX-EXPORT-IMAGE-BACKGROUND-FALLBACK` | warn | media | Slide background `kind: 'asset'` degraded to solid white |
+| `LF-PPTX-EXPORT-LAYOUT-NOT-FOUND` | warn | shape | Element's `inheritsFrom.templateId` doesn't resolve to any layout/master (T-253-rider) |
+| `LF-PPTX-EXPORT-PLACEHOLDER-NOT-FOUND` | warn | shape | `templateId` resolved but `placeholderIdx` doesn't exist on layout (or transitively master) (T-253-rider) |
+| `LF-PPTX-EXPORT-PLACEHOLDER-MISMATCH` | info | shape | Slide-side field structurally non-comparable to placeholder (rare) (T-253-rider) |
 
 ## Determinism
 
@@ -99,11 +117,39 @@ the writer code does not call `Date.now()`, `Math.random()`,
 `performance.now()`, or `new Date(...)` (except the frozen-epoch literal in
 `types.ts`'s `FROZEN_EPOCH`). Pinned by `exportPptx.test.ts`'s grep test.
 
-## What's not in the base writer
+## Placeholder inheritance write-back (T-253-rider)
 
-T-253-rider activates:
-- `<p:sldLayout>` + `<p:sldMaster>` parts
-- per-element `<p:ph idx="N"/>` references via `inheritsFrom`
+T-253-rider extends the writer to:
+
+- emit `<p:sldLayout>` + `<p:sldMaster>` parts mirroring `Document.layouts` /
+  `Document.masters`,
+- emit `<p:nvSpPr><p:nvPr><p:ph type="..." idx="..."/></p:nvPr></p:nvSpPr>`
+  when an element's `inheritsFrom` resolves cleanly,
+- suppress slide-side fields that match the placeholder's value via
+  `compareToPlaceholder` from `@stageflip/schema`. The suppression is the
+  inverse of `applyInheritance`; it shares the same shallow-on-top-level
+  semantics:
+    - `transform` is whole-or-nothing (1 EMU diff → full slide-side `<a:xfrm>`),
+    - `animations: []` is **never** suppressed,
+    - `id` / `type` / `inheritsFrom` are always preserved.
+- emit a slide-rel pointing at `../slideLayouts/slideLayout<i+1>.xml` when
+  `Slide.layoutId` resolves to one of `Document.layouts`.
+
+When a slide element matches the placeholder on **every** override key,
+the writer emits ONLY the `<p:nvSpPr>` block (no `<p:spPr>`, no `<p:txBody>`)
+so the runtime fully inherits.
+
+Three new loss flags surface unresolvable references:
+
+- `LF-PPTX-EXPORT-LAYOUT-NOT-FOUND` — `templateId` doesn't match any layout/master
+- `LF-PPTX-EXPORT-PLACEHOLDER-NOT-FOUND` — `placeholderIdx` doesn't match
+- `LF-PPTX-EXPORT-PLACEHOLDER-MISMATCH` — structural divergence (rare)
+
+Both unresolved cases fall back to materialized geometry (base-writer
+behavior). The fallback is silent at the schema layer (no flag noise);
+flags surface only at the writer.
+
+## Future riders
 
 Future riders:
 - T-253-tables: `<a:tbl>` write-back

@@ -9,8 +9,9 @@ Searchable Q&A: when authoring an exporter feature or reviewing a T-253-rider PR
 | Can I emit `<a:custGeom>` for custom shapes? | **No (degraded)** | falls back to `<a:prstGeom prst="rect"/>` + `LF-PPTX-EXPORT-CUSTOM-GEOMETRY-DEGRADED` |
 | Can I emit `<p:videoFile>` for VideoElement? | **No** | skipped + `LF-PPTX-EXPORT-UNSUPPORTED-ELEMENT` |
 | Can I emit `<a:tbl>` for TableElement? | **No** (T-253-base) | skipped + `LF-PPTX-EXPORT-UNSUPPORTED-ELEMENT`; future T-253-tables-rider |
-| Can I emit `<p:sldLayout>` / `<p:sldMaster>` parts? | **No** (T-253-base) | T-253-rider activates this path |
-| Can I write `inheritsFrom` references? | **No** (T-253-base) | dropped; T-253-rider activates |
+| Can I emit `<p:sldLayout>` / `<p:sldMaster>` parts? | **Yes** (T-253-rider) | each `Document.layouts[i]` → `ppt/slideLayouts/slideLayoutK.xml`; each `Document.masters[i]` → `ppt/slideMasters/slideMasterK.xml` |
+| Can I write `inheritsFrom` references? | **Yes** (T-253-rider) | element with resolved `inheritsFrom` emits `<p:nvSpPr><p:nvPr><p:ph type="..." idx="..."/></p:nvPr></p:nvSpPr>`; unresolvable → `LF-PPTX-EXPORT-LAYOUT-NOT-FOUND` / `LF-PPTX-EXPORT-PLACEHOLDER-NOT-FOUND` |
+| Can I suppress slide-side overrides that match the placeholder? | **Yes** (T-253-rider) | uses `compareToPlaceholder` from `@stageflip/schema` (inverse of `applyInheritance`); transform suppression is **whole-or-nothing** (1 EMU diff → full slide-side `<a:xfrm>` emitted); `animations: []` is **never** suppressed |
 | Can I emit `<a:blipFill>` for image-fill slide backgrounds? | **No (degraded)** | placeholder solid white + `LF-PPTX-EXPORT-IMAGE-BACKGROUND-FALLBACK` |
 | Can I write animations (`<p:timing>`, `<p:cTn>`)? | **No** | dropped + `LF-PPTX-EXPORT-ANIMATIONS-DROPPED` per affected slide |
 | Can I write speaker notes (`notesSlide` part)? | **No** | dropped + `LF-PPTX-EXPORT-NOTES-DROPPED` per affected slide |
