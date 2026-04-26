@@ -1,17 +1,34 @@
 // packages/import-pptx/src/geometries/index.ts
 // Public registry mapping OOXML preset names to path generators. T-242a
-// shipped 6; T-242b first-wave adds 10 more (3 orthogonal arrows, 2 basics,
-// 3 brackets/braces, 2 misc shapes). The 14 already-mapped-to-structural-
-// kinds presets from T-240 (rect, ellipse, line, polygon, star variants)
-// are NOT in this registry — they continue to emit `'shape'` with
-// structural kinds. T-242c will add the remaining ~20 to reach the spec's
-// 50-preset commitment.
+// shipped 6; T-242b first-wave added 10 more (3 orthogonal arrows, 2
+// basics, 3 brackets/braces, 2 misc shapes). T-242c batch 1 adds 9 (4
+// arrows + 5 callouts), bringing the total to 25. The 14 already-mapped-
+// to-structural-kinds presets from T-240 (rect, ellipse, line, polygon,
+// star variants) are NOT in this registry — they continue to emit
+// `'shape'` with structural kinds. T-242c batch 2 adds the remaining 8 to
+// reach 33; T-242d ships the trailing 3 arc-bearing presets.
 
-import { downArrow, leftArrow, rightArrow, upArrow } from './presets/arrows.js';
+import {
+  bentArrow,
+  curvedRightArrow,
+  downArrow,
+  leftArrow,
+  leftRightArrow,
+  rightArrow,
+  upArrow,
+  upDownArrow,
+} from './presets/arrows.js';
 import { ribbon } from './presets/banners.js';
 import { chevron, parallelogram, trapezoid } from './presets/basics.js';
 import { leftBrace, leftBracket, rightBrace, rightBracket } from './presets/brackets.js';
-import { wedgeRectCallout } from './presets/callouts.js';
+import {
+  borderCallout1,
+  borderCallout2,
+  cloudCallout,
+  wedgeEllipseCallout,
+  wedgeRectCallout,
+  wedgeRoundRectCallout,
+} from './presets/callouts.js';
 import { cloud, heart, sun } from './presets/misc.js';
 import type { AdjustmentMap, GeometryBox, PathGenerator } from './types.js';
 
@@ -22,8 +39,17 @@ export const PRESET_GENERATORS: Readonly<Record<string, PathGenerator>> = {
   leftArrow,
   upArrow,
   downArrow,
+  leftRightArrow,
+  upDownArrow,
+  bentArrow,
+  curvedRightArrow,
   // callouts
   wedgeRectCallout,
+  wedgeRoundRectCallout,
+  wedgeEllipseCallout,
+  cloudCallout,
+  borderCallout1,
+  borderCallout2,
   // banners
   ribbon,
   // basics
