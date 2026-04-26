@@ -20,5 +20,13 @@
     "path": "packages/cdp-host-bundle/dist/browser/bundle.js",
     "limit": "500 KB",
     "gzip": true
+  },
+  {
+    "name": "@stageflip/export-pptx (ESM, gzipped, all exports)",
+    "path": "packages/export-pptx/dist/index.js",
+    "import": "*",
+    "limit": "50 KB",
+    "gzip": true,
+    "ignore": ["crypto", "node:crypto"]
   }
 ]
