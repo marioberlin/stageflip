@@ -21,6 +21,17 @@ try {
 // biome-ignore lint/style/noDefaultExport: Astro config contract.
 export default defineConfig({
   site: 'https://docs.stageflip.dev',
+  // Use the no-op image service — workspace explicitly excludes sharp via
+  // pnpm-lock.yaml's `ignoredOptionalDependencies` (sharp's native bindings
+  // bloat the install + we don't process images in docs). Without this,
+  // Astro 5+'s default tries to dynamically import sharp at build time and
+  // rollup fails to resolve it on `pnpm install --frozen-lockfile`. The
+  // failure surfaces only when render-e2e's path filter (packages/schema/
+  // packages/rir) triggers, which builds the full workspace including
+  // app-docs. See https://docs.astro.build/en/reference/configuration-reference/#imageservice.
+  image: {
+    service: { entrypoint: 'astro/assets/services/noop' },
+  },
   integrations: [
     starlight({
       title: 'StageFlip docs',

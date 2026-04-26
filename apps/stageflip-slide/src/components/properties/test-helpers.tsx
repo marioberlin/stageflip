@@ -108,6 +108,8 @@ export function makeDoc({
     theme: { tokens: {} },
     variables: {},
     components: {},
+    masters: [],
+    layouts: [],
     content: { mode: 'slide', slides },
   };
 }

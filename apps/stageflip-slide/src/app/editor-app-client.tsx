@@ -53,6 +53,8 @@ const INITIAL_DOCUMENT = {
   theme: { tokens: {} },
   variables: {},
   components: {},
+  masters: [],
+  layouts: [],
   content: {
     mode: 'slide',
     slides: [

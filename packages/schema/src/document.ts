@@ -5,6 +5,7 @@
 
 import { z } from 'zod';
 import { contentSchema } from './content/index.js';
+import { slideLayoutSchema, slideMasterSchema } from './templates.js';
 import { themeSchema } from './theme.js';
 
 /** Current canonical schema version. Bump when the doc shape breaks. */
@@ -53,6 +54,14 @@ export const documentSchema = z
     theme: themeSchema,
     variables: variablesSchema.default({}),
     components: z.record(componentDefinitionSchema).default({}),
+    /**
+     * Deck-level template stores (T-251). Both default to `[]` so existing
+     * persisted documents continue to parse unchanged. PPTX importers (T-244,
+     * T-243d) and Google Slides importer (T-244) populate these on round-trip
+     * import; today only hand-authored deck-template documents fill them.
+     */
+    masters: z.array(slideMasterSchema).default([]),
+    layouts: z.array(slideLayoutSchema).default([]),
     content: contentSchema,
   })
   .strict();

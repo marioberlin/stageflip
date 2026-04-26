@@ -13,6 +13,7 @@ import {
   __clearSlideByIdCacheForTest,
   documentAtom,
   elementByIdAtom,
+  materializedDocumentAtom,
   slideByIdAtom,
 } from './document';
 
@@ -116,5 +117,89 @@ describe('elementByIdAtom', () => {
     } as unknown as Document;
     store.set(documentAtom, asDisplay);
     expect(store.get(elementByIdAtom('el-0'))).toBeUndefined();
+  });
+});
+
+describe('materializedDocumentAtom (T-251)', () => {
+  it('returns null when no document is loaded', () => {
+    const store = createStore();
+    expect(store.get(materializedDocumentAtom)).toBeNull();
+  });
+
+  it('AC #21 — returns the same reference when layouts is empty (fast path)', () => {
+    const store = createStore();
+    const doc = makeSlideDoc({ slideCount: 2, elementsPerSlide: 1 });
+    store.set(documentAtom, doc);
+    const materialized = store.get(materializedDocumentAtom);
+    // Identity preserved — applyInheritance returns input by reference when
+    // no templates are declared.
+    expect(materialized).toBe(doc);
+  });
+
+  it('AC #21 — materializes placeholder fills when layouts are non-empty', () => {
+    const store = createStore();
+    const doc: Document = {
+      meta: {
+        id: 'd1',
+        version: 1,
+        createdAt: '2026-04-26T00:00:00.000Z',
+        updatedAt: '2026-04-26T00:00:00.000Z',
+        locale: 'en',
+        schemaVersion: 1,
+      },
+      theme: { tokens: {} },
+      variables: {},
+      components: {},
+      masters: [{ id: 'master-1', name: 'M', placeholders: [] }],
+      layouts: [
+        {
+          id: 'layout-1',
+          name: 'L',
+          masterId: 'master-1',
+          placeholders: [
+            {
+              id: 'p',
+              name: 'PlaceholderName',
+              type: 'text',
+              transform: { x: 0, y: 0, width: 100, height: 50, rotation: 0, opacity: 1 },
+              visible: true,
+              locked: false,
+              animations: [],
+              text: 'P',
+              align: 'left',
+            },
+          ],
+        },
+      ],
+      content: {
+        mode: 'slide',
+        slides: [
+          {
+            id: 's1',
+            layoutId: 'layout-1',
+            elements: [
+              {
+                id: 'e1',
+                type: 'text',
+                transform: { x: 10, y: 20, width: 200, height: 80, rotation: 0, opacity: 1 },
+                visible: true,
+                locked: false,
+                animations: [],
+                text: 'S',
+                align: 'left',
+                inheritsFrom: { templateId: 'layout-1', placeholderIdx: 0 },
+              },
+            ],
+          },
+        ],
+      },
+    };
+    store.set(documentAtom, doc);
+    const materialized = store.get(materializedDocumentAtom);
+    if (!materialized || materialized.content.mode !== 'slide') throw new Error('mode');
+    const el = materialized.content.slides[0]?.elements[0];
+    if (!el || el.type !== 'text') throw new Error('text');
+    expect(el.name).toBe('PlaceholderName');
+    expect(el.text).toBe('S'); // slide override wins
   });
 });

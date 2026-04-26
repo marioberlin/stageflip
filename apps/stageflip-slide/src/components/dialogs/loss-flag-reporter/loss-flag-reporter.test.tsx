@@ -44,6 +44,8 @@ function makeDoc(slideIds: readonly string[]): Document {
     theme: { tokens: {} },
     variables: {},
     components: {},
+    masters: [],
+    layouts: [],
     content: {
       mode: 'slide',
       slides: slideIds.map((id) => ({

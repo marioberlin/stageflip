@@ -5,8 +5,8 @@
 
 import {
   activeSlideIdAtom,
+  materializedSlideByIdAtom,
   selectedElementIdsAtom,
-  slideByIdAtom,
   useDocument,
   useEditorShellAtomValue,
 } from '@stageflip/editor-shell';
@@ -44,7 +44,12 @@ export interface SlideCanvasProps {
  */
 export function SlideCanvas({ viewportSizeForTest }: SlideCanvasProps = {}): ReactElement {
   const activeSlideId = useEditorShellAtomValue(activeSlideIdAtom);
-  const slideAtom = useMemo(() => slideByIdAtom(activeSlideId), [activeSlideId]);
+  // T-251 — read from `materializedSlideByIdAtom` so element fields filled
+  // in from a SlideLayout / SlideMaster placeholder (via `inheritsFrom`)
+  // appear in the rendered DOM. For documents without templates, the
+  // materialized atom returns the same slide reference as `slideByIdAtom`,
+  // so render output is unchanged on the back-compat fast path.
+  const slideAtom = useMemo(() => materializedSlideByIdAtom(activeSlideId), [activeSlideId]);
   const slide = useEditorShellAtomValue(slideAtom);
 
   const viewportRef = useRef<HTMLDivElement | null>(null);

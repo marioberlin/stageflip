@@ -57,6 +57,8 @@ a deterministic table-of-shapes for quick lookup.
 | `theme` | object | ✓ |
 | `variables` | record<string, union<string \| number \| boolean \| null>> (default) | — |
 | `components` | record<string, object> (default) | — |
+| `masters` | array<object> (default) | — |
+| `layouts` | array<object> (default) | — |
 | `content` | discriminated-union(mode) | ✓ |
 
 ## DocumentMeta
@@ -99,6 +101,7 @@ a deterministic table-of-shapes for quick lookup.
 | `visible` | boolean (default) | — |
 | `locked` | boolean (default) | — |
 | `animations` | array<object> (default) | — |
+| `inheritsFrom` | object? | — |
 
 ## Element (discriminated union)
 
@@ -132,6 +135,7 @@ a deterministic table-of-shapes for quick lookup.
 | `visible` | boolean (default) | — |
 | `locked` | boolean (default) | — |
 | `animations` | array<object> (default) | — |
+| `inheritsFrom` | object? | — |
 | `type` | literal("text") | ✓ |
 | `text` | string | ✓ |
 | `runs` | array<object>? | — |
@@ -154,6 +158,7 @@ a deterministic table-of-shapes for quick lookup.
 | `visible` | boolean (default) | — |
 | `locked` | boolean (default) | — |
 | `animations` | array<object> (default) | — |
+| `inheritsFrom` | object? | — |
 | `type` | literal("image") | ✓ |
 | `src` | string | ✓ |
 | `alt` | string? | — |
@@ -172,6 +177,7 @@ a deterministic table-of-shapes for quick lookup.
 | `visible` | boolean (default) | — |
 | `locked` | boolean (default) | — |
 | `animations` | array<object> (default) | — |
+| `inheritsFrom` | object? | — |
 | `type` | literal("video") | ✓ |
 | `src` | string | ✓ |
 | `trim` | object (refined)? | — |
@@ -192,6 +198,7 @@ a deterministic table-of-shapes for quick lookup.
 | `visible` | boolean (default) | — |
 | `locked` | boolean (default) | — |
 | `animations` | array<object> (default) | — |
+| `inheritsFrom` | object? | — |
 | `type` | literal("audio") | ✓ |
 | `src` | string | ✓ |
 | `trim` | object (refined)? | — |
@@ -211,6 +218,7 @@ a deterministic table-of-shapes for quick lookup.
 | `visible` | boolean (default) | — |
 | `locked` | boolean (default) | — |
 | `animations` | array<object> (default) | — |
+| `inheritsFrom` | object? | — |
 | `type` | literal("shape") | ✓ |
 | `shape` | enum(custom-path \| ellipse \| line \| polygon \| rect \| star) | ✓ |
 | `path` | string? | — |
@@ -231,6 +239,7 @@ a deterministic table-of-shapes for quick lookup.
 | `visible` | boolean (default) | — |
 | `locked` | boolean (default) | — |
 | `animations` | array<object> (default) | — |
+| `inheritsFrom` | object? | — |
 | `type` | literal("chart") | ✓ |
 | `chartKind` | enum(area \| bar \| combo \| donut \| line \| pie \| scatter) | ✓ |
 | `data` | union<object \| string> | ✓ |
@@ -250,6 +259,7 @@ a deterministic table-of-shapes for quick lookup.
 | `visible` | boolean (default) | — |
 | `locked` | boolean (default) | — |
 | `animations` | array<object> (default) | — |
+| `inheritsFrom` | object? | — |
 | `type` | literal("table") | ✓ |
 | `rows` | number | ✓ |
 | `columns` | number | ✓ |
@@ -269,6 +279,7 @@ a deterministic table-of-shapes for quick lookup.
 | `visible` | boolean (default) | — |
 | `locked` | boolean (default) | — |
 | `animations` | array<object> (default) | — |
+| `inheritsFrom` | object? | — |
 | `type` | literal("clip") | ✓ |
 | `runtime` | string | ✓ |
 | `clipName` | string | ✓ |
@@ -288,6 +299,7 @@ a deterministic table-of-shapes for quick lookup.
 | `visible` | boolean (default) | — |
 | `locked` | boolean (default) | — |
 | `animations` | array<object> (default) | — |
+| `inheritsFrom` | object? | — |
 | `type` | literal("embed") | ✓ |
 | `src` | string | ✓ |
 | `sandbox` | array<enum(allow-forms \| allow-modals \| allow-popups \| allow-same-origin \| allow-scripts)> (default) | — |
@@ -306,6 +318,7 @@ a deterministic table-of-shapes for quick lookup.
 | `visible` | boolean (default) | — |
 | `locked` | boolean (default) | — |
 | `animations` | array<object> (default) | — |
+| `inheritsFrom` | object? | — |
 | `type` | literal("code") | ✓ |
 | `code` | string | ✓ |
 | `language` | enum(bash \| css \| go \| html \| java \| javascript \| json \| jsx \| kotlin \| markdown \| other \| php \| plaintext \| python \| ruby \| rust \| scss \| sql \| swift \| toml \| tsx \| typescript \| yaml) (default) | — |

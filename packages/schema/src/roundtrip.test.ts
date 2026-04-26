@@ -425,3 +425,123 @@ describe('round-trip: top-level Document', () => {
     });
   }
 });
+
+/* --------------------------- T-251 — templates --------------------------- */
+
+describe('round-trip: T-251 deck-level templates + per-element inheritsFrom', () => {
+  const NOW = '2026-04-26T00:00:00.000Z';
+  const T = { x: 0, y: 0, width: 100, height: 50 };
+  const ST = { x: 10, y: 20, width: 200, height: 80 };
+
+  it('AC #1 — back-compat: document with masters: [] / layouts: [] parses', () => {
+    const doc = documentSchema.parse({
+      meta: { id: 'd1', version: 1, createdAt: NOW, updatedAt: NOW },
+      theme: { tokens: {} },
+      content: { mode: 'slide', slides: [{ id: 's1', elements: [] }] },
+    });
+    expect(doc.masters).toEqual([]);
+    expect(doc.layouts).toEqual([]);
+  });
+
+  it('AC #2 — accepts master + layout + slide pointing at the layout', () => {
+    const doc = documentSchema.parse({
+      meta: { id: 'd1', version: 1, createdAt: NOW, updatedAt: NOW },
+      theme: { tokens: {} },
+      masters: [
+        {
+          id: 'master-1',
+          name: 'M',
+          placeholders: [
+            { id: 'mp-0', type: 'text', transform: T, text: 'Title' },
+            { id: 'mp-1', type: 'text', transform: T, text: 'Subtitle' },
+          ],
+        },
+      ],
+      layouts: [{ id: 'layout-1', name: 'L', masterId: 'master-1' }],
+      content: {
+        mode: 'slide',
+        slides: [{ id: 's1', layoutId: 'layout-1', elements: [] }],
+      },
+    });
+    expect(doc.masters).toHaveLength(1);
+    expect(doc.layouts).toHaveLength(1);
+    if (doc.content.mode !== 'slide') throw new Error('mode');
+    expect(doc.content.slides[0]?.layoutId).toBe('layout-1');
+  });
+
+  it('AC #4 — element with no inheritsFrom parses unchanged (back-compat)', () => {
+    const doc = documentSchema.parse({
+      meta: { id: 'd1', version: 1, createdAt: NOW, updatedAt: NOW },
+      theme: { tokens: {} },
+      content: {
+        mode: 'slide',
+        slides: [
+          {
+            id: 's1',
+            elements: [{ id: 'e1', type: 'text', transform: T, text: 'plain' }],
+          },
+        ],
+      },
+    });
+    if (doc.content.mode !== 'slide') throw new Error('mode');
+    const el = doc.content.slides[0]?.elements[0];
+    expect(el?.inheritsFrom).toBeUndefined();
+  });
+
+  it('AC #5 — element with inheritsFrom round-trips byte-identical', () => {
+    const original = {
+      meta: {
+        id: 'd1',
+        version: 1,
+        createdAt: NOW,
+        updatedAt: NOW,
+        locale: 'en',
+        schemaVersion: SCHEMA_VERSION,
+      },
+      theme: { tokens: {} },
+      variables: {},
+      components: {},
+      masters: [],
+      layouts: [],
+      content: {
+        mode: 'slide' as const,
+        slides: [
+          {
+            id: 's1',
+            elements: [
+              {
+                id: 'e1',
+                type: 'text' as const,
+                transform: { ...ST, rotation: 0, opacity: 1 },
+                visible: true,
+                locked: false,
+                animations: [],
+                text: 'hello',
+                align: 'left' as const,
+                inheritsFrom: { templateId: 'layout-1', placeholderIdx: 7 },
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const once = documentSchema.parse(original);
+    const twice = documentSchema.parse(JSON.parse(JSON.stringify(once)));
+    expect(twice).toEqual(once);
+    if (twice.content.mode !== 'slide') throw new Error('mode');
+    expect(twice.content.slides[0]?.elements[0]?.inheritsFrom).toEqual({
+      templateId: 'layout-1',
+      placeholderIdx: 7,
+    });
+  });
+
+  it('AC #7 — Slide.layoutId is optional; existing slides parse unchanged', () => {
+    const doc = documentSchema.parse({
+      meta: { id: 'd1', version: 1, createdAt: NOW, updatedAt: NOW },
+      theme: { tokens: {} },
+      content: { mode: 'slide', slides: [{ id: 's1', elements: [] }] },
+    });
+    if (doc.content.mode !== 'slide') throw new Error('mode');
+    expect(doc.content.slides[0]?.layoutId).toBeUndefined();
+  });
+});

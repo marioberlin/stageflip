@@ -18,6 +18,8 @@ function doc(slideIds: string[]): Document {
     theme: { tokens: {} },
     variables: {},
     components: {},
+    masters: [],
+    layouts: [],
     content: { mode: 'slide', slides: slideIds.map((id) => ({ id, elements: [] })) },
   } as Document;
 }

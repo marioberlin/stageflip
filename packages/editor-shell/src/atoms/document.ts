@@ -22,12 +22,40 @@
  */
 
 import type { Document, Element, Slide } from '@stageflip/schema';
+import { applyInheritance } from '@stageflip/schema';
 import { type Atom, atom } from 'jotai';
 
 export const documentAtom = atom<Document | null>(null);
 
+/**
+ * Derived atom that materializes per-element placeholder references via the
+ * schema-level `applyInheritance(doc)` helper (T-251). Editor surfaces that
+ * read element fields directly (e.g., the slide canvas) consume this atom so
+ * placeholder fills appear in the rendered DOM without invoking the full
+ * RIR compile pipeline.
+ *
+ * Fast path: when `documentAtom` has empty `layouts` and `masters`, the
+ * helper returns the input by reference and this atom resolves to the same
+ * `Document` instance. Existing call-sites that subscribed to `documentAtom`
+ * pre-T-251 see byte-identical state through `materializedDocumentAtom` for
+ * documents without templates, so re-render churn is zero on the fast path.
+ *
+ * Note: `documentAtom` itself is unchanged — writes still flow through it.
+ * Only **read paths from rendering surfaces** consume the materialized
+ * variant. The editor's mutation flow (selectElement, updateElement, undo)
+ * keeps operating on the unmaterialized document so authors can edit
+ * `inheritsFrom`-bearing elements without seeing inherited fields persist
+ * back into the Document.
+ */
+export const materializedDocumentAtom = atom<Document | null>((get) => {
+  const doc = get(documentAtom);
+  if (!doc) return null;
+  return applyInheritance(doc);
+});
+
 const slideByIdCache = new Map<string, Atom<Slide | undefined>>();
 const elementByIdCache = new Map<string, Atom<Element | undefined>>();
+const materializedSlideByIdCache = new Map<string, Atom<Slide | undefined>>();
 
 /**
  * Subscribe to the slide with the given id. Returns `undefined` when the
@@ -69,6 +97,25 @@ export function elementByIdAtom(elementId: string): Atom<Element | undefined> {
   return derived;
 }
 
+/**
+ * Slide-by-id factory whose source is `materializedDocumentAtom` instead of
+ * `documentAtom` (T-251). Use from rendering surfaces (e.g., the slide
+ * canvas) so element fields filled in from a placeholder appear in the
+ * rendered DOM. Mutation surfaces should keep using `slideByIdAtom` so
+ * authors edit the unmaterialized document.
+ */
+export function materializedSlideByIdAtom(slideId: string): Atom<Slide | undefined> {
+  const cached = materializedSlideByIdCache.get(slideId);
+  if (cached) return cached;
+  const derived = atom<Slide | undefined>((get) => {
+    const doc = get(materializedDocumentAtom);
+    if (!doc || doc.content.mode !== 'slide') return undefined;
+    return doc.content.slides.find((s) => s.id === slideId);
+  });
+  materializedSlideByIdCache.set(slideId, derived);
+  return derived;
+}
+
 /** Test-only. Clears the slide-factory cache so memoization tests don't
  * leak state across cases. */
 export function __clearSlideByIdCacheForTest(): void {
@@ -78,4 +125,9 @@ export function __clearSlideByIdCacheForTest(): void {
 /** Test-only. Clears the element-factory cache. */
 export function __clearElementByIdCacheForTest(): void {
   elementByIdCache.clear();
+}
+
+/** Test-only. Clears the materialized-slide-factory cache. */
+export function __clearMaterializedSlideByIdCacheForTest(): void {
+  materializedSlideByIdCache.clear();
 }
