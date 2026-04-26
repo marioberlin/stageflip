@@ -26,6 +26,7 @@ export type {
   LossFlagCategory,
   LossFlagCode,
   LossFlagSeverity,
+  LossFlagSource,
   ParsedAssetRef,
   ParsedElement,
   ParsedGroupElement,

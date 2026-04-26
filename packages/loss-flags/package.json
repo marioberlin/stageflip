@@ -1,5 +1,5 @@
 {
-  "name": "@stageflip/import-pptx",
+  "name": "@stageflip/loss-flags",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -23,12 +23,7 @@
     "lint": "biome check src",
     "test": "vitest run"
   },
-  "dependencies": {
-    "@stageflip/loss-flags": "workspace:^",
-    "@stageflip/schema": "workspace:^",
-    "fast-xml-parser": "5.7.2",
-    "fflate": "0.8.2"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@vitest/coverage-v8": "2.1.9",
     "vitest": "2.1.9"

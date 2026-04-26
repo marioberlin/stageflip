@@ -20,6 +20,7 @@
     "@stageflip/engine": "workspace:*",
     "@stageflip/frame-runtime": "workspace:*",
     "@stageflip/llm-abstraction": "workspace:*",
+    "@stageflip/loss-flags": "workspace:*",
     "@stageflip/runtimes-contract": "workspace:*",
     "@stageflip/schema": "workspace:*",
     "next": "15.5.15",

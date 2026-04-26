@@ -239,6 +239,9 @@ importers:
       '@stageflip/llm-abstraction':
         specifier: workspace:*
         version: link:../../packages/llm-abstraction
+      '@stageflip/loss-flags':
+        specifier: workspace:*
+        version: link:../../packages/loss-flags
       '@stageflip/runtimes-contract':
         specifier: workspace:*
         version: link:../../packages/runtimes/contract
@@ -637,6 +640,9 @@ importers:
 
   packages/import-pptx:
     dependencies:
+      '@stageflip/loss-flags':
+        specifier: workspace:^
+        version: link:../loss-flags
       '@stageflip/schema':
         specifier: workspace:^
         version: link:../schema
@@ -674,6 +680,15 @@ importers:
       openai:
         specifier: 6.34.0
         version: 6.34.0(ws@8.20.0)(zod@4.3.6)
+
+  packages/loss-flags:
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: 2.1.9
+        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+      vitest:
+        specifier: 2.1.9
+        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/mcp-server:
     dependencies:
