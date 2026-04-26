@@ -1,6 +1,12 @@
 ---
-name: references-tier
-description: Convention for shipping a sibling `references/` directory next to a SKILL.md when the surface complexity warrants it. Each reference doc is short (<500 lines), purpose-specific (constraints / pitfalls / patterns / case studies), and linkable from the parent skill. Inspired by huashu's references/ tier (~7K lines across 20 docs).
+title: References Tier Convention
+id: skills/stageflip/concepts/references-tier
+tier: concept
+status: substantive
+last_updated: 2026-04-26
+owner_task: T-250
+related:
+  - skills/stageflip/reference/export-pptx
 ---
 
 # `references/` tier convention
