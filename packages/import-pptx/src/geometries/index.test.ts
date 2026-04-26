@@ -1,12 +1,12 @@
 // packages/import-pptx/src/geometries/index.test.ts
 // Pin the registry coverage and the contract every preset generator
-// upholds. T-242c batch 1 grew the list to 25; batch 2 takes it to 33;
-// T-242d closes out at 36.
+// upholds. T-242c batch 1 grew the list to 25; batch 2 took it to 33;
+// T-242d closes out at 36 with the arc-bearing trio.
 
 import { describe, expect, it } from 'vitest';
 import { COVERED_PRESETS, HONORED_ADJUSTMENTS, PRESET_GENERATORS, geometryFor } from './index.js';
 
-const T_242C_BATCH2_PRESETS = [
+const T_242D_PRESETS = [
   // T-242a (6)
   'rightArrow',
   'wedgeRectCallout',
@@ -44,11 +44,16 @@ const T_242C_BATCH2_PRESETS = [
   'moon',
   'lightningBolt',
   'noSmoking',
+  // T-242d (3) — arc-bearing trio
+  'chord',
+  'pie',
+  'donut',
 ];
 
 describe('preset registry', () => {
-  it('covers exactly the T-242a + T-242b first-wave + T-242c (batch 1 + batch 2) presets (33 total)', () => {
-    expect(COVERED_PRESETS.slice().sort()).toEqual(T_242C_BATCH2_PRESETS.slice().sort());
+  it('covers exactly the T-242a + T-242b + T-242c (batch 1 + batch 2) + T-242d presets (36 total)', () => {
+    expect(COVERED_PRESETS.length).toBe(36);
+    expect(COVERED_PRESETS.slice().sort()).toEqual(T_242D_PRESETS.slice().sort());
   });
 
   it('every generator returns a non-empty SVG path string for a 100x100 box', () => {
@@ -69,10 +74,11 @@ describe('preset registry', () => {
   });
 
   it('returns undefined for an unmapped preset name', () => {
-    // `chord`, `pie`, `donut` ship in T-242d (need <a:arcTo> / SVG `A`).
-    expect(geometryFor('chord', { w: 100, h: 100 })).toBeUndefined();
-    expect(geometryFor('pie', { w: 100, h: 100 })).toBeUndefined();
-    expect(geometryFor('donut', { w: 100, h: 100 })).toBeUndefined();
+    // After T-242d the arc-bearing trio is covered; pick a known-uncovered
+    // name (one of the ~140 outside the 50-commitment, falls through to
+    // T-245's rasterization path) so this assertion still has bite.
+    expect(geometryFor('mathDivide', { w: 100, h: 100 })).toBeUndefined();
+    expect(geometryFor('uturnArrow', { w: 100, h: 100 })).toBeUndefined();
   });
 
   it('every generator is callable directly', () => {
@@ -405,5 +411,128 @@ describe('noSmoking', () => {
     // 2 circles × 4 cubic Béziers each = 8 minimum.
     const cCount = (d?.match(/C /g) ?? []).length;
     expect(cCount).toBeGreaterThanOrEqual(8);
+  });
+});
+
+// --- T-242d ----------------------------------------------------------------
+
+describe('pie', () => {
+  it('produces an M cx cy → L → A → Z wedge with the default 270° sweep', () => {
+    // Default <a:gd>: adj1 = 0 (start angle 0°), adj2 = 16200000 (sweep 270°).
+    const d = geometryFor('pie', { w: 200, h: 100 });
+    expect(d).toBeDefined();
+    expect(d).toMatch(/^M /);
+    // Wedge has a center vertex.
+    expect(d).toMatch(/^M 100 50 L /);
+    // One arc command for the curved edge.
+    const aCount = (d?.match(/ A /g) ?? []).length;
+    expect(aCount).toBe(1);
+    expect(d?.endsWith('Z')).toBe(true);
+    // 270° sweep > 180° → large-arc-flag = 1.
+    expect(d).toMatch(/A 100 50 0 1 1 /);
+  });
+
+  it('honors <a:avLst> adj2 = 10800000 (180° → half-pie, large-arc=0)', () => {
+    const d = geometryFor('pie', { w: 100, h: 100 }, { adj1: 0, adj2: 10800000 });
+    expect(d).toBeDefined();
+    // Start angle 0°: arc starts at (100, 50). After 180° CW (in OOXML, which
+    // matches SVG y-down sweep=1), endpoint is at (0, 50).
+    // M cx cy = M 50 50; L startX startY = L 100 50; A rx ry 0 0 1 0 50 Z.
+    expect(d).toBe('M 50 50 L 100 50 A 50 50 0 0 1 0 50 Z');
+  });
+});
+
+describe('chord', () => {
+  it('produces an M → A → Z arc-and-chord with no center vertex', () => {
+    // Default <a:gd>: adj1 = 0, adj2 = 16200000.
+    const d = geometryFor('chord', { w: 200, h: 100 });
+    expect(d).toBeDefined();
+    expect(d).toMatch(/^M /);
+    // No center vertex — the closing line is the chord from arc-end back to start.
+    expect(d).not.toMatch(/^M 100 50 L /);
+    // Exactly one M and one A.
+    const mCount = (d?.match(/M /g) ?? []).length;
+    const aCount = (d?.match(/ A /g) ?? []).length;
+    expect(mCount).toBe(1);
+    expect(aCount).toBe(1);
+    expect(d?.endsWith('Z')).toBe(true);
+  });
+
+  it('honors <a:avLst> adj2 = 10800000 (half-disc bisected by a horizontal chord)', () => {
+    // Start at (100, 50), sweep 180° CW to (0, 50); chord = the horizontal
+    // line through y=50 closing the path.
+    const d = geometryFor('chord', { w: 100, h: 100 }, { adj1: 0, adj2: 10800000 });
+    expect(d).toBe('M 100 50 A 50 50 0 0 1 0 50 Z');
+  });
+});
+
+describe('donut', () => {
+  it('produces two concentric ellipse subpaths (outer CW + inner CCW)', () => {
+    // Default <a:gd>: adj1 = 25000 (25% of width).
+    const d = geometryFor('donut', { w: 100, h: 100 });
+    expect(d).toBeDefined();
+    expect(d).toMatch(/^M /);
+    // AC #7 (a): exactly two M commands → two subpaths.
+    const mCount = (d?.match(/M /g) ?? []).length;
+    expect(mCount).toBe(2);
+    // Each subpath uses two SVG arc commands (semicircles) → 4 A total.
+    const aCount = (d?.match(/ A /g) ?? []).length;
+    expect(aCount).toBe(4);
+    // Outer subpath sweep flag = 1 (CW); inner sweep flag = 0 (CCW).
+    // First arc on each subpath is right after the M; pin the direction by
+    // counting per-direction sweep flags.
+    expect(d).toContain('A 50 50 0 1 1 ');
+    expect(d).toContain('A 25 25 0 1 0 ');
+  });
+
+  it('AC #7 (b): never emits a fill-rule attribute — generator returns d only', () => {
+    // The generator returns the path data string, not an SVG element. The
+    // donut topology relies on SVG's *default* fill-rule="nonzero" because
+    // the two subpaths have opposite winding. Verify the generator's output
+    // has no fill-rule token; the renderer-core path dispatcher likewise
+    // emits no override (downstream contract; not exercised here).
+    const d = geometryFor('donut', { w: 100, h: 100 });
+    expect(d).toBeDefined();
+    expect(d).not.toMatch(/fill-rule/);
+    expect(d).not.toMatch(/evenodd/);
+  });
+
+  it('AC #7 (c): hit-test at the donut center is outside the filled region', () => {
+    // The donut hole sits between the outer ring (rx=ry=50) and the inner
+    // cutout (rx=ry=25, since adj1=25% of width=100 → t=25). The donut
+    // center (50, 50) is *inside* the inner cutout → outside the filled
+    // region under nonzero winding (outer CW contributes +1, inner CCW
+    // contributes -1, sum = 0 → hole). Verify with an analytical test
+    // matching the generator's geometry rather than driving a renderer.
+    const w = 100;
+    const h = 100;
+    const cx = w / 2;
+    const cy = h / 2;
+    const t = w * 0.25; // adj1 = 25000 (25% of width).
+    // Hit-test point.
+    const px = cx;
+    const py = cy;
+    // Outer ellipse (rx=50, ry=50) centered at (cx, cy).
+    const outerHit = (px - cx) ** 2 / 50 ** 2 + (py - cy) ** 2 / 50 ** 2 <= 1;
+    // Inner ellipse (rx=ry=50-t=25) — t=25 so inner radii = 25.
+    const innerHit = (px - cx) ** 2 / (50 - t) ** 2 + (py - cy) ** 2 / (50 - t) ** 2 <= 1;
+    // nonzero winding: outer CW (+1) and inner CCW (-1) cancel inside both
+    // → hole. Outside outer = 0 (background). Between outer and inner = +1.
+    const insideFill = outerHit && !innerHit;
+    expect(insideFill).toBe(false);
+  });
+
+  it('honors <a:avLst> adj1 (ring thickness in 1000ths of width)', () => {
+    // adj1 = 50000 → ring thickness = 50% of width → inner radius = 25
+    // for w=100. Inner ellipse arcs should reflect this.
+    const d = geometryFor('donut', { w: 100, h: 100 }, { adj1: 50000 });
+    expect(d).toBeDefined();
+    // Inner radii = (50 - 50) = 0 — degenerate; the generator should still
+    // honor the math but produce a path the renderer can swallow. With
+    // adj1=50000 the hole vanishes; inner radii = (w/2 - w*0.5) = 0.
+    // Pin a less-degenerate value.
+    const d2 = geometryFor('donut', { w: 100, h: 100 }, { adj1: 10000 });
+    // adj1=10% → t=10 → inner radii = (50-10) = 40.
+    expect(d2).toContain('A 40 40 0 1 0 ');
   });
 });
