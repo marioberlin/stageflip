@@ -360,7 +360,11 @@ describe('exportPptx — non-slide-mode early-return (coverage gap)', () => {
 
   it('video-mode doc returns shell + 1 unsupported-element flag', async () => {
     const doc: Document = {
-      meta: { title: 'video', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
+      meta: {
+        title: 'video',
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-01T00:00:00Z',
+      },
       theme: { tokens: {} },
       variables: {},
       components: {},
@@ -384,7 +388,11 @@ describe('exportPptx — non-slide-mode early-return (coverage gap)', () => {
 
   it('display-mode doc returns shell + 1 unsupported-element flag', async () => {
     const doc: Document = {
-      meta: { title: 'display', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
+      meta: {
+        title: 'display',
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-01T00:00:00Z',
+      },
       theme: { tokens: {} },
       variables: {},
       components: {},
