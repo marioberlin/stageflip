@@ -56,7 +56,7 @@ packages/loss-flags/
     emit.test.ts               # determinism + severity/category default tests
 ```
 
-`package.json` mirrors `packages/storage-firebase/package.json` shape (sibling small-package precedent): `"private": false` so future Reporter / Editor packages can depend on it; `peerDependencies` empty; one runtime dep (`node:crypto` is built-in, no install).
+`package.json` mirrors `packages/storage-firebase/package.json` shape (sibling small-package precedent): `"private": false` so future Reporter / Editor packages can depend on it; `peerDependencies` empty; one runtime dep (`node:crypto` is built-in, no install). **No `vitest.config.ts`** — `storage-firebase` doesn't have one; both packages inherit the workspace-root vitest config.
 
 ### Public API
 
@@ -65,8 +65,18 @@ The new package exports:
 ```ts
 // @stageflip/loss-flags
 
-/** Per-importer source identifier. New importers extend by declaration merging. */
-export type LossFlagSource = 'pptx' | 'gslides' | 'hyperframes' | 'html';
+/**
+ * Per-importer source identifier. Typed as `string` (not a closed union) for
+ * the same reason `code` is a string: each importer owns its source name
+ * locally; new importers don't touch the shared package. Convention is to use
+ * the importer package's suffix:
+ *   - `'pptx'`             from `@stageflip/import-pptx`
+ *   - `'gslides'`          from `@stageflip/import-google-slides`
+ *   - `'hyperframes-html'` from `@stageflip/import-hyperframes-html`
+ * The Reporter UI (T-248) renders any `source` string; type-safe enums are an
+ * importer-local concern.
+ */
+export type LossFlagSource = string;
 
 export type LossFlagSeverity = 'info' | 'warn' | 'error';
 
@@ -140,7 +150,7 @@ Every file currently importing `emitLossFlag` from `./loss-flags.js` continues t
 - **Option A (preferred, minimum diff)**: keep the existing function name `emitLossFlag` in `@stageflip/import-pptx`. The PPTX wrapper exports `emitLossFlag` as the same name; the new `@stageflip/loss-flags` exports its generic emitter under the same name too. Disambiguation is by package, not by symbol name. Callsites change zero lines.
 - **Option B**: rename the PPTX wrapper to `emitPptxLossFlag`. Cleaner but every callsite changes. Reject.
 
-Pick A.
+Pick A. **Risk + mitigation**: an editor IDE auto-import for `emitLossFlag` could ambiguously suggest either package. The PPTX wrapper's `emitLossFlag(input: PptxEmitInput)` accepts a *narrower* input type than the generic `emitLossFlag(input: EmitLossFlagInput)` (the wrapper drops the `source` / `severity` / `category` fields, auto-filling them), so calling the generic emitter from inside `import-pptx` would fail to compile due to the missing required fields — a typecheck wall, not a silent footgun. Document this asymmetry in `loss-flags.ts`'s file header.
 
 ### What `apps/*` and editor-shell can now do
 
@@ -188,9 +198,9 @@ Each gets a Vitest test, written first and failing.
 3. `emitLossFlag(input)` is pure: same input → same `id` across runs (Vitest test runs the same input 1000× and asserts every output equal).
 4. `emitLossFlag(input)` derives `id` from `sha256(source + category + location + originalSnippet).slice(0, 12)` — exact algorithm pinned by a fixed-input → fixed-id test.
 5. `emitLossFlag` accepts every `LossFlagSeverity` and every `LossFlagCategory` value without runtime narrowing — round-trip tests for each.
-6. `@stageflip/import-pptx` re-exports `LossFlag`, `LossFlagSeverity`, `LossFlagCategory` from `@stageflip/loss-flags` so existing imports of these names from `@stageflip/import-pptx` continue to compile (test imports them from `@stageflip/import-pptx`'s public surface).
-7. The `import-pptx` `emitLossFlag(input)` wrapper produces **byte-identical `LossFlag` records** to what the pre-extraction implementation produced for the same inputs. Pin via a test fixture: 8 inputs (one per existing `LossFlagCode`) → 8 expected `LossFlag` outputs (id + severity + category populated from the existing `CODE_DEFAULTS` map).
-8. The full `@stageflip/import-pptx` test suite (87 tests at handover write-time, possibly more after T-242c batch 1) continues to pass with no changes to test fixtures. Any change to a pinned `lossFlags[].id` is a regression.
+6. `@stageflip/import-pptx` re-exports `LossFlag`, `LossFlagSeverity`, `LossFlagCategory`, `LossFlagSource`, and `emitLossFlag` from `@stageflip/loss-flags` so existing imports of these names from `@stageflip/import-pptx` continue to compile **and link at runtime**. Test imports them from `@stageflip/import-pptx`'s public surface and exercises both type-only re-exports (interfaces / type aliases) and value re-export (the `emitLossFlag` function — assert it's callable and returns a `LossFlag`).
+7. The `import-pptx` `emitLossFlag(input)` wrapper produces **byte-identical `LossFlag` records** to what the pre-extraction implementation produced for the same inputs. Pin via a test fixture: 8 inputs (one per existing `LossFlagCode`) → 8 expected `LossFlag` outputs (id + severity + category populated from the existing `CODE_DEFAULTS` map). **Sequencing to avoid circularity**: in **Commit 1** (failing tests + scaffolding), capture the 8 expected outputs by invoking the **current pre-extraction `emitLossFlag`** against the 8 inputs and pinning the actuals as expected fixtures (the new package's emitter doesn't exist yet, so the test fails with an import error). In **Commit 2** (the extraction), the new generic emitter + the rewired PPTX wrapper must produce the pinned outputs — any drift is a real regression. Do **not** generate the fixtures from the new implementation; that would make AC #7 tautological.
+8. The full `@stageflip/import-pptx` test suite continues to pass with no changes to test fixtures. Any change to a pinned `lossFlags[].id` is a regression. **Pin the suite size at this branch's base commit** (`f669bf1`, the merge of PR #183 = T-242c spec): `pnpm --filter @stageflip/import-pptx test` reports `N` passing tests at base; the same command on the T-247-loss-flags branch tip must report `N` passing tests too. If T-242c batch 1 (PR #184) merges into main between the branch base and this PR landing, rebase and re-pin to the new base; do not assume the count.
 9. `apps/stageflip-slide` (or the smallest existing `apps/*` package) builds with a no-op `import type { LossFlag } from '@stageflip/loss-flags'` added — proves the package is consumable from app code without pulling in `@stageflip/import-pptx`.
 10. Coverage on `packages/loss-flags/src/**` is ≥90% (small surface, easy bar).
 11. `pnpm check-licenses` passes — `@stageflip/loss-flags` declares no new third-party deps (uses `node:crypto` only).
@@ -207,7 +217,7 @@ Each gets a Vitest test, written first and failing.
 ## Skill updates (in same PR)
 
 - `skills/stageflip/concepts/loss-flags/SKILL.md` — note that the canonical type now lives in `@stageflip/loss-flags`; importers extend with their own code unions; cross-link the new package.
-- `skills/stageflip/workflows/import-pptx/SKILL.md` — update the "loss flags emit through `emitLossFlag` in `@stageflip/import-pptx/loss-flags`" line to also mention the underlying `@stageflip/loss-flags` package.
+- `skills/stageflip/workflows/import-pptx/SKILL.md` — update the line at L116 (currently `Loss flags (\`skills/stageflip/concepts/loss-flags\`) are emitted at every`) to mention that the canonical emitter now lives in `@stageflip/loss-flags` and `import-pptx` exports a PPTX-defaulted wrapper.
 
 No other skill files reference `LossFlag` directly today (verified via repo grep before drafting).
 
