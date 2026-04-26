@@ -27,6 +27,13 @@ export const slideSchema = z
   .object({
     id: idSchema,
     title: z.string().max(400).optional(),
+    /**
+     * Pointer to a `SlideLayout` in `Document.layouts` (T-251). Optional;
+     * existing slides without a layoutId continue to parse and render. The
+     * RIR `apply-inheritance` pass uses this to look up placeholder
+     * elements when materializing per-element `inheritsFrom`.
+     */
+    layoutId: idSchema.optional(),
     elements: z.array(elementSchema),
     background: slideBackgroundSchema.optional(),
     transition: slideTransitionSchema.optional(),
