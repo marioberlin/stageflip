@@ -48,11 +48,32 @@ preset has tuning we didn't apply".
 `<a:custGeom>` with the supported commands (`<a:moveTo>`, `<a:lnTo>`,
 `<a:cubicBezTo>`, `<a:quadBezTo>`, `<a:close>`, multi-`<a:path>`) translates
 to SVG `d` via `custGeomToSvgPath`. `<a:arcTo>` is the remaining unsupported
-command — its SVG translation requires the current pen position, which the
-walk-by-kind traversal can't reliably provide; lifting that limitation
-needs a workspace-wide switch to `preserveOrder: true` in the shared XML
-parser. Payloads using `<a:arcTo>` fall back to `unsupported-shape` (T-245
-rasterization picks them up).
+command; payloads using it currently fall back to `unsupported-shape` (T-245
+rasterization picks them up). T-242d Sub-PR 1 has flipped the shared XML
+parser to `preserveOrder: true` so the walker can interleave heterogeneous
+commands in document order — the precondition `<a:arcTo>` needs. Sub-PR 2
+adds the actual `<a:arcTo>` translation + the `chord` / `pie` / `donut`
+preset generators.
+
+### Parsed XML shape
+
+`opc.ts`'s `parseXml` runs fast-xml-parser with `preserveOrder: true`. Every
+parsed node is therefore an *ordered array* of single-key element records:
+
+```js
+[
+  { 'a:moveTo': [...children], ':@': { '@_x': '0', '@_y': '0' } },
+  { 'a:lnTo':   [...children], ':@': { '@_x': '10', '@_y': '0' } },
+  { 'a:close':  [],            ':@': {} },
+]
+```
+
+Document order is preserved across heterogeneous tags — the precondition
+the cust-geom path walker needs. Callers must navigate via the helpers
+exported from `opc.ts` (`firstChild` / `children` / `attrs` / `attr` /
+`allChildren` / `tagOf`); no production callsite indexes into the raw
+`:@` / array shape directly. The `elements/shared.ts` re-export bundles
+the same helpers plus `attrNumber` / `textContent` for element converters.
 
 ```ts
 import { geometryFor, custGeomToSvgPath, COVERED_PRESETS } from '@stageflip/import-pptx';

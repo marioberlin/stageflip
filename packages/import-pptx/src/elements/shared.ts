@@ -2,8 +2,14 @@
 // Helpers shared by every element converter. `ElementContext` carries the
 // metadata each converter needs but cannot derive locally (slide id, OOXML
 // part path for diagnostics, the part's relationship map for asset lookup).
+//
+// XML shape (T-242d): every element converter consumes the ordered-array
+// `preserveOrder: true` shape produced by `opc.ts`'s `parseXml`. The helpers
+// re-exported here (`firstChild` / `children` / `attr` / etc.) are the only
+// supported way to navigate that shape — no callsite indexes into the raw
+// `:@` / array form directly.
 
-import type { OpcRelMap } from '../opc.js';
+import { type OpcRelMap, type OrderedXmlNode, attr, attrs, children, firstChild } from '../opc.js';
 
 /** Per-call metadata threaded through every element converter. */
 export interface ElementContext {
@@ -15,36 +21,35 @@ export interface ElementContext {
   rels: OpcRelMap;
 }
 
-/** True when `v` is a plain object (not array, not null). */
-export function isRecord(v: unknown): v is Record<string, unknown> {
-  return typeof v === 'object' && v !== null && !Array.isArray(v);
-}
-
-/** Helper: collapse fast-xml-parser's "single child becomes object" shape. */
-export function asArray(v: unknown): unknown[] {
-  if (Array.isArray(v)) return v;
-  if (v === undefined) return [];
-  return [v];
-}
-
-/** Read a `@_<name>` string attribute. */
-export function pickAttr(node: unknown, name: string): string | undefined {
-  if (!isRecord(node)) return undefined;
-  const v = node[`@_${name}`];
-  return typeof v === 'string' ? v : undefined;
-}
-
-/** Read a `@_<name>` numeric attribute, returning `undefined` on miss/parse-fail. */
-export function pickAttrNumber(node: unknown, name: string): number | undefined {
-  const v = pickAttr(node, name);
+/**
+ * Read an attribute as a number (parsed via `Number(...)`). Returns
+ * `undefined` when the attribute is absent or not finite.
+ */
+export function attrNumber(node: OrderedXmlNode | undefined, name: string): number | undefined {
+  const v = attr(node, name);
   if (v === undefined) return undefined;
   const n = Number(v);
   return Number.isFinite(n) ? n : undefined;
 }
 
-/** Pull a child object out by tag name; `undefined` when absent. */
-export function pickRecord(node: unknown, name: string): Record<string, unknown> | undefined {
-  if (!isRecord(node)) return undefined;
-  const v = node[name];
-  return isRecord(v) ? v : undefined;
+/**
+ * Concatenate the `#text` content of a node's direct children. Whitespace
+ * between siblings is preserved per fast-xml-parser's emission. Returns
+ * `undefined` when the node has no text children (distinct from empty
+ * string, which means "child present but empty").
+ */
+export function textContent(node: OrderedXmlNode | undefined): string | undefined {
+  if (node === undefined) return undefined;
+  const parts: string[] = [];
+  for (const c of children(node, '#text')) {
+    const v = (c as Record<string, unknown>)['#text'];
+    if (typeof v === 'string') parts.push(v);
+    else if (typeof v === 'number' || typeof v === 'boolean') parts.push(String(v));
+  }
+  if (parts.length === 0) return undefined;
+  return parts.join('');
 }
+
+// Re-export the navigation helpers so element converters import a single
+// helper module rather than reaching into `opc.ts` directly.
+export { attr, attrs, children, firstChild };
