@@ -358,6 +358,7 @@ export const compilerDiagnosticSchema = z
     message: z.string(),
     elementId: z.string().optional(),
     pass: z.enum([
+      'apply-inheritance',
       'theme-resolve',
       'variable-resolve',
       'component-expand',

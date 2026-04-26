@@ -24,6 +24,7 @@ import {
   type DataSourceProvider,
   DiagnosticSink,
   aggregateFonts,
+  applyInheritancePass,
   expandComponents,
   mapElements,
   resolveBindings,
@@ -270,7 +271,12 @@ function lowerElementTree(
 
 export function compileRIR(input: unknown, opts: CompileRIROptions = {}): CompileResult {
   const sink = new DiagnosticSink();
-  const doc = documentSchema.parse(input);
+  const parsed = documentSchema.parse(input);
+
+  // Pass 0: apply-inheritance — materialize per-element placeholder refs
+  // (T-251). Runs FIRST so theme tokens / variables / component bodies on
+  // placeholder values resolve through the standard pipeline.
+  const doc = applyInheritancePass(parsed, sink);
 
   // Pass 1: component-expand (currently stub).
   const expanded = expandComponents(doc, sink);
