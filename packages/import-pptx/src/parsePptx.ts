@@ -3,6 +3,7 @@
 // is deterministic: same buffer in, same tree out, same loss-flag ids.
 
 import { readRels } from './opc.js';
+import { readEmbeddedFonts } from './parts/embedded-fonts.js';
 import { readPresentation } from './parts/presentation.js';
 import { parseSlidePart } from './parts/slide.js';
 import { accumulateGroupTransforms } from './transforms/accumulate.js';
@@ -66,5 +67,11 @@ export async function parsePptx(buffer: Uint8Array): Promise<CanonicalSlideTree>
     }
   }
 
-  return accumulateGroupTransforms({ slides, layouts, masters, lossFlags: flags });
+  // Deck-level embedded fonts (T-243c). Pure: no I/O, no Date, no Math.random.
+  const embeddedFontsResult = readEmbeddedFonts(entries);
+  flags.push(...embeddedFontsResult.flags);
+
+  const tree: CanonicalSlideTree = { slides, layouts, masters, lossFlags: flags };
+  if (embeddedFontsResult.fonts.length > 0) tree.embeddedFonts = embeddedFontsResult.fonts;
+  return accumulateGroupTransforms(tree);
 }

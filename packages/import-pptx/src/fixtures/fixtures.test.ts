@@ -115,6 +115,24 @@ const expectedSummaries: Record<FixtureName, ReturnType<typeof summarise>> = {
     perSlide: [{ id: 'slide_1', elementTypes: ['video', 'image'] }],
     flagCodes: ['LF-PPTX-UNRESOLVED-ASSET', 'LF-PPTX-UNRESOLVED-VIDEO'],
   },
+  'embedded-font': {
+    slideCount: 1,
+    layoutCount: 1,
+    masterCount: 1,
+    // One title shape; the embedded font lives on the deck-level
+    // collection rather than on any slide element.
+    perSlide: [{ id: 'slide_1', elementTypes: ['text'] }],
+    flagCodes: ['LF-PPTX-UNRESOLVED-FONT'],
+  },
+  'image-video-font': {
+    slideCount: 1,
+    layoutCount: 1,
+    masterCount: 1,
+    // walkSpTree dispatches <p:sp> before <p:pic>; the embedded font lives
+    // on the deck-level collection (not in `perSlide`).
+    perSlide: [{ id: 'slide_1', elementTypes: ['video', 'image'] }],
+    flagCodes: ['LF-PPTX-UNRESOLVED-ASSET', 'LF-PPTX-UNRESOLVED-FONT', 'LF-PPTX-UNRESOLVED-VIDEO'],
+  },
 };
 
 describe('AC #8 — programmatic fixtures', () => {

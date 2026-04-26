@@ -8,7 +8,9 @@ import { resolveAssets } from './assets/resolve.js';
 import type { AssetStorage } from './assets/types.js';
 import {
   buildAdjustedShapesFixture,
+  buildEmbeddedFontFixture,
   buildGroupFixture,
+  buildImageVideoFontFixture,
   buildMinimalFixture,
   buildMultiSlideFixture,
   buildPictureFixture,
@@ -267,5 +269,53 @@ describe('parsePptx — acceptance criteria', () => {
     const vid = slide?.elements.find((e) => e.type === 'video');
     expect(img?.type === 'image' && img.src.kind === 'resolved').toBe(true);
     expect(vid?.type === 'video' && vid.src.kind === 'resolved').toBe(true);
+  });
+
+  // T-243c — embedded font fixture parses with one ParsedEmbeddedFont attached
+  // to the deck-level `embeddedFonts` collection.
+  it('parsePptx attaches embeddedFonts for a deck with <p:embeddedFontLst> (T-243c)', async () => {
+    const tree = await parsePptx(buildEmbeddedFontFixture());
+    expect(tree.embeddedFonts).toBeDefined();
+    expect(tree.embeddedFonts?.length).toBe(1);
+    const f = tree.embeddedFonts?.[0];
+    expect(f?.family).toBe('CustomEmbedded');
+    expect(f?.faces.regular?.kind).toBe('unresolved');
+    if (f?.faces.regular?.kind !== 'unresolved') return;
+    expect(f.faces.regular.oocxmlPath).toBe('ppt/fonts/font1.ttf');
+    expect(tree.lossFlags.find((g) => g.code === 'LF-PPTX-UNRESOLVED-FONT')).toBeDefined();
+  });
+
+  // T-243c AC #5 — a deck with no <p:embeddedFontLst> leaves embeddedFonts undefined.
+  it('leaves embeddedFonts undefined for a deck without an <p:embeddedFontLst>', async () => {
+    const tree = await parsePptx(buildMinimalFixture());
+    expect(tree.embeddedFonts).toBeUndefined();
+    expect(tree.lossFlags.find((f) => f.code === 'LF-PPTX-UNRESOLVED-FONT')).toBeUndefined();
+  });
+
+  // T-243c AC #14 — full pipeline (parsePptx → resolveAssets) clears every
+  // unresolved-asset/video/font flag on a fixture with all three asset kinds.
+  it('parsePptx → resolveAssets clears every unresolved flag for image+video+font fixture', async () => {
+    const buf = buildImageVideoFontFixture();
+    const tree = await parsePptx(buf);
+
+    expect(tree.lossFlags.find((f) => f.code === 'LF-PPTX-UNRESOLVED-ASSET')).toBeDefined();
+    expect(tree.lossFlags.find((f) => f.code === 'LF-PPTX-UNRESOLVED-VIDEO')).toBeDefined();
+    expect(tree.lossFlags.find((f) => f.code === 'LF-PPTX-UNRESOLVED-FONT')).toBeDefined();
+
+    const storage: AssetStorage = {
+      async put(_bytes, opts) {
+        return { id: opts.contentHash.slice(0, 16) };
+      },
+    };
+    const resolved = await resolveAssets(tree, unpackPptx(buf), storage);
+
+    expect(resolved.lossFlags.find((f) => f.code === 'LF-PPTX-UNRESOLVED-ASSET')).toBeUndefined();
+    expect(resolved.lossFlags.find((f) => f.code === 'LF-PPTX-UNRESOLVED-VIDEO')).toBeUndefined();
+    expect(resolved.lossFlags.find((f) => f.code === 'LF-PPTX-UNRESOLVED-FONT')).toBeUndefined();
+    expect(
+      resolved.lossFlags.find((f) => f.code === 'LF-PPTX-MISSING-ASSET-BYTES'),
+    ).toBeUndefined();
+
+    expect(resolved.embeddedFonts?.[0]?.faces.regular?.kind).toBe('resolved');
   });
 });

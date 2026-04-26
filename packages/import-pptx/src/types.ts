@@ -132,10 +132,31 @@ export type LossFlagCode =
   | 'LF-PPTX-PRESET-ADJUSTMENT-IGNORED'
   | 'LF-PPTX-UNRESOLVED-ASSET'
   | 'LF-PPTX-UNRESOLVED-VIDEO'
+  | 'LF-PPTX-UNRESOLVED-FONT'
   | 'LF-PPTX-MISSING-ASSET-BYTES'
   | 'LF-PPTX-UNSUPPORTED-ELEMENT'
   | 'LF-PPTX-UNSUPPORTED-FILL'
   | 'LF-PPTX-NOTES-DROPPED';
+
+/**
+ * One PPTX-embedded font family. Faces are optional — a font may ship
+ * only `regular`, or `regular` + `bold`. Each face's `bytes` reference is
+ * unresolved at parser exit; T-243c's `resolveAssets` extension uploads
+ * the bytes and rewrites to `{ kind: 'resolved', ref: AssetRef }`.
+ */
+export interface ParsedEmbeddedFont {
+  /** PPTX `<p:font typeface="…">` value — matches text elements' `fontFamily`. */
+  family: string;
+  /** Optional PANOSE classification (kept opaque; renderers may ignore). */
+  panose?: string;
+  /** Per-face byte references. Face is absent when the PPTX didn't ship it. */
+  faces: {
+    regular?: ParsedAssetRef;
+    bold?: ParsedAssetRef;
+    italic?: ParsedAssetRef;
+    boldItalic?: ParsedAssetRef;
+  };
+}
 
 /**
  * Re-exports of the canonical `LossFlag` shape and its severity / category
@@ -170,6 +191,15 @@ export interface CanonicalSlideTree {
   layouts: Record<string, ParsedSlide>;
   masters: Record<string, ParsedSlide>;
   lossFlags: LossFlag[];
+  /**
+   * Deck-level embedded font collection (T-243c). Populated from the
+   * `<p:embeddedFontLst>` element of `ppt/presentation.xml`. Absent
+   * (`undefined`) when the deck ships no embedded fonts. Each entry's
+   * face refs are unresolved at parser exit; `resolveAssets` uploads the
+   * bytes through `AssetStorage` and rewrites them to schema-typed
+   * `asset:<id>` form.
+   */
+  embeddedFonts?: ParsedEmbeddedFont[];
   transformsAccumulated?: boolean;
   /**
    * Set by T-243's `resolveAssets` after every `ParsedAssetRef.unresolved`
