@@ -83,15 +83,57 @@ describe('visibleLossFlagsAtom (derived)', () => {
     expect(visible.map((f) => f.id)).toEqual(['err', 'warn', 'info']);
   });
 
-  it('within same severity, sorts by source ascending then code ascending', () => {
+  it('within same severity, sorts by category ascending then source ascending then code ascending', () => {
     const store = createStore();
-    const a = makeFlag({ id: 'a', severity: 'warn', source: 'pptx', code: 'LF-PPTX-Z' });
-    const b = makeFlag({ id: 'b', severity: 'warn', source: 'pptx', code: 'LF-PPTX-A' });
-    const c = makeFlag({ id: 'c', severity: 'warn', source: 'gslides', code: 'LF-GS-A' });
+    const a = makeFlag({
+      id: 'a',
+      severity: 'warn',
+      source: 'pptx',
+      code: 'LF-PPTX-Z',
+      category: 'shape',
+    });
+    const b = makeFlag({
+      id: 'b',
+      severity: 'warn',
+      source: 'pptx',
+      code: 'LF-PPTX-A',
+      category: 'shape',
+    });
+    const c = makeFlag({
+      id: 'c',
+      severity: 'warn',
+      source: 'gslides',
+      code: 'LF-GS-A',
+      category: 'shape',
+    });
     store.set(importLossFlagsAtom, [a, b, c]);
     const visible = store.get(visibleLossFlagsAtom);
-    // gslides < pptx (alpha), then within pptx: LF-PPTX-A < LF-PPTX-Z.
+    // Same category 'shape': gslides < pptx (alpha), then within pptx: LF-PPTX-A < LF-PPTX-Z.
     expect(visible.map((f) => f.id)).toEqual(['c', 'b', 'a']);
+  });
+
+  it('within same severity, category sorts BEFORE source (AC #14)', () => {
+    const store = createStore();
+    // Category-primary key must beat source: 'animation' < 'shape' alphabetically,
+    // so the gslides shape flag must come AFTER the pptx animation flag despite
+    // 'gslides' < 'pptx' on the source axis.
+    const animPptx = makeFlag({
+      id: 'anim',
+      severity: 'warn',
+      source: 'pptx',
+      code: 'LF-PPTX-X',
+      category: 'animation',
+    });
+    const shapeGslides = makeFlag({
+      id: 'shape',
+      severity: 'warn',
+      source: 'gslides',
+      code: 'LF-GS-X',
+      category: 'shape',
+    });
+    store.set(importLossFlagsAtom, [shapeGslides, animPptx]);
+    const visible = store.get(visibleLossFlagsAtom);
+    expect(visible.map((f) => f.id)).toEqual(['anim', 'shape']);
   });
 
   it('does not mutate the source array (sorted copy)', () => {

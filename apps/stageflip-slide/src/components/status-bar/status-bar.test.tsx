@@ -96,12 +96,10 @@ describe('<StatusBar>', () => {
       message: 'm',
     };
     render(
-      <DocumentProvider initialDocument={makeDoc(1, 0)}>
-        <EditorShell>
-          <Seed flags={[flag]} />
-          <StatusBar />
-        </EditorShell>
-      </DocumentProvider>,
+      <EditorShell initialDocument={makeDoc(1, 0)}>
+        <Seed flags={[flag]} />
+        <StatusBar />
+      </EditorShell>,
     );
     expect(screen.getByTestId('loss-flag-badge')).toBeTruthy();
   });

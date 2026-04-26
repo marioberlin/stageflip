@@ -23,9 +23,9 @@ export const dismissedLossFlagIdsAtom = atom<ReadonlySet<string>>(new Set<string
 
 /**
  * Derived: `importLossFlagsAtom` minus `dismissedLossFlagIdsAtom`, sorted
- * by severity descending (`error` > `warn` > `info`) then by `source`
- * ascending then by `code` ascending. Returns a fresh array on every
- * read; safe for downstream `.map`.
+ * by severity descending (`error` > `warn` > `info`) then by `category`
+ * ascending then by `source` ascending then by `code` ascending. Returns
+ * a fresh array on every read; safe for downstream `.map`.
  */
 export const visibleLossFlagsAtom = atom((get) => {
   const flags = get(importLossFlagsAtom);
@@ -45,6 +45,7 @@ const SEVERITY_RANK: Readonly<Record<LossFlag['severity'], number>> = {
 function compareFlags(a: LossFlag, b: LossFlag): number {
   const sevDelta = SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity];
   if (sevDelta !== 0) return sevDelta;
+  if (a.category !== b.category) return a.category < b.category ? -1 : 1;
   if (a.source !== b.source) return a.source < b.source ? -1 : 1;
   if (a.code !== b.code) return a.code < b.code ? -1 : 1;
   return 0;
