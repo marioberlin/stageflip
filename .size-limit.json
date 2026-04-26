@@ -36,5 +36,13 @@
     "limit": "60 KB",
     "gzip": true,
     "ignore": ["crypto", "node:crypto", "@stageflip/import-pptx", "@stageflip/loss-flags", "@stageflip/schema"]
+  },
+  {
+    "name": "@stageflip/rasterize (ESM, gzipped, all exports — T-245 baseline)",
+    "path": "packages/rasterize/dist/index.js",
+    "import": "*",
+    "limit": "8 KB",
+    "gzip": true,
+    "ignore": ["pngjs", "crypto", "node:crypto"]
   }
 ]
