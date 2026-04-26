@@ -317,31 +317,33 @@ describe('ribbon2', () => {
     expect(d).toBeDefined();
     expect(d).toMatch(/^M /);
     expect(d?.endsWith('Z')).toBe(true);
-    // 9-vertex closed polygon mirroring `ribbon`'s topology (M + 8 L + Z).
+    // 8-vertex closed polygon mirroring `ribbon`'s topology (M + 7 L + Z).
     const lCount = (d?.match(/L /g) ?? []).length;
-    expect(lCount).toBe(8);
+    expect(lCount).toBe(7);
   });
 });
 
 describe('verticalScroll', () => {
-  it('uses cubic Béziers to approximate the rolled-paper curls', () => {
+  it('uses cubic Béziers to approximate the two rolled-paper curls', () => {
     const d = geometryFor('verticalScroll', { w: 100, h: 200 });
     expect(d).toBeDefined();
     expect(d).toMatch(/^M /);
+    expect(d?.endsWith('Z')).toBe(true);
     const cCount = (d?.match(/C /g) ?? []).length;
-    // Two curls (top-left + bottom-right) approximated with quarter-arc
-    // Béziers — at minimum 4 cubic segments total.
-    expect(cCount).toBeGreaterThanOrEqual(4);
+    // Two curls (top-left + bottom-right), each a half-circle built from
+    // two cubic-Bezier quarters → 4 cubic segments total.
+    expect(cCount).toBe(4);
   });
 });
 
 describe('horizontalScroll', () => {
-  it('uses cubic Béziers to approximate the rolled-paper curls', () => {
+  it('uses cubic Béziers to approximate the two rolled-paper curls', () => {
     const d = geometryFor('horizontalScroll', { w: 200, h: 100 });
     expect(d).toBeDefined();
     expect(d).toMatch(/^M /);
+    expect(d?.endsWith('Z')).toBe(true);
     const cCount = (d?.match(/C /g) ?? []).length;
-    expect(cCount).toBeGreaterThanOrEqual(4);
+    expect(cCount).toBe(4);
   });
 });
 

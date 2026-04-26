@@ -21,21 +21,22 @@ owns each gap.
 T-240 maps a curated subset of `<a:prstGeom prst="X">` values to schema's
 structural `ShapeKind` (rect, ellipse, polygon, star, line). T-242 grows
 coverage to additional presets via `'custom-path'` with a generated SVG `d`
-attribute. T-242a + T-242b first-wave + T-242c batch 1 ship infra +
-**25 presets**:
+attribute. T-242a + T-242b first-wave + T-242c (batch 1 + batch 2) ship
+infra + **33 presets**:
 
 - **Arrows**: rightArrow, leftArrow, upArrow, downArrow, leftRightArrow,
   upDownArrow, bentArrow, curvedRightArrow.
 - **Callouts**: wedgeRectCallout, wedgeRoundRectCallout,
   wedgeEllipseCallout, cloudCallout, borderCallout1, borderCallout2.
-- **Banners**: ribbon.
+- **Banners / Scrolls / High-point stars**: ribbon, ribbon2,
+  verticalScroll, horizontalScroll, star10, star12.
 - **Basics**: parallelogram, trapezoid, chevron.
 - **Brackets / Braces**: leftBracket, rightBracket, leftBrace, rightBrace.
-- **Misc**: cloud, sun, heart.
+- **Misc**: cloud, sun, heart, moon, lightningBolt, noSmoking.
 
-T-242c batch 2 adds 8 more (banners + misc) to reach 33; T-242d ships the
-trailing 3 arc-bearing presets (`chord`, `pie`, `donut`) to close out the
-spec's 50-preset commitment (50 = 14 structural + 33 custom-path + 3 arc).
+T-242d ships the trailing 3 arc-bearing presets (`chord`, `pie`, `donut`)
+to close out the spec's 50-preset commitment (50 = 14 structural + 33
+custom-path + 3 arc).
 
 `roundRect` honors its `adj1` adjustment: parsed as a 100000ths integer per
 ECMA-376; the resulting corner radius lands on the schema's existing
