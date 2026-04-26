@@ -53,7 +53,7 @@ const expectedSummaries: Record<FixtureName, ReturnType<typeof summarise>> = {
       {
         id: 'slide_1',
         // rect, ellipse, hexagon→polygon, star5→star, cloud→T-242 custom-path,
-        // lightningBolt→still-unsupported.
+        // chord→still-unsupported (lands in T-242d with <a:arcTo>).
         elementTypes: ['shape', 'shape', 'shape', 'shape', 'shape', 'unsupported-shape'],
       },
     ],

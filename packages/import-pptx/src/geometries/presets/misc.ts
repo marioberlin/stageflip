@@ -1,7 +1,7 @@
 // packages/import-pptx/src/geometries/presets/misc.ts
 // Miscellaneous preset generators that don't fit a shape family. T-242a
-// shipped `cloud`. T-242b first-wave adds `sun` and `heart`. The remaining
-// miscellaneous presets (moon, lightningBolt, noSmoking) land in T-242c.
+// shipped `cloud`. T-242b first-wave added `sun` and `heart`. T-242c
+// batch 2 adds `moon`, `lightningBolt`, `noSmoking`.
 
 import { fmt } from '../format.js';
 import type { PathGenerator } from '../types.js';
@@ -76,3 +76,17 @@ export const heart: PathGenerator = ({ w, h }) => {
     'Z',
   ].join(' ');
 };
+
+// --- T-242c batch 2 scaffolding (impl in follow-up commit) -----------------
+
+/** Placeholder. Implementation lands in the impl commit. */
+const PLACEHOLDER: PathGenerator = () => 'M 0 0 Z';
+
+/** `moon`: crescent (outer convex arc + inner concave cutout). */
+export const moon: PathGenerator = PLACEHOLDER;
+
+/** `lightningBolt`: zigzag closed polygon. */
+export const lightningBolt: PathGenerator = PLACEHOLDER;
+
+/** `noSmoking`: ring (annulus) + diagonal prohibition bar. */
+export const noSmoking: PathGenerator = PLACEHOLDER;

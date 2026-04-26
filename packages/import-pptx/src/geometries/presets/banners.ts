@@ -1,7 +1,8 @@
 // packages/import-pptx/src/geometries/presets/banners.ts
-// Banner / scroll preset generators. T-242a ships `ribbon` only (down-pointing
-// ribbon with two folded ends); ribbon2, scrolls, and the high-point stars
-// land in T-242b.
+// Banner / scroll preset generators. T-242a shipped `ribbon`. T-242c batch
+// 2 adds the up-fold variant `ribbon2`, the two paper scrolls
+// (`verticalScroll`, `horizontalScroll`), and the high-point stars
+// (`star10`, `star12`).
 
 import type { PathGenerator } from '../types.js';
 
@@ -30,3 +31,23 @@ export const ribbon: PathGenerator = ({ w, h }) => {
     'Z',
   ].join(' ');
 };
+
+// --- T-242c batch 2 scaffolding (impl in follow-up commit) -----------------
+
+/** Placeholder. Implementation lands in the impl commit. */
+const PLACEHOLDER: PathGenerator = () => 'M 0 0 Z';
+
+/** `ribbon2`: up-fold mirror of `ribbon` (tabs at the top). */
+export const ribbon2: PathGenerator = PLACEHOLDER;
+
+/** `verticalScroll`: paper scroll body with rolled curls. */
+export const verticalScroll: PathGenerator = PLACEHOLDER;
+
+/** `horizontalScroll`: paper scroll body with rolled curls. */
+export const horizontalScroll: PathGenerator = PLACEHOLDER;
+
+/** `star10`: 10-pointed star. */
+export const star10: PathGenerator = PLACEHOLDER;
+
+/** `star12`: 12-pointed star. */
+export const star12: PathGenerator = PLACEHOLDER;
