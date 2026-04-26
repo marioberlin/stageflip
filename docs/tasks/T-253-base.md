@@ -137,6 +137,8 @@ T-253-base writes everything in this list except the `slideLayouts/` and `slideM
 
 ### 4. Element-level emission
 
+**Slide-level `Slide.background`**: emitted as `<p:cSld><p:bg>...</p:bg></p:cSld>` at the start of each slide part when `Slide.background` is present. The schema's `slideBackgroundSchema` (per `packages/schema/src/content/slide.ts`) carries either a solid fill (`{ kind: 'solid', color }`) or an image fill (`{ kind: 'image', src }`) — both map to `<p:bgPr>` with `<a:solidFill>` or `<a:blipFill>` respectively. When `Slide.background` is undefined, the writer emits no `<p:bg>` (slide inherits the master's background, which in T-253-base ships as the default theme's white background).
+
 For each `Slide.elements` entry, the writer dispatches by element type:
 
 - **`TextElement`** → `<p:sp>` with `<p:nvSpPr>` + `<p:spPr>` (geometry) + `<p:txBody>` (per-paragraph + per-run XML). Text runs emit `<a:rPr>` carrying the run's resolved color / font / size / weight / italic / underline.
@@ -161,9 +163,22 @@ Six new codes, all with `source: 'pptx-export'`:
 
 ### 6. Round-trip guarantee + parity test
 
-T-253-base ships a `roundtrip.test.ts` suite that, for every fixture in `packages/import-pptx/src/fixtures/`, exports the parsed `Document` (post `parsePptx → applyInheritance → resolveAssets` per the documented full pipeline), re-parses the exported bytes through `parsePptx`, and asserts the second-pass `CanonicalSlideTree` is structurally equal to the first-pass tree (modulo loss flags expected for unsupported types).
+T-253-base ships a `roundtrip.test.ts` suite that, for every PPTX fixture exposed by `@stageflip/import-pptx`'s programmatic fixture builder (`packages/import-pptx/src/fixtures/builder.ts` + `fixtures.test.ts` — the importer's fixtures are built in code, not on-disk files), exports the parsed `Document` (post `parsePptx → applyInheritance → resolveAssets` per the documented full pipeline), re-parses the exported bytes through `parsePptx`, and asserts the second-pass `CanonicalSlideTree` is **structurally equal** to the first-pass tree under the equality predicate defined below.
 
 This is a strong contract: a fixture that round-trips clean today must continue to round-trip clean as the writer evolves. Adding a new element-type writer (e.g., T-253-tables-rider) is gated on extending the round-trip suite; the suite itself is part of T-253-base.
+
+**Round-trip equality predicate** (used by AC #26 + #27):
+
+The predicate compares two `CanonicalSlideTree` values for structural equality, with the following documented exclusions:
+
+- **Loss flags are excluded** from the structural-equality compare; they're tracked separately. The predicate verifies the second-pass `lossFlags` is the empty set (or a subset of an explicitly-allowed set per fixture, e.g., `LF-PPTX-EXPORT-UNSUPPORTED-ELEMENT` on a fixture that intentionally exercises a deferred element type).
+- **Fields documented as dropped by the base writer are zeroed out on both sides before comparison**: `Slide.notes`, `ElementBase.animations`, slide-side `transition`, and `Document.theme` (writer flattens to per-element values). This means a fixture's `notes` field doesn't have to round-trip; the predicate only requires that the second pass also has empty `notes`.
+- **`inheritsFrom` is dropped on both sides** in T-253-base (the base writer flattens placeholder inheritance). T-253-rider re-enables `inheritsFrom` round-trip; the predicate is parameterized by a `riderActive: boolean` flag so the same predicate works in both PRs.
+- **Float comparisons use exact equality** (no epsilon). EMU-derived px values come from integer EMU divides in the parser; round-trip preserves them exactly. If a fixture surfaces float drift, it's a writer bug, not a predicate bug — escalate per §"Escalation triggers".
+- **Element ordering within a slide is preserved** (z-order). The predicate is index-positional, not set-based.
+- **`Document.layouts` / `Document.masters` length and content** are checked: T-253-base produces empty-on-output even for inputs with non-empty layouts/masters. The predicate stipulates "second-pass `layouts.length === 0` and `masters.length === 0` regardless of input" for base, parameterized for rider.
+
+The predicate lives in `packages/export-pptx/src/test-helpers/round-trip.ts`; both base and rider's tests import it.
 
 ### 7. AssetReader injection vs. AssetStorage reuse
 
@@ -194,15 +209,36 @@ Reasons for the bespoke emitter:
 
 The emitter handles the four standard XML escapes (`&` `<` `>` `"`); not full Unicode normalization (PPTX consumers handle UTF-8 raw).
 
-### 9. ZIP emission
+### 9. ZIP emission — fflate with pinned options
 
-JSZip is the industry-standard option but the project doesn't currently depend on it. **Decision**: add `fflate` (MIT, already on the whitelist via `@stageflip/import-pptx` which uses it). `fflate` is ~13 KB, supports deterministic output via `mtime` config, and is faster than JSZip. Pin the workspace dep in this PR; cross-check `pnpm check-licenses` is green.
+JSZip is the industry-standard option but the project doesn't currently depend on it. **Decision**: use `fflate` (MIT, already on the whitelist via `@stageflip/import-pptx`'s `unpackPptx`). `fflate` is ~13 KB, supports deterministic output, and is faster than JSZip. Pin a fixed `fflate` version in this package's `package.json` (matching the importer's pin); cross-check `pnpm check-licenses` is green.
 
-The writer drives `fflate` synchronously: build the entry list as `Record<string, Uint8Array>`, then `zipSync` → `Uint8Array`. Pin via test that two consecutive exports produce byte-identical output.
+**Pinned fflate options** for byte-determinism:
+
+```ts
+import { zipSync } from 'fflate';
+
+const zipped = zipSync(entries, {
+  // level: 6 is fflate's default DEFLATE level. Pin explicitly so a future
+  // fflate upgrade that changes defaults doesn't silently change byte output.
+  level: 6,
+  // mtime: same Unix timestamp on every entry — no per-entry overrides.
+  // Pin via opts.modifiedAt (or the frozen-epoch fallback). fflate's mtime
+  // is per-entry; the writer applies it uniformly via the per-entry attrs
+  // hash (entries: { [path]: [bytes, { mtime }] }).
+  mtime: opts.modifiedAt ?? FROZEN_EPOCH,
+});
+```
+
+The writer drives `fflate` synchronously: build the entry list as `Record<string, [Uint8Array, ZipAttributes]>`, then `zipSync` → `Uint8Array`. The bespoke per-entry attrs structure keeps the mtime application uniform.
+
+**Why level 6 (the default) rather than level 0 (store)**: PPTX files are typically opened by Office and Slides; both expect DEFLATE-compressed entries. A `level: 0` (store) ZIP works but bloats output ~5–10x and would surface as a regression in any size-aware test. Level 6 produces the smallest deterministic output across fflate minor versions.
+
+Pin via test that two consecutive exports produce byte-identical output (AC #2).
 
 ### 10. Tests-first contract
 
-Per CLAUDE.md §3, every AC gets a Vitest test failing first. The fixtures that drive `roundtrip.test.ts` are mostly the parsed-side fixtures from `@stageflip/import-pptx`'s `fixtures/`; the exporter copies in a few static `Document` JSON fixtures for the cases the importer doesn't cover (e.g., a hand-authored deck with no inheritance).
+Per CLAUDE.md §3, every AC gets a Vitest test failing first. The fixtures that drive `roundtrip.test.ts` are mostly the parsed-side fixtures from `@stageflip/import-pptx`'s programmatic fixture builder (`packages/import-pptx/src/fixtures/builder.ts`); the exporter copies in a few static `Document` JSON fixtures for the cases the importer doesn't cover (e.g., a hand-authored deck with no inheritance).
 
 ## Files to create / modify
 
@@ -249,9 +285,14 @@ packages/export-pptx/
       collect.ts                            # NEW — walks Document, collects (assetId, slideId, elementId) tuples for media-rel emission
       collect.test.ts                       # NEW
     roundtrip.test.ts                       # NEW — parsePptx ∘ exportPptx round-trip suite
+    test-helpers/
+      round-trip.ts                         # NEW — round-trip equality predicate (shared with T-253-rider)
+      round-trip.test.ts                    # NEW — pin the predicate's exclusion rules
     fixtures/
       hand-authored-deck.json               # NEW — Document JSON for cases parser fixtures don't cover
       empty-deck.json                       # NEW
+      slide-background-solid.json           # NEW — pins AC #17a (solid background)
+      slide-background-image.json           # NEW — pins AC #17a (image background)
   package.json                              # MODIFIED — add fflate dep + @stageflip/loss-flags + @stageflip/schema; scripts unchanged
   vitest.config.ts                          # NEW — matches the import-pptx config
 
@@ -307,6 +348,8 @@ Each gets a Vitest test, written first and failing.
 15. **ShapeElement (custom geometry)** falls back to `<a:prstGeom prst="rect"/>` and emits `LF-PPTX-EXPORT-CUSTOM-GEOMETRY-DEGRADED`. Pin via fixture.
 16. **GroupElement** round-trips: `<p:grpSp>` with two children re-parses to a `ParsedGroupElement` with `children.length === 2`. Pin via fixture.
 17. **TableElement / VideoElement / AudioElement / ChartElement / EmbedElement / CodeElement / ClipElement** all skip with `LF-PPTX-EXPORT-UNSUPPORTED-ELEMENT` (one flag per skipped element). Pin via fixture covering every type.
+17a. **`Slide.background` round-trips**: a slide with `background: { kind: 'solid', color: '#FF0000' }` emits `<p:cSld><p:bg><p:bgPr><a:solidFill><a:srgbClr val="FF0000"/></a:solidFill></p:bgPr></p:bg></p:cSld>`, and re-parsing through `parsePptx` yields a slide with the same background. Pin via fixture for solid fill; pin a second fixture for image fill (`<a:blipFill>`).
+17b. **Slide background absent**: a slide with `background === undefined` emits no `<p:bg>` element; the slide XML's `<p:cSld>` does not contain a background block. Pin via negative-case fixture.
 
 ### Asset embedding
 
@@ -324,8 +367,8 @@ Each gets a Vitest test, written first and failing.
 
 ### Round-trip suite
 
-26. Every fixture in `packages/import-pptx/src/fixtures/` produces, via `parsePptx → applyInheritance → resolveAssets → exportPptx → parsePptx`, a `CanonicalSlideTree` that is structurally equal to the first-pass tree (modulo expected `LF-PPTX-EXPORT-*` loss flags for fixtures using deferred element types). Pin via the new `roundtrip.test.ts` suite.
-27. The `hand-authored-deck.json` fixture (hand-authored Document with text + image + shape + group, no inheritance) round-trips with **zero** loss flags. Pin.
+26. Every fixture exposed by `@stageflip/import-pptx`'s programmatic fixture builder (`packages/import-pptx/src/fixtures/builder.ts` — the suite enumerates them via the importer's existing `fixtures.test.ts` registry) produces, via `parsePptx → applyInheritance → resolveAssets → exportPptx → parsePptx`, a `CanonicalSlideTree` that satisfies the round-trip equality predicate from §"Round-trip equality predicate" (with `riderActive: false` for base). Loss flags on the second pass must be the empty set, or a subset of the per-fixture allowed set. Pin via the new `roundtrip.test.ts` suite.
+27. The `hand-authored-deck.json` fixture (hand-authored Document with text + image + shape + group, no inheritance, no notes / animations / theme override) round-trips with **zero** loss flags AND under the equality predicate. Pin.
 
 ### Determinism
 
@@ -402,7 +445,7 @@ Stop and report instead of guessing if:
 
 ## Notes for the Orchestrator
 
-1. **M-sized; expect five commits + possible cleanup.** XML emitter + ZIP packer are mechanical; the round-trip suite is the substantive correctness contract. Reviewer should focus on AC #26 (round-trip) and AC #28 (determinism source-level rule).
+1. **M-sized; expect five commits + possible cleanup.** XML emitter + ZIP packer are mechanical; the round-trip suite is the substantive correctness contract. Reviewer should focus on AC #26 (round-trip) and AC #28 (determinism source-level rule). **Sizing caveat**: ~22 files + 30 ACs is on the edge between M and L. If the Implementer hits 3× the M estimate (per CLAUDE.md §6 escalation), escalate up to L rather than rushing — the round-trip predicate + the four element emitters together carry most of the load and warrant care.
 2. **The plan-row faulty premise.** `docs/implementation-plan.md:542` (v1.24) says T-253 is a "rider" assuming an existing exporter. T-253-base is the foundation; T-253-rider is the original plan-row scope. The plan-row update lands in this same PR (alongside the two specs) so future readers don't re-discover the gap.
 3. **`AssetReader` is narrower than `AssetStorage` deliberately.** The exporter only reads. Production callers wrap their `@stageflip/storage-firebase` adapter to implement `AssetReader`. Don't widen the interface — a future shared `@stageflip/storage` package can unify both.
 4. **Deferred element types are explicit.** Tables, videos, embedded fonts each get their own follow-on rider once the importer-side gap closes. T-253-base does NOT speculate on those riders' shape; it just emits `LF-PPTX-EXPORT-UNSUPPORTED-ELEMENT` and skips.

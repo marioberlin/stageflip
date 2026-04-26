@@ -61,7 +61,16 @@ For each element with `inheritsFrom = { templateId, placeholderIdx }`:
 1. Resolve `templateId` against `layoutsById` (or fall through to `mastersById`).
 2. If unresolved → emit `LF-PPTX-EXPORT-LAYOUT-NOT-FOUND`, drop `inheritsFrom`, fall back to base behavior (materialized geometry).
 3. If resolved but the matching `placeholderIdx` doesn't exist on the template → emit `LF-PPTX-EXPORT-PLACEHOLDER-NOT-FOUND`, drop `inheritsFrom`, fall back.
-4. If resolved cleanly → emit `<p:nvSpPr><p:nvPr><p:ph type="<placeholder.type>" idx="<placeholderIdx>"/></p:nvPr></p:nvSpPr>` plus the slide-side override fields. Suppress slide-side fields that are byte-equal to the placeholder default (so the slide truly inherits from the template at runtime). **Mismatch detection**: for any field whose slide-side value matches the placeholder default, omit it from the slide XML. Emit `LF-PPTX-EXPORT-PLACEHOLDER-MISMATCH` only when the slide-side value cannot be represented as either "matches default" or "explicit override" (rare; usually means the value is structurally divergent from the placeholder type).
+4. If resolved cleanly → emit `<p:nvSpPr><p:nvPr><p:ph type="<placeholder.type>" idx="<placeholderIdx>"/></p:nvPr></p:nvSpPr>` plus the slide-side override fields. Suppress slide-side fields that match the placeholder default (so the slide truly inherits from the template at runtime).
+
+**Override granularity — must mirror T-251's `applyInheritance`** (the inverse). Per `packages/schema/src/inheritance.ts:22-28` and T-251 spec §"Override granularity":
+
+- The override is **shallow on `ElementBase`'s top-level keys** (`name`, `transform`, `visible`, `locked`, `animations`, plus the type-specific content fields like `text`, `src`, `shape`, `path`).
+- **Nested fields inside `transform` (`position`, `size`, `rotation`, `scale`, `opacity`, `anchor`) are NOT field-granular**: if any nested field of `transform` differs from the placeholder's, the entire slide-side `transform` wins. T-253-rider's writer mirrors this: the suppression check on `transform` is **whole-or-nothing** — the writer compares the slide's `transform` to the placeholder's `transform` as a single object (numeric deep-equal, no float epsilon — fixtures use round numbers per T-251 §"Override granularity"). If they match, omit; if not, emit the full slide-side `transform`.
+- **`animations: []` is NEVER suppressed** — Zod's `.default([])` makes `animations: []` always considered "set" at the slide level. T-251's `applyInheritance` never copies the placeholder's `animations` for the same reason; the inverse holds here.
+- The check uses the same comparator as T-251's resolver. **Decision**: extract a shared `compareToPlaceholder(slideEl, placeholderEl): { suppressKeys: (keyof ElementBase)[]; mismatch: boolean }` helper into `@stageflip/schema/src/inheritance.ts` (sibling export to `applyInheritance`). T-253-rider depends on the helper landing in this PR; if T-251's `inheritance.ts` already exposes the comparator, reuse it; otherwise add it as a separate commit-1 step in this PR.
+
+**Mismatch detection**: emit `LF-PPTX-EXPORT-PLACEHOLDER-MISMATCH` only when a slide-side value cannot be represented as either "matches default" or "explicit override" — e.g., the slide-side has a `transform` whose nested `position` overrides the placeholder's but the placeholder's `size` is structurally absent. The shallow-on-top-level rule keeps this rare; pin via fixture.
 
 ### 2. New writer parts: `slideLayouts/` + `slideMasters/`
 
@@ -182,8 +191,16 @@ skills/stageflip/
 .changeset/export-pptx-t253-rider.md    # NEW — minor on @stageflip/export-pptx (0.1.0 → 0.2.0)
 ```
 
+**One small additive change to `@stageflip/schema`**: the override-suppression rule (§"Override granularity") needs a `compareToPlaceholder(slideEl, placeholderEl)` comparator that's the inverse of T-251's `applyInheritance`. T-251 ships `applyInheritance` but does not export a separate comparator. T-253-rider adds:
+
+```
+packages/schema/
+  src/inheritance.ts                  # MODIFIED — add compareToPlaceholder helper (sibling export)
+  src/inheritance.test.ts             # MODIFIED — add comparator pin tests
+.changeset/schema-t253-rider.md       # NEW — patch on @stageflip/schema (additive helper, no breaking change)
+```
+
 No changes to:
-- `@stageflip/schema` — T-251 already shipped the types.
 - `@stageflip/import-pptx` — T-253-rider is write-only; the importer's read path through layouts/masters lands in a separate task (call it T-243d if/when authored).
 
 ## Acceptance criteria
@@ -211,10 +228,12 @@ Each gets a Vitest test, written first and failing.
 11. A `Slide` with `layoutId` resolving to `Document.layouts[i]` emits a slide-rel pointing at `../slideLayouts/slideLayout<i+1>.xml` with `Type="...slideLayout"`. Pin.
 12. A `Slide` with `layoutId === undefined` (or unresolvable) emits no slide-layout rel. Pin.
 
-### Override suppression
+### Override suppression — uses T-251's `compareToPlaceholder` comparator
 
-13. A slide element whose every field is byte-equal to its placeholder's default emits **only** the `<p:nvSpPr>` block (no `<p:spPr>`, no `<p:txBody>`); the runtime fully inherits. Pin via fixture (a slide element identical to its placeholder).
-14. A slide element whose `transform` matches but whose `text` differs emits the `<p:nvSpPr>` block plus a `<p:txBody>` carrying the override. The unchanged `transform` is omitted from the slide XML. Pin.
+13. A slide element whose every top-level `ElementBase` key matches its placeholder's value (per `compareToPlaceholder` from `@stageflip/schema/src/inheritance.ts`) emits **only** the `<p:nvSpPr>` block (no `<p:spPr>`, no `<p:txBody>`); the runtime fully inherits. Pin via fixture (a slide element with `transform` deep-equal to the placeholder's, identical `text`, etc.).
+14. A slide element whose `transform` matches the placeholder's (deep-equal, no epsilon) but whose `text` differs emits the `<p:nvSpPr>` block plus a `<p:txBody>` carrying the override. The unchanged `transform` is omitted from the slide XML. Pin.
+14a. **Whole-or-nothing transform suppression**: a slide element whose `transform.position` differs from the placeholder's by even one EMU emits the **entire** slide-side `transform` (not a partial-transform diff). Pin: a fixture with `transform.position.x` = placeholder + 100 EMU produces `<a:xfrm>` with the full slide-side translation/extent, not `<a:off>` only.
+14b. **`animations: []` is NEVER suppressed**: Zod's `.default([])` semantics from T-251 §"Override granularity" — the writer never omits an `animations` field from the slide XML based on inheritance.
 
 ### Loss flags
 
@@ -269,7 +288,9 @@ Standard CLAUDE.md §8 set, all green:
   - Commit 3: `feat(export-pptx): T-253-rider — element dispatcher inheritsFrom resolution + override suppression + 3 loss flags`
   - Optional Commit 4 for non-blocking Reviewer feedback.
 - Branch: `task/T-253-rider-placeholder-inheritance`
-- Changesets: `.changeset/export-pptx-t253-rider.md` — `minor` on `@stageflip/export-pptx` (0.1.0 → 0.2.0).
+- Changesets:
+  - `.changeset/export-pptx-t253-rider.md` — `minor` on `@stageflip/export-pptx` (0.1.0 → 0.2.0).
+  - `.changeset/schema-t253-rider.md` — `patch` on `@stageflip/schema` (additive `compareToPlaceholder` helper).
 
 ## Escalation triggers (CLAUDE.md §6)
 
