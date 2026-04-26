@@ -6,7 +6,8 @@
 
 import { describe, expect, it } from 'vitest';
 import { type Document, documentSchema } from './document.js';
-import { applyInheritance } from './inheritance.js';
+import type { Element } from './elements/index.js';
+import { applyInheritance, compareToPlaceholder } from './inheritance.js';
 
 const NOW = '2026-04-26T00:00:00.000Z';
 const TRANSFORM = { x: 0, y: 0, width: 100, height: 50 };
@@ -657,6 +658,123 @@ describe('applyInheritance — direct master reference', () => {
     const el = out.content.slides[0]?.elements[0];
     if (!el || el.type !== 'text') throw new Error('text');
     expect(el.name).toBe('MasterName');
+  });
+});
+
+describe('compareToPlaceholder (T-253-rider)', () => {
+  function makeText(over: Partial<Record<string, unknown>> = {}): Element {
+    const base = {
+      id: 'el',
+      type: 'text',
+      transform: { x: 10, y: 20, width: 200, height: 80 },
+      visible: true,
+      locked: false,
+      animations: [],
+      text: 'P',
+      ...over,
+    };
+    return base as unknown as Element;
+  }
+
+  it('suppresses every key whose slide-side value matches the placeholder default', () => {
+    const placeholder = makeText({ name: 'PName', text: 'P' });
+    const slide = makeText({ name: 'PName', text: 'P' });
+    const r = compareToPlaceholder(slide, placeholder);
+    expect(r.suppressKeys).toContain('name');
+    expect(r.suppressKeys).toContain('text');
+    expect(r.suppressKeys).toContain('transform');
+    expect(r.mismatch).toBe(false);
+  });
+
+  it('does not suppress `animations` even if both sides have `[]`', () => {
+    const placeholder = makeText();
+    const slide = makeText();
+    const r = compareToPlaceholder(slide, placeholder);
+    expect(r.suppressKeys).not.toContain('animations');
+  });
+
+  it('whole-or-nothing transform: a single nested field divergence drops the whole transform from suppressKeys', () => {
+    const placeholder = makeText({ transform: { x: 10, y: 20, width: 200, height: 80 } });
+    const slide = makeText({ transform: { x: 11, y: 20, width: 200, height: 80 } }); // x differs
+    const r = compareToPlaceholder(slide, placeholder);
+    expect(r.suppressKeys).not.toContain('transform');
+  });
+
+  it('suppresses transform when every nested numeric field matches (deep-equal)', () => {
+    const placeholder = makeText({ transform: { x: 10, y: 20, width: 200, height: 80 } });
+    const slide = makeText({ transform: { x: 10, y: 20, width: 200, height: 80 } });
+    const r = compareToPlaceholder(slide, placeholder);
+    expect(r.suppressKeys).toContain('transform');
+  });
+
+  it('does not suppress a field whose slide-side value differs from the placeholder', () => {
+    const placeholder = makeText({ text: 'PLACEHOLDER' });
+    const slide = makeText({ text: 'real text' });
+    const r = compareToPlaceholder(slide, placeholder);
+    expect(r.suppressKeys).not.toContain('text');
+  });
+
+  it('does not suppress a key the slide leaves undefined (slide does not emit it anyway)', () => {
+    const placeholder = makeText({ name: 'PName' });
+    const slide = makeText(); // name omitted
+    const r = compareToPlaceholder(slide, placeholder);
+    expect(r.suppressKeys).not.toContain('name');
+  });
+
+  it('never suppresses id, type, or inheritsFrom', () => {
+    const placeholder = makeText({ id: 'p', type: 'text' });
+    const slide = makeText({ id: 'p', type: 'text' });
+    const r = compareToPlaceholder(slide, placeholder);
+    expect(r.suppressKeys).not.toContain('id');
+    expect(r.suppressKeys).not.toContain('type');
+    expect(r.suppressKeys).not.toContain('inheritsFrom');
+  });
+
+  it('is the inverse of applyInheritance: after applyInheritance, suppressKeys covers every placeholder-defined field', () => {
+    const doc = documentSchema.parse({
+      meta: { id: 'd1', version: 1, createdAt: NOW, updatedAt: NOW },
+      theme: { tokens: {} },
+      masters: [{ id: 'm1', name: 'M', placeholders: [] }],
+      layouts: [
+        {
+          id: 'l1',
+          name: 'L',
+          masterId: 'm1',
+          placeholders: [
+            { id: 'ph', name: 'PHName', type: 'text', transform: TRANSFORM, text: 'PH text' },
+          ],
+        },
+      ],
+      content: {
+        mode: 'slide',
+        slides: [
+          {
+            id: 's1',
+            layoutId: 'l1',
+            elements: [
+              {
+                id: 'e1',
+                type: 'text',
+                transform: TRANSFORM, // matches placeholder's
+                text: 'PH text', // matches placeholder's
+                inheritsFrom: { templateId: 'l1', placeholderIdx: 0 },
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const out = applyInheritance(doc);
+    if (out.content.mode !== 'slide') throw new Error('mode');
+    const el = out.content.slides[0]?.elements[0];
+    if (!el) throw new Error('el');
+    const placeholder = doc.layouts[0]?.placeholders[0];
+    if (!placeholder) throw new Error('placeholder');
+    const r = compareToPlaceholder(el, placeholder);
+    // Every placeholder-defined field now matches; should be suppressible.
+    expect(r.suppressKeys).toContain('name');
+    expect(r.suppressKeys).toContain('text');
+    expect(r.suppressKeys).toContain('transform');
   });
 });
 
