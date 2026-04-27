@@ -540,6 +540,34 @@ importers:
         specifier: 3.1.1
         version: 3.1.1
 
+  packages/export-google-slides:
+    dependencies:
+      '@stageflip/import-google-slides':
+        specifier: workspace:^
+        version: link:../import-google-slides
+      '@stageflip/loss-flags':
+        specifier: workspace:^
+        version: link:../loss-flags
+      '@stageflip/rasterize':
+        specifier: workspace:^
+        version: link:../rasterize
+      '@stageflip/schema':
+        specifier: workspace:^
+        version: link:../schema
+    devDependencies:
+      '@types/pngjs':
+        specifier: 6.0.5
+        version: 6.0.5
+      '@vitest/coverage-v8':
+        specifier: 2.1.9
+        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+      pngjs:
+        specifier: 7.0.0
+        version: 7.0.0
+      vitest:
+        specifier: 2.1.9
+        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+
   packages/export-html5-zip:
     dependencies:
       '@stageflip/schema':
