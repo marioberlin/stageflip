@@ -1,7 +1,89 @@
-// firebase/firestore-eu.rules — placeholder, filled in by T-271 commit 4.
 rules_version = '2';
+
+// firestore.rules — deny-by-default, role-aware.
+// Matches the T-262 auth model from skills/stageflip/concepts/auth:
+// principals are `user`, `org`, `api-key`, or `mcp-session`; roles are
+// `viewer` / `editor` / `admin` / `owner`. Each user's active-org and
+// role live in the id-token's custom claims, set by apps/api during
+// login. Document ACL overrides (share links, per-document collab)
+// come in T-260+; this ruleset only covers the org-scoped collections.
+
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // --- Helpers ----------------------------------------------------
+
+    function isAuthed() {
+      return request.auth != null;
+    }
+
+    function activeOrg() {
+      return request.auth.token.get('org', '');
+    }
+
+    function role() {
+      return request.auth.token.get('role', '');
+    }
+
+    function isAtLeast(level) {
+      let ranks = { 'viewer': 1, 'editor': 2, 'admin': 3, 'owner': 4 };
+      return ranks.get(role(), 0) >= ranks.get(level, 99);
+    }
+
+    function isOrgMember(orgId) {
+      return isAuthed() && activeOrg() == orgId;
+    }
+
+    // --- Organisations ----------------------------------------------
+
+    match /orgs/{orgId} {
+      allow read: if isOrgMember(orgId) && isAtLeast('viewer');
+      allow update: if isOrgMember(orgId) && isAtLeast('admin');
+      allow create, delete: if isOrgMember(orgId) && isAtLeast('owner');
+
+      match /documents/{docId} {
+        allow read: if isOrgMember(orgId) && isAtLeast('viewer');
+        allow create, update: if isOrgMember(orgId) && isAtLeast('editor');
+        allow delete: if isOrgMember(orgId) && isAtLeast('editor');
+
+        match /changes/{changeId} {
+          allow read, write: if isOrgMember(orgId) && isAtLeast('editor');
+        }
+      }
+
+      match /apiKeys/{keyId} {
+        // T-262 AC #29: read by admin+. Writes are NEVER allowed from
+        // client SDKs — Cloud Functions write via the admin SDK using
+        // the service-account bypass (firebase-admin ignores rules).
+        allow read: if isOrgMember(orgId) && isAtLeast('admin');
+        allow write: if false;
+      }
+
+      match /members/{userId} {
+        allow read: if isOrgMember(orgId) && isAtLeast('viewer');
+        allow write: if isOrgMember(orgId) && isAtLeast('admin');
+      }
+
+      match /invites/{token} {
+        // Invite docs hold a token + role + email + ttl. Reads are
+        // limited to admins (so they can audit pending invites);
+        // writes are Cloud-Functions-only (inviteMember /
+        // acceptInvite). Token-bearer accept happens server-side via
+        // the acceptInvite callable, so client SDK access stays
+        // closed.
+        allow read: if isOrgMember(orgId) && isAtLeast('admin');
+        allow write: if false;
+      }
+    }
+
+    // --- User profile -----------------------------------------------
+
+    match /users/{userId} {
+      allow read, write: if isAuthed() && request.auth.uid == userId;
+    }
+
+    // --- Deny-by-default --------------------------------------------
+
     match /{document=**} {
       allow read, write: if false;
     }
