@@ -29,7 +29,7 @@
     "check-determinism": "tsx scripts/check-determinism.ts",
     "parity": "turbo run build --filter=@stageflip/parity-cli && node packages/parity-cli/bin/parity.js",
     "parity:prime": "turbo run build --filter=@stageflip/parity-cli && node packages/parity-cli/bin/parity.js prime",
-    "size-limit": "turbo run build --filter=@stageflip/frame-runtime --filter=@stageflip/cdp-host-bundle --filter=@stageflip/export-pptx --filter=@stageflip/import-google-slides --filter=@stageflip/rasterize && size-limit",
+    "size-limit": "turbo run build --filter=@stageflip/frame-runtime --filter=@stageflip/cdp-host-bundle --filter=@stageflip/export-pptx --filter=@stageflip/import-google-slides --filter=@stageflip/rasterize --filter=@stageflip/import-hyperframes-html && size-limit",
     "skills-sync": "tsx scripts/sync-skills.ts",
     "skills-sync:check": "tsx scripts/sync-skills.ts --check",
     "gen:tool-skills": "tsx scripts/gen-tool-skills.ts",

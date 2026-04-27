@@ -21,6 +21,15 @@
     "dev": "tsup src/index.ts --dts --format esm,cjs --watch",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@stageflip/loss-flags": "workspace:^",
+    "@stageflip/schema": "workspace:^",
+    "parse5": "7.3.0"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "2.1.9",
+    "vitest": "2.1.9"
   }
 }
