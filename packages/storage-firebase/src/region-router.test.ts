@@ -163,6 +163,15 @@ describe('createRegionRouter — getStorageBucketForOrg (AC #11)', () => {
     });
     expect(() => router.getStorageBucketForOrg(euOrg)).toThrow(/eu/i);
   });
+
+  it('throws if US bucket missing when a US org asks for it', () => {
+    const router = createRegionRouter({
+      defaultFirestore: makeFirestore('default'),
+      euFirestore: makeFirestore('eu-west'),
+      euBucket: makeBucket('eu'),
+    });
+    expect(() => router.getStorageBucketForOrg(usOrg)).toThrow(/us/i);
+  });
 });
 
 describe('createRegionRouter — back-compat (AC #12, #13)', () => {
