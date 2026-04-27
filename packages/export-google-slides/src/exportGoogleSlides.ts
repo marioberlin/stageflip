@@ -6,12 +6,13 @@
 import type { LossFlag } from '@stageflip/loss-flags';
 import type { Document, Element, Slide } from '@stageflip/schema';
 import { type SlidesMutationClient, createDefaultMutationClient } from './api/client.js';
-import type { BatchUpdateRequest } from './api/types.js';
+import type { ApiPresentation, BatchUpdateRequest } from './api/types.js';
 import type { ObservedBbox } from './convergence/diff.js';
 import { runConvergenceLoop } from './convergence/run-loop.js';
 import { imageFallbackForResidual } from './fallback/image-fallback.js';
 import { emitLossFlag } from './loss-flags.js';
 import { type PlannedSlide, buildPlan } from './plan/build-plan.js';
+import type { PreferenceApiPageElement } from './plan/preference.js';
 import {
   type ConvergenceTolerances,
   DEFAULT_MAX_ITERATIONS,
@@ -62,6 +63,7 @@ export async function exportGoogleSlides(
   // Resolve the target presentationId (overwrite vs. create new — AC #2).
   let presentationId = opts.presentationId;
   const slideObjectIdBySlideId: Record<string, string> = {};
+  let existingPresentation: ApiPresentation | undefined;
   if (presentationId === undefined) {
     const titleArg = doc.meta.title !== undefined ? { title: doc.meta.title } : {};
     const created = await apiClient.createPresentation(titleArg);
@@ -83,6 +85,25 @@ export async function exportGoogleSlides(
     for (const s of doc.content.slides) {
       slideObjectIdBySlideId[s.id] = s.id;
     }
+    // Spec §5 step 1: read existing presentation state. The plan emitter
+    // reads this to drive option (b) (duplicate-similar) — without it,
+    // option (b) cannot fire because there are no candidate page elements
+    // to match against.
+    try {
+      existingPresentation = await apiClient.getPresentation({ presentationId });
+      apiCallsMade += 1;
+    } catch (err) {
+      // Read failures don't abort the export — the plan falls back to
+      // create-from-scratch (option c). Surface the diagnostic via
+      // `LF-GSLIDES-EXPORT-API-ERROR` so the caller sees it.
+      flags.push(
+        emitLossFlag({
+          code: 'LF-GSLIDES-EXPORT-API-ERROR',
+          location: {},
+          message: `presentations.get failed: ${err instanceof Error ? err.message : String(err)}`,
+        }),
+      );
+    }
   }
 
   // Per-slide loss-flags for elements with animations / notes / fonts /
@@ -93,9 +114,10 @@ export async function exportGoogleSlides(
     }
   }
 
-  // Plan emission. AC #7-#11.
+  // Plan emission. AC #7-#11. The `existingPages` map seeds option (b)
+  // (duplicate-similar) candidates from the live target presentation.
   const planned = buildPlan(doc, {
-    existingPages: {}, // canned-test path: no pre-existing API state
+    existingPages: existingPagesFromApi(existingPresentation),
     slideObjectIdBySlideId,
   });
 
@@ -199,7 +221,17 @@ async function processSlide(input: ProcessSlideInput): Promise<ProcessSlideOutpu
   if (input.tier === 'pixel-perfect-visual') {
     // Force EVERY element to fallback. AC #6.
     let residualCount = 0;
-    const goldenPng = await loadGoldenPng(input);
+    // B2: learn the actual thumbnail dimensions so the canonical-side
+    // golden matches. `LARGE` is 1600 × auto-height (16:9 → 900,
+    // 4:3 → 1200, etc.). The renderer is then driven at those exact
+    // dimensions and the fallback bbox math stays in shared coordinates.
+    const apiThumb = await input.apiClient.fetchSlideThumbnail({
+      presentationId: input.presentationId,
+      slideObjectId: input.planned.slideObjectId,
+    });
+    apiCalls += 1;
+    const goldenSize = { width: apiThumb.width, height: apiThumb.height };
+    const goldenPng = await loadGoldenPng(input, goldenSize);
     for (const [elementId, el] of Object.entries(input.planned.elementsById)) {
       const apiId = input.planned.apiIdByElement[elementId];
       if (apiId === undefined) continue;
@@ -209,7 +241,7 @@ async function processSlide(input: ProcessSlideInput): Promise<ProcessSlideOutpu
           apiObjectId: apiId,
           slideObjectId: input.planned.slideObjectId,
           goldenPng,
-          goldenSize: { width: 1600, height: 900 },
+          goldenSize,
           apiClient: input.apiClient,
         });
         await safeBatchUpdate(input.apiClient, {
@@ -266,7 +298,15 @@ async function processSlide(input: ProcessSlideInput): Promise<ProcessSlideOutpu
   let residualCount = 0;
   const residualElements = loop.finalDiff.perElement.filter((e) => !e.inTolerance);
   if (residualElements.length > 0) {
-    const goldenPng = await loadGoldenPng(input);
+    // B2: re-use the thumbnail's actual dimensions for the residual crop
+    // so the rasterized fallback aligns with what Slides will render.
+    const apiThumb = await input.apiClient.fetchSlideThumbnail({
+      presentationId: input.presentationId,
+      slideObjectId: input.planned.slideObjectId,
+    });
+    apiCalls += 1;
+    const goldenSize = { width: apiThumb.width, height: apiThumb.height };
+    const goldenPng = await loadGoldenPng(input, goldenSize);
     for (const r of residualElements) {
       const el = input.planned.elementsById[r.elementId];
       const apiId = input.planned.apiIdByElement[r.elementId];
@@ -277,7 +317,7 @@ async function processSlide(input: ProcessSlideInput): Promise<ProcessSlideOutpu
           apiObjectId: apiId,
           slideObjectId: input.planned.slideObjectId,
           goldenPng,
-          goldenSize: { width: 1600, height: 900 },
+          goldenSize,
           apiClient: input.apiClient,
         });
         await safeBatchUpdate(input.apiClient, {
@@ -459,11 +499,62 @@ function walkElements(elements: Element[]): Element[] {
   return out;
 }
 
-async function loadGoldenPng(input: ProcessSlideInput): Promise<Uint8Array> {
-  return await input.renderer.renderSlide(input.doc, input.planned.slideId, {
-    width: 1600,
-    height: 900,
-  });
+async function loadGoldenPng(
+  input: ProcessSlideInput,
+  size: { width: number; height: number },
+): Promise<Uint8Array> {
+  return await input.renderer.renderSlide(input.doc, input.planned.slideId, size);
+}
+
+/**
+ * Normalize a `presentations.get` response into the `existingPages` map
+ * shape `buildPlan` expects: keyed by slide objectId, values are arrays of
+ * `PreferenceApiPageElement` (the planner's candidate type).
+ *
+ * Spec §5 step 1. Without this map, option (b) (duplicate-similar) never
+ * fires; the planner collapses to options (a) → (c).
+ */
+function existingPagesFromApi(
+  pres: ApiPresentation | undefined,
+): Record<string, PreferenceApiPageElement[] | undefined> {
+  const out: Record<string, PreferenceApiPageElement[] | undefined> = {};
+  if (pres?.slides === undefined) return out;
+  for (const slide of pres.slides) {
+    if (slide.objectId === undefined) continue;
+    const elements: PreferenceApiPageElement[] = [];
+    for (const pe of slide.pageElements ?? []) {
+      // Pluck only the fields the planner reads. Dropping unknown fields
+      // keeps the map narrow and avoids carrying server-side state we
+      // don't need.
+      const entry: PreferenceApiPageElement = {};
+      if (pe.objectId !== undefined) entry.objectId = pe.objectId;
+      if (pe.size !== undefined) {
+        const size: PreferenceApiPageElement['size'] = {};
+        if (pe.size.width?.magnitude !== undefined) {
+          size.width = { magnitude: pe.size.width.magnitude };
+        }
+        if (pe.size.height?.magnitude !== undefined) {
+          size.height = { magnitude: pe.size.height.magnitude };
+        }
+        entry.size = size;
+      }
+      if (pe.transform !== undefined) {
+        const tf: PreferenceApiPageElement['transform'] = {};
+        if (pe.transform.translateX !== undefined) tf.translateX = pe.transform.translateX;
+        if (pe.transform.translateY !== undefined) tf.translateY = pe.transform.translateY;
+        entry.transform = tf;
+      }
+      if (pe.shape !== undefined) {
+        entry.shape = pe.shape;
+      }
+      if (pe.image !== undefined) entry.image = pe.image;
+      if (pe.table !== undefined) entry.table = pe.table;
+      if (pe.elementGroup !== undefined) entry.elementGroup = pe.elementGroup;
+      elements.push(entry);
+    }
+    out[slide.objectId] = elements;
+  }
+  return out;
 }
 
 /**

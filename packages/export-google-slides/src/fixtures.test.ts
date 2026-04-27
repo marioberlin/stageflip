@@ -24,6 +24,7 @@ interface Fixture {
   doc: Document;
   tier?: 'fully-editable' | 'hybrid' | 'pixel-perfect-visual';
   observations?: Record<string, Array<{ observed: ObservedBbox[]; perceptualDiff: number }>>;
+  maxIterations?: number;
   /** Predicate to assert against the result. */
   expect: (r: import('./types.js').ExportGoogleSlidesResult) => void;
 }
@@ -110,6 +111,7 @@ const FIXTURES: Fixture[] = [
   {
     name: 'hybrid-with-residual (1 slide, 1 residual element → image-fallback)',
     tier: 'hybrid',
+    maxIterations: 2,
     doc: {
       ...baseDocMeta,
       content: {
@@ -292,6 +294,7 @@ describe('fixtures end-to-end', () => {
         apiClient,
       };
       if (fx.tier !== undefined) opts.tier = fx.tier;
+      if (fx.maxIterations !== undefined) opts.maxIterations = fx.maxIterations;
       const result = await exportGoogleSlides(fx.doc, opts);
       fx.expect(result);
     });

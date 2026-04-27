@@ -3,9 +3,23 @@
 // fetch-diff-adjust-apply cycle for one slide, up to `maxIterations`. At
 // loop exit returns the final diff so the orchestrator can decide which
 // elements fall into image-fallback (§7).
+//
+// Production path (B1 fix): each iteration fetches the rendered Slides PNG,
+// renders the canonical-side golden at the SAME dimensions (B2 fix), runs
+// `computePixelDiff` → `findRegions` → `deriveObservations`. The loop
+// produces non-zero `iterations` and fires `LF-GSLIDES-EXPORT-CONVERGENCE-STALLED` /
+// `LF-GSLIDES-EXPORT-FALLBACK` against real pixel observations.
+//
+// Test seam: `observationsByIteration[i]`, when defined, supersedes the
+// pixel-derived observation for iteration i. Tests use this to drive
+// deterministic unit-test paths (no PNG synthesis required). When the seam
+// returns `undefined` for the iteration, the production pipeline runs.
 
 import type { Document } from '@stageflip/schema';
 import type { SlidesMutationClient } from '../api/client.js';
+import { findRegions } from '../diff/connected-components.js';
+import { deriveObservations } from '../diff/observe.js';
+import { computePixelDiff } from '../diff/pixel-diff.js';
 import type { ConvergenceTolerances, RendererCdpProvider } from '../types.js';
 import { planAdjustments } from './adjust.js';
 import type { ObservedBbox, SlideDiff } from './diff.js';
@@ -23,12 +37,13 @@ export interface RunLoopInput {
   tolerances: ConvergenceTolerances;
   maxIterations: number;
   /**
-   * Test seam: per-iteration observed bboxes + perceptual diff. Production
-   * wires through a connected-components pass on the Slides PNG; tests
-   * supply canned values so the loop is deterministic without a real
-   * pixel-diff engine. Index 0 is the post-initial-apply observation.
+   * Test seam: per-iteration observed bboxes + perceptual diff. When defined
+   * for an iteration, supersedes the pixel-diff path. Production callers
+   * pass `[]` (or undefined) and the loop uses the real
+   * pixel-diff → connected-components → observation pipeline. Index 0 is
+   * the post-initial-apply observation.
    */
-  observationsByIteration: Array<{
+  observationsByIteration?: Array<{
     observed: ObservedBbox[];
     perceptualDiff: number;
   }>;
@@ -53,26 +68,45 @@ export async function runConvergenceLoop(input: RunLoopInput): Promise<RunLoopRe
   let stalled = false;
   let lastDiff: SlideDiff | undefined;
   let apiCalls = 0;
+  const seam = input.observationsByIteration ?? [];
   while (iter < input.maxIterations) {
-    const obs = input.observationsByIteration[iter];
-    if (obs === undefined) break;
-    // Fetch the rendered Slides PNG (counted but not used in tests; the
-    // canned observed bboxes substitute for the connected-components pass).
-    await input.apiClient.fetchSlideThumbnail({
+    // Fetch the rendered Slides PNG. B2: capture actual returned dimensions
+    // so the renderer can produce a matching golden — `LARGE` thumbnails
+    // are 1600 px wide with the height varying by aspect ratio
+    // (16:9 → 900, 4:3 → 1200, etc.).
+    const apiPng = await input.apiClient.fetchSlideThumbnail({
       presentationId: input.presentationId,
       slideObjectId: input.slideObjectId,
     });
     apiCalls += 1;
 
-    // Render the canonical-side golden — same dimensions as the API thumb.
-    // The result is currently unused in the canned-observed flow but keeps
-    // the renderer wired up for production correctness + AC #5 pinning.
-    await input.renderer.renderSlide(input.doc, input.slideId, { width: 1600, height: 900 });
+    // Render the canonical-side golden at the SAME dimensions as the API
+    // thumbnail. Mismatched dimensions would cause `computePixelDiff` to
+    // throw — and even if we accommodated, the diff math depends on shared
+    // coordinate space.
+    const goldenPng = await input.renderer.renderSlide(input.doc, input.slideId, {
+      width: apiPng.width,
+      height: apiPng.height,
+    });
+
+    // Test seam OR production pipeline.
+    const seamObs = seam[iter];
+    let observed: ObservedBbox[];
+    let perceptualDiff: number;
+    if (seamObs !== undefined) {
+      observed = seamObs.observed;
+      perceptualDiff = seamObs.perceptualDiff;
+    } else {
+      const pix = computePixelDiff(apiPng.bytes, goldenPng);
+      const regions = findRegions(pix.diffMask, pix.width, pix.height);
+      observed = deriveObservations({ elementsById: input.elementsById, regions });
+      perceptualDiff = pix.perceptualDiff;
+    }
 
     const diff = computeDiff({
       elementsById: input.elementsById,
-      observed: obs.observed,
-      perceptualDiff: obs.perceptualDiff,
+      observed,
+      perceptualDiff,
       tolerances: input.tolerances,
     });
     lastDiff = diff;
@@ -81,7 +115,7 @@ export async function runConvergenceLoop(input: RunLoopInput): Promise<RunLoopRe
 
     const observedById: Record<string, { x: number; y: number; width: number; height: number }> =
       {};
-    for (const o of obs.observed) {
+    for (const o of observed) {
       observedById[o.elementId] = { x: o.x, y: o.y, width: o.width, height: o.height };
     }
     const adjustments = planAdjustments({

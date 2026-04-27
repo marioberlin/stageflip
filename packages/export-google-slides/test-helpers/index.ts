@@ -61,9 +61,14 @@ export interface BuildClientOptions {
 
 export function buildRecordingClient(opts: BuildClientOptions = {}): RecordingMutationClient {
   const presentationId = opts.presentationId ?? 'test-presentation-id';
-  const thumbnailBytes = opts.thumbnailBytes ?? makePlaceholderPng();
+  // Default thumbnail dimensions match the renderer-stub's default 1600×900
+  // golden so production-path tests (no `observations` seam) produce a
+  // dimensions-matched pixel-diff. Tests that exercise other dimensions
+  // (e.g. 4:3 / 1600×1200) override `thumbnailWidth`/`thumbnailHeight` AND
+  // pass a matching `thumbnailBytes` PNG.
   const thumbnailWidth = opts.thumbnailWidth ?? 1600;
   const thumbnailHeight = opts.thumbnailHeight ?? 900;
+  const thumbnailBytes = opts.thumbnailBytes ?? makeUniformPng(thumbnailWidth, thumbnailHeight);
   const driveFileId = opts.driveFileId ?? 'test-drive-file-id';
   const batchUpdates: RecordingMutationClient['batchUpdates'] = [];
   const driveUploads: RecordingMutationClient['driveUploads'] = [];
