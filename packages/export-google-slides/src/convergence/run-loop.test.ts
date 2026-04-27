@@ -4,8 +4,8 @@
 
 import type { Document, Element } from '@stageflip/schema';
 import { describe, expect, it } from 'vitest';
+import { buildRecordingClient, makeUniformPng } from '../../test-helpers/index.js';
 import { createStubRenderer } from '../renderer/stub.js';
-import { buildRecordingClient, makeUniformPng } from '../test-helpers.js';
 import { DEFAULT_TOLERANCES } from '../types.js';
 import { runConvergenceLoop } from './run-loop.js';
 

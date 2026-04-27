@@ -3,8 +3,8 @@
 
 import type { Element } from '@stageflip/schema';
 import { describe, expect, it } from 'vitest';
+import { makeUniformPng } from '../../test-helpers/index.js';
 import type { SlidesMutationClient } from '../api/client.js';
-import { makeUniformPng } from '../test-helpers.js';
 import { imageFallbackForResidual } from './image-fallback.js';
 
 const stubElement: Element = {

@@ -6,8 +6,9 @@
 // production wires through the default fetch-driven implementation.
 
 import type { GoogleAuthProvider } from '@stageflip/import-google-slides';
-import { fetchSlideThumbnail } from '@stageflip/import-google-slides';
+import { fetchPresentation, fetchSlideThumbnail } from '@stageflip/import-google-slides';
 import type {
+  ApiPresentation,
   BatchUpdateRequest,
   BatchUpdateResponse,
   CreatePresentationResponse,
@@ -44,6 +45,13 @@ export interface SlidesMutationClient {
     presentationId: string;
     slideObjectId: string;
   }): Promise<{ bytes: Uint8Array; width: number; height: number }>;
+  /**
+   * `presentations.get` — read existing presentation state. The orchestrator
+   * uses this to populate `buildPlan.existingPages` so option (b)
+   * (duplicate-similar) can match against the live target slide. Spec §5
+   * step 1.
+   */
+  getPresentation(opts: { presentationId: string }): Promise<ApiPresentation>;
 }
 
 export interface DefaultMutationClientOptions {
@@ -153,6 +161,15 @@ export function createDefaultMutationClient(
       if (opts.apiBaseUrl !== undefined) fetchOpts.apiBaseUrl = opts.apiBaseUrl;
       if (opts.fetchImpl !== undefined) fetchOpts.fetchImpl = opts.fetchImpl;
       return fetchSlideThumbnail(c.presentationId, c.slideObjectId, 'LARGE', opts.auth, fetchOpts);
+    },
+    async getPresentation(c) {
+      const fetchOpts: { apiBaseUrl?: string; fetchImpl?: typeof fetch } = {};
+      if (opts.apiBaseUrl !== undefined) fetchOpts.apiBaseUrl = opts.apiBaseUrl;
+      if (opts.fetchImpl !== undefined) fetchOpts.fetchImpl = opts.fetchImpl;
+      // Cast: T-244's `ApiPresentation` shape is structurally a superset of
+      // ours (extra optional fields like `slideProperties` we don't read).
+      const raw = (await fetchPresentation(c.presentationId, opts.auth, fetchOpts)) as unknown;
+      return raw as ApiPresentation;
     },
   };
 }

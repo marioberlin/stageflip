@@ -131,4 +131,29 @@ describe('createDefaultMutationClient', () => {
     expect(captured?.url).toMatch(/uploadType=multipart/);
     expect(captured?.contentType).toMatch(/^multipart\/related; boundary=/);
   });
+
+  it('getPresentation: GETs /presentations/<id> and returns the JSON body', async () => {
+    const calls: Array<{ url: string }> = [];
+    const fetchImpl: typeof fetch = async (url) => {
+      calls.push({ url: String(url) });
+      return new Response(
+        JSON.stringify({
+          presentationId: 'p1',
+          slides: [{ objectId: 'slide1', pageElements: [] }],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      );
+    };
+    const client = createDefaultMutationClient({
+      auth: {
+        async getAccessToken() {
+          return 'tok';
+        },
+      },
+      fetchImpl,
+    });
+    const r = await client.getPresentation({ presentationId: 'p1' });
+    expect(calls[0]?.url).toMatch(/\/presentations\/p1$/);
+    expect(r.slides).toHaveLength(1);
+  });
 });

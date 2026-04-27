@@ -29,11 +29,10 @@ function listSourceFiles(dir: string): string[] {
       continue;
     }
     if (!full.endsWith('.ts')) continue;
-    // Skip tests + helpers (the test layer is allowed to use any timing
-    // primitive). The grep is the source layer's discipline.
+    // Skip tests (the test layer is allowed to use any timing primitive).
+    // The grep is the source layer's discipline. Test helpers live outside
+    // `src/` (in `test-helpers/`) so they aren't reached at all.
     if (full.endsWith('.test.ts')) continue;
-    if (full.endsWith('test-helpers.ts')) continue;
-    if (full.endsWith('determinism.test.ts')) continue;
     out.push(full);
   }
   return out;
@@ -43,8 +42,8 @@ describe('AC #28: source-level determinism', () => {
   it('packages/export-google-slides/src/** uses no Date.now / Math.random / performance.now / setTimeout / setInterval', () => {
     const files = listSourceFiles(SRC_ROOT);
     const violations: Array<{ file: string; pattern: string; line: number; text: string }> = [];
-    for (const f of files) {
-      const txt = readFileSync(f, 'utf8');
+    for (const filePath of files) {
+      const txt = readFileSync(filePath, 'utf8');
       const lines = txt.split('\n');
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i] ?? '';
@@ -55,11 +54,11 @@ describe('AC #28: source-level determinism', () => {
         if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')) {
           continue;
         }
-        for (const f of FORBIDDEN) {
-          if (f.pattern.test(line)) {
+        for (const forbidden of FORBIDDEN) {
+          if (forbidden.pattern.test(line)) {
             violations.push({
-              file: relative(SRC_ROOT, files[0] ?? ''),
-              pattern: f.name,
+              file: relative(SRC_ROOT, filePath),
+              pattern: forbidden.name,
               line: i + 1,
               text: line.trim(),
             });

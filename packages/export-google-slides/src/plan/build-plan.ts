@@ -145,20 +145,17 @@ function emitElement(ctx: EmitContext): void {
       const apiObjectId = `${el.inheritsFrom.templateId}_${el.inheritsFrom.placeholderIdx}`;
       ctx.apiIdByElement[el.id] = apiObjectId;
       ctx.strategiesByElement[el.id] = 'placeholder-update';
-      ctx.requests.push({
-        elementId: el.id,
-        slideObjectId: ctx.slideObjectId,
-        strategy: 'placeholder-update',
-        request: {
-          updateShapeProperties: {
-            objectId: apiObjectId,
-            fields: 'shapeBackgroundFill',
-            shapeProperties: shapePropertiesFromElement(el),
-          },
-        },
-      });
-      // For text elements, also issue an InsertText so the placeholder
-      // body reflects the canonical text.
+      // Spec §5(a): preserves theme + font inheritance. The placeholder
+      // already exists on the layout/master with the inherited shape props;
+      // emitting `updateShapeProperties` here would reset whatever field is
+      // listed in `fields` — including `shapeBackgroundFill` resets the
+      // theme-driven background to the empty `shapeProperties: {}` payload.
+      // We therefore omit the shape-props update at this tier and rely on
+      // the inherited values. Future work: emit a targeted update only when
+      // the canonical carries explicit overrides differing from the
+      // placeholder's props (would require diffing).
+      // For text elements, the placeholder body reflects the canonical text
+      // via InsertText — that's the only mutation needed in option (a).
       if (el.type === 'text') {
         ctx.requests.push({
           elementId: el.id,
@@ -413,14 +410,6 @@ function resolveInheritedPlaceholder(
     return master.placeholders[ref.placeholderIdx];
   }
   return undefined;
-}
-
-function shapePropertiesFromElement(_el: Element): Record<string, unknown> {
-  // T-252 spec §5: UpdateShapeProperties preserves theme bindings — we
-  // intentionally omit `shapeBackgroundFill` overrides at the placeholder
-  // tier so the inherited theme propagates. The empty record is the minimal
-  // valid shape.
-  return {};
 }
 
 function affineFromElement(el: Element): AffineTransform {

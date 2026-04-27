@@ -7,10 +7,10 @@
 import type { GoogleAuthProvider } from '@stageflip/import-google-slides';
 import type { Document } from '@stageflip/schema';
 import { describe, expect, it } from 'vitest';
+import { buildRecordingClient, makeUniformPng } from '../test-helpers/index.js';
 import type { ObservedBbox } from './convergence/diff.js';
 import { exportGoogleSlides } from './exportGoogleSlides.js';
 import { createStubRenderer } from './renderer/stub.js';
-import { buildRecordingClient, makeUniformPng } from './test-helpers.js';
 
 const stubAuth: GoogleAuthProvider = {
   async getAccessToken() {

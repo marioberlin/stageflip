@@ -160,16 +160,22 @@ async function processSlide(input: ProcessSlideInput): Promise<ProcessSlideOutpu
     // Map per-request errors into LF-GSLIDES-EXPORT-API-ERROR. AC #25.
     if (applyResult.errors !== undefined && applyResult.errors.length > 0) {
       for (const err of applyResult.errors) {
-        const planned = input.planned.requests[err.requestIndex];
+        // requestIndex === -1 sentinel = whole-batch failure (thrown by the
+        // underlying client), no specific request to attribute to. We emit
+        // the flag without an elementId/originalSnippet rather than
+        // misattributing to requests[0].
+        const planned =
+          err.requestIndex >= 0 ? input.planned.requests[err.requestIndex] : undefined;
         const elementId = planned?.elementId ?? '';
-        input.flags.push(
-          emitLossFlag({
-            code: 'LF-GSLIDES-EXPORT-API-ERROR',
-            location: { slideId: input.planned.slideId, elementId },
-            message: err.message,
-            originalSnippet: JSON.stringify(planned?.request ?? {}),
-          }),
-        );
+        const flagInput: Parameters<typeof emitLossFlag>[0] = {
+          code: 'LF-GSLIDES-EXPORT-API-ERROR',
+          location: { slideId: input.planned.slideId, elementId },
+          message: err.message,
+        };
+        if (planned !== undefined) {
+          flagInput.originalSnippet = JSON.stringify(planned.request);
+        }
+        input.flags.push(emitLossFlag(flagInput));
       }
     }
   }
@@ -350,12 +356,17 @@ async function safeBatchUpdate(
   try {
     return await apiClient.batchUpdate(args);
   } catch (err) {
+    // Sentinel: the whole batch failed (e.g. network/HTTP throw), not a
+    // specific request index. -1 distinguishes from per-request errors that
+    // the API can return with `requestIndex: 0..N-1`. The orchestrator's
+    // `LF-GSLIDES-EXPORT-API-ERROR` emitter handles -1 as "no specific
+    // request id".
     return {
       presentationId: args.presentationId,
       replies: [],
       errors: [
         {
-          requestIndex: 0,
+          requestIndex: -1,
           message: err instanceof Error ? err.message : String(err),
         },
       ],

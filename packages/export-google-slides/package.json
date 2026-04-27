@@ -20,7 +20,7 @@
     "build": "tsup src/index.ts --dts --format esm,cjs --clean",
     "dev": "tsup src/index.ts --dts --format esm,cjs --watch",
     "typecheck": "tsc --noEmit",
-    "lint": "biome check src",
+    "lint": "biome check src test-helpers",
     "test": "vitest run"
   },
   "dependencies": {

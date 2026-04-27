@@ -35,7 +35,7 @@ function makeDoc(overrides: Partial<Document> = {}): Document {
 }
 
 describe('buildPlan — AC #7-#11', () => {
-  it('AC #7: inheritsFrom-aware emits UpdateShapePropertiesRequest (placeholder-update)', () => {
+  it('AC #7: inheritsFrom-aware text placeholder emits InsertText only (option a, no shape-props reset)', () => {
     const doc = makeDoc({
       layouts: [
         {
@@ -86,11 +86,63 @@ describe('buildPlan — AC #7-#11', () => {
     expect(plan).toHaveLength(1);
     expect(plan[0]?.strategiesByElement.e1).toBe('placeholder-update');
     const reqs = plan[0]?.requests.map((r) => Object.keys(r.request)[0]);
-    expect(reqs).toContain('updateShapeProperties');
-    // Text content also gets InsertText.
+    // Spec §5(a): we do NOT emit `updateShapeProperties` here — that would
+    // reset the inherited theme bindings on the placeholder. We only push
+    // the canonical text into the placeholder's body via `insertText`.
     expect(reqs).toContain('insertText');
-    // No CreateShape.
+    expect(reqs?.includes('updateShapeProperties')).toBe(false);
     expect(reqs?.includes('createShape')).toBe(false);
+  });
+
+  it('AC #7 (corollary): inheritsFrom-aware non-text placeholder emits zero requests (theme inherit)', () => {
+    const doc = makeDoc({
+      layouts: [
+        {
+          id: 'layout1',
+          name: 'BgRect',
+          masterId: 'master1',
+          placeholders: [
+            {
+              id: 'phRect',
+              type: 'shape',
+              shape: 'rect',
+              transform: { x: 0, y: 0, width: 100, height: 40, rotation: 0, opacity: 1 },
+              visible: true,
+              locked: false,
+              animations: [],
+            },
+          ],
+        },
+      ],
+      content: {
+        mode: 'slide',
+        slides: [
+          {
+            id: 'slide_1',
+            layoutId: 'layout1',
+            elements: [
+              {
+                id: 'eRect',
+                type: 'shape',
+                shape: 'rect',
+                transform: { x: 10, y: 20, width: 200, height: 50, rotation: 0, opacity: 1 },
+                visible: true,
+                locked: false,
+                animations: [],
+                inheritsFrom: { templateId: 'layout1', placeholderIdx: 0 },
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const plan = buildPlan(doc, {
+      existingPages: { slide_1: [] },
+      slideObjectIdBySlideId: { slide_1: 'slide_1' },
+    });
+    expect(plan[0]?.strategiesByElement.eRect).toBe('placeholder-update');
+    // The inherited shape already exists on the layout — no mutations needed.
+    expect(plan[0]?.requests).toHaveLength(0);
   });
 
   it('AC #8: similar object on target slide emits DuplicateObjectRequest', () => {

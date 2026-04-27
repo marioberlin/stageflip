@@ -163,6 +163,43 @@ export interface CreatePresentationResponse {
   slides?: Array<{ objectId: string }>;
 }
 
+/**
+ * `presentations.get` response slice. Only the fields T-252's plan emitter
+ * inspects to drive option (a) / option (b) preference. Re-uses the
+ * `PreferenceApiPageElement` shape from `plan/preference.ts` for `pageElements`.
+ */
+export interface ApiPresentation {
+  presentationId?: string;
+  pageSize?: { width: Magnitude; height: Magnitude };
+  slides?: ApiPage[];
+  layouts?: ApiPage[];
+  masters?: ApiPage[];
+  title?: string;
+}
+
+export interface ApiPage {
+  objectId?: string;
+  pageType?: 'SLIDE' | 'LAYOUT' | 'MASTER' | 'NOTES' | 'NOTES_MASTER';
+  pageElements?: ApiPageElementSnapshot[];
+}
+
+/**
+ * Minimal page-element snapshot the planner reads. Mirrors T-244's
+ * `ApiPageElement` (which is package-internal there) — we keep our own copy
+ * to avoid coupling to an unexported symbol.
+ */
+export interface ApiPageElementSnapshot {
+  objectId?: string;
+  size?: { width?: Magnitude; height?: Magnitude };
+  transform?: AffineTransform;
+  shape?: {
+    text?: { textElements?: Array<{ textRun?: { content?: string } }> };
+  };
+  image?: { contentUrl?: string };
+  table?: { rows?: number; columns?: number };
+  elementGroup?: { children?: ApiPageElementSnapshot[] };
+}
+
 /** Drive `files.create` response — minimal slice. */
 export interface DriveFileCreateResponse {
   id: string;
