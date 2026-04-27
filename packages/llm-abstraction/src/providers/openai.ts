@@ -4,7 +4,7 @@
 // with `tool_call_id`, and tool_use blocks become assistant `tool_calls`.
 
 import OpenAI from 'openai';
-import { classifyError } from '../errors.js';
+import { LLMError, classifyError } from '../errors.js';
 import type {
   LLMContentBlock,
   LLMMessage,
@@ -204,6 +204,18 @@ function flattenMessages(request: LLMRequest): OpenAIMessage[] {
 function translateMessage(message: LLMMessage): OpenAIMessage[] {
   if (typeof message.content === 'string') {
     return [{ role: mapRole(message.role), content: message.content }];
+  }
+
+  // T-246 spec §1: image-block binding for GPT-4o Vision is a follow-on
+  // task. For now, throw `unsupported` so callers get a clear signal rather
+  // than a malformed OpenAI request.
+  for (const block of message.content) {
+    if (block.type === 'image') {
+      throw new LLMError('OpenAI provider does not yet support image content blocks', {
+        kind: 'unsupported',
+        provider: 'openai',
+      });
+    }
   }
 
   const out: OpenAIMessage[] = [];

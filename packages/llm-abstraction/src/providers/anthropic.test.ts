@@ -172,6 +172,32 @@ describe('createAnthropicProvider.complete', () => {
     expect(spy.mock.calls[0]?.[1]).toEqual({ signal: controller.signal });
   });
 
+  it('AC #4: throws LLMError(unsupported) when given an image content block', async () => {
+    const client = fakeClient(async () => ({
+      id: 'msg_x',
+      model: 'claude-opus-4-7',
+      content: [],
+      stop_reason: 'end_turn',
+      usage: { input_tokens: 0, output_tokens: 0 },
+    }));
+    const provider = createAnthropicProvider({ client });
+    const caught = await provider
+      .complete({
+        model: 'claude-opus-4-7',
+        max_tokens: 100,
+        messages: [
+          {
+            role: 'user',
+            content: [{ type: 'image', mediaType: 'image/png', data: 'X' }],
+          },
+        ],
+      })
+      .catch((e) => e);
+    expect(caught).toBeInstanceOf(LLMError);
+    expect(caught.kind).toBe('unsupported');
+    expect(caught.provider).toBe('anthropic');
+  });
+
   it('normalises unknown stop_reason values to end_turn', async () => {
     const client = fakeClient(async () => ({
       id: 'msg_4',

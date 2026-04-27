@@ -12,6 +12,7 @@ export type LLMErrorKind =
   | 'invalid_request'
   | 'server_error'
   | 'network'
+  | 'unsupported'
   | 'unknown';
 
 export interface LLMErrorOptions {

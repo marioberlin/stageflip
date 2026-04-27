@@ -5,8 +5,27 @@ export type LLMProviderName = 'anthropic' | 'google' | 'openai';
 
 export type LLMRole = 'system' | 'user' | 'assistant' | 'tool';
 
+/**
+ * Supported image media types for the multimodal `image` content block.
+ * Constrained to the formats Gemini, Claude, and GPT-4o all accept.
+ */
+export type LLMImageMediaType = 'image/png' | 'image/jpeg' | 'image/webp';
+
 export type LLMContentBlock =
   | { type: 'text'; text: string }
+  | {
+      /**
+       * Multimodal image input. Request-side only — not yielded by stream
+       * events (image inputs are never streamed back). `data` is base64-encoded
+       * raw image bytes (no `data:` URL prefix). T-246 added this for the
+       * Gemini multimodal AI-QC convergence loop; Anthropic and OpenAI
+       * providers throw `LLMError({kind: 'unsupported'})` until follow-on
+       * tasks bind their image-input shapes.
+       */
+      type: 'image';
+      mediaType: LLMImageMediaType;
+      data: string;
+    }
   | { type: 'tool_use'; id: string; name: string; input: unknown }
   | {
       type: 'tool_result';

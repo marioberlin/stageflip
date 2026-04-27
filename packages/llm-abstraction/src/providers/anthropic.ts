@@ -4,7 +4,7 @@
 // the other providers translate into.
 
 import Anthropic from '@anthropic-ai/sdk';
-import { classifyError } from '../errors.js';
+import { LLMError, classifyError } from '../errors.js';
 import type {
   LLMContentBlock,
   LLMMessage,
@@ -121,6 +121,14 @@ function translateContentBlock(block: LLMContentBlock): unknown {
   switch (block.type) {
     case 'text':
       return { type: 'text', text: block.text };
+    case 'image':
+      // T-246 spec §1: image-block binding for Anthropic Vision is a
+      // follow-on task. For now, throw `unsupported` so callers get a
+      // clear signal rather than a malformed Anthropic API request.
+      throw new LLMError('Anthropic provider does not yet support image content blocks', {
+        kind: 'unsupported',
+        provider: 'anthropic',
+      });
     case 'tool_use':
       return {
         type: 'tool_use',
