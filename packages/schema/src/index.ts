@@ -4,6 +4,7 @@
 // input, every edit, every export round-trips through these types.
 
 export * from './animations.js';
+export * from './components.js';
 export * from './content/index.js';
 export * from './document.js';
 export * from './elements/index.js';

@@ -4,6 +4,7 @@
 // through `documentSchema`.
 
 import { z } from 'zod';
+import { layoutDescriptorSchema, slotDefinitionSchema } from './components.js';
 import { contentSchema } from './content/index.js';
 import { slideLayoutSchema, slideMasterSchema } from './templates.js';
 import { themeSchema } from './theme.js';
@@ -34,16 +35,21 @@ export const variablesSchema = z.record(z.union([z.string(), z.number(), z.boole
 export type Variables = z.infer<typeof variablesSchema>;
 
 /**
- * Component definition. Placeholder shape — T-249 theme learning + the RIR
- * compiler's component-expand pass fill out the contract. Today we accept
- * any JSON shape so imports can store component parameters without needing
- * every import adapter to know the final shape.
+ * Component definition. T-249's design-system pipeline emits these from
+ * recurring-grouping detection (step 5); the body carries a slot list +
+ * a normalized layout descriptor. Existing documents with `components: {}`
+ * continue to parse — only documents that opt into components ever produce
+ * a populated body, and T-249 is the first emitter.
  */
 export const componentDefinitionSchema = z
   .object({
     id: z.string().min(1),
-    /** Component body is a JSON-safe blob for now. Typed by T-249. */
-    body: z.unknown(),
+    body: z
+      .object({
+        slots: z.array(slotDefinitionSchema).default([]),
+        layout: layoutDescriptorSchema,
+      })
+      .strict(),
   })
   .strict();
 export type ComponentDefinition = z.infer<typeof componentDefinitionSchema>;
