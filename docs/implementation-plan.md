@@ -557,12 +557,12 @@ phase. Renumbered / carried as T-137 / T-138 in Phase 6.
 | T-265 | `@stageflip/runtimes/blender` — bake-tier ClipRuntime; worker Docker + GPU drivers; BullMQ queue | L |
 | T-266 | Render farm deployment (CoreWeave/Paperspace/self-host) | L |
 | T-267 | Stripe billing + usage metering | L |
-| T-268 | Security review + pentest | L |
+| ~~T-268~~ | ~~Security review + pentest~~ — **DEFERRED 2026-04-28**: vendor engagement (firm, scope, budget) is an operational/business decision, not an orchestrator call. T-264 ships the telemetry a pentester would inspect, so the prerequisite is met; the call is timing + procurement. Revisit post-prod-launch. | — |
 | T-269 | Load testing (K6) | M |
 | T-270 | `@stageflip/storage-postgres` — proves abstraction holds (Supabase) | M |
 | T-271 | EU Firestore region for GDPR data residency | M |
 | T-272 | Backup + point-in-time recovery | M |
-| T-273 | BigQuery telemetry export | M |
+| ~~T-273~~ | ~~BigQuery telemetry export~~ — **DEFERRED 2026-04-28**: T-264 just shipped; no telemetry is flowing to export yet. Premature for current scale; OTel + pino logs can be wired to BigQuery later without architectural disruption. T-267 reconciliation pivots to Firestore aggregates instead. | — |
 
 ## Phase 13 — Premium Motion Library & Frontier Runtime (Three Parallel Tracks)
 
