@@ -22,5 +22,10 @@
     "typecheck": "tsc --noEmit",
     "lint": "biome check src",
     "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@stageflip/schema": "workspace:*",
+    "@stageflip/storage": "workspace:*",
+    "yjs": "13.6.27"
   }
 }
