@@ -10,4 +10,5 @@ export default defineWorkspace([
   'packages/runtimes/*',
   'packages/profiles/*',
   'apps/*',
+  'scripts',
 ]);
