@@ -55,10 +55,18 @@
       ]
     }
   ],
-  "firestore": {
-    "rules": "firebase/firestore.rules",
-    "indexes": "firebase/firestore.indexes.json"
-  },
+  "firestore": [
+    {
+      "database": "(default)",
+      "rules": "firebase/firestore.rules",
+      "indexes": "firebase/firestore.indexes.json"
+    },
+    {
+      "database": "eu-west",
+      "rules": "firebase/firestore-eu.rules",
+      "indexes": "firebase/firestore.indexes.json"
+    }
+  ],
   "storage": {
     "rules": "firebase/storage.rules"
   }

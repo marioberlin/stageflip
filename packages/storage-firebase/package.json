@@ -24,6 +24,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@stageflip/auth-schema": "workspace:^",
     "@stageflip/import-pptx": "workspace:^",
     "firebase-admin": "13.0.1"
   },

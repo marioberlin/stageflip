@@ -26,10 +26,16 @@ interface HostingEntry {
   readonly rewrites?: unknown[];
 }
 
+interface FirestoreDbEntry {
+  readonly database: string;
+  readonly rules: string;
+  readonly indexes: string;
+}
+
 describe('firebase.json', () => {
   const cfg = readJson<{
     hosting: HostingEntry[];
-    firestore: { rules: string; indexes: string };
+    firestore: FirestoreDbEntry[];
     storage: { rules: string };
   }>('firebase.json');
 
@@ -53,8 +59,19 @@ describe('firebase.json', () => {
     }
   });
 
-  it('points firestore + storage rules at the firebase/ directory', () => {
-    expect(cfg.firestore.rules).toBe('firebase/firestore.rules');
+  it('points the (default) Firestore at firebase/firestore.rules', () => {
+    const def = cfg.firestore.find((f) => f.database === '(default)');
+    expect(def?.rules).toBe('firebase/firestore.rules');
+    expect(def?.indexes).toBe('firebase/firestore.indexes.json');
+  });
+
+  it('declares the eu-west database with its own rules file (T-271)', () => {
+    const eu = cfg.firestore.find((f) => f.database === 'eu-west');
+    expect(eu?.rules).toBe('firebase/firestore-eu.rules');
+    expect(eu?.indexes).toBe('firebase/firestore.indexes.json');
+  });
+
+  it('points storage rules at the firebase/ directory', () => {
     expect(cfg.storage.rules).toBe('firebase/storage.rules');
   });
 });
