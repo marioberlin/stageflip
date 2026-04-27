@@ -28,6 +28,7 @@ describe('emitLossFlag (gslides wrapper)', () => {
       'LF-GSLIDES-LOW-MATCH-CONFIDENCE',
       'LF-GSLIDES-PLACEHOLDER-INLINED',
       'LF-GSLIDES-TABLE-MERGE-LOST',
+      'LF-GSLIDES-AI-QC-CAP-HIT',
     ];
     for (const code of codes) {
       expect(CODE_DEFAULTS[code]).toBeDefined();
