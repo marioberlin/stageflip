@@ -4,7 +4,7 @@ id: skills/stageflip/reference/import-google-slides
 tier: reference
 status: substantive
 last_updated: 2026-04-27
-owner_task: T-244
+owner_task: T-246
 related:
   - skills/stageflip/workflows/import-google-slides
   - skills/stageflip/concepts/loss-flags
@@ -30,6 +30,15 @@ import {
   CvProviderError,
   resolveAssets,
   gslidesUrlFetcher,
+  // T-246 AI-QC convergence pass
+  runAiQcConvergence,
+  createStubGeminiProvider,
+  AIQC_SYSTEM_PROMPT,
+  AIQC_RESPONSE_SCHEMA_DESCRIPTION,
+  buildLlmRequest,
+  parseGeminiResolution,
+  applyResolutionToElement,
+  mapShapeKind,
 } from '@stageflip/import-google-slides';
 import type {
   CanonicalSlideTree,
@@ -45,6 +54,16 @@ import type {
   ParsedGroupElement,
   ParsedImageElement,
   ParsedSlide,
+  // T-246 AI-QC convergence pass
+  RunAiQcConvergenceOptions,
+  RunAiQcConvergenceResult,
+  AiQcResolution,
+  AiQcOutcome,
+  AiQcErrorCode,
+  GeminiResolutionResponse,
+  StubGeminiProvider,
+  StubResponseFactory,
+  StubResponseSpec,
 } from '@stageflip/import-google-slides';
 ```
 
@@ -133,7 +152,8 @@ type GSlidesLossFlagCode =
   | 'LF-GSLIDES-IMAGE-FALLBACK'
   | 'LF-GSLIDES-LOW-MATCH-CONFIDENCE'
   | 'LF-GSLIDES-PLACEHOLDER-INLINED'
-  | 'LF-GSLIDES-TABLE-MERGE-LOST';
+  | 'LF-GSLIDES-TABLE-MERGE-LOST'
+  | 'LF-GSLIDES-AI-QC-CAP-HIT';
 ```
 
 `CODE_DEFAULTS` maps each code to `{ severity, category }`. The `emitLossFlag`
@@ -160,6 +180,98 @@ interface PendingMatchResolution {
   }>;
 }
 ```
+
+### `tree.pageImagesPng`
+
+Per-slide rendered PNG bytes that `parseGoogleSlides` retains for the AI-QC
+convergence pass. Keyed by `slideId` (NOT `slideObjectId`):
+
+```ts
+interface CanonicalSlideTree {
+  // ...
+  pageImagesPng: Record<string, { bytes: Uint8Array; width: number; height: number }>;
+}
+```
+
+T-246 contract amendment to T-244: without these bytes, the AI-QC pass has
+no source PNG to send to Gemini.
+
+### `runAiQcConvergence(tree, opts)` — T-246 AI-QC convergence pass
+
+```ts
+function runAiQcConvergence(
+  tree: CanonicalSlideTree,
+  opts: RunAiQcConvergenceOptions,
+): Promise<RunAiQcConvergenceResult>;
+
+interface RunAiQcConvergenceOptions {
+  llm: LLMProvider;                 // configured for Gemini
+  model?: string;                   // default 'gemini-2.0-flash'
+  acceptThreshold?: number;         // default 0.85
+  maxTokens?: number;               // default 1024
+  timeoutMs?: number;               // default 30000
+  maxCallsPerDeck?: number;         // default 100 — cost cap
+}
+
+interface RunAiQcConvergenceResult {
+  tree: CanonicalSlideTree;         // resolved values written back
+  lossFlags: LossFlag[];            // emitted during this pass
+  callsMade: number;                // <= maxCallsPerDeck
+  resolutions: AiQcResolution[];
+}
+
+interface AiQcResolution {
+  slideId: string;
+  elementId: string;
+  outcome:
+    | 'resolved'
+    | 'rejected-low-confidence'
+    | 'rejected-llm-error'
+    | 'skipped-cap';
+  geminiConfidence?: number;        // present when outcome ∈ {resolved, rejected-low-confidence}
+  errorCode?: 'API_ERROR' | 'MALFORMED_RESPONSE' | 'TIMEOUT';
+}
+```
+
+Composes between `parseGoogleSlides` and `resolveAssets`:
+
+```ts
+const tree = await parseGoogleSlides({ presentationId, auth, cv });
+const aiqc = await runAiQcConvergence(tree, { llm: geminiProvider });
+const resolved = await resolveAssets(aiqc.tree, gslidesUrlFetcher(), storage);
+```
+
+Single-pass per residual; each pending entry gets exactly one Gemini call.
+Production tests use `createStubGeminiProvider({ factory })` to inject canned
+responses.
+
+### `GeminiResolutionResponse` shape
+
+```ts
+interface GeminiResolutionResponse {
+  confidence: number;               // 0..1
+  resolvedKind: 'text' | 'shape' | 'image' | 'group' | 'table' | 'other';
+  text: string | null;
+  fillColor: string | null;         // hex like '#FF0000', or null
+  shapeKind:
+    | 'rect'
+    | 'rounded-rect'
+    | 'ellipse'
+    | 'line'
+    | 'polygon'
+    | 'star'
+    | null;
+  cornerRadiusPx?: number;          // when shapeKind is 'rounded-rect'
+  reasoning: string;
+}
+```
+
+Validated by `parseGeminiResolution(rawText)` (Zod). Markdown code-fence
+wrappers (` ```json ... ``` `) are stripped before parsing.
+
+**Schema-aligned mapping**: `'rounded-rect'` is NOT a schema `ShapeKind`.
+The writeback layer maps it to `{ shape: 'rect', cornerRadius: <px> }` per
+`packages/schema/src/elements/shape.ts`.
 
 ### Errors
 

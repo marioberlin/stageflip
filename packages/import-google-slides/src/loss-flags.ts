@@ -26,6 +26,7 @@ export const CODE_DEFAULTS: Record<
   'LF-GSLIDES-LOW-MATCH-CONFIDENCE': { severity: 'warn', category: 'other' },
   'LF-GSLIDES-PLACEHOLDER-INLINED': { severity: 'warn', category: 'shape' },
   'LF-GSLIDES-TABLE-MERGE-LOST': { severity: 'error', category: 'shape' },
+  'LF-GSLIDES-AI-QC-CAP-HIT': { severity: 'warn', category: 'other' },
 };
 
 /** Inputs accepted by the gslides `emitLossFlag` wrapper. `source` is filled. */

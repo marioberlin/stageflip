@@ -35,7 +35,7 @@
     "import": "*",
     "limit": "60 KB",
     "gzip": true,
-    "ignore": ["crypto", "node:crypto", "@stageflip/import-pptx", "@stageflip/loss-flags", "@stageflip/schema"]
+    "ignore": ["crypto", "node:crypto", "@stageflip/import-pptx", "@stageflip/llm-abstraction", "@stageflip/loss-flags", "@stageflip/schema"]
   },
   {
     "name": "@stageflip/rasterize (ESM, gzipped, all exports — T-245 baseline)",

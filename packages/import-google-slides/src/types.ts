@@ -35,7 +35,8 @@ export type GSlidesLossFlagCode =
   | 'LF-GSLIDES-IMAGE-FALLBACK'
   | 'LF-GSLIDES-LOW-MATCH-CONFIDENCE'
   | 'LF-GSLIDES-PLACEHOLDER-INLINED'
-  | 'LF-GSLIDES-TABLE-MERGE-LOST';
+  | 'LF-GSLIDES-TABLE-MERGE-LOST'
+  | 'LF-GSLIDES-AI-QC-CAP-HIT';
 
 /**
  * Per-element residual record handed to T-246 (the AI-QC convergence loop).
@@ -72,6 +73,19 @@ export interface CanonicalSlideTree extends PptxCanonicalSlideTree {
    * `{}` (not undefined) when no element fell below the matching threshold.
    */
   pendingResolution: Record<string, Record<string, PendingMatchResolution>>;
+  /**
+   * Per-slide rendered PNG bytes (the LARGE thumbnail bytes parseGoogleSlides
+   * already fetched for the CV pass). Keyed by **slideId** (NOT
+   * slideObjectId). Populated when thumbnails were retrieved during parse;
+   * empty `{}` when no thumbnails were available. T-246's AI-QC convergence
+   * loop reads this to crop per-element slices for Gemini prompts.
+   *
+   * Contract amendment owned by T-246 (T-244 spec line 36): T-244 emits
+   * `PendingMatchResolution.pageImageCropPx` (bbox metadata) but not the
+   * underlying PNG bytes. Without these bytes, T-246 cannot crop and the
+   * Gemini fallback path fails.
+   */
+  pageImagesPng: Record<string, { bytes: Uint8Array; width: number; height: number }>;
 }
 
 /**

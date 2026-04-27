@@ -199,6 +199,30 @@ describe('createOpenAIProvider.complete', () => {
     expect(caught.provider).toBe('openai');
   });
 
+  it('AC #4a: throws LLMError(unsupported) when given an image content block', async () => {
+    const { client } = fakeClient(async () => ({
+      id: 'c',
+      model: 'gpt-4o',
+      choices: [{ message: { role: 'assistant', content: '' }, finish_reason: 'stop' }],
+    }));
+    const provider = createOpenAIProvider({ client });
+    const caught = await provider
+      .complete({
+        model: 'gpt-4o',
+        max_tokens: 100,
+        messages: [
+          {
+            role: 'user',
+            content: [{ type: 'image', mediaType: 'image/png', data: 'X' }],
+          },
+        ],
+      })
+      .catch((e) => e);
+    expect(caught).toBeInstanceOf(LLMError);
+    expect(caught.kind).toBe('unsupported');
+    expect(caught.provider).toBe('openai');
+  });
+
   it('passes AbortSignal through to the SDK', async () => {
     const { client, spy } = fakeClient(async () => ({
       id: 'c',

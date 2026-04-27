@@ -61,3 +61,35 @@ export { resolveAssets } from '@stageflip/import-pptx';
 export type { AssetStorage } from '@stageflip/import-pptx';
 
 export { gslidesUrlFetcher } from './assets/fetcher.js';
+
+// T-246: AI-QC convergence pass (Gemini multimodal fallback for residuals).
+export {
+  runAiQcConvergence,
+  collectResiduals,
+  AIQC_SYSTEM_PROMPT,
+  AIQC_RESPONSE_SCHEMA_DESCRIPTION,
+  buildLlmRequest,
+  buildUserMessage,
+  buildUserText,
+  geminiResolutionSchema,
+  parseGeminiResolution,
+  stripMarkdownFences,
+  applyResolutionToElement,
+  mapShapeKind,
+  replaceElementInSlide,
+  createStubGeminiProvider,
+  cropPageImagePngBase64,
+} from './aiqc/index.js';
+export type {
+  AiQcErrorCode,
+  AiQcOutcome,
+  AiQcResolution,
+  GeminiResolutionResponse,
+  RunAiQcConvergenceOptions,
+  RunAiQcConvergenceResult,
+  StubGeminiProvider,
+  StubResponseFactory,
+  StubResponseSpec,
+  CropBboxPx,
+  PageImagePng,
+} from './aiqc/index.js';

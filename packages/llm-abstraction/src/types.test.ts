@@ -3,7 +3,7 @@
 // interleaved deltas, and the default/empty-tool-input edge cases.
 
 import { describe, expect, it } from 'vitest';
-import { type LLMStreamEvent, collectStream } from './types.js';
+import { type LLMContentBlock, type LLMStreamEvent, collectStream } from './types.js';
 
 async function* toAsync<T>(items: T[]): AsyncIterable<T> {
   for (const item of items) yield item;
@@ -123,6 +123,55 @@ describe('collectStream', () => {
     const response = await collectStream(toAsync(events));
     expect(response.stop_reason).toBe('end_turn');
     expect(response.content).toEqual([]);
+  });
+
+  it('AC #1: LLMContentBlock accepts an image variant with mediaType and data', () => {
+    // Compile-time check: pin that the union holds the image variant.
+    const png: LLMContentBlock = {
+      type: 'image',
+      mediaType: 'image/png',
+      data: 'BASE64',
+    };
+    const jpeg: LLMContentBlock = {
+      type: 'image',
+      mediaType: 'image/jpeg',
+      data: 'BASE64',
+    };
+    const webp: LLMContentBlock = {
+      type: 'image',
+      mediaType: 'image/webp',
+      data: 'BASE64',
+    };
+    expect(png.type).toBe('image');
+    expect(jpeg.mediaType).toBe('image/jpeg');
+    expect(webp.mediaType).toBe('image/webp');
+  });
+
+  it('AC #6a: LLMStreamEvent.content_block_start does NOT include image as a streamable type', () => {
+    // TypeScript exhaustiveness check: image blocks are request-side only.
+    // This test pins behavior via runtime — the type-system check is implicit.
+    const blockStart = (event: LLMStreamEvent): string | null => {
+      if (event.type !== 'content_block_start') return null;
+      // Exhaustive switch over the streamable block.type union: 'text' | 'tool_use'.
+      switch (event.block.type) {
+        case 'text':
+          return 'text';
+        case 'tool_use':
+          return 'tool_use';
+        default: {
+          // If `image` were ever added to the streamable union, the
+          // exhaustive-never assertion below would fail to compile.
+          const _exhaustive: never = event.block;
+          return _exhaustive;
+        }
+      }
+    };
+    const result = blockStart({
+      type: 'content_block_start',
+      index: 0,
+      block: { type: 'text' },
+    });
+    expect(result).toBe('text');
   });
 
   it('ignores deltas for unknown block indices without throwing', async () => {

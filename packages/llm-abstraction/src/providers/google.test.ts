@@ -162,6 +162,72 @@ describe('createGoogleProvider.complete', () => {
     ]);
   });
 
+  it('AC #2: translates an image content block to Gemini inlineData', async () => {
+    const generate = vi.fn(async () => ({
+      response: {
+        candidates: [{ finishReason: 'STOP', content: { parts: [] } }],
+      },
+    }));
+    const { client } = fakeClient({ generateContent: generate });
+
+    const provider = createGoogleProvider({ client });
+    await provider.complete({
+      model: 'gemini-2.0-flash',
+      max_tokens: 100,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'image', mediaType: 'image/png', data: 'BASE64BYTES' },
+            { type: 'text', text: 'what is in this picture?' },
+          ],
+        },
+      ],
+    });
+
+    const [sent] = generate.mock.calls[0] ?? [];
+    expect((sent as { contents: unknown }).contents).toEqual([
+      {
+        role: 'user',
+        parts: [
+          { inlineData: { mimeType: 'image/png', data: 'BASE64BYTES' } },
+          { text: 'what is in this picture?' },
+        ],
+      },
+    ]);
+  });
+
+  it('AC #2: image block accepts image/jpeg and image/webp media types', async () => {
+    const generate = vi.fn(async () => ({
+      response: {
+        candidates: [{ finishReason: 'STOP', content: { parts: [] } }],
+      },
+    }));
+    const { client } = fakeClient({ generateContent: generate });
+
+    const provider = createGoogleProvider({ client });
+    await provider.complete({
+      model: 'gemini-2.0-flash',
+      max_tokens: 100,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'image', mediaType: 'image/jpeg', data: 'JPEGBYTES' },
+            { type: 'image', mediaType: 'image/webp', data: 'WEBPBYTES' },
+          ],
+        },
+      ],
+    });
+
+    const [sent] = generate.mock.calls[0] ?? [];
+    const contents = (sent as { contents: Array<{ parts: unknown[] }> }).contents;
+    expect(contents[0]?.parts).toEqual([
+      { inlineData: { mimeType: 'image/jpeg', data: 'JPEGBYTES' } },
+      { inlineData: { mimeType: 'image/webp', data: 'WEBPBYTES' } },
+    ]);
+  });
+
   it('falls back to tool_use_id when no earlier tool_use binds the id', async () => {
     const generate = vi.fn(async () => ({
       response: {

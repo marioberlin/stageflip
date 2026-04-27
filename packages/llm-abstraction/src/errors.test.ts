@@ -55,4 +55,14 @@ describe('classifyError', () => {
     });
     expect(classifyError('anthropic', original)).toBe(original);
   });
+
+  it('AC #3: passes an existing LLMError(kind=unsupported) through unchanged', () => {
+    const original = new LLMError('image not supported', {
+      kind: 'unsupported',
+      provider: 'anthropic',
+    });
+    const out = classifyError('anthropic', original);
+    expect(out).toBe(original);
+    expect(out.kind).toBe('unsupported');
+  });
 });

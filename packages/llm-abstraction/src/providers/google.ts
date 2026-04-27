@@ -230,6 +230,15 @@ function translateContentBlock(
   switch (block.type) {
     case 'text':
       return { text: block.text };
+    case 'image':
+      // Gemini multimodal: { inlineData: { mimeType, data } } where `data` is
+      // raw base64 (no data: URL prefix). T-246 binding.
+      return {
+        inlineData: {
+          mimeType: block.mediaType,
+          data: block.data,
+        },
+      };
     case 'tool_use':
       return {
         functionCall: {
@@ -324,6 +333,7 @@ interface GeminiContent {
 
 type GeminiPart =
   | { text: string }
+  | { inlineData: { mimeType: string; data: string } }
   | {
       functionCall: { name: string; args?: Record<string, unknown> };
     }
