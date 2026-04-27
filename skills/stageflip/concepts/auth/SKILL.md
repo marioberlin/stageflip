@@ -70,9 +70,13 @@ prefix `sf_<env>_<first-6-chars>`. Verification (D-T262-2):
    filters out `revokedAt != null`, and scrypt-compares the plaintext
    against each candidate's `hashedKey`.
 4. On match, the resolution is cached in-process for 60 s keyed by
-   the plaintext key. `revokeApiKey` invalidates the local entry; in
-   multi-instance deployments other processes see staleness up to the
-   60 s TTL — this is the documented eventual-consistency window.
+   the plaintext key. The local cache invalidation hook exists at
+   `invalidateApiKeyCache(plaintext)` for callers that hold the
+   plaintext; the current `revokeApiKey` Cloud Function does NOT
+   call it (the handler doesn't have the plaintext — cache is
+   keyed by plaintext, not by `keyId`). All callers therefore rely
+   on the 60 s TTL alone for cross-instance staleness — the
+   documented eventual-consistency window.
 
 Hash choice: `node:crypto.scrypt` (built-in, no native addon, no
 licensing risk). Bcrypt was the original spec suggestion; scrypt with
