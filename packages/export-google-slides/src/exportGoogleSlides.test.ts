@@ -475,6 +475,56 @@ describe('exportGoogleSlides — additional loss-flag paths', () => {
   });
 });
 
+describe('exportGoogleSlides — presentations.get wiring (M2/M3)', () => {
+  it('overwrite path calls presentations.get exactly once', async () => {
+    const apiClient = buildRecordingClient();
+    await exportGoogleSlides(makeOneSlideShapeDoc(), {
+      auth: stubAuth,
+      presentationId: 'existing-pres',
+      renderer,
+      tier: 'fully-editable',
+      apiClient,
+    });
+    expect(apiClient.presentationsFetched).toHaveLength(1);
+    expect(apiClient.presentationsFetched[0]?.presentationId).toBe('existing-pres');
+  });
+
+  it('create-new path does NOT call presentations.get (no existing state to read)', async () => {
+    const apiClient = buildRecordingClient({ presentationId: 'new-pres-id' });
+    await exportGoogleSlides(makeOneSlideShapeDoc(), {
+      auth: stubAuth,
+      // presentationId omitted → create new
+      renderer,
+      tier: 'fully-editable',
+      apiClient,
+    });
+    expect(apiClient.presentationsFetched).toHaveLength(0);
+  });
+
+  it('presentations.get failure surfaces as LF-GSLIDES-EXPORT-API-ERROR but export continues', async () => {
+    const baseClient = buildRecordingClient();
+    // Override to throw on getPresentation.
+    const apiClient = {
+      ...baseClient,
+      async getPresentation() {
+        throw new Error('500 Internal');
+      },
+    };
+    const result = await exportGoogleSlides(makeOneSlideShapeDoc(), {
+      auth: stubAuth,
+      presentationId: 'existing-pres',
+      renderer,
+      tier: 'fully-editable',
+      apiClient,
+    });
+    const apiErrors = result.lossFlags.filter((f) => f.code === 'LF-GSLIDES-EXPORT-API-ERROR');
+    expect(apiErrors.length).toBeGreaterThanOrEqual(1);
+    expect(apiErrors.some((f) => f.message.includes('presentations.get failed'))).toBe(true);
+    // Export still produced an outcome (didn't abort).
+    expect(result.outcomes).toHaveLength(1);
+  });
+});
+
 describe('exportGoogleSlides — loss flags (AC #24-25)', () => {
   it('AC #24: per-slide animations + notes emit exactly once per slide', async () => {
     const apiClient = buildRecordingClient();

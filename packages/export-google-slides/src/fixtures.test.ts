@@ -7,7 +7,12 @@
 import type { GoogleAuthProvider } from '@stageflip/import-google-slides';
 import type { Document } from '@stageflip/schema';
 import { describe, expect, it } from 'vitest';
-import { buildRecordingClient, makeUniformPng } from '../test-helpers/index.js';
+import {
+  type RecordingMutationClient,
+  buildRecordingClient,
+  makeUniformPng,
+} from '../test-helpers/index.js';
+import type { ApiPresentation } from './api/types.js';
 import type { ObservedBbox } from './convergence/diff.js';
 import { exportGoogleSlides } from './exportGoogleSlides.js';
 import { createStubRenderer } from './renderer/stub.js';
@@ -25,8 +30,13 @@ interface Fixture {
   tier?: 'fully-editable' | 'hybrid' | 'pixel-perfect-visual';
   observations?: Record<string, Array<{ observed: ObservedBbox[]; perceptualDiff: number }>>;
   maxIterations?: number;
-  /** Predicate to assert against the result. */
-  expect: (r: import('./types.js').ExportGoogleSlidesResult) => void;
+  /** Canned `presentations.get` response — seeds option (b) candidates. */
+  getPresentationResponse?: ApiPresentation;
+  /** Predicate to assert against the result + the recorded api client. */
+  expect: (
+    r: import('./types.js').ExportGoogleSlidesResult,
+    apiClient: RecordingMutationClient,
+  ) => void;
 }
 
 const baseDocMeta = {
@@ -246,7 +256,7 @@ const FIXTURES: Fixture[] = [
     },
   },
   {
-    name: 'duplicate-similar (only matters when existingPages provides a match — exercised in build-plan.test.ts)',
+    name: 'duplicate-similar (presentations.get returns a near-match → DuplicateObjectRequest fires)',
     tier: 'fully-editable',
     doc: {
       ...baseDocMeta,
@@ -258,20 +268,59 @@ const FIXTURES: Fixture[] = [
             elements: [
               {
                 id: 'e1',
-                type: 'shape',
-                shape: 'rect',
-                transform: { x: 100, y: 100, width: 100, height: 50, rotation: 0, opacity: 1 },
+                type: 'text',
+                text: 'Hello world',
+                // bbox center: (200, 125) px
+                transform: { x: 100, y: 100, width: 200, height: 50, rotation: 0, opacity: 1 },
                 visible: true,
                 locked: false,
                 animations: [],
+                align: 'left',
               },
             ],
           },
         ],
       },
     } as Document,
-    expect: () => {
-      // No assertion — covered by the dedicated build-plan test.
+    // Canned presentations.get with a near-match candidate: same kind
+    // (text-bearing shape), same bbox, same text → planner picks
+    // option (b) duplicate-similar.
+    getPresentationResponse: {
+      presentationId: 'fx-pres',
+      slides: [
+        {
+          objectId: 'slide_1',
+          pageType: 'SLIDE',
+          pageElements: [
+            {
+              objectId: 'apiSimilar1',
+              size: {
+                width: { magnitude: 200 * 9525, unit: 'EMU' },
+                height: { magnitude: 50 * 9525, unit: 'EMU' },
+              },
+              transform: {
+                translateX: 100 * 9525,
+                translateY: 100 * 9525,
+                unit: 'EMU',
+              },
+              shape: {
+                text: { textElements: [{ textRun: { content: 'Hello world' } }] },
+              },
+            },
+          ],
+        },
+      ],
+    },
+    expect: (_r, apiClient) => {
+      // The orchestrator must have called presentations.get once (at most;
+      // on a fixed presentationId).
+      expect(apiClient.presentationsFetched).toHaveLength(1);
+      // The plan must have emitted a duplicateObject request, NOT a
+      // createShape (which would mean option c was picked).
+      const allReqs = apiClient.batchUpdates.flatMap((bu) => bu.requests);
+      const types = allReqs.map((r) => Object.keys(r)[0]);
+      expect(types).toContain('duplicateObject');
+      expect(types.includes('createShape')).toBe(false);
     },
   },
 ];
@@ -286,6 +335,9 @@ describe('fixtures end-to-end', () => {
       const renderer = createStubRenderer({ pngsBySlideId: renderOpts });
       const apiClientOpts: Parameters<typeof buildRecordingClient>[0] = {};
       if (fx.observations !== undefined) apiClientOpts.observations = fx.observations;
+      if (fx.getPresentationResponse !== undefined) {
+        apiClientOpts.getPresentationResponse = fx.getPresentationResponse;
+      }
       const apiClient = buildRecordingClient(apiClientOpts);
       const opts: Parameters<typeof exportGoogleSlides>[1] = {
         auth: stubAuth,
@@ -296,7 +348,7 @@ describe('fixtures end-to-end', () => {
       if (fx.tier !== undefined) opts.tier = fx.tier;
       if (fx.maxIterations !== undefined) opts.maxIterations = fx.maxIterations;
       const result = await exportGoogleSlides(fx.doc, opts);
-      fx.expect(result);
+      fx.expect(result, apiClient);
     });
   }
 });

@@ -28,11 +28,19 @@ apply.
 
 1. **Resolve presentation target.** `opts.presentationId` undefined → call
    `presentations.create`; defined → overwrite via `presentations.batchUpdate`.
-2. **Build plan** (`plan/build-plan.ts`). Walks every slide's elements and
+2. **Read existing presentation state** via `presentations.get` (overwrite
+   path only). The response normalizes into `buildPlan.existingPages` so
+   option (b) (duplicate-similar) can match against live target-slide
+   candidates. A read failure is non-fatal — surfaced as
+   `LF-GSLIDES-EXPORT-API-ERROR` and the planner falls through to options
+   (a) → (c).
+3. **Build plan** (`plan/build-plan.ts`). Walks every slide's elements and
    emits a preference-ordered list of mutation requests:
-   - **(a) `UpdateShapePropertiesRequest`** when the canonical element
-     carries `inheritsFrom` resolving to a layout/master placeholder.
-     Preserves theme + font inheritance; cheapest in API-call count.
+   - **(a) `InsertText` against the inherited placeholder** when the
+     canonical element carries `inheritsFrom` resolving to a layout/master
+     placeholder. The shape's properties are NOT updated — that would
+     reset theme bindings; we rely on inheritance. (Non-text inheritsFrom
+     placeholders emit zero requests.)
    - **(b) `DuplicateObjectRequest` + modifications** when a "similar"
      object already exists on the target slide (same kind, bbox center
      within 50 px, text 80% Levenshtein-similar).
@@ -40,17 +48,32 @@ apply.
      from scratch** when neither (a) nor (b) applies.
    - **Group export ordering**: child creates emit FIRST, then a single
      `GroupObjectsRequest` binds them.
-3. **Initial apply** of the plan via one `presentations.batchUpdate` call.
-4. **Convergence loop** (`convergence/run-loop.ts`) — runs unless tier is
+4. **Initial apply** of the plan via one `presentations.batchUpdate` call.
+5. **Convergence loop** (`convergence/run-loop.ts`) — runs unless tier is
    `fully-editable`. Up to `maxIterations` (default 3) of:
    - Fetch the rendered slide PNG via `presentations.pages.getThumbnail`.
-   - Render the canonical-side golden via `RendererCdpProvider.renderSlide`.
-   - `computeDiff(...)` → per-element + whole-slide diff.
+   - Render the canonical-side golden via `RendererCdpProvider.renderSlide`
+     **at the API thumbnail's actual dimensions** (`LARGE` is 1600 px wide
+     with auto-height — 16:9 → 900, 4:3 → 1200, 3:1 → 533, etc.).
+   - Run the **pixel-diff pipeline** (`diff/`):
+     - `computePixelDiff(apiPng, goldenPng)` — per-pixel RGBA-channel-delta
+       threshold (default 8/255) yields a binary mask + perceptualDiff scalar.
+     - `findRegions(mask)` — 4-connectivity flood-fill labeling produces
+       bounding boxes + pixel counts for every connected diff component.
+     - `deriveObservations(elements, regions)` — for each canonical element,
+       observed bbox = union of (element bbox) and every diff region whose
+       center falls within the element's expanded bbox (default 32 px
+       expansion). No-overlap → observed = canonical (zero delta).
+   - `computeDiff(...)` → per-element + whole-slide diff against tolerances.
    - If `allElementsInTolerance` → exit.
    - Otherwise `planAdjustments(...)` → inverse-delta
      `UpdatePageElementTransformRequest`s. If empty → loop is **stalled**.
    - Apply the adjustments and iterate.
-5. **Image-fallback** (`fallback/image-fallback.ts`) for residuals at loop
+
+   **Test seam**: `RunLoopInput.observationsByIteration[i]`, when defined,
+   supersedes the pixel-diff pipeline for iteration `i`. Production callers
+   pass `[]` (or undefined) and the loop runs the real pipeline.
+6. **Image-fallback** (`fallback/image-fallback.ts`) for residuals at loop
    exit:
    - Crop the canonical golden via T-245's `rasterizeFromThumbnail` with
      `paddingPx: 0`.
