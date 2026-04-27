@@ -89,6 +89,16 @@ The `@stageflip/rate-limit` package depends on a `RedisLike` interface
 wires `@upstash/redis` (Apache-2.0); tests use an in-memory fake
 (D-T263-5). The package itself ships no Upstash SDK dependency.
 
+**v1 atomicity tradeoff**: the bucket math is CAS-free (`get` then
+`set`, no Redis Lua / atomic decrement). Under concurrent requests on
+the same bucket, brief refill races can over-credit by **at most one
+request per bucket per concurrent burst** — the limiter sees a stale
+`tokens` value between the read and write. Acceptable for v1 (rate
+limits are statistical guards, not strict gates); a future task may
+promote to atomic decrement via Lua / `INCR` once a real-Redis adapter
+is wired and the over-credit window is measured against production
+churn. Documented inline at `packages/rate-limit/src/limiter.ts:5-9`.
+
 ## Two enforcement surfaces (D-T263-4)
 
 ### HTTP middleware
