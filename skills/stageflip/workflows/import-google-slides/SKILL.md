@@ -4,7 +4,7 @@ id: skills/stageflip/workflows/import-google-slides
 tier: workflow
 status: substantive
 last_updated: 2026-04-27
-owner_task: T-244
+owner_task: T-246
 related:
   - skills/stageflip/concepts/loss-flags
   - skills/stageflip/concepts/design-system-learning
@@ -102,6 +102,7 @@ center) and is intentionally untouched in T-244.
 | `LF-GSLIDES-LOW-MATCH-CONFIDENCE` | warn | other | Match confidence below threshold; element ships with API-only values. T-246 may upgrade. |
 | `LF-GSLIDES-PLACEHOLDER-INLINED` | warn | shape | `placeholder.parentObjectId` doesn't resolve; geometry inlined. |
 | `LF-GSLIDES-TABLE-MERGE-LOST` | error | shape | Table spans inconsistent; per-slot fallback. |
+| `LF-GSLIDES-AI-QC-CAP-HIT` | warn | other | Deck had more residuals than `runAiQcConvergence`'s `maxCallsPerDeck`; some skipped. Deck-level (one summary per deck). |
 
 The wrapper `emitLossFlag` (in `@stageflip/import-google-slides/loss-flags`)
 auto-fills `source: 'gslides'` and resolves severity/category from
@@ -119,14 +120,83 @@ const tree = await parseGoogleSlides({ presentationId, auth, cv });
 const resolved = await resolveAssets(tree, gslidesUrlFetcher(), storage);
 ```
 
+## AI-QC convergence pass (T-246)
+
+Post-walk pass that converts `tree.pendingResolution` residuals into resolved
+canonical values via Gemini multimodal calls. Composes between
+`parseGoogleSlides` and `resolveAssets`:
+
+```ts
+const tree = await parseGoogleSlides({ presentationId, auth, cv });
+const aiqc = await runAiQcConvergence(tree, { llm: geminiProvider });
+const resolved = await resolveAssets(aiqc.tree, gslidesUrlFetcher(), storage);
+```
+
+Each pass is independent; production tests replace `llm` with
+`createStubGeminiProvider({ factory })` returning canned responses.
+
+### Per-residual semantics
+
+For each entry in `tree.pendingResolution`, `runAiQcConvergence` builds one
+multimodal request:
+
+- **System prompt** (constant): instructs Gemini to be conservative —
+  return `confidence < 0.85` when unsure.
+- **User message**: one image block (the page PNG) + one text block (the
+  API metadata, the top deterministic candidate, the crop bbox, and the
+  expected JSON-response schema).
+- **Response**: validated by Zod (see
+  `packages/import-google-slides/src/aiqc/response-validator.ts`). Markdown
+  code-fence wrappers (` ```json ... ``` `) are stripped before parsing.
+
+### Acceptance thresholds + writeback
+
+- Default `acceptThreshold: 0.85` (higher than T-244's `0.78` deterministic
+  threshold — the AI fallback must be more confident).
+- `confidence >= acceptThreshold` → writeback applies the resolved value;
+  the residual is removed from `tree.pendingResolution`.
+- Below threshold OR malformed response OR API error → element keeps API-only
+  values; residual stays; `LF-GSLIDES-LOW-MATCH-CONFIDENCE` is emitted.
+
+**Schema-aligned shape mapping**: Gemini's `shapeKind: 'rounded-rect'` maps
+to `{ shape: 'rect', cornerRadius: <px> }` (the schema has no `'roundRect'`
+kind; rounded rects are `rect` + `cornerRadius`).
+
+**Element-replacement for shape→text**: when Gemini returns
+`resolvedKind: 'text'` on a `ShapeElement`, the original element is
+**replaced** (not mutated) with a fresh `TextElement` at the same z-order
+index. Preserved fields: `id`, `transform`, `name`, `visible`, `locked`,
+`inheritsFrom`, `animations`. Dropped: `shape`, `path`, `fill`, `stroke`,
+`cornerRadius`. Added: `text`, default `runs`.
+
+### Cost cap + ordering
+
+- Default `maxCallsPerDeck: 100`. When exceeded, remaining residuals are
+  skipped with `outcome: 'skipped-cap'`; each emits
+  `LF-GSLIDES-LOW-MATCH-CONFIDENCE`. A single deck-level
+  `LF-GSLIDES-AI-QC-CAP-HIT` summarizes the cap event.
+- Iteration order: residuals sorted by `(slideId, elementId)` lex order for
+  determinism.
+
+### Single-pass, not iterative
+
+Each residual gets exactly one Gemini call. The "loop" framing in earlier
+plan rows is abstract; concretely, T-246 sends one call per residual and
+stops. Multi-pass refinement (re-deterministic-match after AI fills) is a
+v2 surface.
+
+### `tree.pageImagesPng`
+
+T-246's contract amendment to T-244: `parseGoogleSlides` retains a per-slide
+PNG bytes map on the tree (keyed by `slideId`) so the AI-QC pass can crop
+per-element slices for Gemini. Without this, T-246 has no source PNG to
+send.
+
 ## OOS
 
 - **T-245** owns the slide-rasterization primitive. Unresolvable elements
   surface as `LF-GSLIDES-IMAGE-FALLBACK` + a placeholder `ParsedAssetRef`;
   T-245 runs in a separate post-walk pass.
-- **T-246** owns the Gemini multimodal fallback. T-244 surfaces residuals
-  in `tree.pendingResolution`; T-246 reads them and writes back resolved
-  values.
 - **T-244-cv-worker** owns the production CV worker (PaddleOCR / OpenCV /
   SAM 2). T-244 ships only the TS interface, the test stub, and the HTTP
   client.
@@ -135,3 +205,6 @@ const resolved = await resolveAssets(tree, gslidesUrlFetcher(), storage);
 - **Custom font fetch** (`fonts.googleapis.com`) is deferred to T-249.
   T-244 emits `LF-GSLIDES-FONT-SUBSTITUTED` when an API-named font isn't in
   the local cache.
+- **Anthropic / OpenAI image-block bindings** are follow-on tasks; today,
+  passing an image block to those providers throws `LLMError({kind:
+  'unsupported'})`.
