@@ -679,7 +679,24 @@ importers:
         specifier: 2.1.9
         version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
 
-  packages/import-hyperframes-html: {}
+  packages/import-hyperframes-html:
+    dependencies:
+      '@stageflip/loss-flags':
+        specifier: workspace:^
+        version: link:../loss-flags
+      '@stageflip/schema':
+        specifier: workspace:^
+        version: link:../schema
+      parse5:
+        specifier: 7.3.0
+        version: 7.3.0
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: 2.1.9
+        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+      vitest:
+        specifier: 2.1.9
+        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/import-pptx:
     dependencies:
