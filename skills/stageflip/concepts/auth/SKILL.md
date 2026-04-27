@@ -3,8 +3,8 @@ title: Auth & Tenancy
 id: skills/stageflip/concepts/auth
 tier: concept
 status: substantive
-last_updated: 2026-04-27
-owner_task: T-262
+last_updated: 2026-04-28
+owner_task: T-271
 related:
   - skills/stageflip/concepts/mcp-integration/SKILL.md
   - skills/stageflip/concepts/rate-limits/SKILL.md
@@ -114,8 +114,39 @@ T-262 specifically:
 
 ## Tenant data residency
 
-EU-residency orgs are assigned to a dedicated Firestore region (T-271). Cross-
-region access is blocked at the rules level; exports run in-region.
+EU-residency orgs are assigned to a dedicated Firestore region (T-271,
+shipped). Cross-region access is blocked at the rules level; exports run
+in-region.
+
+**Routing contract** (T-271):
+
+- `Org.region: 'us' | 'eu'` carries the residency assignment. `'us'` is the
+  default for back-compat with persisted records pre-T-271 (Zod
+  `.default('us')`).
+- Two Firestore databases live in one Firebase project: `(default)` (US,
+  `nam5`) and `eu-west` (`europe-west3`, Frankfurt). Both carry IDENTICAL
+  rule text — divergence between databases is a security regression and
+  pinned by `firebase/tests/eu-region-rules.test.ts`.
+- `@stageflip/storage-firebase`'s `createRegionRouter` is the single
+  routing surface. Consumers call `router.getFirestoreForOrg(org)` and
+  `router.getAssetStorageForOrg(org)`; per-region adapters are cached.
+- Cross-region read is impossible by construction: each Firestore database
+  has its own access path, so a US org's documents simply do not exist in
+  the eu-west database. The router is what binds an EU org's client to
+  eu-west; an EU principal asking for a guessed US doc-id hits eu-west and
+  gets nothing.
+
+**`org.region` is immutable post-creation in v1.**
+
+- `validateRegionTransition(prev, next)` in `@stageflip/auth-schema` is
+  the application-side guard. Cloud Functions and admin scripts MUST run
+  candidate mutations through it before persisting. Zod cannot natively
+  express "this field is immutable across updates"; the helper is the
+  security primitive.
+- Migration between regions is a manual operational procedure documented
+  in `docs/ops/data-residency.md`. The legal triggers are rare; the
+  customer-facing impact is significant (read-only window). Do NOT
+  productize the migration without explicit reauthorization.
 
 ## Current state (Phase 12)
 
@@ -133,12 +164,14 @@ T-262 (auth + tenancy) **shipped** as part of Phase 12. Implementation:
 - `firebase/firestore.rules` — extended with apiKeys / invites
   posture.
 
-T-263 (rate limits) and T-271 (EU region) build on this foundation:
+T-263 (rate limits, shipped) and T-271 (EU region, shipped) build on
+this foundation:
 
 - T-263 keys rate-limit buckets on the resolved `Principal` —
   api-keys get tighter buckets than user JWTs by default.
-- T-271 adds a `region` field to `orgs/{orgId}` and routes
-  Firestore reads to the matching region.
+- T-271 adds a `region` field to `orgs/{orgId}` and routes Firestore +
+  asset-bucket reads to the matching region. See above and
+  `docs/ops/data-residency.md`.
 
 Out-of-scope deferrals from T-262:
 

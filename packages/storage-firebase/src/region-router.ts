@@ -8,7 +8,7 @@
 
 import type { Org } from '@stageflip/auth-schema';
 import type { AssetStorage } from '@stageflip/import-pptx';
-import { createFirebaseAssetStorage, type BucketLike } from './asset-storage.js';
+import { type BucketLike, createFirebaseAssetStorage } from './asset-storage.js';
 
 export type { BucketLike };
 

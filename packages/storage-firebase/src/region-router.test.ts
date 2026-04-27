@@ -2,14 +2,14 @@
 // T-271 AC #1–#5, #11 — region router routes Firestore + bucket per org.region.
 // Adapter cache pinned (AC #4); injection-friendly constructor pinned (AC #5).
 
-import { describe, expect, it } from 'vitest';
 import type { Org } from '@stageflip/auth-schema';
+import { describe, expect, it } from 'vitest';
 import {
-  createRegionRouter,
-  type FirestoreLike,
   type BucketLike,
-  DEFAULT_US_BUCKET,
   DEFAULT_EU_BUCKET,
+  DEFAULT_US_BUCKET,
+  type FirestoreLike,
+  createRegionRouter,
 } from './region-router.js';
 
 function makeFirestore(label: string): FirestoreLike {
