@@ -34,7 +34,7 @@ The full P11 sequence (across mid + late + late-2 + complete sessions) covered:
 | Foundational schema | T-251 (deck-level layouts + masters + inheritsFrom) | ✅ #196 |
 | Loss-flag extraction | T-247-loss-flags | ✅ #188 |
 | Loss-flag reporter UI | T-248 | ✅ #192 |
-| PPTX import bring-up | T-240, T-241a, T-242, T-242c, T-242d, T-243a, T-243b, T-243c, T-243-storage-adapter | ✅ all merged earlier in P11 |
+| PPTX import bring-up | T-240, T-241a, T-242, T-242d, T-243a, T-243b, T-243c, T-243-storage-adapter | ✅ all merged earlier in P11 |
 | Google Slides triad | **T-244** (importer), **T-246** (AI-QC convergence), **T-252** (exporter) | ✅ #208, #220, #222 |
 | Python CV sidecar | **T-244-cv-worker** (FastAPI + PaddleOCR + OpenCV) | ✅ #224 |
 | Slide rasterization primitive | T-245 (`@stageflip/rasterize`) | ✅ #212 |
