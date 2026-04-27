@@ -10,7 +10,7 @@
 //   - `validateRegionTransition(prev, next)` — the application-side immutability
 //     guard. Zod cannot natively express "this field is immutable across
 //     updates"; the helper is the security primitive enforced by callers
-//     mutating org records.
+//     mutating org records (T-271 AC #8).
 
 import { z } from 'zod';
 
@@ -50,13 +50,32 @@ export type RegionTransitionResult =
   | { readonly ok: false; readonly error: string };
 
 /**
- * Stub — filled in by T-271 commit 2 (`feat(auth-schema): region immutability
- * guard`). Returns a placeholder `ok` so the implementation can land
- * incrementally; the test suite pins the real behaviour.
+ * Application-side immutability guard for `org.region` (T-271 AC #8). Zod
+ * cannot natively express "this field is immutable across updates", so callers
+ * that mutate org records (Cloud Functions, admin scripts) MUST run the
+ * candidate `next` record through this helper before persisting and reject the
+ * write on `{ ok: false }`.
+ *
+ * Cross-region migration is a manual operational procedure (see
+ * `docs/ops/data-residency.md`); this guard is the security primitive that
+ * prevents accidental in-place mutation. It is also mirrored at the rules
+ * layer (`firebase/firestore.rules` and `firebase/firestore-eu.rules`) — both
+ * databases reject client-side writes to `org.region`, but the rules cannot
+ * see the prior value, so the application-side guard is what prevents an
+ * admin SDK call (which bypasses rules) from flipping the field by mistake.
+ *
+ * @returns `{ ok: true }` if the region is unchanged; `{ ok: false, error }`
+ * otherwise. The error message names both regions to aid operator triage.
  */
 export function validateRegionTransition(
-  _prev: Pick<Org, 'region'>,
-  _next: Pick<Org, 'region'>,
+  prev: Pick<Org, 'region'>,
+  next: Pick<Org, 'region'>,
 ): RegionTransitionResult {
-  throw new Error('validateRegionTransition — not implemented (T-271 commit 2 pending)');
+  if (prev.region === next.region) {
+    return { ok: true };
+  }
+  return {
+    ok: false,
+    error: `org.region is immutable post-creation: cannot change ${prev.region} → ${next.region}. Manual migration required (see docs/ops/data-residency.md).`,
+  };
 }
