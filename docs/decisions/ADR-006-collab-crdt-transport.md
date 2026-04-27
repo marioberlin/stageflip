@@ -1,8 +1,8 @@
 # ADR-006: Collab CRDT — Y.Doc Binding, Transport, ChangeSet Layering
 
 **Date**: 2026-04-27
-**Ratified**: _pending_
-**Status**: **Proposed**
+**Ratified**: 2026-04-27 (via merge to `main` as `d32aea5`; T-260 implements)
+**Status**: **Accepted**
 **Supersedes**: N/A
 **Superseded by**: N/A
 
