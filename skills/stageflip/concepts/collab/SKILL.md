@@ -46,17 +46,78 @@ document id) are treated as `y.Map` at the top but mutated single-writer.
 
 ## Presence shape
 
+Shipped in T-261 as `@stageflip/presence`. Locked by ADR-006 §D5 +
+`docs/tasks/T-261.md` D-T261-1:
+
 ```ts
 interface Presence {
   userId: string;
-  color: string;            // stable across sessions
-  cursor?: { slideId: string; x: number; y: number };
-  selection?: { elementIds: string[] };
+  /** Stable color across sessions — derived from userId hash. */
+  color: string;
+  /** Last-seen wall-clock ms. Server-side stale filter compares against now. */
+  lastSeenMs: number;
+  cursor?: {
+    slideId: string;
+    x: number;
+    y: number;
+    // Cursor coords are slide-local, in canonical-pixel units (per RIR).
+  };
+  selection?: {
+    /** IDs of selected elements on the active slide. */
+    elementIds: string[];
+  };
   status?: 'active' | 'idle' | 'away';
 }
 ```
 
 Presence data is ephemeral — never persisted beyond the session.
+
+## Heartbeat + idle thresholds
+
+D-T261-2:
+
+- **Heartbeat cadence** — 10 s. The client writes its presence record
+  (refreshing `lastSeenMs` and `status`) every 10 s.
+- **`active`** — there has been a cursor or selection change in the last
+  30 s.
+- **`idle`** — 30 s of no input.
+- **`away`** — 5 minutes of no input.
+- **Server-side stale filter** — the RTDB adapter filters records older
+  than 30 s from yielded subscribe maps. Stale records are not eagerly
+  deleted server-side; a Cloud Function cleaner is operational scope
+  (out of T-261). Filtering is sufficient for v1.
+- **Hard disconnect** — the RTDB adapter wires
+  `ref.onDisconnect().remove()` on connect, so the user's record is
+  removed when the socket closes (the killer feature of RTDB for
+  presence).
+
+The 3:1 ratio of stale TTL (30 s) to heartbeat cadence (10 s) is
+intentional: a single missed heartbeat does not immediately ghost the
+user; two consecutive misses do.
+
+## Color assignment
+
+D-T261-4: stable per `userId` across docs and sessions. The palette
+order is part of the API contract — changing it shifts every user's
+color across releases.
+
+```ts
+const PRESENCE_PALETTE = [
+  '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+  '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1',
+  '#14b8a6', '#eab308',
+]; // 12 colors, all WCAG-AA on white, distinguishable to deuteranopes
+```
+
+Hash is a simple polynomial (`hash = (hash * 31 + ch) | 0`) modulo 12.
+Pinned via test for stability across releases.
+
+## Cursor debounce
+
+D-T261-3. Mouse-move can fire 60+ fps. `PresenceClient.setCursor(...)`
+debounces the **wire write** to 50 ms (≈20 fps). The local-state
+observable (`onLocal`) fires on every call, so UI sees no lag. Selection
+changes are NOT debounced — they're rare, intent-driven actions.
 
 ## Storage contract integration
 
@@ -112,8 +173,16 @@ ADR-006 §D3.
   the `CollabClient` + command registry that dual-emits Y.Doc transactions
   and ChangeSets (D3), and the `compact()` snapshot helper (D4). 49 tests.
   See ADR-006 for the binding rationale.
-- **Presence (RTDB) ships in T-261**. Per ADR-006 §D5 the collab package
-  must NOT import `y-protocols/awareness`.
+- **Presence (RTDB) ships in T-261** — `@stageflip/presence` provides the
+  `PresenceAdapter` contract, an `InMemoryPresenceAdapter` (dev/test
+  fan-out, AbortSignal-driven disconnect simulation), a
+  `FirebaseRtdbPresenceAdapter` wired to `ref.onDisconnect().remove()` on
+  the canonical `/presence/{docId}/{userId}` path with a 30 s stale-record
+  filter, and a `PresenceClient` with 10 s heartbeat, 50 ms cursor
+  debounce (wire-only; local observable fires every call), idle/away
+  status transitions, and peer-only subscribe (excludes the local user).
+  39 tests. Per ADR-006 §D5 neither package imports
+  `y-protocols/awareness`; the two planes stay decoupled.
 - **Compaction worker** (the cron that calls `compact()`) is operational
   scope; ships as a follow-up infra task.
 
@@ -122,5 +191,5 @@ ADR-006 §D3.
 - ADR: `docs/decisions/ADR-006-collab-crdt-transport.md`
 - Storage contract: T-025, T-026 · `packages/storage/`
 - CRDT package: `packages/collab/` (T-260)
-- Presence impl: T-261
+- Presence package: `packages/presence/` (T-261)
 - Tasks: T-260 (CRDT), T-261 (presence)
