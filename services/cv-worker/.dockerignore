@@ -1,0 +1,20 @@
+# services/cv-worker/.dockerignore
+# Exclude test fixtures, dev requirements, caches, and editor cruft from the
+# Cloud Run image. Keeps the production image to the runtime surface only.
+
+tests/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+*.egg-info/
+.DS_Store
+README.md
+RUNBOOK.md
+requirements-dev.txt
+pyproject.toml
+scripts/
