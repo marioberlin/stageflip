@@ -52,12 +52,27 @@ service cloud.firestore {
       }
 
       match /apiKeys/{keyId} {
-        allow read, write: if isOrgMember(orgId) && isAtLeast('admin');
+        // T-262 AC #29: read by admin+. Writes are NEVER allowed from
+        // client SDKs — Cloud Functions write via the admin SDK using
+        // the service-account bypass (firebase-admin ignores rules).
+        allow read: if isOrgMember(orgId) && isAtLeast('admin');
+        allow write: if false;
       }
 
       match /members/{userId} {
         allow read: if isOrgMember(orgId) && isAtLeast('viewer');
         allow write: if isOrgMember(orgId) && isAtLeast('admin');
+      }
+
+      match /invites/{token} {
+        // Invite docs hold a token + role + email + ttl. Reads are
+        // limited to admins (so they can audit pending invites);
+        // writes are Cloud-Functions-only (inviteMember /
+        // acceptInvite). Token-bearer accept happens server-side via
+        // the acceptInvite callable, so client SDK access stays
+        // closed.
+        allow read: if isOrgMember(orgId) && isAtLeast('admin');
+        allow write: if false;
       }
     }
 

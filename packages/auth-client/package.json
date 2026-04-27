@@ -1,0 +1,50 @@
+{
+  "name": "@stageflip/auth-client",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "StageFlip auth client — React hooks for current user, current org, role gating, and active-org switching (T-262).",
+  "license": "BUSL-1.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marioberlin/stageflip.git",
+    "directory": "packages/auth-client"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --dts --format esm,cjs --clean",
+    "dev": "tsup src/index.ts --dts --format esm,cjs --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "dependencies": {
+    "@stageflip/auth-schema": "workspace:^"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.2",
+    "@types/react": "19.2.14",
+    "@vitest/coverage-v8": "2.1.9",
+    "happy-dom": "20.9.0",
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
+    "vitest": "2.1.9"
+  }
+}
