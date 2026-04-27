@@ -3,12 +3,15 @@ title: Loss Flags
 id: skills/stageflip/concepts/loss-flags
 tier: concept
 status: substantive
-last_updated: 2026-04-30
-owner_task: T-248
+last_updated: 2026-04-27
+owner_task: T-250
 related:
-  - skills/stageflip/workflows/import-pptx/SKILL.md
-  - skills/stageflip/workflows/import-google-slides/SKILL.md
-  - skills/stageflip/reference/export-formats/SKILL.md
+  - skills/stageflip/workflows/import-pptx
+  - skills/stageflip/workflows/import-google-slides
+  - skills/stageflip/workflows/import-hyperframes-html
+  - skills/stageflip/workflows/export-pptx
+  - skills/stageflip/workflows/export-google-slides
+  - skills/stageflip/reference/export-formats
 ---
 
 # Loss Flags
@@ -77,6 +80,72 @@ its own `LF-<SRC>-*` `code` union (a string-narrowing type) and provides a
 thin wrapper around `emitLossFlag` that auto-fills `source` and the per-code
 default severity / category. Adding a new importer never touches
 `@stageflip/loss-flags`.
+
+## Taxonomy — codes by source (Phase 11 snapshot)
+
+The cross-cutting view. Each importer / exporter / pipeline pass owns its
+`LF-<SRC>-*` enum; the table below enumerates every code currently in
+`CODE_DEFAULTS` across the tree. Use it as the lookup for "which source
+emits this?" and "which severities does my pipeline raise?".
+
+When a code is added or removed, update the per-package `CODE_DEFAULTS` and
+this table in the same PR.
+
+| Source | Code | Severity | Category | Owner task |
+|---|---|---|---|---|
+| `pptx` | `LF-PPTX-CUSTOM-GEOMETRY` | warn | shape | T-240, cleared by T-242b/d |
+| `pptx` | `LF-PPTX-PRESET-GEOMETRY` | info | shape | T-240, cleared by T-242a–d |
+| `pptx` | `LF-PPTX-PRESET-ADJUSTMENT-IGNORED` | info | shape | T-242a |
+| `pptx` | `LF-PPTX-UNRESOLVED-ASSET` | info | media | T-240, cleared by T-243 |
+| `pptx` | `LF-PPTX-UNRESOLVED-VIDEO` | info | media | T-243b |
+| `pptx` | `LF-PPTX-UNRESOLVED-FONT` | info | font | T-243c |
+| `pptx` | `LF-PPTX-MISSING-ASSET-BYTES` | error | media | T-243 / T-243b / T-243c |
+| `pptx` | `LF-PPTX-UNSUPPORTED-ELEMENT` | warn | other | T-240 |
+| `pptx` | `LF-PPTX-UNSUPPORTED-FILL` | info | theme | T-240 |
+| `pptx` | `LF-PPTX-NOTES-DROPPED` | info | other | T-240 |
+| `pptx-export` | `LF-PPTX-EXPORT-UNSUPPORTED-ELEMENT` | warn | other | T-253-base |
+| `pptx-export` | `LF-PPTX-EXPORT-ASSET-MISSING` | error | media | T-253-base |
+| `pptx-export` | `LF-PPTX-EXPORT-CUSTOM-GEOMETRY-DEGRADED` | warn | shape | T-253-base |
+| `pptx-export` | `LF-PPTX-EXPORT-ANIMATIONS-DROPPED` | info | animation | T-253-base |
+| `pptx-export` | `LF-PPTX-EXPORT-NOTES-DROPPED` | info | other | T-253-base |
+| `pptx-export` | `LF-PPTX-EXPORT-THEME-FLATTENED` | info | theme | T-253-base |
+| `pptx-export` | `LF-PPTX-EXPORT-IMAGE-BACKGROUND-FALLBACK` | warn | media | T-253-base |
+| `pptx-export` | `LF-PPTX-EXPORT-LAYOUT-NOT-FOUND` | warn | shape | T-253-rider |
+| `pptx-export` | `LF-PPTX-EXPORT-PLACEHOLDER-NOT-FOUND` | warn | shape | T-253-rider |
+| `pptx-export` | `LF-PPTX-EXPORT-PLACEHOLDER-MISMATCH` | info | shape | T-253-rider |
+| `gslides` | `LF-GSLIDES-PADDING-INFERRED` | info | shape | T-244 |
+| `gslides` | `LF-GSLIDES-FONT-SUBSTITUTED` | warn | font | T-244 |
+| `gslides` | `LF-GSLIDES-IMAGE-FALLBACK` | warn | media | T-244 |
+| `gslides` | `LF-GSLIDES-LOW-MATCH-CONFIDENCE` | warn | other | T-244 |
+| `gslides` | `LF-GSLIDES-PLACEHOLDER-INLINED` | warn | shape | T-244 |
+| `gslides` | `LF-GSLIDES-TABLE-MERGE-LOST` | error | shape | T-244 |
+| `gslides` | `LF-GSLIDES-AI-QC-CAP-HIT` | warn | other | T-246 |
+| `gslides` (export) | `LF-GSLIDES-EXPORT-FALLBACK` | warn | media | T-252 |
+| `gslides` (export) | `LF-GSLIDES-EXPORT-API-ERROR` | error | other | T-252 |
+| `gslides` (export) | `LF-GSLIDES-EXPORT-CONVERGENCE-STALLED` | warn | other | T-252 |
+| `gslides` (export) | `LF-GSLIDES-EXPORT-ANIMATIONS-DROPPED` | info | animation | T-252 |
+| `gslides` (export) | `LF-GSLIDES-EXPORT-NOTES-DROPPED` | info | other | T-252 |
+| `gslides` (export) | `LF-GSLIDES-EXPORT-FONT-SUBSTITUTED` | warn | font | T-252 |
+| `gslides` (export) | `LF-GSLIDES-EXPORT-TABLE-ROTATION-LOST` | warn | shape | T-252 |
+| `gslides` (export) | `LF-GSLIDES-EXPORT-CUSTOM-GEOMETRY-DEGRADED` | warn | shape | T-252 |
+| `hyperframes-html` | `LF-HYPERFRAMES-HTML-CLASS-STYLE-LOST` | warn | theme | T-247 |
+| `hyperframes-html` | `LF-HYPERFRAMES-HTML-ANIMATIONS-DROPPED` | info | animation | T-247 |
+| `hyperframes-html` | `LF-HYPERFRAMES-HTML-CAPTIONS-UNRECOGNIZED` | warn | other | T-247 |
+| `hyperframes-html` | `LF-HYPERFRAMES-HTML-UNSUPPORTED-ELEMENT` | warn | other | T-247 |
+| `hyperframes-html` | `LF-HYPERFRAMES-HTML-DIMENSION-INFERRED` | info | shape | T-247 |
+| `hyperframes-html` | `LF-HYPERFRAMES-HTML-ASSET-MISSING` | error | media | T-247 |
+| `rir` | `LF-RIR-LAYOUT-NOT-FOUND` | warn | other | T-251 |
+| `rir` | `LF-RIR-PLACEHOLDER-NOT-FOUND` | warn | other | T-251 |
+| `design-system` | `LF-DESIGN-SYSTEM-FONT-FETCH-FAILED` | error | font | T-249 |
+| `design-system` | `LF-DESIGN-SYSTEM-AMBIGUOUS-CLUSTER` | warn | theme | T-249 |
+| `design-system` | `LF-DESIGN-SYSTEM-COMPONENT-MERGE-FAILED` | info | shape | T-249 |
+
+The two Slides sources both serialize as `source: 'gslides'` per T-252 spec
+§8 (the source string is reused; the `code` prefix discriminates importer
+vs. exporter). Future enhancement: `pnpm gen:loss-flag-taxonomy` would walk
+each `loss-flags.ts` `CODE_DEFAULTS` table and regenerate this section so
+the doc cannot drift. Out of scope for T-250 — when the table grows past
+~50 codes, escalate per CLAUDE.md §6.
 
 ## Current state (Phase 11 — T-240 in)
 

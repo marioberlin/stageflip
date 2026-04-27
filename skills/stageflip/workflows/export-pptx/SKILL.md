@@ -3,11 +3,12 @@ title: Workflow — Export PPTX
 id: skills/stageflip/workflows/export-pptx
 tier: workflow
 status: substantive
-last_updated: 2026-04-26
-owner_task: T-253
+last_updated: 2026-04-27
+owner_task: T-250
 related:
   - skills/stageflip/workflows/import-pptx
   - skills/stageflip/concepts/loss-flags
+  - skills/stageflip/concepts/schema
   - skills/stageflip/reference/export-pptx
 ---
 
@@ -94,7 +95,9 @@ transitively via each master's `<p:sldLayoutIdLst>`.
 
 ## Loss flags
 
-Ten codes, all `source: 'pptx-export'`:
+Cross-cutting taxonomy (every code by source) lives in
+`skills/stageflip/concepts/loss-flags/SKILL.md` §"Taxonomy — codes by
+source". Ten export-pptx codes, all `source: 'pptx-export'`:
 
 | Code | Severity | Category | Emitted when |
 |---|---|---|---|
@@ -117,7 +120,7 @@ the writer code does not call `Date.now()`, `Math.random()`,
 `performance.now()`, or `new Date(...)` (except the frozen-epoch literal in
 `types.ts`'s `FROZEN_EPOCH`). Pinned by `exportPptx.test.ts`'s grep test.
 
-## Placeholder inheritance write-back (T-253-rider)
+## Placeholder-inheritance write-back (T-253-rider)
 
 T-253-rider extends the writer to:
 
@@ -148,6 +151,18 @@ Three new loss flags surface unresolvable references:
 Both unresolved cases fall back to materialized geometry (base-writer
 behavior). The fallback is silent at the schema layer (no flag noise);
 flags surface only at the writer.
+
+## References
+
+The constraints catalogue + writer pitfalls live in the export-pptx
+reference tier (per the `references/` convention —
+`skills/stageflip/concepts/references-tier/SKILL.md`):
+
+- `skills/stageflip/reference/export-pptx/references/pptx-constraints.md`
+  — what the writer can/can't emit and why.
+
+When a recurring writer pitfall surfaces, add a sibling
+`references/<topic>-pitfalls.md` next to the reference-tier SKILL.md.
 
 ## Future riders
 

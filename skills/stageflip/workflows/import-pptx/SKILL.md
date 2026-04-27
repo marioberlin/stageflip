@@ -3,10 +3,12 @@ title: Workflow — Import PPTX
 id: skills/stageflip/workflows/import-pptx
 tier: workflow
 status: substantive
-last_updated: 2026-04-26
+last_updated: 2026-04-27
 owner_task: T-250
 related:
   - skills/stageflip/concepts/loss-flags
+  - skills/stageflip/concepts/schema
+  - skills/stageflip/concepts/references-tier
   - skills/stageflip/concepts/design-system-learning
 ---
 
@@ -200,6 +202,42 @@ exports `emitLossFlag` as a thin PPTX-defaulted wrapper that auto-fills
 | T-248 | Loss-flag reporter UI surface in `apps/stageflip-slide` ships (status-bar badge + modal); see `skills/stageflip/concepts/loss-flags/SKILL.md` §"Reporter UI (T-248)". Wiring `parsePptx` → `importLossFlagsAtom` is a follow-up task. |
 | T-249 | Theme learning — fold master/layout inheritance into the schema's `theme`. |
 | T-250 | This skill plus the other `import-*` skills get substantive content. |
+
+## Loss flags
+
+Cross-cutting taxonomy (every code by source) lives in
+`skills/stageflip/concepts/loss-flags/SKILL.md` §"Taxonomy — codes by
+source". The PPTX importer's per-code defaults are pinned in
+`packages/import-pptx/src/loss-flags.ts` `CODE_DEFAULTS`; the deterministic
+id formula (sha256-12 of source/code/location/originalSnippet, joined by
+U+0001) is owned by `@stageflip/loss-flags` and shared with every other
+importer + exporter.
+
+| Code | Severity | Category | Owner |
+|---|---|---|---|
+| `LF-PPTX-CUSTOM-GEOMETRY` | warn | shape | T-240 (no longer emitted post-T-242b/d) |
+| `LF-PPTX-PRESET-GEOMETRY` | info | shape | T-240 (no longer emitted post-T-242a–d) |
+| `LF-PPTX-PRESET-ADJUSTMENT-IGNORED` | info | shape | T-242a |
+| `LF-PPTX-UNRESOLVED-ASSET` | info | media | T-240 (cleared by T-243) |
+| `LF-PPTX-UNRESOLVED-VIDEO` | info | media | T-243b (cleared by T-243b) |
+| `LF-PPTX-UNRESOLVED-FONT` | info | font | T-243c (cleared by T-243c) |
+| `LF-PPTX-MISSING-ASSET-BYTES` | error | media | T-243 / T-243b / T-243c |
+| `LF-PPTX-UNSUPPORTED-ELEMENT` | warn | other | T-240 |
+| `LF-PPTX-UNSUPPORTED-FILL` | info | theme | T-240 |
+| `LF-PPTX-NOTES-DROPPED` | info | other | T-240 |
+
+## References
+
+The `references/` tier convention
+(`skills/stageflip/concepts/references-tier/SKILL.md`) gives this skill a
+sibling `references/` directory once it earns its place — observed
+failure modes, constraint catalogues, pattern recipes. Earlier sketches:
+
+- T-243a/b/c gotchas (asset/video/font extraction edge cases).
+- `<a:custGeom>` arc-walker corner cases discovered in T-242d.
+
+When the next Implementer hits a recurring pitfall not preempted by this
+SKILL.md, add a `references/<topic>-pitfalls.md` and link it here.
 
 ## Public-spec references (no vendored code)
 

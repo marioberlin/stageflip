@@ -3,10 +3,12 @@ title: Workflow — Import / Export Hyperframes HTML
 id: skills/stageflip/workflows/import-hyperframes-html
 tier: workflow
 status: substantive
-last_updated: 2026-04-26
-owner_task: T-247
+last_updated: 2026-04-27
+owner_task: T-250
 related:
   - skills/stageflip/concepts/loss-flags
+  - skills/stageflip/concepts/schema
+  - skills/stageflip/concepts/references-tier
   - skills/stageflip/reference/import-hyperframes-html
 ---
 
@@ -83,16 +85,21 @@ Future producers can target this contract deterministically by naming
 compositions `main-*`, `captions`, `subtitles`, or by emitting only audio
 elements.
 
-## Lossy paths (v1)
+## Loss flags
 
-| Path | Loss flag code | Severity |
-|---|---|---|
-| CSS-class typography (font-size / color / weight) | `LF-HYPERFRAMES-HTML-CLASS-STYLE-LOST` | warn |
-| GSAP timeline animations | `LF-HYPERFRAMES-HTML-ANIMATIONS-DROPPED` | info |
-| Unrecognized transcript shape | `LF-HYPERFRAMES-HTML-CAPTIONS-UNRECOGNIZED` | warn |
-| Unsupported tags (canvas / iframe / object) | `LF-HYPERFRAMES-HTML-UNSUPPORTED-ELEMENT` | warn |
-| Missing width / height | `LF-HYPERFRAMES-HTML-DIMENSION-INFERRED` | info |
-| Asset bytes can't be retrieved | `LF-HYPERFRAMES-HTML-ASSET-MISSING` | error |
+Cross-cutting taxonomy (every code by source) lives in
+`skills/stageflip/concepts/loss-flags/SKILL.md` §"Taxonomy — codes by
+source". Per-code defaults are pinned in
+`packages/import-hyperframes-html/src/loss-flags.ts` `CODE_DEFAULTS`.
+
+| Code | Severity | Category | Emitted when |
+|---|---|---|---|
+| `LF-HYPERFRAMES-HTML-CLASS-STYLE-LOST` | warn | theme | CSS-class typography (font-size / color / weight) on a styled element |
+| `LF-HYPERFRAMES-HTML-ANIMATIONS-DROPPED` | info | animation | GSAP timeline parsed and dropped (one per composition); also for non-identity scale + opacity-0 normalizations |
+| `LF-HYPERFRAMES-HTML-CAPTIONS-UNRECOGNIZED` | warn | other | Inline `TRANSCRIPT` regex matched but per-entry shape failed validation |
+| `LF-HYPERFRAMES-HTML-UNSUPPORTED-ELEMENT` | warn | other | Unsupported tags (canvas / iframe / object) |
+| `LF-HYPERFRAMES-HTML-DIMENSION-INFERRED` | info | shape | `data-width` / `data-height` missing; inferred from layout |
+| `LF-HYPERFRAMES-HTML-ASSET-MISSING` | error | media | Asset bytes can't be retrieved via the injected fetcher |
 
 All flags carry `source: 'hyperframes-html'`. The wrapper in
 `packages/import-hyperframes-html/src/loss-flags.ts` mirrors the PPTX +

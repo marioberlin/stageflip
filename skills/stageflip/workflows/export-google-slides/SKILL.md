@@ -4,10 +4,11 @@ id: skills/stageflip/workflows/export-google-slides
 tier: workflow
 status: substantive
 last_updated: 2026-04-27
-owner_task: T-252
+owner_task: T-250
 related:
   - skills/stageflip/workflows/import-google-slides
   - skills/stageflip/concepts/loss-flags
+  - skills/stageflip/concepts/schema
   - skills/stageflip/reference/export-google-slides
   - skills/stageflip/reference/rasterize
 ---
@@ -107,7 +108,11 @@ the importer side uses (T-244 + T-246).
 
 ## Loss flags
 
-Eight new codes, all `source: 'gslides'`:
+Cross-cutting taxonomy (every code by source) lives in
+`skills/stageflip/concepts/loss-flags/SKILL.md` §"Taxonomy — codes by
+source". Eight export codes, all `source: 'gslides'` (the source string is
+shared with the importer per T-252 spec §8 — the `code` prefix
+discriminates):
 
 | Code | Severity | Category | Emitted when |
 |---|---|---|---|
