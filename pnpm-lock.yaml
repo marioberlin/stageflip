@@ -346,6 +346,9 @@ importers:
       '@stageflip/auth-schema':
         specifier: workspace:^
         version: link:../../packages/auth-schema
+      '@stageflip/observability':
+        specifier: workspace:^
+        version: link:../../packages/observability
       firebase-admin:
         specifier: 13.0.1
         version: 13.0.1
