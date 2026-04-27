@@ -141,7 +141,7 @@ describe('removeSlide (AC #23)', () => {
 });
 
 describe('reorderSlides (AC #24)', () => {
-  it('emits one move op', async () => {
+  it('emits remove+add pair (NOT move) — Y.Array reorder is delete-then-insert', async () => {
     const { client, emitted } = await makeClient();
     await client.command('addSlide', { slide: slide('s2') });
     await client.command('addSlide', { slide: slide('s3') });
@@ -150,9 +150,42 @@ describe('reorderSlides (AC #24)', () => {
     const ids = slidesArr?.toArray().map((s) => s.get('id'));
     expect(ids).toEqual(['s2', 's3', 's1']);
     const cs = emitted.at(-1);
-    expect(cs?.ops[0]?.op).toBe('move');
-    expect(cs?.ops[0]?.from).toBe('/content/slides/0');
-    expect(cs?.ops[0]?.path).toBe('/content/slides/2');
+    expect(cs?.ops).toHaveLength(2);
+    expect(cs?.ops[0]?.op).toBe('remove');
+    expect(cs?.ops[0]?.path).toBe('/content/slides/0');
+    expect(cs?.ops[1]?.op).toBe('add');
+    expect(cs?.ops[1]?.path).toBe('/content/slides/2');
+    expect((cs?.ops[1]?.value as { id: string }).id).toBe('s1');
+    client.dispose();
+  });
+
+  it('Y.Text identity is lost across reorder — pinned by design (see slide-commands.ts)', async () => {
+    const { client } = await makeClient();
+    await client.command('addSlide', { slide: slide('s2') });
+    // Set notes on s1 so it has a Y.Text we can grab a reference to.
+    await client.command('setSlideNotes', { slideId: 's1', notes: 'Hello world' });
+    await tick(20);
+    const slideMap = getSlideMap(client.ydoc, 's1');
+    if (!slideMap) throw new Error('expected slide s1');
+    const originalNotes = slideMap.get('notes') as Y.Text;
+    expect(originalNotes).toBeInstanceOf(Y.Text);
+    expect(originalNotes.toString()).toBe('Hello world');
+    // Snapshot the original Y.Text's parent integration before the reorder.
+    const wasIntegrated = originalNotes.doc !== null;
+    expect(wasIntegrated).toBe(true);
+
+    await client.command('reorderSlides', { fromIdx: 0, toIdx: 1 });
+
+    // After reorder: the slide at its new index carries a FRESH Y.Text
+    // instance (proving identity loss). The original Y.Text reference is
+    // no longer the slide's notes — pinning the rebuild as expected
+    // behavior so a future "fix" attempt fails this test loudly.
+    const movedSlide = getSlideMap(client.ydoc, 's1');
+    if (!movedSlide) throw new Error('expected slide s1 after reorder');
+    const newNotes = movedSlide.get('notes');
+    expect(newNotes).toBeInstanceOf(Y.Text);
+    expect(newNotes).not.toBe(originalNotes);
+    expect((newNotes as Y.Text).toString()).toBe('Hello world');
     client.dispose();
   });
 });
@@ -340,9 +373,21 @@ describe('actor + parentVersion (AC #28, #29)', () => {
     client.dispose();
   });
 
-  it('parentVersion uses the most recent observed snapshot version', async () => {
-    const { client, emitted } = await makeClient({ snapshotVersion: 7 });
+  it('parentVersion is bootstrap-only — peer-side compaction does NOT refresh until reconnect', async () => {
+    const { client, storage, emitted } = await makeClient({ snapshotVersion: 7 });
     await client.command('addSlide', { slide: slide('s2') });
+    expect(emitted.at(-1)?.parentVersion).toBe(7);
+
+    // Simulate a peer compacting mid-session: the snapshot in storage rotates
+    // to version 8, but the live provider's cached version is bootstrap-only
+    // (see provider.ts comment on _latestSnapshotVersion).
+    await storage.putSnapshot('d1', {
+      docId: 'd1',
+      version: 8,
+      content: makeDoc(),
+      updatedAt: nowISO(),
+    });
+    await client.command('addSlide', { slide: slide('s3') });
     expect(emitted.at(-1)?.parentVersion).toBe(7);
     client.dispose();
   });

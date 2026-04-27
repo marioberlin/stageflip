@@ -77,17 +77,14 @@ export class CollabClient {
   /** Resolves once the provider transitions to `synced`. */
   async hydrate(): Promise<void> {
     if (this.provider.status === 'synced') return;
-    return new Promise((resolve, reject) => {
+    // We do not reject on `error` — the provider's reconnect loop drives
+    // back to `synced`. Callers needing failure-aware UX subscribe via
+    // `provider.onStatus` directly.
+    return new Promise((resolve, _reject) => {
       const off = this.provider.onStatus((s: ProviderStatus) => {
         if (s === 'synced') {
           off();
           resolve();
-        } else if (s === 'error') {
-          // Stay subscribed; reconnect path may recover. The caller can
-          // observe `error` via `provider.onStatus` if desired. We do NOT
-          // reject on 'error' because the provider is designed to recover.
-          // But keep this branch for future contract evolution.
-          void reject;
         }
       });
     });

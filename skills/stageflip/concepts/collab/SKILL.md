@@ -76,6 +76,20 @@ provider works against `InMemoryStorageAdapter` (dev/test),
 `FirebaseStorageAdapter` (prod), and the future `PostgresStorageAdapter`
 (T-270). Reasoning: ADR-006 §D2.
 
+## Reorder caveat
+
+`reorderSlides` is implemented as delete-then-insert because Y.Array has no
+native move primitive. Consequence: any `Y.Text` instances inside the moved
+slide (notably `slide.notes`) lose CRDT identity — the reinserted slide
+carries fresh `Y.Text` values rebuilt from the JSON snapshot taken at
+reorder time. Concurrent remote edits to a reordered slide's `notes` (or
+any future slide-level Y.Text field) that have not yet flushed at reorder
+time are NOT preserved across the reorder. The emitted ChangeSet reflects
+this honestly with a `remove` followed by an `add` (NOT a `move`) so the
+audit log records the rebuild rather than implying preservation. Editor
+consumers (T-261) should treat reorder as destructive w.r.t. unflushed
+concurrent Y.Text edits on the moved slide.
+
 ## ChangeSet vs. Yjs update
 
 The Yjs `applyUpdate` stream is the live-sync / merge layer. The

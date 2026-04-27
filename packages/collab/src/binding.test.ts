@@ -142,12 +142,164 @@ describe('binding — round-trip', () => {
     expect(parsed).toEqual(doc);
   });
 
-  it('AC#8 — round-trip handles all element types in the union', () => {
-    const doc = makeDoc();
-    // Sanity: makeDoc covers text/image/shape/group/table — the explicit
-    // enumeration AC#1 calls out. (chart/clip/embed/code/video/audio share
-    // the plain-JSON path; covered structurally by the cloneJson code.)
-    expect(doc.content.mode === 'slide' ? doc.content.slides[0]?.elements.length : 0).toBe(5);
+  it('AC#8 — round-trip handles all 11 element types in the union', () => {
+    // Build a slide carrying one element per type in ELEMENT_TYPES so the
+    // round-trip path exercises every branch of buildElementMap /
+    // readElementMap directly (no implicit "structural coverage").
+    const slide = {
+      id: 's-all',
+      title: 'all-types',
+      elements: [
+        textElement('e-text', 'hi'),
+        {
+          id: 'e-image',
+          type: 'image' as const,
+          transform: { ...baseTransform },
+          visible: true,
+          locked: false,
+          animations: [],
+          src: 'asset:img1',
+          fit: 'cover' as const,
+        },
+        {
+          id: 'e-video',
+          type: 'video' as const,
+          transform: { ...baseTransform },
+          visible: true,
+          locked: false,
+          animations: [],
+          src: 'asset:vid1',
+          muted: false,
+          loop: false,
+          playbackRate: 1,
+        },
+        {
+          id: 'e-audio',
+          type: 'audio' as const,
+          transform: { ...baseTransform },
+          visible: true,
+          locked: false,
+          animations: [],
+          src: 'asset:aud1',
+          loop: false,
+        },
+        {
+          id: 'e-shape',
+          type: 'shape' as const,
+          transform: { ...baseTransform },
+          visible: true,
+          locked: false,
+          animations: [],
+          shape: 'rect' as const,
+          fill: '#0000ff',
+        },
+        {
+          id: 'e-group',
+          type: 'group' as const,
+          transform: { ...baseTransform },
+          visible: true,
+          locked: false,
+          animations: [],
+          clip: false,
+          children: [textElement('e-group-child', 'inside')],
+        },
+        {
+          id: 'e-chart',
+          type: 'chart' as const,
+          transform: { ...baseTransform },
+          visible: true,
+          locked: false,
+          animations: [],
+          chartKind: 'bar' as const,
+          data: {
+            labels: ['a', 'b'],
+            series: [{ name: 's1', values: [1, 2] }],
+          },
+          legend: true,
+          axes: true,
+        },
+        {
+          id: 'e-table',
+          type: 'table' as const,
+          transform: { ...baseTransform },
+          visible: true,
+          locked: false,
+          animations: [],
+          rows: 1,
+          columns: 1,
+          headerRow: false,
+          cells: [{ row: 0, col: 0, content: 'x', align: 'left' as const, colspan: 1, rowspan: 1 }],
+        },
+        {
+          id: 'e-clip',
+          type: 'clip' as const,
+          transform: { ...baseTransform },
+          visible: true,
+          locked: false,
+          animations: [],
+          runtime: 'frame',
+          clipName: 'fade',
+          params: {},
+        },
+        {
+          id: 'e-embed',
+          type: 'embed' as const,
+          transform: { ...baseTransform },
+          visible: true,
+          locked: false,
+          animations: [],
+          src: 'https://example.com/',
+          sandbox: ['allow-scripts' as const],
+          allowFullscreen: false,
+        },
+        {
+          id: 'e-code',
+          type: 'code' as const,
+          transform: { ...baseTransform },
+          visible: true,
+          locked: false,
+          animations: [],
+          code: 'const x = 1;',
+          language: 'typescript' as const,
+          showLineNumbers: false,
+          wrap: false,
+        },
+      ],
+    };
+    const doc = documentSchema.parse({
+      meta: {
+        id: 'doc-all',
+        version: 0,
+        createdAt: nowISO(),
+        updatedAt: nowISO(),
+        locale: 'en',
+        schemaVersion: 1,
+      },
+      theme: { tokens: {} },
+      variables: {},
+      components: {},
+      masters: [],
+      layouts: [],
+      content: { mode: 'slide' as const, slides: [slide] },
+    });
+    // Sanity: every type literal from ELEMENT_TYPES present.
+    const types =
+      doc.content.mode === 'slide' ? doc.content.slides[0]?.elements.map((e) => e.type) : [];
+    expect(new Set(types)).toEqual(
+      new Set([
+        'text',
+        'image',
+        'video',
+        'audio',
+        'shape',
+        'group',
+        'chart',
+        'table',
+        'clip',
+        'embed',
+        'code',
+      ]),
+    );
     const ydoc = documentToYDoc(doc);
     const out = documentSchema.parse(yDocToDocument(ydoc));
     expect(out).toEqual(doc);

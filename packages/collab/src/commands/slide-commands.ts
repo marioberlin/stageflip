@@ -35,6 +35,21 @@ export const removeSlideCommand: CommandFn<CommandArgs['removeSlide']> = async (
   await ctx.emit(cs);
 };
 
+/**
+ * Reorder a slide. CONSTRAINT: Y.Array has no native move primitive, so
+ * this implementation is delete-then-insert. Consequences:
+ *   (a) Y.Text instances inside the moved slide (notably `notes`) lose
+ *       CRDT identity — the rebuilt slide carries fresh Y.Text values.
+ *   (b) Concurrent remote edits to a moving slide's `notes` (or any other
+ *       Y.Text field) that have not yet flushed at reorder time will NOT
+ *       be preserved across the reorder.
+ *   (c) The emitted ChangeSet reflects this honestly with a `remove`
+ *       followed by an `add` (NOT a single `move`) so the audit log
+ *       records the rebuild rather than implying preservation.
+ * Callers should treat reorder as destructive w.r.t. unflushed concurrent
+ * Y.Text edits on the moved slide. Documented at:
+ * `skills/stageflip/concepts/collab/SKILL.md#reorder-caveat`.
+ */
 export const reorderSlidesCommand: CommandFn<CommandArgs['reorderSlides']> = async (ctx, args) => {
   const slidesArr = getSlidesArray(ctx.ydoc);
   if (!slidesArr) throw new Error('reorderSlides: document is not in slide mode');
@@ -45,20 +60,21 @@ export const reorderSlidesCommand: CommandFn<CommandArgs['reorderSlides']> = asy
   if (args.toIdx < 0 || args.toIdx >= slidesArr.length) {
     throw new Error(`reorderSlides: toIdx ${String(args.toIdx)} out of range`);
   }
+  let slideJson: Parameters<typeof buildSlideMap>[0] | undefined;
   ctx.ydoc.transact(() => {
     const moving = slidesArr.get(args.fromIdx) as Y.Map<unknown>;
     // Read structural copy, delete, then re-insert. Y.Array has no native
-    // move; this is the documented pattern.
-    const json = moving.toJSON();
+    // move; this is the documented pattern. See block comment above for
+    // identity-loss consequences.
+    slideJson = moving.toJSON() as Parameters<typeof buildSlideMap>[0];
     slidesArr.delete(args.fromIdx, 1);
-    slidesArr.insert(args.toIdx, [buildSlideMap(json as Parameters<typeof buildSlideMap>[0])]);
+    slidesArr.insert(args.toIdx, [buildSlideMap(slideJson)]);
   });
+  // Audit log: emit remove+add (NOT a single move) — `move` would imply
+  // CRDT-preserving relocation, which is not what happened.
   const cs = makeChangeSet(ctx, [
-    {
-      op: 'move',
-      from: `${slidesPath}/${String(args.fromIdx)}`,
-      path: `${slidesPath}/${String(args.toIdx)}`,
-    },
+    { op: 'remove', path: `${slidesPath}/${String(args.fromIdx)}` },
+    { op: 'add', path: `${slidesPath}/${String(args.toIdx)}`, value: slideJson },
   ]);
   await ctx.emit(cs);
 };

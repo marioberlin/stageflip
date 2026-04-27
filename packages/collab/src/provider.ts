@@ -65,7 +65,14 @@ export class YjsStorageProvider {
   private _status: ProviderStatus = 'syncing';
   private statusListeners = new Set<StatusListener>();
 
-  /** Latest snapshot observed via getSnapshot. Used for ChangeSet.parentVersion. */
+  /**
+   * Snapshot version observed at bootstrap. Used for ChangeSet.parentVersion.
+   * Bootstrap-only: NOT updated when a peer compacts mid-session. If a peer
+   * rotates the snapshot, this provider's `parentVersion` stays at the
+   * bootstrap value until reconnect (next bootstrap()). T-261 / editor-shell
+   * consumers will surface whether an explicit refresh API is needed; until
+   * then we keep the surface minimal.
+   */
   private _latestSnapshotVersion = 0;
 
   private readonly debounceMs: number;

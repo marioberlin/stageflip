@@ -3,8 +3,7 @@
 
 import { type Document, type Slide, documentSchema } from '@stageflip/schema';
 import { InMemoryStorageAdapter } from '@stageflip/storage';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { documentToYDoc } from './binding.js';
+import { afterEach, describe, expect, it } from 'vitest';
 import { CollabClient } from './client.js';
 
 const nowISO = (): string => '2026-04-27T00:00:00.000Z';
@@ -135,7 +134,3 @@ afterEach(async () => {
   // Real-timer let-everything-settle.
   await tick(0);
 });
-
-// silence unused
-void documentToYDoc;
-beforeEach(() => undefined);
