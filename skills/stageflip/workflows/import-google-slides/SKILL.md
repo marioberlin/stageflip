@@ -4,9 +4,10 @@ id: skills/stageflip/workflows/import-google-slides
 tier: workflow
 status: substantive
 last_updated: 2026-04-27
-owner_task: T-246
+owner_task: T-250
 related:
   - skills/stageflip/concepts/loss-flags
+  - skills/stageflip/concepts/schema
   - skills/stageflip/concepts/design-system-learning
   - skills/stageflip/reference/import-google-slides
 ---
@@ -28,7 +29,11 @@ does not expose. Candidates that fail to match deterministically surface as
 upgrade.
 
 **The rendered PNG is the source of truth.** API geometry is reference;
-pixels are ground truth.
+pixels are ground truth. API alone isn't pixel-accurate (server-side
+autofit, padding inferred differently, theme tokens resolve to different
+actual colors). Pairing the API metadata with the rendered thumbnail
+recovers ground truth. See `docs/tasks/T-244.md` §3 ("Pixel-candidate
+pipeline") for the rationale.
 
 ## Pipeline
 
@@ -38,9 +43,16 @@ pixels are ground truth.
    `Thumbnail` with `{contentUrl, width, height}`. A second GET on
    `contentUrl` (without the OAuth header — it's a short-lived public link)
    returns the PNG bytes at the actual rendered dimensions.
-3. The `CvCandidateProvider` (stubbed in tests, HTTP in production)
-   processes the PNG and returns candidates keyed per detector
-   (textLines / contours / masks).
+3. The `CvCandidateProvider` interface (stubbed in tests via
+   `createStubCvProvider({ candidatesBySlideId })`, HTTP in production via
+   the T-244-cv-worker Cloud Run service) processes the PNG and returns
+   candidates keyed per detector (textLines / contours / masks). The
+   deterministic CV pass — PaddleOCR text-content match, OpenCV
+   `findContours` / `connectedComponentsWithStats`, optional SAM 2 mask
+   containment — resolves ~90% of objects; ~10% residuals reach
+   `runAiQcConvergence` for a single Gemini multimodal call per residual
+   (T-246). See `docs/tasks/T-246.md` §6 for the single-pass convergence
+   contract.
 4. For each API page element (recursing into `elementGroup.children`), the
    matcher computes:
    - **Text-content equality** — Unicode NFC + collapsed whitespace +
@@ -63,10 +75,13 @@ Page size is `presentation.pageSize` in EMU. The thumbnail's
 (non-16:9 pages produce different heights even at the LARGE thumbnail size).
 
 ```
-emuPerPx = renderSize / pageSizeEmu       (per-axis)
-elementBboxPx = applyAffineToUnitSquare(worldTransform * size) * emuPerPx
+emu_to_px = renderSize / pageSizeEmu      // per-axis scalar
+elementBboxPx = applyAffineToUnitSquare(worldTransform * size) * emu_to_px
+            ∩ slideBoundsPx
 worldTransform = composeAffines(parent, ..., child)
 ```
+
+(Aliased `emuPerPx` in the source — the math is the same.)
 
 `composeAffines` is package-local to `@stageflip/import-google-slides`; the
 math is the standard 3×3 augmented matrix product. **No cross-package
@@ -92,7 +107,11 @@ center) and is intentionally untouched in T-244.
   The transitive walk (layout → master) is the RIR `applyInheritance`
   pass's job; T-244 only emits the slide-side `inheritsFrom`.
 
-## Loss flags taxonomy
+## Loss flags
+
+Cross-cutting taxonomy: see
+`skills/stageflip/concepts/loss-flags/SKILL.md` §"Taxonomy — codes by
+source" for every code across importers/exporters. The local table:
 
 | Code | Severity | Category | Emitted when |
 |---|---|---|---|
