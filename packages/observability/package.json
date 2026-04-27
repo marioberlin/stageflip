@@ -1,0 +1,50 @@
+{
+  "name": "@stageflip/observability",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "StageFlip observability — OpenTelemetry tracing + Sentry error reporting + structured pino logs (T-264).",
+  "license": "BUSL-1.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marioberlin/stageflip.git",
+    "directory": "packages/observability"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --dts --format esm,cjs --clean",
+    "dev": "tsup src/index.ts --dts --format esm,cjs --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "1.9.1",
+    "@opentelemetry/core": "2.7.0",
+    "@opentelemetry/exporter-trace-otlp-http": "0.215.0",
+    "@opentelemetry/resources": "2.7.0",
+    "@opentelemetry/sdk-trace-base": "2.7.0",
+    "@opentelemetry/sdk-trace-node": "2.7.0",
+    "@opentelemetry/semantic-conventions": "1.40.0",
+    "@sentry/node": "10.50.0",
+    "pino": "10.3.1"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "2.1.9",
+    "vitest": "2.1.9"
+  }
+}
