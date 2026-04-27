@@ -49,6 +49,15 @@ Thumbs.db
 .stageflip-cache/
 *.stageflip-render/
 
+# Python (services/cv-worker)
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+
 # Secrets / credentials
 *.pem
 *.key

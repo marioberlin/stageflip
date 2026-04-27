@@ -1,0 +1,22 @@
+# services/cv-worker/requirements.txt
+# Pinned production dependencies. All licenses fall under THIRD_PARTY.md §1
+# permitted set:
+#   paddleocr            Apache-2.0
+#   paddlepaddle (CPU)   Apache-2.0
+#   opencv-python-headless Apache-2.0 (since 4.5.0)
+#   numpy                BSD-3-Clause
+#   pillow               HPND (PIL Software License — MIT-like; on whitelist)
+#   fastapi              MIT
+#   uvicorn              BSD-3-Clause
+#   python-multipart     Apache-2.0
+#
+# SAM 2 is opt-in via ENABLE_SAM2 env var; install separately when enabling.
+
+paddleocr==2.10.0
+paddlepaddle==2.6.2
+opencv-python-headless==4.10.0.84
+numpy==1.26.4
+pillow==10.4.0
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+python-multipart==0.0.10
