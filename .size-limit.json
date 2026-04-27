@@ -52,5 +52,13 @@
     "limit": "30 KB",
     "gzip": true,
     "ignore": ["parse5", "crypto", "node:crypto", "@stageflip/loss-flags", "@stageflip/schema"]
+  },
+  {
+    "name": "@stageflip/export-google-slides (ESM, gzipped, all exports — T-252 baseline)",
+    "path": "packages/export-google-slides/dist/index.js",
+    "import": "*",
+    "limit": "80 KB",
+    "gzip": true,
+    "ignore": ["crypto", "node:crypto", "pngjs", "@stageflip/import-google-slides", "@stageflip/loss-flags", "@stageflip/rasterize", "@stageflip/schema"]
   }
 ]
