@@ -116,6 +116,10 @@ export async function parseGoogleSlides(
   // Phase 2: per-slide processing.
   const slides: ParsedSlide[] = [];
   const pendingResolution: Record<string, Record<string, PendingMatchResolution>> = {};
+  // T-246 contract amendment: keep references to the per-slide PNG bytes
+  // already in memory so the AI-QC convergence loop can crop per-element
+  // slices for Gemini multimodal prompts. See T-246 spec line 36.
+  const pageImagesPng: Record<string, { bytes: Uint8Array; width: number; height: number }> = {};
 
   for (const slidePage of presentation.slides ?? []) {
     if (!slidePage.objectId) continue;
@@ -134,6 +138,15 @@ export async function parseGoogleSlides(
       ));
     const renderSize = { width: thumb.width, height: thumb.height };
     const emuPerPx = emuToPx({ pageSizeEmu, renderSize });
+
+    // T-246 contract amendment: stash the PNG bytes by slideId. We keep the
+    // existing `thumb` reference (no copy) — the bytes are already in memory
+    // for the CV pass, so retaining them on the tree is essentially free.
+    pageImagesPng[slideId] = {
+      bytes: thumb.bytes,
+      width: thumb.width,
+      height: thumb.height,
+    };
 
     // CV detection.
     const cvDetectOpts: Parameters<CvCandidateProvider['detect']>[1] = {
@@ -292,6 +305,7 @@ export async function parseGoogleSlides(
     masters: templates.masters,
     lossFlags: allFlags,
     pendingResolution,
+    pageImagesPng,
     assetsResolved: false,
   };
   return tree;
