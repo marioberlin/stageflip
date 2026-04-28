@@ -37,12 +37,12 @@ If you are the next agent: read this top to bottom, then `CLAUDE.md`, then `docs
 | Blender bake-tier ClipRuntime | T-265 | ✅ | [#243](https://github.com/marioberlin/stageflip/pull/243) |
 | Render-farm adapter | T-266 | ✅ | [#244](https://github.com/marioberlin/stageflip/pull/244) |
 | Stripe billing | **T-267** | ⏸ Spec-only (deferred to final phase) | [#234](https://github.com/marioberlin/stageflip/pull/234) (spec only) |
-| Security review + pentest | ~~T-268~~ | DROPPED 2026-04-28 | n/a |
+| Security review + pentest | ~~T-268~~ | DEFERRED 2026-04-28 (revisit post-prod-launch) | n/a |
 | K6 load testing | T-269 | ✅ | [#241](https://github.com/marioberlin/stageflip/pull/241) |
 | Postgres adapter (Supabase) | T-270 | ✅ | [#242](https://github.com/marioberlin/stageflip/pull/242) |
 | EU Firestore region | T-271 | ✅ | [#239](https://github.com/marioberlin/stageflip/pull/239) |
 | Backup + PITR | T-272 | ✅ (drill PENDING — see §"Operational follow-ups") | [#240](https://github.com/marioberlin/stageflip/pull/240) |
-| BigQuery telemetry export | ~~T-273~~ | DROPPED 2026-04-28 | n/a |
+| BigQuery telemetry export | ~~T-273~~ | DEFERRED 2026-04-28 (no telemetry flowing yet; revisit later) | n/a |
 
 ### P12 PR sequence (16 PRs, chronological)
 
@@ -103,8 +103,8 @@ Plan quote (paraphrased from §Phase 12): *"Collab + hardening + bake tier; stor
 - ✅ **EU residency shipped** — T-271; two Firestore databases (`(default)` US, `eu-west` EU); region routing in storage adapter; org.region immutability guard; manual migration runbook.
 - ✅ **Backup + PITR shipped** — T-272; daily Firestore + Storage exports; daily verification function with Sentry alerts; restore runbook + drill placeholder.
 - ✅ **Load testing shipped** — T-269; K6 scenarios (collab-sync custom Trend / render-submit / api-mixed); CI smoke + ops full-load.
-- ❌ **Pentest** — T-268 DROPPED. Vendor procurement is operational/business; revisit post-prod-launch.
-- ❌ **BigQuery export** — T-273 DROPPED. Premature; OTel + pino can be wired later without architectural disruption.
+- ⏸ **Pentest** — T-268 DEFERRED. Vendor procurement is operational/business; revisit post-prod-launch.
+- ⏸ **BigQuery export** — T-273 DEFERRED. Premature; OTel + pino can be wired later without architectural disruption.
 
 ---
 
@@ -134,7 +134,7 @@ firebase/
   functions/                   — NEW package; auth Cloud Functions (T-262); bake submit (T-265); backup + verify + restore (T-272)
   firestore.rules              — extended with apiKeys deny-by-default + role gating (T-262)
   firestore-eu.rules           — byte-equal mirror for eu-west database (T-271)
-  firebase.json                — multi-database config (default + eu-west) (T-271)
+  ../firebase.json             — multi-database config (default + eu-west) at REPO ROOT, not firebase/ (T-271)
 
 tests/load                     — K6 scenarios + helpers + CI smoke + ops full-load runbook (T-269)
 .github/workflows/             — +load-smoke.yml (T-269), +blender-worker.yml (T-265 fix-pass)
