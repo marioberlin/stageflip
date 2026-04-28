@@ -140,13 +140,22 @@ describe('presetFrontmatterSchema (AC #1–#8)', () => {
     expect(parsed.fallbackFont).toBeUndefined();
   });
 
-  it('AC #7: when fallbackFont present, weight must be positive int', () => {
+  it('AC #7: when fallbackFont present, weight must be a nonnegative int (T-304 amendment v2: `0` is a sentinel)', () => {
+    // weight: 0 is allowed per T-304 amendment v2 (sentinel for text-free presets).
     expect(() =>
       presetFrontmatterSchema.parse({
         ...validPreset,
         fallbackFont: { family: 'X', weight: 0, license: 'ofl' },
       }),
+    ).not.toThrow();
+    // weight: negative still throws.
+    expect(() =>
+      presetFrontmatterSchema.parse({
+        ...validPreset,
+        fallbackFont: { family: 'X', weight: -1, license: 'ofl' },
+      }),
     ).toThrow();
+    // weight: non-integer still throws.
     expect(() =>
       presetFrontmatterSchema.parse({
         ...validPreset,

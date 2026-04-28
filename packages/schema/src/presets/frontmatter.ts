@@ -54,7 +54,12 @@ const preferredFontSchema = z
 const fallbackFontSchema = z
   .object({
     family: z.string().min(1),
-    weight: z.number().int().positive(),
+    // weight: nonnegative (NOT positive) per T-304 amendment v2 (2026-04-28).
+    // On-disk stub `ctas/coinbase-dvd-qr.md` uses `weight: 0` as a "no
+    // fallback font" sentinel for text-free presets (QR-code-only).
+    // T-307/T-308 own the semantic question "should text-free presets
+    // declare fonts?". T-304 validates SHAPE only, accepting the sentinel.
+    weight: z.number().int().nonnegative(),
     license: fontLicenseSchema,
   })
   .strict();
