@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "product-render params",
+  "description": "Parameters for the product-render Blender scene template (T-265).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "objectAsset": {
+      "type": "string",
+      "pattern": "^asset:[A-Za-z0-9_-]+$",
+      "description": "Asset reference for the GLB/GLTF object to render."
+    },
+    "rotationDegPerSec": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 720,
+      "default": 90,
+      "description": "Camera orbit speed in degrees per second."
+    },
+    "background": {
+      "type": "string",
+      "enum": ["studio", "outdoor", "transparent"],
+      "default": "studio"
+    }
+  },
+  "required": ["objectAsset"]
+}

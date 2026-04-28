@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "particle-burst params",
+  "description": "Parameters for the particle-burst Blender scene template (T-265).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "count": {
+      "type": "integer",
+      "minimum": 100,
+      "maximum": 100000,
+      "default": 5000,
+      "description": "Number of particles."
+    },
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "default": "#ffd400"
+    },
+    "burstStrength": {
+      "type": "number",
+      "minimum": 0.1,
+      "maximum": 50,
+      "default": 8
+    }
+  }
+}
