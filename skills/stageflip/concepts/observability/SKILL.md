@@ -190,6 +190,38 @@ in:
 
 Each rollout adds the standard span attributes plus its domain-specific keys.
 
+## Load testing (T-269)
+
+Load tests live in `tests/load/` (workspace package `@stageflip/tests-load`).
+Three K6 scenarios cover the load-bearing surfaces:
+
+| Scenario | Surface | What it asserts |
+|---|---|---|
+| `collab-sync.js` | Yjs delta fan-out (WebSocket) | P95 round-trip < 200 ms (full) / < 300 ms (smoke) |
+| `render-submit.js` | BullMQ queue ingress | P95 accept < 100 ms (full) / < 150 ms (smoke); err < 0.5 % |
+| `api-mixed.js` | Public API mix | no 5xx; respects 429 + Retry-After (T-263 wire shape) |
+
+Two profiles share the scenarios:
+
+- **Smoke** — CI on every change to `tests/load/**`. 10 VUs x 60 s each.
+  Workflow: `.github/workflows/load-smoke.yml`. Runs `k6 archive` always
+  (syntax + import gate); runs the live scenarios when `vars.STAGING_LOAD_URL`
+  is configured.
+- **Full** — operational; `pnpm load:full` against a staging tenant.
+  50 VUs x 5 min each. Output JSON summaries under `tests/load/runs/`.
+
+The K6 helpers (`tests/load/helpers.js`) wrap every HTTP request in the
+T-263 retry-after handler (`computeRetryAfter`), bounded at 3 retries with
+1-30 s per sleep so the load test cannot tight-loop the staging tenant on
+429. Auth headers follow T-262 conventions (`Authorization: Bearer ...` +
+`X-Org-Id`).
+
+`tests/load/**` is exempt from `pnpm check-determinism` (D-T269-5) — load
+scenarios use `Math.random()` for action selection by design.
+
+Output location: `tests/load/runs/*.json` (gitignored). CI uploads them as
+a `load-smoke-summaries-<sha>` artifact for 7 days.
+
 ## Backup + restore (T-272)
 
 The backup + verification Cloud Functions in

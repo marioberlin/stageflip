@@ -45,6 +45,10 @@ Thumbs.db
 # auto-generated + hand-authored reference skills) is NOT matched.
 /reference/
 
+# K6 load-test outputs (T-269) — JSON summaries written by `pnpm load:smoke` /
+# `pnpm load:full`. Local artifacts only; runs are tracked in ops dashboards.
+/tests/load/runs/
+
 # Render artifacts (local dev)
 .stageflip-cache/
 *.stageflip-render/

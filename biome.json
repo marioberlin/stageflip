@@ -66,6 +66,23 @@
           "style": { "noDefaultExport": "off" }
         }
       }
+    },
+    {
+      "include": ["**/vitest.config.ts"],
+      "linter": {
+        "rules": {
+          "style": { "noDefaultExport": "off" }
+        }
+      }
+    },
+    {
+      "include": ["tests/load/scenarios/**/*.js", "scenarios/**/*.js"],
+      "linter": {
+        "rules": {
+          "style": { "noDefaultExport": "off" },
+          "suspicious": { "noConsoleLog": "off" }
+        }
+      }
     }
   ]
 }
