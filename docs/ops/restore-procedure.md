@@ -93,7 +93,7 @@ The CLI helper prints the canonical command sequence:
 ```bash
 pnpm tsx scripts/backup-restore.ts \
   --dry-run \
-  --target=stageflip \      # or stageflip-staging
+  --target=staging \        # or `prod` — the CLI accepts only these two values
   --backup-date=2026-04-27
 ```
 
