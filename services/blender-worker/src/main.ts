@@ -13,6 +13,7 @@ import { createBlenderCliInvoker } from './blender-invoker.js';
 import {
   type BakeOutputBucket,
   type BucketRouter,
+  type StateMarkerEmitter,
   WORKER_QUEUE_NAME,
   type WorkerObservability,
   processBakeJob,
@@ -61,6 +62,27 @@ function buildBucketRouter(): BucketRouter {
   return { bucketFor: (_region, name) => adapter(name) };
 }
 
+/**
+ * Render-farm state-marker emitter (T-266 D-T266-5). Writes the documented
+ * one-line markers directly to stdout — the in-memory render-farm adapter
+ * parses these to drive job lifecycle transitions. Format is intentionally
+ * non-JSON to avoid accidental reformatting by structured-log shims.
+ */
+function buildStateMarkers(): StateMarkerEmitter {
+  return {
+    started(bakeId: string): void {
+      process.stdout.write(`STAGEFLIP_RENDER_FARM_STARTED bakeId=${bakeId}\n`);
+    },
+    finished(args): void {
+      const { bakeId, status, error } = args;
+      const base = `STAGEFLIP_RENDER_FARM_FINISHED bakeId=${bakeId} status=${status}`;
+      const line =
+        error !== undefined ? `${base} error=${error.replace(/[\r\n]+/g, ' ').trim()}` : base;
+      process.stdout.write(`${line}\n`);
+    },
+  };
+}
+
 function buildObservability(): WorkerObservability {
   // Stdout structured log; Sentry wired via @stageflip/observability when
   // STAGEFLIP_SENTRY_DSN is set in the worker env.
@@ -79,11 +101,15 @@ export async function startWorker(): Promise<Worker> {
   const observability = buildObservability();
   const router = buildBucketRouter();
   const invoker = createBlenderCliInvoker();
+  const stateMarkers = buildStateMarkers();
   const worker = new Worker(
     WORKER_QUEUE_NAME,
     async (job) => {
       const payload = job.data as BakeJobPayload;
-      return processBakeJob({ invoker, router, observability, clock: () => Date.now() }, payload);
+      return processBakeJob(
+        { invoker, router, observability, clock: () => Date.now(), stateMarkers },
+        payload,
+      );
     },
     { connection, concurrency: 1 },
   );

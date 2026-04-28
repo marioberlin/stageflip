@@ -61,11 +61,32 @@ export interface WorkerObservability {
   captureError(err: unknown, ctx?: Record<string, unknown>): void;
 }
 
+/**
+ * Render-farm state-marker emitter (T-266 D-T266-5). The in-memory adapter
+ * reads these from the worker's stdout to drive job lifecycle transitions.
+ * Production K8s adapters ignore them — they read pod state from the API.
+ *
+ * This is a separate interface from `WorkerObservability` because the markers
+ * are a parseable protocol, not a log: their format is load-bearing for
+ * adapter integration and must NOT be reformatted by structured-log shims.
+ */
+export interface StateMarkerEmitter {
+  /** Emit "started" — the worker has picked up the job and is rendering. */
+  started(bakeId: string): void;
+  /** Emit "finished" with succeeded or failed status (and optional error). */
+  finished(args: { bakeId: string; status: 'succeeded' | 'failed'; error?: string }): void;
+}
+
 export interface ProcessBakeJobDeps {
   readonly invoker: BlenderInvoker;
   readonly router: BucketRouter;
   readonly observability: WorkerObservability;
   readonly clock: () => number;
+  /**
+   * Optional render-farm state-marker emitter (T-266). Omitting it disables
+   * marker emission; existing T-265 tests don't pass it and remain unchanged.
+   */
+  readonly stateMarkers?: StateMarkerEmitter;
 }
 
 export type ProcessBakeJobResult =
@@ -106,6 +127,28 @@ export function expectedFrameCount(durationMs: number, fps: number): number {
  * error; BullMQ handles retries via the producer's `attempts: 3` policy.
  */
 export async function processBakeJob(
+  deps: ProcessBakeJobDeps,
+  payload: BakeJobPayload,
+): Promise<ProcessBakeJobResult> {
+  // T-266 AC #14: emit "started" so the in-memory render-farm adapter can
+  // transition queued → running. Fired before any work so cache-hit short-
+  // circuits also produce a started/finished pair.
+  deps.stateMarkers?.started(payload.inputsHash);
+  try {
+    const result = await processBakeJobInner(deps, payload);
+    deps.stateMarkers?.finished({ bakeId: payload.inputsHash, status: 'succeeded' });
+    return result;
+  } catch (err) {
+    deps.stateMarkers?.finished({
+      bakeId: payload.inputsHash,
+      status: 'failed',
+      error: err instanceof Error ? err.message : String(err),
+    });
+    throw err;
+  }
+}
+
+async function processBakeJobInner(
   deps: ProcessBakeJobDeps,
   payload: BakeJobPayload,
 ): Promise<ProcessBakeJobResult> {
