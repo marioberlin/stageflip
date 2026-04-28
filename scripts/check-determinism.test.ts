@@ -10,11 +10,12 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import {
-  type ShaderViolation,
   SHADER_FORBIDDEN_APIS,
+  type ShaderViolation,
+  scanFile,
   scanShaderSubRule,
 } from './check-determinism.js';
 
@@ -281,11 +282,11 @@ describe('T-309 AC #8 — pass-line wording', () => {
     root = makeWorkspace([
       {
         rel: `${SHADER_DIR}/a.ts`,
-        source: `export function uFrame(frame: number): number { return frame; }\n`,
+        source: 'export function uFrame(frame: number): number { return frame; }\n',
       },
       {
         rel: `${SHADER_DIR}/b.ts`,
-        source: `export function uTime(frame: number): number { return frame * 2; }\n`,
+        source: 'export function uTime(frame: number): number { return frame * 2; }\n',
       },
     ]);
     const result = scanShaderSubRule({ workspaceRoot: root });
@@ -298,7 +299,7 @@ describe('T-309 AC #8 — pass-line wording', () => {
       // No shader/three-scene files; broad rule's territory only.
       {
         rel: 'packages/frame-runtime/src/foo.ts',
-        source: `export function add(a: number, b: number) { return a + b; }\n`,
+        source: 'export function add(a: number, b: number) { return a + b; }\n',
       },
     ]);
     const result = scanShaderSubRule({ workspaceRoot: root });
@@ -327,8 +328,10 @@ describe('T-309 AC #9 — violation diagnostics shape', () => {
     ]);
     const { violations } = scanShaderSubRule({ workspaceRoot: root });
     expect(violations.length).toBeGreaterThan(0);
-    const v: ShaderViolation = violations[0]!;
-    expect(typeof v.file).toBe('string');
+    const v = violations[0];
+    if (v === undefined) throw new Error('expected at least one violation');
+    const _typecheck: ShaderViolation = v;
+    expect(typeof _typecheck.file).toBe('string');
     expect(v.line).toBeGreaterThan(0);
     expect(v.column).toBeGreaterThan(0);
     expect(typeof v.api).toBe('string');
@@ -394,5 +397,92 @@ describe('T-309 — escape-hatch comment exempts a line', () => {
     ]);
     const result = scanShaderSubRule({ workspaceRoot: root });
     expect(result.violations.filter((v) => v.api === 'Date.now()')).toHaveLength(0);
+  });
+});
+
+// ---------- broad rule (§3) — exercise scanFile per rule ----------
+
+describe('T-309 — broad rule scanFile coverage (regression-protection for AC #13)', () => {
+  let root: string;
+  afterEach(() => {
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  it('flags every broad-rule API in a single file scan', async () => {
+    root = makeWorkspace([
+      {
+        rel: 'src.ts',
+        source: `export function bad() {
+  Date.now();
+  new Date();
+  performance.now();
+  Math.random();
+  fetch('/x');
+  navigator.sendBeacon('/y', '');
+  new XMLHttpRequest();
+  requestAnimationFrame(() => 0);
+  cancelAnimationFrame(0);
+  setTimeout(() => 0, 1);
+  setInterval(() => 0, 1);
+  new Worker('w.js');
+  new SharedWorker('s.js');
+}
+`,
+      },
+    ]);
+    const violations = await scanFile(join(root, 'src.ts'));
+    const apis = new Set(violations.map((v) => v.api));
+    expect(apis.has('Date.now()')).toBe(true);
+    expect(apis.has('new Date()')).toBe(true);
+    expect(apis.has('performance.now()')).toBe(true);
+    expect(apis.has('Math.random()')).toBe(true);
+    expect(apis.has('fetch()')).toBe(true);
+    expect(apis.has('navigator.sendBeacon()')).toBe(true);
+    expect(apis.has('new XMLHttpRequest()')).toBe(true);
+    expect(apis.has('requestAnimationFrame()')).toBe(true);
+    expect(apis.has('cancelAnimationFrame()')).toBe(true);
+    expect(apis.has('setTimeout()')).toBe(true);
+    expect(apis.has('setInterval()')).toBe(true);
+    expect(apis.has('new Worker()')).toBe(true);
+    expect(apis.has('new SharedWorker()')).toBe(true);
+  });
+
+  it('respects the determinism-safe escape-hatch on the broad rule', async () => {
+    root = makeWorkspace([
+      {
+        rel: 'src.ts',
+        source: `export function ok() {
+  // determinism-safe: telemetry needed (ADR-002)
+  Date.now();
+  Date.now(); // determinism-safe: inline form
+}
+`,
+      },
+    ]);
+    const violations = await scanFile(join(root, 'src.ts'));
+    expect(violations).toHaveLength(0);
+  });
+
+  it('returns empty when no rules match', async () => {
+    root = makeWorkspace([
+      {
+        rel: 'src.ts',
+        source: 'export function add(a: number, b: number) { return a + b; }\n',
+      },
+    ]);
+    const violations = await scanFile(join(root, 'src.ts'));
+    expect(violations).toHaveLength(0);
+  });
+});
+
+// ---------- walkSync robustness ----------
+
+describe('T-309 — walkSync handles unreadable directories gracefully', () => {
+  it('returns empty for a root that does not exist', () => {
+    // Path the OS will return ENOENT for; the walkSync internal try/catch
+    // must swallow it and produce no files.
+    const result = scanShaderSubRule({ workspaceRoot: '/nonexistent-12345-stageflip' });
+    expect(result.inspectedCount).toBe(0);
+    expect(result.violations).toHaveLength(0);
   });
 });
