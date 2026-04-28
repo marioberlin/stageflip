@@ -4,13 +4,6 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": [
-    "seed.ts",
-    "cleanup.ts",
-    "*.test.ts",
-    "*.d.ts",
-    "vitest.config.ts",
-    "cli/**/*.ts"
-  ],
+  "include": ["seed.ts", "cleanup.ts", "*.test.ts", "*.d.ts", "vitest.config.ts", "cli/**/*.ts"],
   "exclude": ["node_modules", "scenarios/**", "runs/**"]
 }
