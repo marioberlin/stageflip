@@ -19,7 +19,7 @@ importers:
         version: 1.59.1
       '@size-limit/preset-big-lib':
         specifier: 11.2.0
-        version: 11.2.0(size-limit@11.2.0)
+        version: 11.2.0(esbuild@0.27.7)(size-limit@11.2.0)
       '@types/node':
         specifier: 22.19.17
         version: 22.19.17
@@ -1414,6 +1414,9 @@ importers:
 
   packages/schema:
     dependencies:
+      gray-matter:
+        specifier: 4.0.3
+        version: 4.0.3
       zod:
         specifier: 3.25.76
         version: 3.25.76
@@ -9134,11 +9137,11 @@ snapshots:
     dependencies:
       size-limit: 11.2.0
 
-  '@size-limit/preset-big-lib@11.2.0(size-limit@11.2.0)':
+  '@size-limit/preset-big-lib@11.2.0(esbuild@0.27.7)(size-limit@11.2.0)':
     dependencies:
       '@size-limit/file': 11.2.0(size-limit@11.2.0)
       '@size-limit/time': 11.2.0(size-limit@11.2.0)
-      '@size-limit/webpack': 11.2.0(size-limit@11.2.0)
+      '@size-limit/webpack': 11.2.0(esbuild@0.27.7)(size-limit@11.2.0)
       size-limit: 11.2.0
     transitivePeerDependencies:
       - '@swc/core'
@@ -9164,11 +9167,11 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@size-limit/webpack@11.2.0(size-limit@11.2.0)':
+  '@size-limit/webpack@11.2.0(esbuild@0.27.7)(size-limit@11.2.0)':
     dependencies:
       nanoid: 5.1.9
       size-limit: 11.2.0
-      webpack: 5.106.2
+      webpack: 5.106.2(esbuild@0.27.7)
     transitivePeerDependencies:
       - '@swc/core'
       - esbuild
@@ -9509,14 +9512,6 @@ snapshots:
       magic-string: 0.30.21
     optionalDependencies:
       vite: 5.4.21(@types/node@22.19.17)(terser@5.46.2)
-
-  '@vitest/mocker@2.1.9(vite@5.4.21(@types/node@25.6.0)(terser@5.46.2))':
-    dependencies:
-      '@vitest/spy': 2.1.9
-      estree-walker: 3.0.3
-      magic-string: 0.30.21
-    optionalDependencies:
-      vite: 5.4.21(@types/node@25.6.0)(terser@5.46.2)
 
   '@vitest/pretty-format@2.1.9':
     dependencies:
@@ -13613,13 +13608,15 @@ snapshots:
 
   term-size@2.2.1: {}
 
-  terser-webpack-plugin@5.4.0(webpack@5.106.2):
+  terser-webpack-plugin@5.4.0(esbuild@0.27.7)(webpack@5.106.2(esbuild@0.27.7)):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       jest-worker: 27.5.1
       schema-utils: 4.3.3
       terser: 5.46.2
-      webpack: 5.106.2
+      webpack: 5.106.2(esbuild@0.27.7)
+    optionalDependencies:
+      esbuild: 0.27.7
 
   terser@5.46.2:
     dependencies:
@@ -14012,7 +14009,7 @@ snapshots:
   vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2):
     dependencies:
       '@vitest/expect': 2.1.9
-      '@vitest/mocker': 2.1.9(vite@5.4.21(@types/node@25.6.0)(terser@5.46.2))
+      '@vitest/mocker': 2.1.9(vite@5.4.21(@types/node@22.19.17)(terser@5.46.2))
       '@vitest/pretty-format': 2.1.9
       '@vitest/runner': 2.1.9
       '@vitest/snapshot': 2.1.9
@@ -14155,7 +14152,7 @@ snapshots:
 
   webpack-sources@3.3.4: {}
 
-  webpack@5.106.2:
+  webpack@5.106.2(esbuild@0.27.7):
     dependencies:
       '@types/eslint-scope': 3.7.7
       '@types/estree': 1.0.8
@@ -14178,7 +14175,7 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 4.3.3
       tapable: 2.3.2
-      terser-webpack-plugin: 5.4.0(webpack@5.106.2)
+      terser-webpack-plugin: 5.4.0(esbuild@0.27.7)(webpack@5.106.2(esbuild@0.27.7))
       watchpack: 2.5.1
       webpack-sources: 3.3.4
     transitivePeerDependencies:
