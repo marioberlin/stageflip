@@ -103,6 +103,66 @@ T-307 owns the canonical license enum + composite-expression handling
 (`apache-2.0 + ofl`, `commercial-byo`, etc.). T-304 validates SHAPE; T-307
 validates VOCABULARY.
 
+## Font-license registry (T-307)
+
+`@stageflip/schema/presets/node` exports `FontLicenseRegistry`, which walks
+the loaded `PresetRegistry` and indexes every `(family, license)` pair by
+canonical family name. The browser-safe entry `@stageflip/schema` exports the
+parser + atom enum so consumers without Node access can validate
+free-form license expressions.
+
+```ts
+// Browser-safe vocabulary + parser:
+import { parseFontLicenseExpression, FONT_LICENSE_ATOMS } from '@stageflip/schema';
+
+// Node-only registry:
+import { FontLicenseRegistry } from '@stageflip/schema/presets/node';
+```
+
+### License atoms
+
+The 12-atom enum (`FONT_LICENSE_ATOMS`) is the registry's contract. New
+preset stubs MUST use only these atoms in `preferredFont.license` /
+`fallbackFont.license`:
+
+| Atom | Meaning |
+|---|---|
+| `ofl` | SIL Open Font License (the dominant fallback license). |
+| `apache-2.0` | Apache 2.0 (e.g., Roboto). |
+| `mit` | MIT. |
+| `public-domain` | Public domain. |
+| `cc0-1.0` | CC0 1.0 Universal. |
+| `proprietary-byo` | Bring-your-own (e.g., CNN Sans, BBC Reith). Must pair with `fallbackFont`. |
+| `commercial-byo` | Licensed commercially; bring license (e.g., ITC Benguiat). |
+| `platform-byo` | Platform fonts (TikTok Sans, Apple SF) — assume installed. |
+| `license-cleared` | Informal "we know it's OK"; escalate to type-design-consultant (T-311). |
+| `license-mixed` | Multi-license fallback group. |
+| `ofl-equivalent` | OFL-compatible custom (e.g., 8-bit pixel fonts). |
+| `na` | Text-free presets (e.g., QR-only CTAs). |
+
+### Composite expressions
+
+Two operators are recognised in license strings:
+
+- **AND (`+`)** — every atom required (e.g., `'apache-2.0 + ofl'` for a font that
+  ships both licenses simultaneously).
+- **OR (`/`)** — any one atom suffices (e.g., `'apache-2.0 / ofl / commercial-byo'`
+  for a fallback set where the user picks whichever is convenient).
+
+Mixing `+` and `/` in one expression is rejected at the parser level.
+Parenthesised annotations (e.g., `'ofl-equivalent (custom)'`) are stripped —
+the annotation is informational; the canonical atom is what reaches the
+registry.
+
+### CI gate (T-307 + T-308)
+
+`scripts/check-licenses.ts` validates the full preset corpus on every push:
+
+- Every license expression must parse (unknown atoms fail loud).
+- Every preset must use only atoms in `FONT_ALLOWED_ATOMS`.
+- `proprietary-byo` entries without a fallback are flagged for audit (not a
+  hard error; T-308's `check-preset-integrity` may upgrade to a hard gate).
+
 ## Frontmatter shape (cluster)
 
 ```yaml
@@ -146,5 +206,5 @@ behavior. Output canonicality is pinned by AC #30 (100-invocation hash test).
 - [ADR-003 — interactive runtime tier](../../../decisions/ADR-003-interactive-runtime-tier.md)
   (defines `permissions` field)
 - [skills/stageflip/concepts/schema](../schema/SKILL.md) (parent concept)
-- T-307 (font-license registry — license vocabulary)
+- T-307 (font-license registry — license vocabulary; **shipped**)
 - T-308 (`check-preset-integrity` CI gate — first downstream consumer)

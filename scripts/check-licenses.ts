@@ -7,8 +7,19 @@
 // Fails with exit 1 on any forbidden license, any LGPL without an ADR, or any
 // unknown/UNLICENSED third-party dep. Workspace packages (`@stageflip/*`, root
 // `stageflip`) are skipped; their posture is set by LICENSE + ADR-001.
+//
+// T-307 extension: ALSO validates every preset's font-license expression
+// against an allow-list of font-license atoms (see `FONT_ALLOWED_ATOMS`
+// below). Uses the @stageflip/schema preset loader directly via a relative
+// import (same pattern as check-skill-drift). The font-license block is
+// additive: pass/fail is OR'd into the dep-license verdict so the script
+// remains a single CI gate.
 
 import { spawnSync } from 'node:child_process';
+
+import type { FontLicenseAtom } from '../packages/schema/src/presets/font-license.js';
+import { FontLicenseRegistry } from '../packages/schema/src/presets/font-registry.js';
+import { loadAllPresets } from '../packages/schema/src/presets/loader.js';
 
 interface PackageEntry {
   name: string;
@@ -42,12 +53,7 @@ const ALLOWED = new Set([
  * Licenses that require an ADR before use (LGPL dynamic-linking only, per
  * ADR-001 §D4). A match is a soft failure until the ADR lands.
  */
-const NEEDS_ADR = new Set([
-  'LGPL-2.1',
-  'LGPL-3.0',
-  'LGPL-2.1-or-later',
-  'LGPL-3.0-or-later',
-]);
+const NEEDS_ADR = new Set(['LGPL-2.1', 'LGPL-3.0', 'LGPL-2.1-or-later', 'LGPL-3.0-or-later']);
 
 /** Hard-forbidden licenses; any match is an immediate gate failure. */
 const FORBIDDEN = new Set([
@@ -146,6 +152,96 @@ function isWorkspacePkg(name: string): boolean {
   return name === 'stageflip' || name.startsWith('@stageflip/');
 }
 
+// ---------- Font-license validation (T-307) ----------
+
+/**
+ * Permitted font-license atoms. Per ADR-004 §D3 + ADR-001 §D4, the registry's
+ * 12 atoms are all permissible classifications, but `proprietary-byo`,
+ * `commercial-byo`, and `platform-byo` carry a sign-off obligation
+ * (`signOff.typeDesign`) — documented in the registry, not enforced here. The
+ * gate's job is the parser-level contract: every license expression must
+ * parse to known atoms.
+ */
+const FONT_ALLOWED_ATOMS: ReadonlyArray<FontLicenseAtom> = [
+  'ofl',
+  'apache-2.0',
+  'mit',
+  'public-domain',
+  'cc0-1.0',
+  'proprietary-byo',
+  'commercial-byo',
+  'platform-byo',
+  'license-cleared',
+  'license-mixed',
+  'ofl-equivalent',
+  'na',
+];
+
+const PRESETS_ROOT = 'skills/stageflip/presets';
+
+interface FontLicenseReport {
+  inspected: number;
+  unparseable: Array<{ family: string; license: string; cause: string }>;
+  unwhitelisted: Array<{ family: string; license: string; referencedBy: ReadonlyArray<string> }>;
+  missingFallback: Array<{ family: string; referencedBy: ReadonlyArray<string> }>;
+}
+
+function runFontLicenseChecks(): FontLicenseReport {
+  const report: FontLicenseReport = {
+    inspected: 0,
+    unparseable: [],
+    unwhitelisted: [],
+    missingFallback: [],
+  };
+
+  let presetRegistry: ReturnType<typeof loadAllPresets>;
+  try {
+    presetRegistry = loadAllPresets(PRESETS_ROOT);
+  } catch (err) {
+    report.unparseable.push({
+      family: '<preset-loader>',
+      license: '<n/a>',
+      cause: err instanceof Error ? err.message : String(err),
+    });
+    return report;
+  }
+
+  let registry: FontLicenseRegistry;
+  try {
+    registry = FontLicenseRegistry.buildFromPresets(presetRegistry);
+  } catch (err) {
+    report.unparseable.push({
+      family: '<font-registry-build>',
+      license: '<n/a>',
+      cause: err instanceof Error ? err.message : String(err),
+    });
+    return report;
+  }
+
+  report.inspected = registry.size();
+
+  const validation = registry.validateAgainstWhitelist(FONT_ALLOWED_ATOMS);
+  for (const v of validation.violations) {
+    report.unwhitelisted.push({
+      family: v.family,
+      license: v.license.atoms.join(
+        v.license.composition === 'all' ? ' + ' : v.license.composition === 'union' ? ' / ' : '',
+      ),
+      referencedBy: v.referencedBy,
+    });
+  }
+
+  // Audit-flag (NOT a hard error per AC #20): proprietary-byo without fallback.
+  for (const flagged of registry.auditMissingFallback()) {
+    report.missingFallback.push({
+      family: flagged.family,
+      referencedBy: flagged.referencedBy,
+    });
+  }
+
+  return report;
+}
+
 function runPnpmLicenses(): Record<string, PackageEntry[]> {
   const result = spawnSync('pnpm', ['licenses', 'list', '--json'], {
     encoding: 'utf8',
@@ -185,10 +281,16 @@ function main(): void {
     }
   }
 
+  // T-307: font-license validation block. ADDITIVE — does not modify the
+  // existing dep-license logic above. Failure here is OR'd into the exit code.
+  const fontReport = runFontLicenseChecks();
+  const fontFailures = fontReport.unparseable.length > 0 || fontReport.unwhitelisted.length > 0;
+
   const exitCode =
-    forbidden.length > 0 || unknown.length > 0 || needsAdr.length > 0 ? 1 : 0;
+    forbidden.length > 0 || unknown.length > 0 || needsAdr.length > 0 || fontFailures ? 1 : 0;
 
   process.stdout.write(`check-licenses: ${checked} external deps inspected\n`);
+  process.stdout.write(`check-licenses: ${fontReport.inspected} font-license entries inspected\n`);
 
   if (forbidden.length > 0) {
     process.stderr.write(`\n  FORBIDDEN (${forbidden.length}):\n`);
@@ -197,9 +299,7 @@ function main(): void {
   if (needsAdr.length > 0) {
     process.stderr.write(`\n  NEEDS-ADR (${needsAdr.length}):\n`);
     for (const [id, lic] of needsAdr) process.stderr.write(`    ${id}  ->  ${lic}\n`);
-    process.stderr.write(
-      '  -> file an ADR permitting dynamic-link LGPL, or remove the dep.\n',
-    );
+    process.stderr.write('  -> file an ADR permitting dynamic-link LGPL, or remove the dep.\n');
   }
   if (unknown.length > 0) {
     process.stderr.write(`\n  UNKNOWN (${unknown.length}):\n`);
@@ -207,6 +307,35 @@ function main(): void {
     process.stderr.write(
       '  -> unknown/UNLICENSED third-party license. Whitelist with review, or remove.\n',
     );
+  }
+
+  if (fontReport.unparseable.length > 0) {
+    process.stderr.write(`\n  FONT-LICENSE UNPARSEABLE (${fontReport.unparseable.length}):\n`);
+    for (const u of fontReport.unparseable) {
+      process.stderr.write(`    ${u.family}  ->  ${u.license}\n      cause: ${u.cause}\n`);
+    }
+    process.stderr.write(
+      '  -> font-license expression failed to parse. See packages/schema/src/presets/font-license.ts\n',
+    );
+  }
+  if (fontReport.unwhitelisted.length > 0) {
+    process.stderr.write(`\n  FONT-LICENSE UNWHITELISTED (${fontReport.unwhitelisted.length}):\n`);
+    for (const u of fontReport.unwhitelisted) {
+      process.stderr.write(`    ${u.family}  ->  ${u.license}\n`);
+      process.stderr.write(`      referenced by: ${u.referencedBy.join(', ')}\n`);
+    }
+    process.stderr.write(
+      '  -> font-license atom not in the permitted set. Update preset frontmatter or extend FONT_ALLOWED_ATOMS.\n',
+    );
+  }
+  if (fontReport.missingFallback.length > 0) {
+    // Audit-flag only — informational; does not affect exitCode.
+    process.stdout.write(
+      `\n  FONT-LICENSE AUDIT (${fontReport.missingFallback.length}): proprietary-byo without fallback\n`,
+    );
+    for (const f of fontReport.missingFallback) {
+      process.stdout.write(`    ${f.family}  (referenced by: ${f.referencedBy.join(', ')})\n`);
+    }
   }
 
   if (exitCode === 0) process.stdout.write('check-licenses: PASS\n');
