@@ -10,3 +10,4 @@ packages:
   - "firebase/functions"
   - "infra"
   - "scripts"
+  - "tests/load"
