@@ -83,6 +83,12 @@ const REVIEWED_OK = new Map<string, string>([
   // license also procured per docs/dependencies.md §3 Media/rendering row.
   // Consumed by @stageflip/runtimes-gsap (T-063). Reviewed 2026-04-21.
   ['gsap', "Standard 'no charge' license (URL form); Business Green procured"],
+  // jsonify 0.0.1 — Douglas Crockford's reference json.org JSON.parse /
+  // JSON.stringify implementation, declared "Public Domain" in package.json.
+  // Functionally equivalent to Unlicense / CC0-1.0 (already in ALLOWED).
+  // Transitive dep of pg-mem -> json-stable-stringify (T-270 storage-postgres
+  // unit-test backend). Reviewed 2026-04-27.
+  ['jsonify', 'Public Domain (json.org reference; equivalent to Unlicense)'],
 ]);
 
 /**
