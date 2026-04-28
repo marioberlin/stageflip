@@ -8,7 +8,9 @@
     "backup-restore.test.ts",
     "migrate-org-region.ts",
     "check-preset-integrity.ts",
-    "check-preset-integrity.test.ts"
+    "check-preset-integrity.test.ts",
+    "check-determinism.ts",
+    "check-determinism.test.ts"
   ],
   "exclude": ["node_modules"]
 }
