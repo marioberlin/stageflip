@@ -3,6 +3,12 @@
   "compilerOptions": {
     "noEmit": true
   },
-  "include": ["backup-restore.ts", "backup-restore.test.ts", "migrate-org-region.ts"],
+  "include": [
+    "backup-restore.ts",
+    "backup-restore.test.ts",
+    "migrate-org-region.ts",
+    "check-preset-integrity.ts",
+    "check-preset-integrity.test.ts"
+  ],
   "exclude": ["node_modules"]
 }
