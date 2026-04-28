@@ -5,6 +5,7 @@
 
 import { z } from 'zod';
 
+import { type InteractiveClip, interactiveClipSchema } from '../clips/interactive.js';
 import { type AudioElement, audioElementSchema } from './audio.js';
 import { type ElementBase, elementBaseSchema } from './base.js';
 import { type BlenderClipElement, blenderClipSchema } from './blender-clip.js';
@@ -41,7 +42,8 @@ export type Element =
   | ClipElement
   | EmbedElement
   | CodeElement
-  | BlenderClipElement;
+  | BlenderClipElement
+  | InteractiveClip;
 
 /**
  * Group schema with recursive `children: Element[]`. Uses `z.lazy` and an
@@ -71,6 +73,15 @@ export const groupElementSchema: z.ZodType<GroupElement> = z.lazy(() =>
  * Runtime cost at 11 branches is negligible; top-level Zod errors remain
  * readable because every branch still discriminates on `type`.
  */
+/**
+ * Lazy reference to `interactiveClipSchema` — `interactive.ts` imports
+ * `elementSchema` from this module via `z.lazy` to use as the `staticFallback`
+ * inner schema (it is itself an Element[]). Wrapping the InteractiveClip
+ * branch in `z.lazy` defers binding-resolution to parse time, breaking the
+ * ESM circular-import "undefined at union-construction time" hazard.
+ */
+const interactiveClipBranch = z.lazy(() => interactiveClipSchema);
+
 export const elementSchema = z.union([
   textElementSchema,
   imageElementSchema,
@@ -83,6 +94,7 @@ export const elementSchema = z.union([
   embedElementSchema,
   codeElementSchema,
   blenderClipSchema,
+  interactiveClipBranch,
   groupElementSchema,
 ]) as unknown as z.ZodType<Element>;
 
@@ -103,6 +115,7 @@ export const ELEMENT_TYPES = [
   'embed',
   'code',
   'blender-clip',
+  'interactive-clip',
 ] as const;
 export type ElementType = (typeof ELEMENT_TYPES)[number];
 

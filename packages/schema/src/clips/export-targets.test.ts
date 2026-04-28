@@ -11,7 +11,7 @@ import {
   exportTargetSchema,
   resolveClipPath,
 } from './export-targets.js';
-import { type InteractiveClip } from './interactive.js';
+import type { InteractiveClip } from './interactive.js';
 
 const ANY_CLIP: InteractiveClip = {
   id: 'el_int1',

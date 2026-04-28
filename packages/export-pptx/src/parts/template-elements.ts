@@ -44,7 +44,8 @@ function renderTemplateElement(el: Element, ctx: SlideEmitContext): string {
     case 'clip':
     case 'embed':
     case 'code':
-    case 'blender-clip': {
+    case 'blender-clip':
+    case 'interactive-clip': {
       // Template-tier image / video / etc. placeholders are uncommon; emit
       // a minimal `<p:sp>` stub so the part stays structurally valid, plus
       // a loss flag so the consumer can surface the gap. Future T-253

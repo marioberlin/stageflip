@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { ELEMENT_TYPES, elementSchema } from '../elements/index.js';
-import { type InteractiveClip } from './interactive.js';
+import type { InteractiveClip } from './interactive.js';
 
 const VALID: InteractiveClip = {
   id: 'el_int_union',
@@ -53,7 +53,7 @@ describe('elementSchema (T-305 ACs #15–#17)', () => {
         id: 'el_image_1',
         transform: { x: 0, y: 0, width: 100, height: 100 },
         type: 'image',
-        src: 'https://example.com/x.png',
+        src: 'asset:img_x',
       }),
     ).not.toThrow();
   });

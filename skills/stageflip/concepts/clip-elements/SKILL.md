@@ -3,8 +3,8 @@ title: Clip Element Catalogue
 id: skills/stageflip/concepts/clip-elements
 tier: concept
 status: substantive
-last_updated: 2026-04-27
-owner_task: T-265
+last_updated: 2026-04-28
+owner_task: T-305
 related:
   - skills/stageflip/concepts/runtimes/SKILL.md
   - skills/stageflip/concepts/schema/SKILL.md
@@ -13,7 +13,7 @@ related:
 # Clip Element Catalogue
 
 `Element` is the discriminated union of every shape a slide / video / display
-can carry. Two element types specifically carry **motion**:
+can carry. Three element types specifically carry **motion**:
 
 - `clip` — the generic motion element. Names a registered runtime + a clip
   kind from that runtime's registry. Frame-deterministic and interactive
@@ -21,6 +21,9 @@ can carry. Two element types specifically carry **motion**:
 - `blender-clip` — the bake-tier element (T-265). Names a built-in scene
   template (`fluid-sim`, `product-render`, `particle-burst`) plus a
   parameter bag, plus a pinned `inputsHash` that addresses the cache.
+- `interactive-clip` — the interactive-tier element (T-305). Declares BOTH
+  a deterministic `staticFallback` and a live `liveMount`; export pipelines
+  route per `resolveClipPath(target, clip)` per ADR-003 §D3.
 
 Every other element type (`text`, `image`, `video`, `audio`, `shape`,
 `group`, `chart`, `table`, `embed`, `code`) is structural / static.
@@ -63,8 +66,75 @@ Per-template JSON Schemas live in
 `services/blender-worker/templates/<name>/params.schema.json`. The set is
 closed in v1; adding a template is a follow-up task.
 
+## `InteractiveClip` family (T-305)
+
+Per ADR-003 §D2, the interactive runtime tier is the boundary where the
+`§3` determinism rules deliberately do not apply. Every clip in this tier
+declares both paths:
+
+```ts
+{
+  type: 'interactive-clip',
+  family: 'shader' | 'three-scene' | 'voice' | 'ai-chat'
+        | 'live-data' | 'web-embed' | 'ai-generative',
+  staticFallback: Element[],          // non-empty per ADR-003 §D2 invariant
+  liveMount: {
+    component: { module: '<pkg>#<ClassName>', version?: string },
+    props: Record<string, unknown>,   // typed per family in Phase γ
+    permissions: ('mic' | 'network' | 'camera')[],
+  },
+  posterFrame?: number,
+  // ...elementBase fields
+}
+```
+
+The seven frontier families enumerated by ADR-005 §D1:
+
+| Family | Live capability | Static fallback |
+|---|---|---|
+| `shader` | GLSL fragment shader (frame-deterministic via `uFrame`) | rasterized canonical frame |
+| `three-scene` | Three.js scene (seeded PRNG + `tick(frame)`) | rendered still |
+| `voice` | Web Audio + MediaRecorder (`mic`) | waveform poster |
+| `ai-chat` | Scoped LLM round-trip (`network`) | captured transcript |
+| `live-data` | Endpoint fetch + chart (`network`) | last cached value |
+| `web-embed` | Sandboxed iframe (`network`) | poster screenshot |
+| `ai-generative` | Playback-time prompt → content (`network`) | curated example output |
+
+### Static + live duality
+
+The duality is **load-bearing**. ADR-003 §D2 forbids bare-`liveMount` clips:
+the `staticFallback.min(1)` Zod refine in `interactiveClipSchema` rejects
+them at the type level; `check-preset-integrity` (T-308) re-asserts at CI
+time. The static fallback is rendered by frame-runtime for parity-safe
+exports; the live mount is the frontier surface.
+
+### Export-matrix routing (ADR-003 §D3)
+
+`resolveClipPath(target: ExportTarget, clip: InteractiveClip)` returns
+`'static' | 'live'`:
+
+| Target | Path |
+|---|---|
+| `mp4` / `image-sequence` / `pptx-flat` / `display-pre-rendered` | `static` |
+| `html-slides` / `live-presentation` / `display-interactive` / `on-device-player` | `live` |
+
+The matrix is pinned in `packages/schema/src/clips/export-targets.ts` and
+covered by a test that iterates every target. Adding a target is an ADR-003
+§D3 amendment plus a coordinated change to every per-target exporter.
+
+### Cross-links
+
+- ADR-003 §D2/§D3/§D4 — the contract this schema enforces.
+- ADR-005 §D1 — the seven frontier families.
+- T-306 — `packages/runtimes/interactive/` (the runtime tier; T-305 is the
+  schema/contract layer it consumes).
+- `skills/stageflip/concepts/runtimes/SKILL.md` — runtime-tier overview.
+
 ## Cross-links
 
 - `packages/schema/src/elements/blender-clip.ts` — Zod schema.
+- `packages/schema/src/clips/interactive.ts` — Zod schema.
+- `packages/schema/src/clips/export-targets.ts` — export matrix +
+  `resolveClipPath`.
 - `packages/schema/src/elements/index.ts` — discriminated union.
 - `services/blender-worker/templates/` — built-in scene templates.

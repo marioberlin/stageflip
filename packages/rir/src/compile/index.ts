@@ -257,6 +257,25 @@ function toRIRContent(el: Element): RIRElementContent {
           duration: el.duration,
         },
       };
+    case 'interactive-clip':
+      // T-305: InteractiveClip is the interactive-tier element type per
+      // ADR-003 §D2. RIR lowering carries both paths through; the renderer
+      // dispatcher routes via `resolveClipPath(target, clip)` from
+      // `@stageflip/schema/clips`. Per ADR-003 §D3, parity-safe targets
+      // (mp4 / image-sequence / pptx-flat / display-pre-rendered) render
+      // `staticFallback`; live targets (html-slides / live-presentation /
+      // display-interactive / on-device-player) mount `liveMount`.
+      return {
+        type: 'clip',
+        runtime: 'interactive',
+        clipName: el.family,
+        params: {
+          family: el.family,
+          staticFallback: el.staticFallback,
+          liveMount: el.liveMount,
+          ...(el.posterFrame !== undefined ? { posterFrame: el.posterFrame } : {}),
+        },
+      };
     default: {
       const never: never = el;
       return never;

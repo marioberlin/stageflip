@@ -91,9 +91,9 @@ describe('interactiveClipSchema (T-305 ACs #1–#4, #6, #8, #9)', () => {
     expect(parsed.liveMount.permissions).toEqual([]);
   });
   it('AC #2 — empty staticFallback throws with the spec min(1) message', () => {
-    expect(() =>
-      interactiveClipSchema.parse({ ...VALID, staticFallback: [] }),
-    ).toThrow(/non-empty staticFallback/);
+    expect(() => interactiveClipSchema.parse({ ...VALID, staticFallback: [] })).toThrow(
+      /non-empty staticFallback/,
+    );
   });
   it('AC #3 — missing liveMount throws', () => {
     const { liveMount: _omitted, ...withoutLiveMount } = VALID;
