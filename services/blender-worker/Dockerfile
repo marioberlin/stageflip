@@ -41,10 +41,10 @@ COPY packages/auth-schema ./packages/auth-schema
 
 RUN pnpm install --frozen-lockfile --filter @stageflip/blender-worker...
 # Build workspace deps first so the worker's tsc can resolve their dist/.
-# `@stageflip/runtimes-blender` exports point at ./dist/index.d.ts; without
-# an explicit build the worker fails with TS2307.
-RUN pnpm --filter @stageflip/runtimes-blender build
-RUN pnpm --filter @stageflip/blender-worker build
+# Each workspace package exports `./dist/index.d.ts`; without explicit
+# topological builds the worker fails with TS2307. Use turbo so deps build
+# in order (auth-schema, schema, runtimes-contract → runtimes-blender).
+RUN pnpm exec turbo run build --filter @stageflip/blender-worker
 
 # --- runtime --------------------------------------------------------------
 
