@@ -27,7 +27,14 @@ compass-distilled rule set (visual tokens / typography / animation / rules /
 acceptance / references).
 
 **T-304** ships the loader + validator + frontmatter parser at
-`@stageflip/schema/presets`. Consumers:
+`@stageflip/schema`. The surface is split across two subpaths so browser
+bundles (apps/stageflip-slide, apps/stageflip-display) never pull in
+`node:fs` / `node:path`:
+
+- **`@stageflip/schema`** (browser-safe): schemas + types + body parser + error classes.
+- **`@stageflip/schema/presets/node`** (Node-only): loader + registry.
+
+Consumers:
 
 - **T-307** — font-license registry (validates the canonical license vocabulary).
 - **T-308** — `check-preset-integrity` CI gate.
@@ -36,17 +43,22 @@ acceptance / references).
 ## API surface
 
 ```ts
+// Browser-safe (schemas + types + errors + body parser):
 import {
   presetFrontmatterSchema,
   clusterSkillFrontmatterSchema,
-  loadPreset,
-  loadCluster,
-  loadAllPresets,
-  PresetRegistry,
   PresetValidationError,
   PresetParseError,
   PresetRegistryLoadError,
 } from '@stageflip/schema';
+
+// Node-only (loader + registry — uses node:fs / node:path):
+import {
+  loadPreset,
+  loadCluster,
+  loadAllPresets,
+  PresetRegistry,
+} from '@stageflip/schema/presets/node';
 ```
 
 Three loader tiers:
