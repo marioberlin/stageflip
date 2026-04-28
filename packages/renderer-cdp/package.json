@@ -28,7 +28,7 @@
     "@stageflip/fonts": "workspace:*",
     "@stageflip/rir": "workspace:*",
     "@stageflip/runtimes-contract": "workspace:*",
-    "puppeteer-core": "23.11.1"
+    "puppeteer-core": "24.42.0"
   },
   "devDependencies": {
     "happy-dom": "20.9.0"
