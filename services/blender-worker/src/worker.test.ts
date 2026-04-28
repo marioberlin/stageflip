@@ -217,3 +217,79 @@ describe('processBakeJob — region routing', () => {
     expect(router.bucketFor).toHaveBeenCalledWith('eu', 'eu-bucket');
   });
 });
+
+describe('processBakeJob — render-farm state markers (T-266 AC #14)', () => {
+  it('emits started and finished(succeeded) on a successful render', async () => {
+    const { bucket } = makeBucket();
+    const startedCalls: string[] = [];
+    const finishedCalls: Array<{ bakeId: string; status: string; error?: string }> = [];
+    const stateMarkers = {
+      started: (bakeId: string) => {
+        startedCalls.push(bakeId);
+      },
+      finished: (args: { bakeId: string; status: 'succeeded' | 'failed'; error?: string }) => {
+        finishedCalls.push(args);
+      },
+    };
+    const deps = makeDeps({ bucket });
+    await processBakeJob({ ...deps, stateMarkers }, PAYLOAD);
+    expect(startedCalls).toEqual([PAYLOAD.inputsHash]);
+    expect(finishedCalls).toEqual([{ bakeId: PAYLOAD.inputsHash, status: 'succeeded' }]);
+  });
+
+  it('emits started and finished(failed, error) when the render throws', async () => {
+    const { bucket } = makeBucket();
+    const startedCalls: string[] = [];
+    const finishedCalls: Array<{ bakeId: string; status: string; error?: string }> = [];
+    const stateMarkers = {
+      started: (bakeId: string) => {
+        startedCalls.push(bakeId);
+      },
+      finished: (args: { bakeId: string; status: 'succeeded' | 'failed'; error?: string }) => {
+        finishedCalls.push(args);
+      },
+    };
+    const failingInvoker = {
+      render: async () => {
+        throw new Error('blender crashed');
+      },
+    };
+    const deps = makeDeps({ bucket, invoker: failingInvoker });
+    await expect(processBakeJob({ ...deps, stateMarkers }, PAYLOAD)).rejects.toThrow(
+      'blender crashed',
+    );
+    expect(startedCalls).toEqual([PAYLOAD.inputsHash]);
+    expect(finishedCalls).toEqual([
+      { bakeId: PAYLOAD.inputsHash, status: 'failed', error: 'blender crashed' },
+    ]);
+  });
+
+  it('emits markers on cache-hit too (started/finished pair)', async () => {
+    const { bucket } = makeBucket({
+      [`bakes/${PAYLOAD.inputsHash}/manifest.json`]: '{"frameCount":30}',
+    });
+    const startedCalls: string[] = [];
+    const finishedCalls: Array<{ bakeId: string; status: string; error?: string }> = [];
+    const stateMarkers = {
+      started: (bakeId: string) => {
+        startedCalls.push(bakeId);
+      },
+      finished: (args: { bakeId: string; status: 'succeeded' | 'failed'; error?: string }) => {
+        finishedCalls.push(args);
+      },
+    };
+    const deps = makeDeps({ bucket });
+    const result = await processBakeJob({ ...deps, stateMarkers }, PAYLOAD);
+    expect(result.status).toBe('cached');
+    expect(startedCalls).toEqual([PAYLOAD.inputsHash]);
+    expect(finishedCalls).toEqual([{ bakeId: PAYLOAD.inputsHash, status: 'succeeded' }]);
+  });
+
+  it('AC #18: omitting stateMarkers preserves T-265 behaviour exactly', async () => {
+    const { bucket } = makeBucket();
+    const deps = makeDeps({ bucket });
+    // No stateMarkers → no marker side-effects; the call still succeeds.
+    const result = await processBakeJob(deps, PAYLOAD);
+    expect(result.status).toBe('rendered');
+  });
+});

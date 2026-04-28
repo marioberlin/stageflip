@@ -4,7 +4,7 @@ id: skills/stageflip/concepts/runtimes
 tier: concept
 status: substantive
 last_updated: 2026-04-27
-owner_task: T-265
+owner_task: T-266
 related:
   - skills/stageflip/concepts/clip-elements/SKILL.md
   - skills/stageflip/concepts/storage-contract/SKILL.md
@@ -98,11 +98,66 @@ If you change any of these defaults, the cache is silently invalidated for
 existing hashes. Bump the canonicalization rule explicitly and document the
 migration.
 
+## Render farm deployment (T-266)
+
+The bake worker runs somewhere — local dev uses a child process; production
+uses a GPU-cloud vendor. T-266 ships **`@stageflip/render-farm`**, an
+adapter abstraction that decouples the bake worker from the vendor choice:
+
+```ts
+import { getRenderFarmAdapter } from '@stageflip/render-farm';
+const adapter = getRenderFarmAdapter(process.env);
+const { jobId } = await adapter.submitJob({
+  bakeId, image, resources: { cpu, memoryGB, gpu: 'cuda' }, env: { ... },
+});
+```
+
+The `RenderFarmAdapter` contract (`packages/render-farm/src/contract.ts`)
+defines `submitJob`, `cancelJob`, `getJobStatus`, optional `streamLogs`, and
+`capabilities` (which features are real vs stubs). All methods emit OTel
+spans tagged with `vendor`, `jobId`, `state`, `duration_ms`.
+
+### Adapters shipped in T-266
+
+- **`InMemoryRenderFarmAdapter`** — runs the worker as a child process via
+  `node:child_process`. Used for local dev + tests + the parity harness.
+  Capabilities: `cpu-only`, streaming logs, `maxConcurrentJobs: 4`.
+- **`KubernetesRenderFarmAdapter` stub** — class skeleton with all methods
+  throwing `NotImplementedError`. `capabilities.maxConcurrentJobs: 0`
+  signals "not deployed". A vendor implementation lands when first prod
+  load demands it.
+
+### Vendor selection
+
+Production env sets `STAGEFLIP_RENDER_FARM_ADAPTER=k8s` (or a future vendor
+key). The selector throws on unknown values — silent fallback to
+`in-memory` would mis-route prod bake load.
+
+Current vendor: **none** (in-memory only). Future options + cost/throughput
+tradeoffs: see `docs/ops/render-farm-vendors.md`. v1 recommendation is
+self-hosted K8s on GKE Autopilot; the adapter pattern means we can swap.
+
+### State-marker protocol
+
+The in-memory adapter drives lifecycle transitions by parsing two stdout
+markers from the worker:
+
+```
+STAGEFLIP_RENDER_FARM_STARTED bakeId=<id>
+STAGEFLIP_RENDER_FARM_FINISHED bakeId=<id> status=<succeeded|failed> [error=<msg>]
+```
+
+The worker emits these around `processBakeJob`. Real K8s adapters ignore
+them (they read pod state from the Kubernetes API) — the markers are only
+load-bearing for the in-memory path.
+
 ## Cross-links
 
 - `packages/runtimes/blender/` — submit + fetch + queue + inputs-hash.
 - `services/blender-worker/` — Docker image, BullMQ consumer, render.py.
 - `firebase/functions/src/bake/` — Cloud Function adapter.
+- `packages/render-farm/` — adapter contract + in-memory + K8s stub (T-266).
+- `docs/ops/render-farm-vendors.md` — vendor evaluation + recommendation.
 - `docs/decisions/ADR-003-interactive-runtime-tier.md` — three-tier model.
 - `docs/architecture.md:330` — bake path layout.
 - `docs/architecture.md:339-341` — BullMQ queue names.
