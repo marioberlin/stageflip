@@ -15,3 +15,9 @@ export {
   type Preset,
 } from './loader.js';
 export { PresetRegistry, type RegistryClusterEntry } from './registry.js';
+export {
+  canonicalizeFontFamily,
+  FontLicenseRegistry,
+  type FontEntry,
+  type ValidationResult,
+} from './font-registry.js';
