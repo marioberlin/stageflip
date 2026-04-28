@@ -1,7 +1,6 @@
 {
   "name": "@stageflip/runtimes-blender",
   "version": "0.0.0",
-  "private": true,
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -19,5 +18,26 @@
     "typecheck": "tsc --noEmit",
     "lint": "biome check src",
     "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@stageflip/auth-schema": "workspace:*",
+    "@stageflip/runtimes-contract": "workspace:*",
+    "@stageflip/schema": "workspace:*",
+    "bullmq": "5.21.2",
+    "ioredis": "5.4.1",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "2.1.9",
+    "vitest": "2.1.9"
+  },
+  "license": "BUSL-1.1",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marioberlin/stageflip.git",
+    "directory": "packages/runtimes/blender"
   }
 }
