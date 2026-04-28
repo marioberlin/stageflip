@@ -11,6 +11,7 @@ export * from './elements/index.js';
 export { applyInheritance, compareToPlaceholder } from './inheritance.js';
 export type { CompareToPlaceholderResult } from './inheritance.js';
 export * from './migrations/index.js';
+export * from './presets/index.js';
 export * from './primitives.js';
 export * from './templates.js';
 export * from './theme.js';

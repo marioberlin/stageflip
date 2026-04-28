@@ -9,20 +9,23 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./presets/node": {
+      "types": "./dist/presets/node.d.ts",
+      "import": "./dist/presets/node.js",
+      "require": "./dist/presets/node.cjs"
     }
   },
-  "files": [
-    "dist",
-    "src"
-  ],
+  "files": ["dist", "src"],
   "scripts": {
-    "build": "tsup src/index.ts --dts --format esm,cjs --clean",
-    "dev": "tsup src/index.ts --dts --format esm,cjs --watch",
+    "build": "tsup src/index.ts src/presets/node.ts --dts --format esm,cjs --clean",
+    "dev": "tsup src/index.ts src/presets/node.ts --dts --format esm,cjs --watch",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "gray-matter": "4.0.3",
     "zod": "3.25.76"
   },
   "devDependencies": {
