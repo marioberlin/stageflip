@@ -10,4 +10,5 @@ packages:
   - "firebase/functions"
   - "infra"
   - "scripts"
+  - "services/blender-worker"
   - "tests/load"

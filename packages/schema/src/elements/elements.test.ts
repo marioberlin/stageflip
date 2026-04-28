@@ -234,7 +234,7 @@ describe('elementSchema (discriminated union)', () => {
     ).toThrow();
   });
   it('ELEMENT_TYPES covers all discriminant values', () => {
-    expect(ELEMENT_TYPES).toHaveLength(11);
-    expect(new Set(ELEMENT_TYPES).size).toBe(11);
+    expect(ELEMENT_TYPES).toHaveLength(12);
+    expect(new Set(ELEMENT_TYPES).size).toBe(12);
   });
 });
