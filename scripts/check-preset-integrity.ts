@@ -22,12 +22,12 @@ import { fileURLToPath } from 'node:url';
 
 import matter from 'gray-matter';
 
-import { parseFontLicenseExpression } from '../packages/schema/src/presets/font-license.js';
 import { PresetRegistryLoadError } from '../packages/schema/src/presets/errors.js';
+import { parseFontLicenseExpression } from '../packages/schema/src/presets/font-license.js';
 import {
+  type Preset,
   loadAllPresets,
   resetLoaderCache,
-  type Preset,
 } from '../packages/schema/src/presets/loader.js';
 
 // ---------- script-level constants ----------
@@ -246,7 +246,7 @@ export function checkInteractiveStaticFallback(args: {
   raw: Record<string, unknown>;
 }): CheckResult {
   if (!INTERACTIVE_CLIP_KINDS.has(args.clipKind)) return { ok: true };
-  const sf = args.raw['staticFallback'];
+  const sf = args.raw.staticFallback;
   if (sf === undefined || sf === null) {
     return {
       ok: false,

@@ -7,7 +7,7 @@
 // AC numbers refer to docs/tasks/T-308.md.
 
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -68,11 +68,11 @@ function makeFrontmatter(opts: SyntheticOpts = {}): string {
   lines.push(`clipKind: ${clipKind}`);
   lines.push(`source: ${source}`);
   lines.push(`status: ${status}`);
-  lines.push(`preferredFont:`);
+  lines.push('preferredFont:');
   lines.push(`  family: ${preferredFamily}`);
   lines.push(`  license: ${preferredLicense}`);
   if (opts.fallbackFont) {
-    lines.push(`fallbackFont:`);
+    lines.push('fallbackFont:');
     lines.push(`  family: ${opts.fallbackFont.family}`);
     lines.push(`  weight: ${opts.fallbackFont.weight}`);
     lines.push(`  license: ${opts.fallbackFont.license}`);
@@ -81,7 +81,7 @@ function makeFrontmatter(opts: SyntheticOpts = {}): string {
   if (opts.staticFallback !== undefined) {
     lines.push(`staticFallback: ${opts.staticFallback}`);
   }
-  lines.push(`signOff:`);
+  lines.push('signOff:');
   lines.push(`  parityFixture: ${parityFixture}`);
   lines.push(`  typeDesign: ${typeDesign}`);
   lines.push('---');
@@ -141,7 +141,7 @@ cluster: news
     });
     try {
       const report = runIntegrityChecks({ presetsRoot: root });
-      const fmBucket = report.byInvariant['frontmatter'];
+      const fmBucket = report.byInvariant.frontmatter;
       expect(fmBucket).toBeDefined();
       expect(fmBucket?.errors.length).toBeGreaterThan(0);
       expect(report.exitCode).toBe(1);
@@ -227,10 +227,10 @@ describe('check-preset-integrity invariant 4: interactive staticFallback (AC #5)
   it('fails for an interactive-family preset with no staticFallback', () => {
     // Ensure VALID_CLIP_KINDS includes interactive kinds so the synthetic check is meaningful.
     const interactiveKind = [...INTERACTIVE_CLIP_KINDS][0];
-    expect(interactiveKind).toBeDefined();
+    if (interactiveKind === undefined) throw new Error('expected at least one interactive kind');
     const result = checkInteractiveStaticFallback({
       presetId: 'p',
-      clipKind: interactiveKind!,
+      clipKind: interactiveKind,
       raw: { staticFallback: '' },
     });
     expect(result.ok).toBe(false);
@@ -238,10 +238,10 @@ describe('check-preset-integrity invariant 4: interactive staticFallback (AC #5)
 
   it('fails for an interactive-family preset missing the staticFallback field', () => {
     const interactiveKind = [...INTERACTIVE_CLIP_KINDS][0];
-    expect(interactiveKind).toBeDefined();
+    if (interactiveKind === undefined) throw new Error('expected at least one interactive kind');
     const result = checkInteractiveStaticFallback({
       presetId: 'p',
-      clipKind: interactiveKind!,
+      clipKind: interactiveKind,
       raw: {},
     });
     expect(result.ok).toBe(false);
@@ -249,10 +249,10 @@ describe('check-preset-integrity invariant 4: interactive staticFallback (AC #5)
 
   it('passes for an interactive-family preset with a staticFallback', () => {
     const interactiveKind = [...INTERACTIVE_CLIP_KINDS][0];
-    expect(interactiveKind).toBeDefined();
+    if (interactiveKind === undefined) throw new Error('expected at least one interactive kind');
     const result = checkInteractiveStaticFallback({
       presetId: 'p',
-      clipKind: interactiveKind!,
+      clipKind: interactiveKind,
       raw: { staticFallback: 'frozen-poster' },
     });
     expect(result.ok).toBe(true);
