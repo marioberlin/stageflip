@@ -3,7 +3,7 @@ title: Preset schema primitive
 id: skills/stageflip/concepts/presets
 tier: concept
 status: substantive
-last_updated: 2026-04-27
+last_updated: 2026-04-29
 owner_task: T-304
 related:
   - skills/stageflip/presets/news/SKILL.md
@@ -200,6 +200,36 @@ Invariant 5 is the most common bug class — clusters A/B/D/F/G is the
 required-sign-off set; C/E/H are exempt. The `na` exemption for text-free
 presets is narrow (preferredFont.license atom = `'na'`).
 
+## Skill drift gate (T-310)
+
+`scripts/check-skill-drift.ts` (run as `pnpm check-skill-drift`) extends the
+T-014 link-integrity + tier-coverage checks with two **tree-level** preset
+checks. Each runs against the on-disk preset corpus on every push:
+
+| Check | What it enforces |
+|---|---|
+| `preset-cluster-coverage` | Every cluster directory under `skills/stageflip/presets/` has a `SKILL.md`, AND every preset's frontmatter `cluster` field matches its parent directory name. |
+| `preset-id-coherence` | Every preset's frontmatter `id` matches its filename (sans `.md`), AND every cluster `SKILL.md` has `id: skills/stageflip/presets/<cluster>` exactly. |
+
+These complement (do **not** duplicate) `check-preset-integrity` (T-308):
+
+- T-308 enforces the seven ADR-004 §D6 invariants on **individual** presets.
+- T-310 enforces tree-level invariants — coverage, naming, location.
+
+Both gates aggregate violations: a single run reports every error across every
+preset (no fail-on-first), matching the T-304 loader's posture.
+
+Sample output at HEAD:
+
+```
+check-skill-drift [link-integrity]: PASS
+check-skill-drift [tier-coverage]: PASS
+check-skill-drift [preset-cluster-coverage]: PASS (8 clusters, 50 presets)
+check-skill-drift [preset-id-coherence]: PASS
+
+check-skill-drift: PASS
+```
+
 ## Frontmatter shape (cluster)
 
 ```yaml
@@ -245,3 +275,4 @@ behavior. Output canonicality is pinned by AC #30 (100-invocation hash test).
 - [skills/stageflip/concepts/schema](../schema/SKILL.md) (parent concept)
 - T-307 (font-license registry — license vocabulary; **shipped**)
 - T-308 (`check-preset-integrity` CI gate — first downstream consumer)
+- T-310 (`check-skill-drift` preset-tree gate — tree-level coverage + id coherence)

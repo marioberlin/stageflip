@@ -346,7 +346,7 @@ describe('coverage — malformed inputs', () => {
   });
 
   it('returns an error result when the presets root does not exist', () => {
-    const missing = join(tmpdir(), 'tdx-skill-drift-no-such-presets-' + Date.now());
+    const missing = join(tmpdir(), `tdx-skill-drift-no-such-presets-${Date.now()}`);
     const coverage = presetClusterCoverageCheck({ presetsRoot: missing });
     expect(coverage.errors.length).toBeGreaterThan(0);
     const coherence = presetIdCoherenceCheck({ presetsRoot: missing });

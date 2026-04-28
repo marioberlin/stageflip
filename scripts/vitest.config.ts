@@ -14,7 +14,12 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json-summary'],
-      include: ['backup-restore.ts', 'check-preset-integrity.ts', 'check-determinism.ts'],
+      include: [
+        'backup-restore.ts',
+        'check-preset-integrity.ts',
+        'check-determinism.ts',
+        'check-skill-drift.ts',
+      ],
       exclude: ['*.test.ts', '*.config.ts'],
       thresholds: {
         lines: 80,
@@ -30,6 +35,13 @@ export default defineConfig({
         },
         // T-309 AC #15 — script-specific 85% floor on changed code.
         'check-determinism.ts': {
+          lines: 85,
+          functions: 85,
+          statements: 85,
+          branches: 85,
+        },
+        // T-310 AC #12 — script-specific 85% floor on changed code.
+        'check-skill-drift.ts': {
           lines: 85,
           functions: 85,
           statements: 85,
