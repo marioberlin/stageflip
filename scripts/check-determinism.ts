@@ -22,12 +22,29 @@ import ts from 'typescript';
  * Paths that must not use non-deterministic APIs. See CLAUDE.md §3. The
  * determinism shim package itself is excluded because it IS the tool that
  * replaces these APIs at runtime — its code necessarily references them.
+ *
+ * `packages/runtimes/*\/src/clips/**` covers every runtime tier's clip code
+ * EXCEPT the interactive runtime tier — see `EXCLUDED_PREFIXES` below.
  */
 const DETERMINISTIC_GLOBS = [
   'packages/frame-runtime/src/**/*.{ts,tsx}',
   'packages/runtimes/*/src/clips/**/*.{ts,tsx}',
   'packages/renderer-core/src/clips/**/*.{ts,tsx}',
 ];
+
+/**
+ * Path prefixes excluded from the determinism walk per ADR-003 §D5 + T-306
+ * D-T306-5. The interactive runtime tier is explicitly OUT of scope: clips
+ * mounted via this tier may use `Date.now`, `performance.now`, `fetch`,
+ * `requestAnimationFrame`, `setTimeout`, etc. The tier's contract requires
+ * a deterministic `staticFallback` for parity-safe export targets, so the
+ * MP4 / PPTX / display invariants (I-2) hold via that path.
+ *
+ * T-309 will land a shader sub-rule that re-applies determinism inside the
+ * tier (uniform-updaters must use `frame` only). T-306 ships only the
+ * package-level exemption.
+ */
+const EXCLUDED_PREFIXES = ['packages/runtimes/interactive/'];
 
 /**
  * Escape-hatch comment. A source line prefixed by an inline or preceding
@@ -204,9 +221,11 @@ async function collectFiles(): Promise<string[]> {
   const out: string[] = [];
   for (const pattern of DETERMINISTIC_GLOBS) {
     for await (const match of glob(pattern)) {
-      if (!match.endsWith('.test.ts') && !match.endsWith('.test.tsx')) {
-        out.push(resolve(match));
-      }
+      if (match.endsWith('.test.ts') || match.endsWith('.test.tsx')) continue;
+      // ADR-003 §D5: interactive runtime tier is exempt.
+      const normalized = match.replace(/\\/g, '/');
+      if (EXCLUDED_PREFIXES.some((prefix) => normalized.startsWith(prefix))) continue;
+      out.push(resolve(match));
     }
   }
   return out.sort();
