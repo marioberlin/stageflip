@@ -346,6 +346,9 @@ importers:
       '@stageflip/auth-schema':
         specifier: workspace:^
         version: link:../../packages/auth-schema
+      '@stageflip/observability':
+        specifier: workspace:^
+        version: link:../../packages/observability
       firebase-admin:
         specifier: 13.0.1
         version: 13.0.1
@@ -1436,6 +1439,21 @@ importers:
       vitest:
         specifier: 2.1.9
         version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+
+  scripts:
+    devDependencies:
+      '@types/node':
+        specifier: 22.19.17
+        version: 22.19.17
+      '@vitest/coverage-v8':
+        specifier: 2.1.9
+        version: 2.1.9(vitest@2.1.9(@types/node@22.19.17)(happy-dom@20.9.0)(terser@5.46.2))
+      typescript:
+        specifier: 5.6.3
+        version: 5.6.3
+      vitest:
+        specifier: 2.1.9
+        version: 2.1.9(@types/node@22.19.17)(happy-dom@20.9.0)(terser@5.46.2)
 
 packages:
 

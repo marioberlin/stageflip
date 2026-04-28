@@ -1,0 +1,17 @@
+{
+  "name": "@stageflip/scripts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Workspace scripts (T-271 migrate-org-region; T-272 backup-restore). Not published; tests run in-repo via vitest.",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.17",
+    "@vitest/coverage-v8": "2.1.9",
+    "typescript": "5.6.3",
+    "vitest": "2.1.9"
+  }
+}

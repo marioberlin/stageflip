@@ -14,6 +14,7 @@
   "dependencies": {
     "@stageflip/auth-middleware": "workspace:^",
     "@stageflip/auth-schema": "workspace:^",
+    "@stageflip/observability": "workspace:^",
     "firebase-admin": "13.0.1",
     "firebase-functions": "6.5.0"
   },

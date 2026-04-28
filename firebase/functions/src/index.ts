@@ -1,9 +1,10 @@
 // firebase/functions/src/index.ts
 // Top-level Cloud Functions entrypoint. Each callable adapts a pure
-// handler from `./auth/*` into Firebase's onCall convention. The
-// handlers themselves are unit-tested in `auth/*.test.ts`; this file
-// is integration-only and not covered by unit tests (firebase-admin
-// initialisation can't be mocked cleanly in vitest).
+// handler from `./auth/*` (T-262) and `./backup/*` (T-272) into Firebase's
+// onCall / onSchedule conventions. The handlers themselves are unit-tested
+// in their `*.test.ts` siblings; this file is integration-only and not
+// covered by unit tests (firebase-admin initialisation can't be mocked
+// cleanly in vitest).
 
 import { randomBytes } from 'node:crypto';
 import { hashApiKey } from '@stageflip/auth-middleware';
@@ -12,6 +13,7 @@ import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
 import {
   type AuthDeps,
   CallableError,
@@ -24,6 +26,13 @@ import {
   revokeApiKeyHandler,
   setActiveOrgHandler,
 } from './auth/index.js';
+import { createAdminBackupDeps } from './backup/admin-deps.js';
+import {
+  type BackupDeps,
+  backupFirestoreHandler,
+  backupStorageHandler,
+  verifyBackupHandler,
+} from './backup/index.js';
 
 initializeApp();
 
@@ -148,3 +157,33 @@ export const changeMemberRole = onCall(async (req) => {
     asHttps(err);
   }
 });
+
+// --- T-272: backup + verification scheduled functions ---
+
+function backupDeps(): BackupDeps {
+  return createAdminBackupDeps();
+}
+
+/** T-272 AC #1: daily Firestore export at 02:00 UTC. */
+export const backupFirestore = onSchedule(
+  { schedule: '0 2 * * *', timeZone: 'Etc/UTC', timeoutSeconds: 540, memory: '512MiB' },
+  async () => {
+    await backupFirestoreHandler(backupDeps());
+  },
+);
+
+/** T-272 AC #2: daily Storage backup at 02:00 UTC. */
+export const backupStorage = onSchedule(
+  { schedule: '0 2 * * *', timeZone: 'Etc/UTC', timeoutSeconds: 540, memory: '512MiB' },
+  async () => {
+    await backupStorageHandler(backupDeps());
+  },
+);
+
+/** T-272 AC #5: daily verification at 03:00 UTC (1h after backup). */
+export const verifyBackup = onSchedule(
+  { schedule: '0 3 * * *', timeZone: 'Etc/UTC', timeoutSeconds: 300, memory: '256MiB' },
+  async () => {
+    await verifyBackupHandler(backupDeps());
+  },
+);

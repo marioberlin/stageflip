@@ -3,7 +3,7 @@ title: Observability
 id: skills/stageflip/concepts/observability
 tier: concept
 status: substantive
-last_updated: 2026-04-27
+last_updated: 2026-04-28
 owner_task: T-264
 related:
   - skills/stageflip/concepts/auth/SKILL.md
@@ -189,3 +189,16 @@ in:
 - `@stageflip/engine` — agent tool calls (one span per tool invocation).
 
 Each rollout adds the standard span attributes plus its domain-specific keys.
+
+## Backup + restore (T-272)
+
+The backup + verification Cloud Functions in
+`firebase/functions/src/backup/` consume `@stageflip/observability` for
+both error reporting (`captureError`) and structured logs (`createLogger`).
+The verifier asserts existence + size > 0 + JSON-parse on each expected
+backup file; failures emit Sentry alerts via `captureError` AND log at
+error level (which auto-promotes per the logger semantics above).
+
+Operational runbook: `docs/ops/restore-procedure.md`. Architecture:
+`docs/ops/backup-architecture.md`. Drill log:
+`docs/ops/restore-drill-2026-04.md`.

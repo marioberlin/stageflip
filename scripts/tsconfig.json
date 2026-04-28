@@ -1,0 +1,8 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["backup-restore.ts", "backup-restore.test.ts", "migrate-org-region.ts"],
+  "exclude": ["node_modules"]
+}
