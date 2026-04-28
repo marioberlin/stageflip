@@ -24,12 +24,24 @@ export interface BakeOutputBucket {
   putText(path: string, text: string): Promise<void>;
 }
 
+/**
+ * Why a render ran on CPU:
+ *   - 'gpu-not-configured' → dev default; no GPU was ever attempted. Quiet.
+ *   - 'gpu-runtime-failure' → GPU was attempted and threw at runtime. Loud.
+ */
+export type CpuFallbackReason = 'gpu-not-configured' | 'gpu-runtime-failure';
+
 /** Result of a Blender render invocation: a sorted list of frame buffers. */
 export interface BlenderRenderResult {
   /** Per-frame PNG bytes, in frame order (frame 0 first). */
   readonly frames: ReadonlyArray<Uint8Array>;
   /** Whether the render fell back to CPU (GPU unavailable). */
   readonly cpuFallback: boolean;
+  /**
+   * Distinguishes the dev-default no-GPU path (quiet) from a real GPU runtime
+   * failure (loud). Undefined when no fallback occurred.
+   */
+  readonly cpuFallbackReason?: CpuFallbackReason;
 }
 
 /** Pluggable Blender invoker — production wires the Python script, tests stub. */
@@ -63,6 +75,7 @@ export type ProcessBakeJobResult =
       readonly inputsHash: string;
       readonly frameCount: number;
       readonly cpuFallback: boolean;
+      readonly cpuFallbackReason?: CpuFallbackReason;
       readonly manifestPath: string;
     };
 
@@ -110,10 +123,21 @@ export async function processBakeJob(
   // (T-265 AC #24); it returns `cpuFallback: true` if it had to drop to CPU.
   const result = await deps.invoker.render(payload);
   if (result.cpuFallback) {
-    deps.observability.warn('bake.cpu_fallback', {
-      inputsHash: payload.inputsHash,
-      reason: 'CUDA unavailable',
-    });
+    // Distinguish the dev-default no-GPU path (quiet INFO) from a real GPU
+    // runtime failure (loud WARN). Without this split, every dev render
+    // produces a warn that masks legitimate CUDA failures in production.
+    const reason: CpuFallbackReason = result.cpuFallbackReason ?? 'gpu-runtime-failure';
+    if (reason === 'gpu-not-configured') {
+      deps.observability.info('bake.cpu_fallback', {
+        inputsHash: payload.inputsHash,
+        reason,
+      });
+    } else {
+      deps.observability.warn('bake.cpu_fallback', {
+        inputsHash: payload.inputsHash,
+        reason,
+      });
+    }
   }
 
   const expected = expectedFrameCount(payload.duration.durationMs, payload.duration.fps);
@@ -151,6 +175,7 @@ export async function processBakeJob(
     inputsHash: payload.inputsHash,
     frameCount: result.frames.length,
     cpuFallback: result.cpuFallback,
+    ...(result.cpuFallbackReason ? { cpuFallbackReason: result.cpuFallbackReason } : {}),
     manifestPath,
   };
 }

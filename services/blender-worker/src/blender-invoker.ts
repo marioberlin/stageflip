@@ -18,7 +18,7 @@ import { join } from 'node:path';
 
 import type { BakeJobPayload } from '@stageflip/runtimes-blender';
 
-import type { BlenderInvoker, BlenderRenderResult } from './worker.js';
+import type { BlenderInvoker, BlenderRenderResult, CpuFallbackReason } from './worker.js';
 
 export interface BlenderCliInvokerOptions {
   /** Path to the `blender` executable. Defaults to `'blender'` (PATH lookup). */
@@ -99,21 +99,30 @@ export function createBlenderCliInvoker(opts: BlenderCliInvokerOptions = {}): Bl
     async render(payload: BakeJobPayload): Promise<BlenderRenderResult> {
       const tryGpu = gpuAvailable();
       let cpuFallback = false;
+      let cpuFallbackReason: CpuFallbackReason | undefined;
       let invocation: RenderInvocation;
       if (tryGpu) {
         try {
           invocation = await invokeOnce(payload, 'GPU');
         } catch {
+          // GPU was configured but failed at runtime — this is a real fault
+          // surface (CUDA OOM, driver error, …). Worker logs it at WARN.
           cpuFallback = true;
+          cpuFallbackReason = 'gpu-runtime-failure';
           invocation = await invokeOnce(payload, 'CPU');
         }
       } else {
+        // GPU was never configured — dev default. Worker logs it at INFO so
+        // CUDA-failure WARNs in production stay legible.
         cpuFallback = true;
+        cpuFallbackReason = 'gpu-not-configured';
         invocation = await invokeOnce(payload, 'CPU');
       }
       try {
         const frames = await readFrames(invocation.outputDir);
-        return { frames, cpuFallback };
+        return cpuFallbackReason
+          ? { frames, cpuFallback, cpuFallbackReason }
+          : { frames, cpuFallback };
       } finally {
         await rm(invocation.outputDir, { recursive: true, force: true });
       }

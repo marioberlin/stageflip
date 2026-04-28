@@ -54,6 +54,7 @@ function makeDeps(opts: {
   bucket: BakeOutputBucket;
   invoker?: BlenderInvoker;
   cpuFallback?: boolean;
+  cpuFallbackReason?: 'gpu-not-configured' | 'gpu-runtime-failure';
   frameCount?: number;
 }): ProcessBakeJobDeps & { observabilityCalls: { info: unknown[][]; warn: unknown[][] } } {
   const obsInfo: unknown[][] = [];
@@ -72,10 +73,14 @@ function makeDeps(opts: {
   const router: BucketRouter = { bucketFor: () => opts.bucket };
   const frameCount = opts.frameCount ?? 30;
   const invoker: BlenderInvoker = opts.invoker ?? {
-    render: async () => ({
-      frames: Array.from({ length: frameCount }, (_, i) => new Uint8Array([i & 0xff])),
-      cpuFallback: opts.cpuFallback ?? false,
-    }),
+    render: async () => {
+      const cpuFallback = opts.cpuFallback ?? false;
+      const base = {
+        frames: Array.from({ length: frameCount }, (_, i) => new Uint8Array([i & 0xff])),
+        cpuFallback,
+      };
+      return opts.cpuFallbackReason ? { ...base, cpuFallbackReason: opts.cpuFallbackReason } : base;
+    },
   };
   return {
     invoker,
@@ -167,17 +172,36 @@ describe('processBakeJob — render path (T-265 AC #21, #22, #23)', () => {
 });
 
 describe('processBakeJob — GPU/CPU dual-path (T-265 AC #24)', () => {
-  it('emits a CPU-fallback warning when invoker reports cpuFallback', async () => {
+  it('emits a CPU-fallback warning on GPU runtime failure', async () => {
     const { bucket } = makeBucket();
-    const deps = makeDeps({ bucket, cpuFallback: true });
+    const deps = makeDeps({
+      bucket,
+      cpuFallback: true,
+      cpuFallbackReason: 'gpu-runtime-failure',
+    });
     await processBakeJob(deps, PAYLOAD);
     expect(deps.observabilityCalls.warn[0]?.[0]).toBe('bake.cpu_fallback');
+    expect(deps.observabilityCalls.info.find((c) => c[0] === 'bake.cpu_fallback')).toBeUndefined();
   });
-  it('does NOT warn when GPU is used (cpuFallback false)', async () => {
+  it('emits CPU-fallback at INFO (not WARN) when GPU was never configured', async () => {
+    // Dev default: no CUDA env, no driver. Logging at WARN here drowns out
+    // legitimate GPU runtime failures in production.
+    const { bucket } = makeBucket();
+    const deps = makeDeps({
+      bucket,
+      cpuFallback: true,
+      cpuFallbackReason: 'gpu-not-configured',
+    });
+    await processBakeJob(deps, PAYLOAD);
+    expect(deps.observabilityCalls.warn).toHaveLength(0);
+    expect(deps.observabilityCalls.info.find((c) => c[0] === 'bake.cpu_fallback')).toBeDefined();
+  });
+  it('does NOT log when GPU is used (cpuFallback false)', async () => {
     const { bucket } = makeBucket();
     const deps = makeDeps({ bucket, cpuFallback: false });
     await processBakeJob(deps, PAYLOAD);
     expect(deps.observabilityCalls.warn).toHaveLength(0);
+    expect(deps.observabilityCalls.info.find((c) => c[0] === 'bake.cpu_fallback')).toBeUndefined();
   });
 });
 

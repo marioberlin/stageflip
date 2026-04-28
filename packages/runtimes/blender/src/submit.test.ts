@@ -168,6 +168,18 @@ describe('submitBakeJobHandler — cache hit (T-265 AC #11)', () => {
     expect(out.inputsHash).toBe(HASH);
     expect(s.queueAdd).not.toHaveBeenCalled();
   });
+  it('populates frame URLs from the manifest on cache hit (one-shot contract)', async () => {
+    // setup() seeds a manifest with frameCount: 1 → caller should receive
+    // the URL for frame-0.png in the same response, no second round-trip.
+    const s = setup({ manifestPresent: true });
+    const out = await submitBakeJobHandler(
+      { ...s, clock: () => 0, newBakeId: () => 'b1' },
+      CALLER,
+      { clipDescriptor: descriptor() },
+    );
+    if (out.status !== 'ready') throw new Error('expected status=ready');
+    expect(out.frames).toEqual([`https://us-bucket/bakes/${HASH}/frame-0.png`]);
+  });
 });
 
 describe('submitBakeJobHandler — cache miss (T-265 AC #12)', () => {

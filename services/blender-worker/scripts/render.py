@@ -106,6 +106,16 @@ def _render_template_to_dir(
 ) -> int:
     """Open the template, apply params, render N frames. Returns frame count."""
     blend_path = template_blend_path(template, templates_root)
+    if not blend_path.exists():
+        # Surface a self-explanatory error rather than the opaque Blender
+        # "RNA_PointerCreate: ... not found" failure the CLI emits when
+        # open_mainfile points at a missing file. Template binaries are
+        # tracked via a follow-up Git LFS task.
+        raise ValueError(
+            f"render.py: template '{template}' is not yet provisioned "
+            f"(.blend missing at {blend_path}). "
+            f"Follow-up: ship template binaries via Git LFS."
+        )
     bpy.ops.wm.open_mainfile(filepath=str(blend_path))
     scene = bpy.context.scene
 

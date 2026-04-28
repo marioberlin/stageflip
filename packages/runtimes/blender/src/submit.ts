@@ -15,7 +15,7 @@ import type { Region } from '@stageflip/auth-schema';
 
 import type { BlenderClipElement } from '@stageflip/schema';
 
-import { type BakeBucketReader, bakeKeyPrefix, manifestKey } from './fetch.js';
+import { type BakeBucketReader, bakeKeyPrefix, getBakedFrames, manifestKey } from './fetch.js';
 import { computeInputsHash } from './inputs-hash.js';
 import type { BakeJobPayload, BakeQueueProducer } from './queue.js';
 
@@ -56,7 +56,12 @@ export interface SubmitInput {
 }
 
 export type SubmitOutput =
-  | { readonly status: 'ready'; readonly bakeId: string; readonly inputsHash: string }
+  | {
+      readonly status: 'ready';
+      readonly bakeId: string;
+      readonly inputsHash: string;
+      readonly frames: readonly string[];
+    }
   | { readonly status: 'pending'; readonly bakeId: string; readonly inputsHash: string };
 
 export class SubmitError extends Error {
@@ -115,11 +120,24 @@ export async function submitBakeJobHandler(
     );
   }
 
-  // 4. Cache check (T-265 AC #11). Region-aware per T-271.
+  // 4. Cache check (T-265 AC #11). Region-aware per T-271. Cache-hit
+  // submissions are one-shot: we resolve frame URLs from the manifest in
+  // the same call so the caller does not need a second round-trip to fetch.
   const reader = deps.router.reader(caller.region);
   const existing = await reader.getText(manifestKey(expected));
   if (existing !== null) {
-    return { status: 'ready', bakeId: expected, inputsHash: expected };
+    const result = await getBakedFrames(expected, { reader, region: caller.region });
+    if (result.status === 'ready') {
+      return {
+        status: 'ready',
+        bakeId: expected,
+        inputsHash: expected,
+        frames: result.frames,
+      };
+    }
+    // The manifest existed at probe time but `getBakedFrames` did not return
+    // 'ready' (e.g. concurrent invalidation between the two reads). Treat
+    // this as a cache miss and fall through to enqueue.
   }
 
   // 5. Cache miss — enqueue (T-265 AC #12, #13, #17).

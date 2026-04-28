@@ -83,13 +83,14 @@ describe('BlenderCliInvoker — GPU available, GPU succeeds (T-265 AC #24)', () 
     });
     const result = await invoker.render(PAYLOAD);
     expect(result.cpuFallback).toBe(false);
+    expect(result.cpuFallbackReason).toBeUndefined();
     expect(result.frames).toHaveLength(1);
     expect(spawn).toHaveBeenCalledTimes(1);
   });
 });
 
 describe('BlenderCliInvoker — GPU available, GPU fails → CPU fallback (T-265 AC #24)', () => {
-  it('reports cpuFallback: true after GPU error', async () => {
+  it('reports cpuFallback: true with reason "gpu-runtime-failure" after GPU error', async () => {
     const { spawn } = makeSpawn([
       { ok: false, stderr: 'CUDA error: out of memory' },
       { ok: true, framesToWrite: 1 },
@@ -102,13 +103,14 @@ describe('BlenderCliInvoker — GPU available, GPU fails → CPU fallback (T-265
     });
     const result = await invoker.render(PAYLOAD);
     expect(result.cpuFallback).toBe(true);
+    expect(result.cpuFallbackReason).toBe('gpu-runtime-failure');
     expect(result.frames).toHaveLength(1);
     expect(spawn).toHaveBeenCalledTimes(2);
   });
 });
 
 describe('BlenderCliInvoker — GPU unavailable → CPU only (T-265 AC #24)', () => {
-  it('skips GPU attempt entirely', async () => {
+  it('skips GPU and reports reason "gpu-not-configured" (dev default)', async () => {
     const { spawn } = makeSpawn([{ ok: true, framesToWrite: 1 }]);
     const invoker = createBlenderCliInvoker({
       blenderBin: '/fake/blender',
@@ -118,6 +120,7 @@ describe('BlenderCliInvoker — GPU unavailable → CPU only (T-265 AC #24)', ()
     });
     const result = await invoker.render(PAYLOAD);
     expect(result.cpuFallback).toBe(true);
+    expect(result.cpuFallbackReason).toBe('gpu-not-configured');
     expect(spawn).toHaveBeenCalledTimes(1);
   });
 });

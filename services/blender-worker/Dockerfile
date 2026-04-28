@@ -29,6 +29,11 @@ COPY packages/auth-schema/package.json ./packages/auth-schema/
 
 # Sources required for tsc.
 COPY services/blender-worker/src ./services/blender-worker/src
+# Non-TS assets the runtime stage copies out of the builder layer
+# (see `COPY --from=builder ... /scripts` and `/templates` below). Without
+# these, the runtime-stage COPYs fail on a fresh image build.
+COPY services/blender-worker/scripts ./services/blender-worker/scripts
+COPY services/blender-worker/templates ./services/blender-worker/templates
 COPY packages/runtimes/blender ./packages/runtimes/blender
 COPY packages/runtimes/contract ./packages/runtimes/contract
 COPY packages/schema ./packages/schema
