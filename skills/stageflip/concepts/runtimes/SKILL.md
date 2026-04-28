@@ -3,8 +3,8 @@ title: Runtime Tiers
 id: skills/stageflip/concepts/runtimes
 tier: concept
 status: substantive
-last_updated: 2026-04-28
-owner_task: T-306
+last_updated: 2026-04-27
+owner_task: T-309
 related:
   - skills/stageflip/concepts/clip-elements/SKILL.md
   - skills/stageflip/concepts/storage-contract/SKILL.md
@@ -158,9 +158,9 @@ live data, web embeds, AI generative, shaders, three-scene — that
 structurally cannot live under the §3 determinism rule (mic streams, live
 LLM round-trips, `requestAnimationFrame`-driven WebGL, etc.). Per
 ADR-003 §D5, `packages/runtimes/interactive/**` is OUT of scope for
-`pnpm check-determinism`. T-309 will add a shader sub-rule that re-applies
-determinism inside the tier (`uFrame`-only uniform updaters); T-306 ships
-only the package-level exemption.
+`pnpm check-determinism`'s broad rule. T-309 ships a shader sub-rule that
+re-applies determinism inside the tier (uniform-updater functions must
+accept `frame` only); see "Shader sub-rule (T-309)" below.
 
 Every interactive clip declares **both paths** (ADR-003 §D2):
 
@@ -239,6 +239,51 @@ By ADR-003 §D5, code under `packages/runtimes/interactive/**` may use
 path; existing scope on `packages/frame-runtime/`,
 `packages/runtimes/blender/**/clips/**`, and `packages/renderer-core/clips/**`
 remains untouched.
+
+#### Shader sub-rule (T-309)
+
+The interactive tier's broad exemption is **narrowed** for shader and
+Three.js scene clips. Per ADR-003 §D5 + ADR-005 §D2, uniform-updater
+functions for `ShaderClip` and `ThreeSceneClip` are frame-deterministic
+by construction: they must accept `frame` as a parameter and must not
+read `Date.now`, `performance.now`, `Math.random`, `setTimeout` /
+`setInterval`, or `requestAnimationFrame` / `cancelAnimationFrame`.
+
+`scripts/check-determinism.ts` enforces this via an AST pass that fires
+for two opt-in mechanisms (D-T309-3):
+
+1. **Path-based** — every top-level function in
+   `packages/runtimes/interactive/src/clips/shader/**` and
+   `packages/runtimes/interactive/src/clips/three-scene/**` is
+   inspected.
+2. **Decorator-based** — any function carrying the `@uniformUpdater`
+   JSDoc tag, anywhere in the repo, is inspected:
+
+   ```ts
+   /** @uniformUpdater */
+   export function uTime(frame: number): number {
+     return frame * 0.001;
+   }
+   ```
+
+   Use the decorator when a uniform-updater lives outside the named
+   clip directories (e.g., a future `webgl` family) and you still want
+   the rule to apply.
+
+The escape-hatch comment `// determinism-safe: <reason>` exempts a
+single line as on the broad rule. Reach for it only when the API is
+demonstrably non-determinism-affecting (e.g., debug telemetry behind a
+flag); link an ADR in the comment body.
+
+The output line is:
+
+```
+check-determinism [shader sub-rule]: PASS (N uniform-updaters detected)
+```
+
+`N=0` is normal pre-Phase-γ — no `ShaderClip` or `ThreeSceneClip`
+implementations exist yet (T-340+). The sub-rule is vacuously PASS at
+HEAD.
 
 ### Browser-bundle posture
 
