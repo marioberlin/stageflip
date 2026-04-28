@@ -10,7 +10,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
-      include: ['seed.ts', 'cleanup.ts', 'retry-after.test-helper.ts'],
+      include: ['auth.js', 'cleanup.ts', 'retry-after.js', 'seed.ts'],
       thresholds: {
         lines: 80,
         functions: 80,

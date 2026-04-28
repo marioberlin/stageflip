@@ -68,12 +68,15 @@
       }
     },
     {
-      "include": [
-        "tests/load/scenarios/**/*.js",
-        "tests/load/vitest.config.ts",
-        "**/scenarios/**/*.js",
-        "vitest.config.ts"
-      ],
+      "include": ["**/vitest.config.ts"],
+      "linter": {
+        "rules": {
+          "style": { "noDefaultExport": "off" }
+        }
+      }
+    },
+    {
+      "include": ["tests/load/scenarios/**/*.js", "scenarios/**/*.js"],
       "linter": {
         "rules": {
           "style": { "noDefaultExport": "off" },

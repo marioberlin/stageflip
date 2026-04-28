@@ -10,8 +10,9 @@
 export const collabSyncSmoke = {
   // Yjs delta fan-out P95 < 300 ms (50% over the 200 ms full-load target,
   // because CI runners + emulator add latency we won't see in staging).
-  // K6 built-in metric: `ws_connecting` records dial-handshake duration.
-  ws_connecting: ['p(95)<300'],
+  // Custom Trend `fanout_latency_ms` is recorded inside collab-sync.js
+  // when a VU's own update echoes back from the server fan-out path.
+  fanout_latency_ms: ['p(95)<300'],
   // At least one session must succeed; the K6 built-in metric is `ws_sessions`.
   ws_sessions: ['count>0'],
 };
@@ -35,7 +36,7 @@ export const apiMixedSmoke = {
 
 /** Full-load thresholds — tight; reflect the actual SLA. */
 export const collabSyncFull = {
-  ws_connecting: ['p(95)<200'],
+  fanout_latency_ms: ['p(95)<200'],
   ws_sessions: ['count>0'],
 };
 

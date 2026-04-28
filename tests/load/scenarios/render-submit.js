@@ -9,10 +9,9 @@
 // the job (T-269 OOS: render-farm worker capacity, T-266-era).
 
 import { check } from 'k6';
-import http from 'k6/http';
 import { Rate } from 'k6/metrics';
 
-import { requestWithRetryAfter } from '../helpers.js';
+import { authHeaders, requestWithRetryAfter } from '../helpers.js';
 import { renderSubmitFull, renderSubmitSmoke } from '../thresholds.js';
 
 const PROFILE = (__ENV.STAGEFLIP_LOAD_PROFILE || 'smoke').toLowerCase();
@@ -59,14 +58,10 @@ export default function renderSubmitScenario() {
     fps: 30,
     duration: 1,
   });
-  // Bearer + X-Org-Id headers are baked into params; helpers.js owns the
-  // auth-header builder so per-scenario code stays terse.
+  // Bearer + X-Org-Id headers built via the shared helper (matches
+  // api-mixed.js); `requestWithRetryAfter` honors T-263 429 + Retry-After.
   const params = {
-    headers: {
-      Authorization: `Bearer ${TOKEN}`,
-      'X-Org-Id': ORG_ID,
-      'Content-Type': 'application/json',
-    },
+    headers: authHeaders({ token: TOKEN, orgId: ORG_ID }),
     tags: { scenario: 'render-submit' },
   };
   const res = requestWithRetryAfter('POST', url, body, params);
@@ -76,5 +71,4 @@ export default function renderSubmitScenario() {
   });
   // K6 also auto-records http_req_duration / http_req_failed; the
   // threshold names in thresholds.js match those built-ins.
-  void http; // import retained for explicitness in case an op switches helpers
 }

@@ -103,28 +103,34 @@ jobs:
         uses: grafana/setup-k6-action@v1
 
       - name: Run api-mixed scenario (smoke)
+        # AC #5: per-run artifacts named <scenario>-<timestamp>.json so a
+        # single workflow run leaves a self-describing trail in the
+        # `tests/load/runs/` upload. The timestamp is shared across the
+        # three scenario steps via $TS so they group naturally.
         run: |
           set -euo pipefail
           mkdir -p tests/load/runs
+          TS="$(date -u +%Y%m%dT%H%M%SZ)"
+          echo "TS=$TS" >> "$GITHUB_ENV"
           k6 run \
-            --summary-export tests/load/runs/api-mixed.summary.json \
-            --out json=tests/load/runs/api-mixed.json \
+            --summary-export "tests/load/runs/api-mixed-${TS}.summary.json" \
+            --out "json=tests/load/runs/api-mixed-${TS}.json" \
             tests/load/scenarios/api-mixed.js
 
       - name: Run render-submit scenario (smoke)
         run: |
           set -euo pipefail
           k6 run \
-            --summary-export tests/load/runs/render-submit.summary.json \
-            --out json=tests/load/runs/render-submit.json \
+            --summary-export "tests/load/runs/render-submit-${TS}.summary.json" \
+            --out "json=tests/load/runs/render-submit-${TS}.json" \
             tests/load/scenarios/render-submit.js
 
       - name: Run collab-sync scenario (smoke)
         run: |
           set -euo pipefail
           k6 run \
-            --summary-export tests/load/runs/collab-sync.summary.json \
-            --out json=tests/load/runs/collab-sync.json \
+            --summary-export "tests/load/runs/collab-sync-${TS}.summary.json" \
+            --out "json=tests/load/runs/collab-sync-${TS}.json" \
             tests/load/scenarios/collab-sync.js
 
       - name: Upload K6 summaries
