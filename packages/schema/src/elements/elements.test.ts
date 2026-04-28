@@ -234,7 +234,8 @@ describe('elementSchema (discriminated union)', () => {
     ).toThrow();
   });
   it('ELEMENT_TYPES covers all discriminant values', () => {
-    expect(ELEMENT_TYPES).toHaveLength(12);
-    expect(new Set(ELEMENT_TYPES).size).toBe(12);
+    // Bumped from 12 to 13 in T-305 to add 'interactive-clip' (ADR-003 §D2).
+    expect(ELEMENT_TYPES).toHaveLength(13);
+    expect(new Set(ELEMENT_TYPES).size).toBe(13);
   });
 });

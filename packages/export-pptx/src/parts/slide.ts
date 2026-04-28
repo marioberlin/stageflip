@@ -194,6 +194,10 @@ function renderElement(
     case 'embed':
     case 'code':
     case 'blender-clip':
+    case 'interactive-clip':
+      // T-305: InteractiveClip routes to its `staticFallback` for `pptx-flat`
+      // per ADR-003 §D3. The actual fallback rendering is wired by a
+      // follow-up exporter task; for now, flag as unsupported.
       ctx.flags.push(
         emitLossFlag({
           code: 'LF-PPTX-EXPORT-UNSUPPORTED-ELEMENT',
