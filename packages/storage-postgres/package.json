@@ -17,10 +17,20 @@
     "src"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --dts --format esm,cjs --clean",
+    "build": "tsup src/index.ts --dts --format esm,cjs --clean && node -e \"require('node:fs').cpSync('src/migrations','dist/migrations',{recursive:true})\"",
     "dev": "tsup src/index.ts --dts --format esm,cjs --watch",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@stageflip/storage": "workspace:^",
+    "pg": "8.13.1"
+  },
+  "devDependencies": {
+    "@types/pg": "8.11.10",
+    "@vitest/coverage-v8": "2.1.9",
+    "pg-mem": "3.0.5",
+    "vitest": "2.1.9"
   }
 }
