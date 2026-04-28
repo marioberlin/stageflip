@@ -3,8 +3,8 @@ title: Runtime Tiers
 id: skills/stageflip/concepts/runtimes
 tier: concept
 status: substantive
-last_updated: 2026-04-27
-owner_task: T-266
+last_updated: 2026-04-28
+owner_task: T-306
 related:
   - skills/stageflip/concepts/clip-elements/SKILL.md
   - skills/stageflip/concepts/storage-contract/SKILL.md
@@ -151,13 +151,112 @@ The worker emits these around `processBakeJob`. Real K8s adapters ignore
 them (they read pod state from the Kubernetes API) — the markers are only
 load-bearing for the in-memory path.
 
+## Interactive runtime tier (T-306)
+
+The interactive tier is the host for **frontier clips** — voice, AI chat,
+live data, web embeds, AI generative, shaders, three-scene — that
+structurally cannot live under the §3 determinism rule (mic streams, live
+LLM round-trips, `requestAnimationFrame`-driven WebGL, etc.). Per
+ADR-003 §D5, `packages/runtimes/interactive/**` is OUT of scope for
+`pnpm check-determinism`. T-309 will add a shader sub-rule that re-applies
+determinism inside the tier (`uFrame`-only uniform updaters); T-306 ships
+only the package-level exemption.
+
+Every interactive clip declares **both paths** (ADR-003 §D2):
+
+- `staticFallback: CanonicalElement[]` — frame-runtime renders this for
+  parity-safe export targets (MP4, image-sequence, PPTX-flat,
+  display-pre-rendered). Subject to PSNR + SSIM parity.
+- `liveMount: { component, props, permissions }` — the interactive tier
+  mounts this for HTML / live-presentation / display-interactive /
+  on-device-player. Not subject to parity.
+
+T-305 ships the schema; T-306 ships the runtime tier package
+(`@stageflip/runtimes-interactive`). T-308 will add `check-preset-integrity`
+to enforce that no clip declares only `liveMount`.
+
+### Public surface
+
+```ts
+import {
+  InteractiveMountHarness,
+  PermissionShim,
+  interactiveClipRegistry,
+  contractTestSuite,         // from /contract-tests subpath
+} from '@stageflip/runtimes-interactive';
+```
+
+- **`InteractiveMountHarness.mount(clip, root, signal)`** — programmatic
+  mount/unmount/dispose.
+- **`PermissionShim`** — mount-time permission gate.
+- **`interactiveClipRegistry`** — module-level singleton; Phase γ clip
+  packages call `register('shader', shaderFactory)` at import time.
+- **`contractTestSuite(factory)`** — Vitest `describe` block every Phase γ
+  family runs against its own factory.
+
+### Mount flow + security model
+
+The harness orchestrates four steps in this exact order; getting them
+wrong breaks the security model.
+
+```
+harness.mount(clip, root, signal):
+  1. permissionShim.mount(clip)
+       a. tenantPolicy.canMount(family)        # ADR-003 §D4 step 1 + ADR-005 §D3
+            → false: emit 'tenant-denied'; route to staticFallback
+       b. for permission in liveMount.permissions:
+            mic    → getUserMedia({audio:true})
+            camera → getUserMedia({video:true})
+            network → no-op (assumed granted)
+            → denied: emit 'permission-denied'; route to staticFallback
+       c. cache successful grants per-(session, family); skip re-prompt
+  2. registry.resolve(family) || throw InteractiveClipNotRegisteredError
+  3. factory(MountContext)
+  4. signal.abort → MountHandle.dispose() (idempotent)
+```
+
+**Critical invariants:**
+
+- Tenant-policy gate runs BEFORE any `getUserMedia` call. A
+  feature-flagged-off tenant must never see a permission dialog.
+- Idempotent `dispose()` — both manual and `signal.abort`-driven paths
+  converge on the same cleanup; double-dispose is a no-op.
+- On any denial, the harness renders `staticFallback` via
+  `renderStaticFallback` (React 19 root API). The export pipeline (per
+  ADR-003 §D3) continues to function — the live mount degrades, the
+  document still ships.
+- Permission cache is session-scoped (instance lifetime). A page reload
+  resets it; the user's browser-level permission state persists
+  independently.
+
+### Determinism posture
+
+By ADR-003 §D5, code under `packages/runtimes/interactive/**` may use
+`Date.now`, `performance.now`, `Math.random`, `setTimeout`,
+`setInterval`, `requestAnimationFrame`, `fetch`, `MediaRecorder`,
+`getUserMedia`, `Worker`, etc. The exemption is enforced via
+`scripts/check-determinism.ts` `EXCLUDED_PREFIXES` — narrow to only this
+path; existing scope on `packages/frame-runtime/`,
+`packages/runtimes/blender/**/clips/**`, and `packages/renderer-core/clips/**`
+remains untouched.
+
+### Browser-bundle posture
+
+The package is browser-side runtime. It MUST NOT import `fs`, `path`, or
+`child_process`. Its dependencies are `@stageflip/schema` (browser-safe
+surface), and `react` / `react-dom` as peer deps. `pnpm size-limit` is the
+canary for accidental Node-only imports.
+
 ## Cross-links
 
 - `packages/runtimes/blender/` — submit + fetch + queue + inputs-hash.
+- `packages/runtimes/interactive/` — interactive runtime tier (T-306).
 - `services/blender-worker/` — Docker image, BullMQ consumer, render.py.
 - `firebase/functions/src/bake/` — Cloud Function adapter.
 - `packages/render-farm/` — adapter contract + in-memory + K8s stub (T-266).
 - `docs/ops/render-farm-vendors.md` — vendor evaluation + recommendation.
 - `docs/decisions/ADR-003-interactive-runtime-tier.md` — three-tier model.
+- `packages/schema/src/clips/interactive.ts` — `InteractiveClip` schema (T-305).
+- `packages/schema/src/clips/export-targets.ts` — export matrix (T-305).
 - `docs/architecture.md:330` — bake path layout.
 - `docs/architecture.md:339-341` — BullMQ queue names.
