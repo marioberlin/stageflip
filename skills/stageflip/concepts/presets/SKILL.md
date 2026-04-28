@@ -161,7 +161,44 @@ registry.
 - Every license expression must parse (unknown atoms fail loud).
 - Every preset must use only atoms in `FONT_ALLOWED_ATOMS`.
 - `proprietary-byo` entries without a fallback are flagged for audit (not a
-  hard error; T-308's `check-preset-integrity` may upgrade to a hard gate).
+  hard error; T-308's `check-preset-integrity` upgrades this to a hard gate
+  via invariant 3).
+
+## Integrity gate (T-308)
+
+`scripts/check-preset-integrity.ts` (run as `pnpm check-preset-integrity`)
+enforces seven invariants from **ADR-004 §D6**, aggregating violations across
+the entire preset corpus into a single report (mirrors the T-304 loader's
+aggregating posture). Gate failure blocks merge.
+
+### The seven invariants
+
+| # | Invariant | Severity | Notes |
+|---|---|---|---|
+| 1 | Every preset has valid frontmatter | error | Loader Zod validation. |
+| 2 | `clipKind` exists in the script's `VALID_CLIP_KINDS` set | error | Hardcoded per T-308 §D-T308-5. |
+| 3 | Bespoke-font preset (`proprietary-byo` / `commercial-byo`) declares a `fallbackFont` | error | Hard upgrade of T-307's audit-flag posture. |
+| 4 | Interactive-family clipKind has non-empty `staticFallback` | error | Per ADR-003 §D2. Reads raw frontmatter (loader schema is `.strict()` and excludes the field). |
+| 5 | Cluster A/B/D/F/G preset has `signOff.typeDesign` populated | error | Cluster-scoped — does NOT apply to weather (C), data (E), AR (H). Text-free presets (`preferredFont.license = 'na'`) are exempt. |
+| 6 | `signOff.parityFixture` populated | warning | Non-blocking pre-cluster-merge per T-308 §D-T308-2. |
+| 7 | Preset's `source` resolves to a real anchor in `docs/compass.md` | error | SKIPS with one-time warning when `docs/compass.md` is absent (graceful degradation per T-308 §D-T308-4). External `https://...` URLs accepted without verification. |
+
+### Cluster scoping for invariant 5
+
+| Cluster | Directory | Type-design sign-off required? |
+|---|---|---|
+| A | `news` | Yes |
+| B | `sports` | Yes |
+| C | `weather` | No |
+| D | `titles` | Yes |
+| E | `data` | No |
+| F | `captions` | Yes |
+| G | `ctas` | Yes |
+| H | `ar` | No |
+
+Invariant 5 is the most common bug class — clusters A/B/D/F/G is the
+required-sign-off set; C/E/H are exempt. The `na` exemption for text-free
+presets is narrow (preferredFont.license atom = `'na'`).
 
 ## Frontmatter shape (cluster)
 
