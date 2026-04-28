@@ -24,3 +24,11 @@ export {
   type PresetPermission,
 } from './frontmatter.js';
 export { extractPresetBody, type PresetBody } from './body.js';
+export {
+  FONT_LICENSE_ATOMS,
+  fontLicenseAtomSchema,
+  fontLicenseExpressionSchema,
+  parseFontLicenseExpression,
+  type FontLicenseAtom,
+  type ParsedLicenseExpression,
+} from './font-license.js';
