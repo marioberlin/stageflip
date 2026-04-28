@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "fluid-sim params",
+  "description": "Parameters for the fluid-sim Blender scene template (T-265).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "viscosity": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.5,
+      "description": "Fluid viscosity. Higher = thicker fluid (honey vs water)."
+    },
+    "domainSize": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 50,
+      "default": 8,
+      "description": "Cubic domain size in metres."
+    },
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "default": "#3aa0ff",
+      "description": "Surface tint hex colour."
+    }
+  }
+}

@@ -240,6 +240,23 @@ function toRIRContent(el: Element): RIRElementContent {
         // per-depth; stub with empty here and fix up in compileRIR.
         children: [],
       };
+    case 'blender-clip':
+      // T-265: BlenderClip is the bake-tier element type. The renderer
+      // dispatcher fetches frames by `inputsHash` from the bake cache and
+      // composites them as a video; the RIR shape mirrors the existing
+      // `clip` lowering with `runtime: 'blender'` + the inputsHash carried
+      // through `params` so downstream layers can reach the cache without
+      // re-deriving it.
+      return {
+        type: 'clip',
+        runtime: 'blender',
+        clipName: el.scene.template,
+        params: {
+          inputsHash: el.inputsHash,
+          scene: el.scene,
+          duration: el.duration,
+        },
+      };
     default: {
       const never: never = el;
       return never;

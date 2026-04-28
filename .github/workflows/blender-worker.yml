@@ -1,0 +1,106 @@
+# .github/workflows/blender-worker.yml
+# T-265 — Blender bake-worker CI. Runs:
+#   - pytest on the pure render.py helpers (Blender's bpy is stubbed).
+#   - docker build smoke (gates merge; catches missing COPY paths etc.).
+#   - nightly integration job that runs render.py end-to-end against real
+#     template binaries. The integration job is wired structurally now and
+#     gated on env presence; it activates once template .blend binaries land
+#     (follow-up Git LFS task).
+#
+# Independent from the TS-only ci.yml job graph; triggered only when the
+# service path or this workflow changes.
+#
+# Security note: this workflow does not interpolate any user-controlled
+# event payload (issue titles, PR bodies, etc.) into run: blocks.
+
+name: blender-worker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/blender-worker/**"
+      - ".github/workflows/blender-worker.yml"
+  pull_request:
+    paths:
+      - "services/blender-worker/**"
+      - ".github/workflows/blender-worker.yml"
+  schedule:
+    # 05:00 UTC nightly — runs the integration job (skipped when templates absent).
+    - cron: "0 5 * * *"
+
+jobs:
+  pytest:
+    name: pytest (render.py helpers)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python deps
+        run: |
+          pip install --upgrade pip
+          pip install pytest==8.3.3
+
+      - name: Run pytest
+        working-directory: services/blender-worker/scripts
+        run: pytest -ra render_test.py
+
+  docker-build:
+    name: docker build smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: services/blender-worker/Dockerfile
+          push: false
+          load: true
+          tags: blender-worker:ci
+      - name: Image size check (< 4 GB)
+        run: |
+          SIZE_BYTES=$(docker image inspect blender-worker:ci --format='{{.Size}}')
+          MAX_BYTES=$((4 * 1024 * 1024 * 1024))
+          echo "image size: ${SIZE_BYTES} bytes (limit ${MAX_BYTES})"
+          if [ "${SIZE_BYTES}" -gt "${MAX_BYTES}" ]; then
+            echo "::error::blender-worker image exceeds 4 GB budget"
+            exit 1
+          fi
+
+  integration:
+    # Nightly only — exercises the full render path against real .blend
+    # templates. Skipped automatically until template binaries land via
+    # Git LFS (see test gating in render_test.py). Until then this job
+    # runs as a no-op so the schedule wiring is verified.
+    name: nightly integration (AC #25)
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python deps
+        run: |
+          pip install --upgrade pip
+          pip install pytest==8.3.3
+
+      # TODO: wire integration tests once template binaries land.
+      # Until then, run the same gated test with the env flag set; pytest
+      # will skip cleanly when template .blend files are not present.
+      - name: Run integration test (gated, skip-on-missing-template)
+        working-directory: services/blender-worker/scripts
+        env:
+          STAGEFLIP_BLENDER_INTEGRATION: "1"
+        run: pytest -ra render_test.py::test_two_bakes_produce_identical_output_when_inputs_match

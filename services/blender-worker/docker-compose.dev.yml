@@ -1,0 +1,29 @@
+# services/blender-worker/docker-compose.dev.yml
+# Local dev: spin up Redis + the bake worker. The worker reads/writes to a
+# local emulator path under ./data; production wires Cloud Storage.
+# Usage:  docker compose -f docker-compose.dev.yml up --build
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+
+  blender-worker:
+    build:
+      context: ../..
+      dockerfile: services/blender-worker/Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      STAGEFLIP_BAKE_REDIS_URL: redis://redis:6379
+      # CPU only in dev; production sets CUDA_VISIBLE_DEVICES.
+    volumes:
+      - ./data:/app/data

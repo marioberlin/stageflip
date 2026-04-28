@@ -7,6 +7,7 @@ import { z } from 'zod';
 
 import { type AudioElement, audioElementSchema } from './audio.js';
 import { type ElementBase, elementBaseSchema } from './base.js';
+import { type BlenderClipElement, blenderClipSchema } from './blender-clip.js';
 import { type ChartElement, chartElementSchema } from './chart.js';
 import { type ClipElement, clipElementSchema } from './clip.js';
 import { type CodeElement, codeElementSchema } from './code.js';
@@ -39,7 +40,8 @@ export type Element =
   | TableElement
   | ClipElement
   | EmbedElement
-  | CodeElement;
+  | CodeElement
+  | BlenderClipElement;
 
 /**
  * Group schema with recursive `children: Element[]`. Uses `z.lazy` and an
@@ -80,6 +82,7 @@ export const elementSchema = z.union([
   clipElementSchema,
   embedElementSchema,
   codeElementSchema,
+  blenderClipSchema,
   groupElementSchema,
 ]) as unknown as z.ZodType<Element>;
 
@@ -99,6 +102,7 @@ export const ELEMENT_TYPES = [
   'clip',
   'embed',
   'code',
+  'blender-clip',
 ] as const;
 export type ElementType = (typeof ELEMENT_TYPES)[number];
 
@@ -107,6 +111,7 @@ export type ElementType = (typeof ELEMENT_TYPES)[number];
 // any element file propagate automatically.
 export * from './audio.js';
 export * from './base.js';
+export * from './blender-clip.js';
 export * from './chart.js';
 export * from './clip.js';
 export * from './code.js';
