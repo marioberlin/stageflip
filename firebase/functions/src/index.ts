@@ -33,6 +33,8 @@ import {
   backupStorageHandler,
   verifyBackupHandler,
 } from './backup/index.js';
+import { createAdminBakeDeps } from './bake/admin-deps.js';
+import { type BakeSubmitDeps, submitBakeJobAdapter } from './bake/index.js';
 
 initializeApp();
 
@@ -187,3 +189,24 @@ export const verifyBackup = onSchedule(
     await verifyBackupHandler(backupDeps());
   },
 );
+
+// --- T-265: bake submission callable ---
+
+let cachedBakeDeps: Promise<BakeSubmitDeps> | null = null;
+function bakeDeps(): Promise<BakeSubmitDeps> {
+  if (cachedBakeDeps === null) {
+    cachedBakeDeps = createAdminBakeDeps();
+  }
+  return cachedBakeDeps;
+}
+
+export const submitBakeJob = onCall(async (req: CallableRequest<{ clipDescriptor: unknown }>) => {
+  try {
+    const deps = await bakeDeps();
+    return await submitBakeJobAdapter(deps, callerOf(req), {
+      clipDescriptor: req.data.clipDescriptor,
+    });
+  } catch (err) {
+    asHttps(err);
+  }
+});

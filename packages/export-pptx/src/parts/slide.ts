@@ -193,6 +193,7 @@ function renderElement(
     case 'clip':
     case 'embed':
     case 'code':
+    case 'blender-clip':
       ctx.flags.push(
         emitLossFlag({
           code: 'LF-PPTX-EXPORT-UNSUPPORTED-ELEMENT',
