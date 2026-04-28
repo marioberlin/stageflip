@@ -1,0 +1,47 @@
+{
+  "name": "@stageflip/render-farm",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Render-farm adapter contract + in-memory + K8s stub (T-266).",
+  "license": "BUSL-1.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marioberlin/stageflip.git",
+    "directory": "packages/render-farm"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --dts --format esm,cjs --clean",
+    "dev": "tsup src/index.ts --dts --format esm,cjs --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@stageflip/observability": "workspace:*"
+  },
+  "devDependencies": {
+    "@opentelemetry/api": "1.9.1",
+    "@opentelemetry/resources": "2.7.0",
+    "@opentelemetry/sdk-trace-base": "2.7.0",
+    "@opentelemetry/sdk-trace-node": "2.7.0",
+    "@types/node": "22.19.17",
+    "@vitest/coverage-v8": "2.1.9",
+    "vitest": "2.1.9"
+  }
+}
