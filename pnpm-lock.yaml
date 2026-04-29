@@ -1324,6 +1324,9 @@ importers:
 
   packages/runtimes/interactive:
     dependencies:
+      '@stageflip/runtimes-shader':
+        specifier: workspace:*
+        version: link:../shader
       '@stageflip/schema':
         specifier: workspace:*
         version: link:../../schema

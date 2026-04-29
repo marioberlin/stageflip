@@ -47,3 +47,6 @@ export {
   InteractiveClipRegistry,
   interactiveClipRegistry,
 } from './registry.js';
+export { type FrameSource, MissingFrameSourceError } from './frame-source.js';
+export { RAFFrameSource, type RAFFrameSourceOptions } from './frame-source-raf.js';
+export { RecordModeFrameSource } from './frame-source-record.js';

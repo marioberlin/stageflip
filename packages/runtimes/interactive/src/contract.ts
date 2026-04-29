@@ -12,6 +12,8 @@
 
 import type { InteractiveClip, Permission } from '@stageflip/schema';
 
+import type { FrameSource } from './frame-source.js';
+
 /**
  * Tenant-policy hook per ADR-005 §D3. T-306 ships a permissive default
  * (`{ canMount: () => true }`); production code wires a real implementation
@@ -59,6 +61,15 @@ export interface MountContext {
    * mount-harness wires this through to `MountHandle.dispose()` on abort.
    */
   signal: AbortSignal;
+  /**
+   * Optional frame source per T-383 D-T383-6. Frame-driven families
+   * (`shader`, `three-scene`) MUST receive a non-`undefined` frame source
+   * and assert at mount entry; event-driven families (`ai-chat`,
+   * `web-embed`, etc.) ignore this field. Backward-compatible with the
+   * T-306 contract — existing consumers neither read nor depend on this
+   * field, so adding it does not break the contract-test suite.
+   */
+  frameSource?: FrameSource;
 }
 
 /**
