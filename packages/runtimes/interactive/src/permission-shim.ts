@@ -195,4 +195,14 @@ export class PermissionShim {
   clearCache(): void {
     this.grantCache.clear();
   }
+
+  /**
+   * Production-callable: clear a SINGLE granted entry (T-385 D-T385-3).
+   * The permission-flow retry path uses this so a successful re-prompt
+   * does not need to re-walk the full envelope or invalidate sibling
+   * grants. No-op when the entry is absent.
+   */
+  clearCacheEntry(family: InteractiveClip['family'], permission: Permission): void {
+    this.grantCache.delete(`${family}:${permission}`);
+  }
 }

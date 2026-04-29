@@ -312,6 +312,68 @@ calls; assignment to `window.requestAnimationFrame` is not a call). See
 `runtimes/three/SKILL.md` §"Frontier-tier ThreeSceneClip" for the full
 contract.
 
+### Permission flow UX (T-385)
+
+T-385 ships the user-facing layer wrapping `PermissionShim`. It lives
+under `@stageflip/runtimes-interactive/permission-flow` (subpath
+export):
+
+```ts
+import {
+  usePermissionFlow,
+  PermissionDenialBanner,
+  PermissionPrePromptModal,
+} from '@stageflip/runtimes-interactive/permission-flow';
+// or via the root entry:
+import { usePermissionFlow } from '@stageflip/runtimes-interactive';
+```
+
+- **`usePermissionFlow(clip, { shim, prePrompt?, emitTelemetry? })`**
+  drives a state machine
+  (`idle → pre-prompt? → requesting → granted | denied`). Returns
+  `{ state, start, confirmPrePrompt, cancelPrePrompt, retry }`.
+  Retry from `permission-denied` clears the failed permission's
+  cache entry on the shim and re-runs the flow; retry from
+  `tenant-denied` is a no-op (tenant policy is not user-overridable).
+- **`<PermissionDenialBanner>`** and **`<PermissionPrePromptModal>`**
+  are the default visual surfaces. Both accept all user-facing text
+  as required `messages` props — no English defaults — so apps own
+  localisation per CLAUDE.md §10. Both forward `data-testid`.
+- **`PermissionShim.clearCacheEntry(family, permission)`** is the
+  production-callable per-key cache invalidation primitive. The
+  existing `clearCache()` test seam is preserved.
+- **`MountContext.permissionPrePrompt?: boolean`** is the per-mount
+  opt-in. Default off (T-306 baseline). Backward-compatible with
+  pre-existing T-306 / T-383 / T-384 consumers.
+- **`InteractiveMountHarness.mount(clip, root, signal, { permissionPrePrompt? })`**
+  accepts an optional 4th argument; existing 3-arg callers continue
+  to type-check. When the flag is on AND the harness has a
+  `permissionPrePromptHandler` registered, the harness yields a
+  pre-prompt cycle BEFORE the shim's permission probe. Cancelling
+  routes the mount to `staticFallback` with reason
+  `'pre-prompt-cancelled'`.
+
+Telemetry events emitted by `usePermissionFlow` (in addition to the
+shim's existing `tenant-denied` / `permission-denied` channel):
+
+```
+permission.pre-prompt.shown      { family, permission }
+permission.pre-prompt.confirmed  { family, permission }
+permission.pre-prompt.cancelled  { family, permission }
+permission.dialog.shown          { family, permission }
+permission.retry.clicked         { family, permission, attemptNumber }
+permission.retry.granted         { family, permission, attemptNumber }
+permission.retry.denied          { family, permission, attemptNumber }
+```
+
+The pre-prompt mode is OFF by default. T-385 unblocks the five
+γ-live clip families with non-empty permissions: `VoiceClip` (T-387,
+mic), `AiChatClip` (T-389), `LiveDataClip` (T-391), `WebEmbedClip`
+(T-393), `AiGenerativeClip` (T-395) — all `network` except VoiceClip.
+Those clip skills may *recommend* `prePrompt: true` but the host
+application owns the choice. See `concepts/auth/SKILL.md`
+§"Permission flow UX (T-385)" for the full surface description.
+
 ### Browser-bundle posture
 
 The package is browser-side runtime. It MUST NOT import `fs`, `path`, or

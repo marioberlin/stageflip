@@ -70,6 +70,18 @@ export interface MountContext {
    * field, so adding it does not break the contract-test suite.
    */
   frameSource?: FrameSource;
+  /**
+   * Per-mount opt-in for the T-385 pre-prompt explanation modal that runs
+   * BEFORE the browser permission dialog (D-T385-4). `false` / `undefined`
+   * matches the T-306 baseline — the harness calls
+   * `permissionShim.mount(clip)` directly and does not yield a React
+   * render cycle. `true` instructs the harness to render the pre-prompt
+   * via the consumer-supplied surface (default `<PermissionPrePromptModal>`
+   * or any component reading `usePermissionFlow`'s state). Backward-
+   * compatible — pre-existing T-306 / T-383 / T-384 consumers omit the
+   * field and continue to type-check.
+   */
+  permissionPrePrompt?: boolean;
 }
 
 /**
