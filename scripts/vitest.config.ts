@@ -20,6 +20,8 @@ export default defineConfig({
         'check-determinism.ts',
         'check-skill-drift.ts',
         'invoke-type-design-consultant.ts',
+        'generate-preset-parity-fixture.ts',
+        'check-cluster-eligibility.ts',
       ],
       exclude: ['*.test.ts', '*.config.ts'],
       thresholds: {
@@ -50,6 +52,20 @@ export default defineConfig({
         },
         // T-311 AC #15 — script-specific 85% floor on changed code.
         'invoke-type-design-consultant.ts': {
+          lines: 85,
+          functions: 85,
+          statements: 85,
+          branches: 85,
+        },
+        // T-313 AC #18 — generate-parity-fixture coverage floor.
+        'generate-preset-parity-fixture.ts': {
+          lines: 80,
+          functions: 80,
+          statements: 80,
+          branches: 75,
+        },
+        // T-313 AC #19 — check-cluster-eligibility coverage floor.
+        'check-cluster-eligibility.ts': {
           lines: 85,
           functions: 85,
           statements: 85,
