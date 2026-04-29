@@ -88,6 +88,32 @@ The consultant escalates to the Orchestrator when:
 - No fallback exists in the registry for a bespoke font the cluster depends on AND adding one would expand the license whitelist (ADR-001 §D4). The Orchestrator routes to the product owner for license decision.
 - The cluster's compass source cites typographic rules (e.g., "distinct numeral design") that no fallback in the registry satisfies. The Orchestrator routes to the product owner for scope decision (relax the rule, expand the registry, or descope the preset).
 
+## Tooling (T-311)
+
+The Orchestrator-side invocation tooling lives at
+[`scripts/invoke-type-design-consultant.ts`](../../../../scripts/invoke-type-design-consultant.ts):
+
+```
+pnpm invoke-type-design-consultant --cluster=<A|B|D|F|G> [--reason=<text>] [--write-prompt]
+```
+
+The script:
+
+1. Resolves the cluster (letter or name; case-insensitive). Clusters C / E / H
+   are EXEMPT and rejected with a non-zero exit.
+2. Builds the per-cluster preset manifest by walking the on-disk preset corpus
+   via `@stageflip/schema/presets/node` (T-304 loader + T-307 font registry),
+   sorted by id so the manifest is byte-stable across runs.
+3. Writes a skeleton review document at
+   `reviews/type-design-consultant-cluster-<letter>.md` matching the §"Outputs"
+   structure above. Re-running over an existing review requires `--reason=<text>`;
+   the reason is captured at the top of the regenerated skeleton.
+4. With `--write-prompt`, also writes the assembled agent prompt to
+   `reviews/.prompts/cluster-<letter>-<YYYY-MM-DD>.md` for inspection.
+
+The script does NOT call any LLM. The Orchestrator (or future automation)
+runs the agent against the prompt and fills the skeleton in.
+
 ## Anti-patterns
 
 - **Do not** recommend a font outside the license-cleared registry without escalating first.

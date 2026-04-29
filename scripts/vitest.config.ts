@@ -19,6 +19,7 @@ export default defineConfig({
         'check-preset-integrity.ts',
         'check-determinism.ts',
         'check-skill-drift.ts',
+        'invoke-type-design-consultant.ts',
       ],
       exclude: ['*.test.ts', '*.config.ts'],
       thresholds: {
@@ -42,6 +43,13 @@ export default defineConfig({
         },
         // T-310 AC #12 — script-specific 85% floor on changed code.
         'check-skill-drift.ts': {
+          lines: 85,
+          functions: 85,
+          statements: 85,
+          branches: 85,
+        },
+        // T-311 AC #15 — script-specific 85% floor on changed code.
+        'invoke-type-design-consultant.ts': {
           lines: 85,
           functions: 85,
           statements: 85,
