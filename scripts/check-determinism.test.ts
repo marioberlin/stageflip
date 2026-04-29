@@ -1,9 +1,11 @@
 // scripts/check-determinism.test.ts
-// Tests for the T-309 shader sub-rule on top of the existing T-028 broad
-// rule. Each AC from docs/tasks/T-309.md is pinned at least once. Synthetic
-// fixtures are written to a temp directory and fed through the script's
-// public surface (`scanShaderSubRule`, `scanFile`). The on-disk corpus is
-// exercised end-to-end via `runChecks` against the real workspace.
+// Tests for the shader sub-rule on top of the existing T-028 broad rule.
+// T-309 shipped the original sub-rule; T-309a tightens it (class-method
+// scope) and drops the missing-frame check. Each AC from docs/tasks/T-309a.md
+// (1 → 18) is pinned at least once. Earlier T-309 ACs that survive (path /
+// decorator detection, forbidden-API coverage, output shape, performance,
+// backward compat) keep their tests. The dropped behaviour (missing-frame
+// as a violation) has its tests inverted to PASS instead of FAIL.
 
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -146,15 +148,15 @@ export function foo(frame: number): number {
   });
 });
 
-// ---------- AC #5 / #6 — frame parameter + missing-parameter ----------
+// ---------- T-309a AC #6, #7, #8 — missing-frame check dropped ----------
 
-describe('T-309 AC #5, #6 — frame parameter requirement', () => {
+describe('T-309a AC #6, #7, #8 — missing-frame check is no longer a violation', () => {
   let root: string;
   afterEach(() => {
     rmSync(root, { recursive: true, force: true });
   });
 
-  it('AC #5: frame-only signature PASSES', () => {
+  it('frame-only signature PASSES (legacy T-309 AC #5)', () => {
     root = makeWorkspace([
       {
         rel: `${SHADER_DIR}/ok.ts`,
@@ -168,22 +170,237 @@ describe('T-309 AC #5, #6 — frame parameter requirement', () => {
     expect(result.violations).toHaveLength(0);
   });
 
-  it('AC #6: missing frame param + Date.now() yields BOTH violations', () => {
+  it('AC #6: path-matched function with no frame param + no forbidden API PASSES', () => {
+    // Was a FAIL under T-309 (missing-frame); under T-309a a function with
+    // no forbidden APIs is deterministic by definition and PASSES.
+    root = makeWorkspace([
+      {
+        rel: `${SHADER_DIR}/helper.ts`,
+        source: `export function helper(): number {
+  return 1;
+}
+`,
+      },
+    ]);
+    const result = scanShaderSubRule({ workspaceRoot: root });
+    expect(result.violations).toHaveLength(0);
+    expect(result.inspectedCount).toBe(1);
+  });
+
+  it('AC #7: path-matched function with no frame param + Date.now() FAILS with ONE violation', () => {
+    // Was TWO violations under T-309 (missing-frame + Date.now); under
+    // T-309a the missing-frame violation is dropped entirely.
     root = makeWorkspace([
       {
         rel: `${SHADER_DIR}/bad.ts`,
-        source: `export function uFrame(): number {
+        source: `export function helper(): number {
   return Date.now();
 }
 `,
       },
     ]);
     const result = scanShaderSubRule({ workspaceRoot: root });
-    const kinds = result.violations.map((v) => v.api);
-    // Both kinds surface.
-    expect(kinds).toContain('Date.now()');
-    expect(kinds.some((a) => a.startsWith('missing-frame-parameter'))).toBe(true);
-    expect(result.violations.length).toBeGreaterThanOrEqual(2);
+    const apis = result.violations.map((v) => v.api);
+    expect(apis).toContain('Date.now()');
+    expect(apis.some((a) => a.startsWith('missing-frame-parameter'))).toBe(false);
+    expect(result.violations).toHaveLength(1);
+  });
+
+  it('AC #8: decorator-tagged function with no frame param + Date.now() FAILS with ONE violation', () => {
+    root = makeWorkspace([
+      {
+        rel: 'packages/some-other-pkg/src/foo.ts',
+        source: `/** @uniformUpdater */
+export function bar(): number {
+  return Date.now();
+}
+`,
+      },
+    ]);
+    const result = scanShaderSubRule({ workspaceRoot: root });
+    const apis = result.violations.map((v) => v.api);
+    expect(apis).toContain('Date.now()');
+    expect(apis.some((a) => a.startsWith('missing-frame-parameter'))).toBe(false);
+    expect(result.violations).toHaveLength(1);
+  });
+});
+
+// ---------- T-309a AC #1 → #5 — class-method scope ----------
+
+describe('T-309a AC #1 → #5 — class methods on path-matched files', () => {
+  let root: string;
+  afterEach(() => {
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  it('AC #1: class method on path-matched file with Date.now() FAILS at the call site', () => {
+    root = makeWorkspace([
+      {
+        rel: `${SHADER_DIR}/foo.ts`,
+        source: `export class Foo {
+  bar(frame: number): number {
+    return Date.now();
+  }
+}
+`,
+      },
+    ]);
+    const result = scanShaderSubRule({ workspaceRoot: root });
+    expect(result.inspectedCount).toBeGreaterThan(0);
+    const apis = result.violations.map((v) => v.api);
+    expect(apis).toContain('Date.now()');
+    const v = result.violations.find((x) => x.api === 'Date.now()');
+    expect(v?.functionName).toBe('bar');
+    // Line/col point at the Date.now() call inside the method body.
+    expect(v?.line).toBe(3);
+  });
+
+  it('AC #2: class method on path-matched file with frame-only body PASSES', () => {
+    root = makeWorkspace([
+      {
+        rel: `${SHADER_DIR}/foo.ts`,
+        source: `export class Foo {
+  bar(frame: number): number {
+    return frame * 0.001;
+  }
+}
+`,
+      },
+    ]);
+    const result = scanShaderSubRule({ workspaceRoot: root });
+    expect(result.violations).toHaveLength(0);
+    expect(result.inspectedCount).toBe(1);
+  });
+
+  it('AC #3: decorator-tagged class method outside path FAILS regardless of file path', () => {
+    root = makeWorkspace([
+      {
+        rel: 'packages/some-other-pkg/src/foo.ts',
+        source: `export class Foo {
+  /** @uniformUpdater */
+  bar(frame: number): number {
+    return performance.now();
+  }
+}
+`,
+      },
+    ]);
+    const result = scanShaderSubRule({ workspaceRoot: root });
+    const apis = result.violations.map((v) => v.api);
+    expect(apis).toContain('performance.now()');
+    const v = result.violations.find((x) => x.api === 'performance.now()');
+    expect(v?.functionName).toBe('bar');
+  });
+
+  it('AC #4: constructors are NOT inspected (run once at mount, not per frame)', () => {
+    root = makeWorkspace([
+      {
+        rel: `${SHADER_DIR}/foo.ts`,
+        source: `export class Foo {
+  private startedAt: number;
+  constructor() {
+    this.startedAt = Date.now();
+  }
+}
+`,
+      },
+    ]);
+    const result = scanShaderSubRule({ workspaceRoot: root });
+    // Constructor body is exempt; no violations and no inspected updaters.
+    expect(result.violations).toHaveLength(0);
+    expect(result.inspectedCount).toBe(0);
+  });
+
+  it('AC #5: static methods on path-matched class are inspected', () => {
+    root = makeWorkspace([
+      {
+        rel: `${SHADER_DIR}/foo.ts`,
+        source: `export class Foo {
+  static makeBad(frame: number): number {
+    return Math.random();
+  }
+}
+`,
+      },
+    ]);
+    const result = scanShaderSubRule({ workspaceRoot: root });
+    const apis = result.violations.map((v) => v.api);
+    expect(apis).toContain('Math.random()');
+    expect(result.violations.find((v) => v.api === 'Math.random()')?.functionName).toBe('makeBad');
+  });
+
+  it('AC #5 sanity: clean static method on path-matched class PASSES', () => {
+    root = makeWorkspace([
+      {
+        rel: `${SHADER_DIR}/foo.ts`,
+        source: `export class Foo {
+  static ok(frame: number): number {
+    return frame * 2;
+  }
+}
+`,
+      },
+    ]);
+    const result = scanShaderSubRule({ workspaceRoot: root });
+    expect(result.violations).toHaveLength(0);
+    expect(result.inspectedCount).toBe(1);
+  });
+
+  it('AC #11 count: methods on a path-matched class are counted individually', () => {
+    root = makeWorkspace([
+      {
+        rel: `${SHADER_DIR}/foo.ts`,
+        source: `export class Foo {
+  a(frame: number): number { return frame; }
+  b(frame: number): number { return frame * 2; }
+  static c(frame: number): number { return frame + 1; }
+  constructor() { /* exempt */ }
+}
+export function topLevel(frame: number): number { return frame; }
+`,
+      },
+    ]);
+    const result = scanShaderSubRule({ workspaceRoot: root });
+    expect(result.violations).toHaveLength(0);
+    // 3 methods (a, b, c) + 1 top-level fn = 4. Constructor exempt.
+    expect(result.inspectedCount).toBe(4);
+  });
+});
+
+// ---------- T-309a AC #9 / #10 — backward compatibility ----------
+
+describe('T-309a AC #9, #10 — existing T-383 code passes under tightened rule', () => {
+  it('AC #9: real workspace at HEAD has zero shader sub-rule violations', () => {
+    const result = scanShaderSubRule({ workspaceRoot: REPO_ROOT });
+    // T-383 ships `defaultShaderUniforms` (decorator-tagged) AND
+    // `ShaderClipFactoryBuilder` (static-only class). Under T-309a the
+    // class methods are now inspected too — they must continue to PASS
+    // since none call a forbidden API.
+    expect(result.violations).toHaveLength(0);
+    // Sanity: at least the decorator-tagged updater is detected.
+    expect(result.inspectedCount).toBeGreaterThan(0);
+  });
+
+  it('AC #10: defaultShaderUniforms continues to PASS', () => {
+    // Reproduces the exact shape of T-383's default uniform updater so the
+    // pin survives even if the on-disk file changes path.
+    const root = makeWorkspace([
+      {
+        rel: `${SHADER_DIR}/uniforms.ts`,
+        source: `/** @uniformUpdater */
+export function defaultShaderUniforms(frame: number, ctx: { fps: number }): { uTime: number } {
+  return { uTime: frame / ctx.fps };
+}
+`,
+      },
+    ]);
+    try {
+      const result = scanShaderSubRule({ workspaceRoot: root });
+      expect(result.violations).toHaveLength(0);
+      expect(result.inspectedCount).toBe(1);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });
 
@@ -364,18 +581,6 @@ describe('T-309 AC #11 — performance budget <2s for 10 fixture files', () => {
     const elapsed = Date.now() - t0;
     expect(result.inspectedCount).toBe(10);
     expect(elapsed).toBeLessThan(2000);
-  });
-});
-
-// ---------- AC #13 — backward compat ----------
-
-describe('T-309 AC #13 — sub-rule passes at HEAD', () => {
-  it('the real workspace has zero violations; sub-rule passes', () => {
-    const result = scanShaderSubRule({ workspaceRoot: REPO_ROOT });
-    // T-383 lands the first non-trivial target — `defaultShaderUniforms` in
-    // `packages/runtimes/interactive/src/clips/shader/uniforms.ts`. The
-    // sub-rule MUST stay clean against it; this test pins that.
-    expect(result.violations).toHaveLength(0);
   });
 });
 

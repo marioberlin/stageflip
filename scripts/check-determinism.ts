@@ -13,12 +13,23 @@
 //
 // T-309 layered a SHADER SUB-RULE on top: per ADR-003 §D5 + ADR-005 §D2,
 // uniform-updater functions inside the otherwise-exempt interactive tier
-// must accept `frame` only and must not read `Date.now`, `performance.now`,
-// `Math.random`, `setTimeout`/`setInterval`, or
-// `requestAnimationFrame`/`cancelAnimationFrame`. The sub-rule fires for
-// path-matched files (shader / three-scene clip directories) AND for any
-// function tagged with the `@uniformUpdater` JSDoc decorator anywhere in the
-// repo.
+// must not read `Date.now`, `performance.now`, `Math.random`,
+// `setTimeout`/`setInterval`, or `requestAnimationFrame`/`cancelAnimationFrame`.
+// The sub-rule fires for path-matched files (shader / three-scene clip
+// directories) AND for any function tagged with the `@uniformUpdater` JSDoc
+// decorator anywhere in the repo.
+//
+// T-309a (Phase 13) tightened the scope and loosened the signal:
+//   - SCOPE: class methods declared at the top level of path-matched files
+//     are now inspected exactly like top-level functions (constructors
+//     excluded — they run once at mount, not per frame).
+//   - SIGNAL: the original "missing-frame parameter" violation is DROPPED.
+//     A function / method that doesn't take `frame` and doesn't call any
+//     forbidden API is deterministic by definition; the dropped check was
+//     defensive over-reach that produced false positives in factory /
+//     dispose / mount code colocated with uniform updaters. The
+//     forbidden-API check alone is sufficient (and is already redundant
+//     with the `UniformsForFrame<P>` typecheck).
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { glob, readFile as readFilePromise } from 'node:fs/promises';
@@ -313,8 +324,10 @@ interface UniformUpdater {
 
 /**
  * Walk a single source file collecting every uniform-updater. Path-matched
- * files contribute every top-level exported function-like declaration;
- * decorator-tagged functions contribute regardless of file path.
+ * files contribute every top-level function-like declaration AND every
+ * method on every top-level class (instance and static; constructors
+ * excluded per T-309a D-T309a-1 / AC #4). Decorator-tagged functions and
+ * methods contribute regardless of file path.
  */
 function collectUniformUpdaters(args: {
   sourceFile: ts.SourceFile;
@@ -352,6 +365,24 @@ function collectUniformUpdaters(args: {
           }
         }
       }
+    } else if (ts.isClassDeclaration(node)) {
+      // T-309a D-T309a-1 / AC #1, #3, #5: walk class members. Methods (both
+      // instance and static) are inspected exactly like top-level functions.
+      // Constructors are excluded per AC #4 — they run once at mount.
+      for (const member of node.members) {
+        if (!ts.isMethodDeclaration(member)) continue;
+        const memberName =
+          member.name && ts.isIdentifier(member.name) ? member.name.text : '<anonymous>';
+        const memberTagged = hasUniformUpdaterTag(member);
+        if (pathMatched || memberTagged) {
+          out.push({
+            node: member,
+            name: memberName,
+            pathMatched,
+            decoratorTagged: memberTagged,
+          });
+        }
+      }
     }
 
     if (isFunctionLike && funcNode) {
@@ -366,10 +397,11 @@ function collectUniformUpdaters(args: {
       }
     }
 
-    // No recursion into function bodies — top-level exports only per
-    // D-T309-3. (Nested functions inside a uniform-updater inherit their
-    // parent's body inspection.)
-    if (!isFunctionLike && !ts.isVariableStatement(node)) {
+    // No recursion into function bodies — top-level declarations only per
+    // D-T309-3 + D-T309a-1. Class members are handled inline above; we do
+    // not recurse into them either (nested classes inside a method body are
+    // out of scope).
+    if (!isFunctionLike && !ts.isVariableStatement(node) && !ts.isClassDeclaration(node)) {
       ts.forEachChild(node, visit);
     }
   };
@@ -392,12 +424,15 @@ function hasUniformUpdaterTag(node: ts.Node): boolean {
 }
 
 /**
- * Inspect a uniform-updater's signature + body. Emits violations for:
- * - Missing `frame` parameter (D-T309-2; AC #5/#6).
- * - Calls to {@link SHADER_SUB_RULE_RULES} (D-T309-2; AC #7).
+ * Inspect a uniform-updater's body for forbidden-API calls
+ * ({@link SHADER_SUB_RULE_RULES}; D-T309-2 + T-309a AC #7).
  *
- * Both kinds surface independently — AC #6 explicitly requires both to
- * report when both apply.
+ * T-309a D-T309a-2 dropped the original "missing-frame parameter" check
+ * (formerly T-309 AC #5/#6 first violation kind). The forbidden-API check
+ * alone is sufficient: a function that doesn't take `frame` and doesn't
+ * call any forbidden API is deterministic by definition. Misshapen updater
+ * signatures fail typecheck against `UniformsForFrame<P>` before this
+ * script runs.
  */
 function inspectUniformUpdater(args: {
   updater: UniformUpdater;
@@ -407,25 +442,6 @@ function inspectUniformUpdater(args: {
 }): ShaderViolation[] {
   const { updater, sourceFile, absPath, lines } = args;
   const out: ShaderViolation[] = [];
-
-  // Frame parameter check.
-  const params = updater.node.parameters;
-  const hasFrameParam = params.some((p) => {
-    if (ts.isIdentifier(p.name)) return p.name.text === 'frame';
-    return false;
-  });
-  if (!hasFrameParam) {
-    const start = updater.node.getStart(sourceFile);
-    const { line, character } = sourceFile.getLineAndCharacterOfPosition(start);
-    out.push({
-      file: absPath,
-      line: line + 1,
-      column: character + 1,
-      api: 'missing-frame-parameter',
-      hint: `uniform-updater '${updater.name}' must accept 'frame' as a parameter (ADR-003 §D5)`,
-      functionName: updater.name,
-    });
-  }
 
   // Body API check.
   const body = updater.node.body;

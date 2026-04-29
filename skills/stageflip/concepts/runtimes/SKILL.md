@@ -3,8 +3,8 @@ title: Runtime Tiers
 id: skills/stageflip/concepts/runtimes
 tier: concept
 status: substantive
-last_updated: 2026-04-27
-owner_task: T-309
+last_updated: 2026-04-29
+owner_task: T-309a
 related:
   - skills/stageflip/concepts/clip-elements/SKILL.md
   - skills/stageflip/concepts/storage-contract/SKILL.md
@@ -240,24 +240,28 @@ path; existing scope on `packages/frame-runtime/`,
 `packages/runtimes/blender/**/clips/**`, and `packages/renderer-core/clips/**`
 remains untouched.
 
-#### Shader sub-rule (T-309)
+#### Shader sub-rule (T-309 / T-309a)
 
 The interactive tier's broad exemption is **narrowed** for shader and
 Three.js scene clips. Per ADR-003 §D5 + ADR-005 §D2, uniform-updater
 functions for `ShaderClip` and `ThreeSceneClip` are frame-deterministic
-by construction: they must accept `frame` as a parameter and must not
-read `Date.now`, `performance.now`, `Math.random`, `setTimeout` /
-`setInterval`, or `requestAnimationFrame` / `cancelAnimationFrame`.
+by construction: they must not read `Date.now`, `performance.now`,
+`Math.random`, `setTimeout` / `setInterval`, or
+`requestAnimationFrame` / `cancelAnimationFrame`.
 
-`scripts/check-determinism.ts` enforces this via an AST pass that fires
-for two opt-in mechanisms (D-T309-3):
+`scripts/check-determinism.ts` enforces this via an AST pass that
+inspects three declaration shapes on opt-in:
 
-1. **Path-based** — every top-level function in
-   `packages/runtimes/interactive/src/clips/shader/**` and
-   `packages/runtimes/interactive/src/clips/three-scene/**` is
-   inspected.
-2. **Decorator-based** — any function carrying the `@uniformUpdater`
-   JSDoc tag, anywhere in the repo, is inspected:
+1. **Top-level functions and arrow-bound exports** on path-matched files
+   (`packages/runtimes/interactive/src/clips/shader/**`,
+   `packages/runtimes/interactive/src/clips/three-scene/**`).
+2. **Methods on top-level classes** on path-matched files — both
+   instance and static. Constructors are excluded (they run once at
+   mount, not per frame). T-309a (Phase 13) added this scope so factory
+   helpers colocated with uniform updaters can stay in the same file
+   without tripping the rule.
+3. **Decorator-tagged functions and methods** carrying the
+   `@uniformUpdater` JSDoc tag, anywhere in the repo:
 
    ```ts
    /** @uniformUpdater */
@@ -270,6 +274,13 @@ for two opt-in mechanisms (D-T309-3):
    clip directories (e.g., a future `webgl` family) and you still want
    the rule to apply.
 
+T-309a also **dropped** the original "missing-frame parameter" check.
+Functions / methods that don't take `frame` and don't call any
+forbidden API are deterministic by definition; flagging them was
+defensive over-reach. The forbidden-API check alone is sufficient (and
+is already redundant with the `UniformsForFrame<P>` typecheck the
+schema enforces upstream).
+
 The escape-hatch comment `// determinism-safe: <reason>` exempts a
 single line as on the broad rule. Reach for it only when the API is
 demonstrably non-determinism-affecting (e.g., debug telemetry behind a
@@ -281,14 +292,13 @@ The output line is:
 check-determinism [shader sub-rule]: PASS (N uniform-updaters detected)
 ```
 
-`N=0` is normal pre-Phase-γ — no `ShaderClip` or `ThreeSceneClip`
-implementations exist yet (T-340+). The sub-rule is vacuously PASS at
-HEAD.
-
-T-383 lands the first non-trivial target for the path-based check:
-`packages/runtimes/interactive/src/clips/shader/uniforms.ts` ships
-`defaultShaderUniforms(frame, ctx)` — a `@uniformUpdater`-tagged function
-satisfying both the path-based AND decorator-based opt-in. See
+`N` counts every inspected top-level function, every inspected class
+method, and every decorator-tagged function or method. T-383 ships the
+first non-trivial targets:
+`packages/runtimes/interactive/src/clips/shader/uniforms.ts` exports
+`defaultShaderUniforms(frame, ctx)` — a `@uniformUpdater`-tagged
+function — and `factory.ts` exposes `ShaderClipFactoryBuilder.build` /
+`.mount` as static methods (now inspected per T-309a). See
 `runtimes/shader/SKILL.md` §"Frontier-tier ShaderClip" for the full
 factory + frame-source contract.
 
