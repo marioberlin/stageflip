@@ -24,3 +24,9 @@ export {
   type ExportTarget,
   type ResolvedClipPath,
 } from './export-targets.js';
+export {
+  shaderClipPropsSchema,
+  uniformValueSchema,
+  type ShaderClipProps,
+  type UniformValue,
+} from './interactive/index.js';
