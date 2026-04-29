@@ -369,10 +369,12 @@ describe('T-309 AC #11 — performance budget <2s for 10 fixture files', () => {
 
 // ---------- AC #13 — backward compat ----------
 
-describe('T-309 AC #13 — sub-rule is vacuously PASS at HEAD', () => {
-  it('the real workspace has zero shader/three-scene files today; sub-rule passes', () => {
+describe('T-309 AC #13 — sub-rule passes at HEAD', () => {
+  it('the real workspace has zero violations; sub-rule passes', () => {
     const result = scanShaderSubRule({ workspaceRoot: REPO_ROOT });
-    // No shader/three-scene clips exist on main pre-Phase γ.
+    // T-383 lands the first non-trivial target — `defaultShaderUniforms` in
+    // `packages/runtimes/interactive/src/clips/shader/uniforms.ts`. The
+    // sub-rule MUST stay clean against it; this test pins that.
     expect(result.violations).toHaveLength(0);
   });
 });
