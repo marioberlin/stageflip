@@ -12,10 +12,10 @@
 // identical draw cadence). Epsilon = 0.
 //
 // This is the runtime expression of ADR-005 §D2: liveMount and the
-// staticFallback poster pipeline share a single rendering core. A future
-// real-browser CI lane (escalation trigger #2 in the spec) will assert at
-// the pixel level; this test asserts at the GL-call level which is the
-// faithful proxy in happy-dom.
+// staticFallback poster pipeline share a single rendering core. The
+// pixel-level assertion is tracked as T-383a (real-browser CI lane / software-
+// WebGL) per the T-383 PR review; this test asserts at the GL-call level
+// which is the faithful proxy in happy-dom.
 
 import { ShaderClipHost } from '@stageflip/runtimes-shader';
 import { render } from '@testing-library/react';
