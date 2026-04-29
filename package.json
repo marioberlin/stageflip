@@ -29,6 +29,8 @@
     "check-determinism": "tsx scripts/check-determinism.ts",
     "check-preset-integrity": "tsx scripts/check-preset-integrity.ts",
     "invoke-type-design-consultant": "tsx scripts/invoke-type-design-consultant.ts",
+    "generate-parity-fixture": "tsx scripts/generate-preset-parity-fixture.ts",
+    "check-cluster-eligibility": "tsx scripts/check-cluster-eligibility.ts",
     "parity": "turbo run build --filter=@stageflip/parity-cli && node packages/parity-cli/bin/parity.js",
     "parity:prime": "turbo run build --filter=@stageflip/parity-cli && node packages/parity-cli/bin/parity.js prime",
     "size-limit": "turbo run build --filter=@stageflip/frame-runtime --filter=@stageflip/cdp-host-bundle --filter=@stageflip/export-pptx --filter=@stageflip/import-google-slides --filter=@stageflip/rasterize --filter=@stageflip/import-hyperframes-html --filter=@stageflip/export-google-slides && size-limit",
