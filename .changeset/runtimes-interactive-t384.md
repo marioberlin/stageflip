@@ -19,10 +19,13 @@ T-384: `ThreeSceneClip` frontier-tier primitive — second γ-core dispatch.
   `staticFallback` poster generation share a single rendering core
   (ADR-005 §D2 convergence-by-construction).
 - New `createSeededPRNG(seed)` (xorshift32). The wrapper hands the PRNG
-  to the author setup callback through `props.__prng` so authors have a
-  byte-identical-across-runs substitute for `Math.random()` (which is
-  forbidden in `clips/three-scene/**` by T-309's path-based shader sub-
-  rule, tightened by T-309a).
+  to the author setup callback as `setup({ container, width, height,
+  props, prng })` — `prng` is a top-level field on `ThreeClipSetupArgs`
+  (additive, optional in `@stageflip/runtimes-three`'s public type), not
+  smuggled through `props`. Authors have a byte-identical-across-runs
+  substitute for `Math.random()` (which is forbidden in
+  `clips/three-scene/**` by T-309's path-based shader sub-rule, tightened
+  by T-309a).
 - New `installRAFShim(frameSource)` — mount-scoped
   `requestAnimationFrame` shim that retargets all in-mount rAF traffic
   to the FrameSource clock (per ADR-005 §D2). Caveats documented in the

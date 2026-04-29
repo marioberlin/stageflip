@@ -269,7 +269,7 @@ describe('threeSceneClipFactory (T-384)', () => {
     }
   });
 
-  it('AC #21 — invalid props emit failure with reason="invalid-props"', async () => {
+  it('invalid-props telemetry — failure emits reason="invalid-props"', async () => {
     const state = freshSceneState();
     const factory = ThreeSceneClipFactoryBuilder.build({
       importer: async () => ({ MySetup: makeFakeSetup(state) }),
