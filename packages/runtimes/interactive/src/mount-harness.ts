@@ -19,13 +19,50 @@
 //
 // Browser-safe: no Node imports.
 
-import type { InteractiveClip, InteractiveClipFamily } from '@stageflip/schema';
+import type { InteractiveClip, InteractiveClipFamily, Permission } from '@stageflip/schema';
 
 import type { ClipFactory, MountContext, MountHandle, TenantPolicy } from './contract.js';
 import { PERMISSIVE_TENANT_POLICY } from './contract.js';
 import { renderStaticFallback } from './fallback-rendering.js';
 import { type EmitTelemetry, NOOP_EMIT_TELEMETRY, PermissionShim } from './permission-shim.js';
 import { type InteractiveClipRegistry, interactiveClipRegistry } from './registry.js';
+
+/**
+ * Information passed to a `PermissionPrePromptHandler` so the host can
+ * render the pre-prompt modal with the right copy. The handler returns a
+ * promise that resolves to `'confirm'` (proceed to browser permission
+ * dialog) or `'cancel'` (route to static fallback).
+ */
+export interface PermissionPrePromptInvocation {
+  /** The clip family being mounted — drives copy selection. */
+  family: InteractiveClipFamily;
+  /** The first permission about to be requested — display target. */
+  permission: Permission;
+}
+
+/**
+ * T-385 D-T385-9 — host-supplied callback that renders the pre-prompt
+ * explanation modal and resolves with the user's choice. Typically backed
+ * by `<PermissionPrePromptModal>` rendered into a portal owned by the host.
+ */
+export type PermissionPrePromptHandler = (
+  invocation: PermissionPrePromptInvocation,
+) => Promise<'confirm' | 'cancel'>;
+
+/**
+ * Per-mount options for `InteractiveMountHarness.mount`. Backward-
+ * compatible — pre-existing T-306 / T-383 / T-384 callers omit this
+ * argument entirely.
+ */
+export interface InteractiveMountOptions {
+  /**
+   * When `true`, the harness yields a pre-prompt render cycle BEFORE the
+   * shim's permission probe. Default `false`. Requires
+   * `permissionPrePromptHandler` to be set on the harness; if absent, the
+   * flag is ignored and the harness behaves as if `false`.
+   */
+  permissionPrePrompt?: boolean;
+}
 
 /**
  * Thrown when `harness.mount()` is called for a clip whose `family` has
@@ -51,6 +88,15 @@ export interface InteractiveMountHarnessOptions {
   tenantPolicy?: TenantPolicy;
   /** Telemetry emitter; no-op default. */
   emitTelemetry?: EmitTelemetry;
+  /**
+   * T-385 D-T385-9 — host-supplied pre-prompt renderer. When
+   * `mount(clip, root, signal, { permissionPrePrompt: true })` is invoked,
+   * the harness calls this handler INSTEAD of going straight to the shim.
+   * Resolving with `'confirm'` continues to the shim; `'cancel'` routes to
+   * `staticFallback` with reason `'pre-prompt-cancelled'`. Optional —
+   * absent + flag-on falls back to T-306 baseline (no pre-prompt).
+   */
+  permissionPrePromptHandler?: PermissionPrePromptHandler;
 }
 
 /**
@@ -63,6 +109,7 @@ export class InteractiveMountHarness {
   private readonly permissionShim: PermissionShim;
   private readonly tenantPolicy: TenantPolicy;
   private readonly emitTelemetry: EmitTelemetry;
+  private readonly permissionPrePromptHandler: PermissionPrePromptHandler | undefined;
 
   constructor(options: InteractiveMountHarnessOptions = {}) {
     this.registry = options.registry ?? interactiveClipRegistry;
@@ -74,6 +121,7 @@ export class InteractiveMountHarness {
         tenantPolicy: this.tenantPolicy,
         emitTelemetry: this.emitTelemetry,
       });
+    this.permissionPrePromptHandler = options.permissionPrePromptHandler;
   }
 
   /**
@@ -86,7 +134,39 @@ export class InteractiveMountHarness {
    * returns a `MountHandle` whose `dispose()` unmounts that React tree.
    * `updateProps` is a no-op on the static path.
    */
-  async mount(clip: InteractiveClip, root: HTMLElement, signal: AbortSignal): Promise<MountHandle> {
+  async mount(
+    clip: InteractiveClip,
+    root: HTMLElement,
+    signal: AbortSignal,
+    mountOptions: InteractiveMountOptions = {},
+  ): Promise<MountHandle> {
+    // Step 0 (T-385 D-T385-9): optional pre-prompt render cycle. Runs
+    // BEFORE the shim so the user sees the in-app explanation before the
+    // browser dialog. Skipped when:
+    //   - the flag is off (default — matches T-306 baseline);
+    //   - no handler is registered on the harness;
+    //   - the clip declares no permissions (nothing to pre-explain).
+    if (
+      mountOptions.permissionPrePrompt === true &&
+      this.permissionPrePromptHandler !== undefined &&
+      clip.liveMount.permissions.length > 0
+    ) {
+      const firstPermission = clip.liveMount.permissions[0];
+      if (firstPermission !== undefined) {
+        const choice = await this.permissionPrePromptHandler({
+          family: clip.family,
+          permission: firstPermission,
+        });
+        if (choice === 'cancel') {
+          this.emitTelemetry('mount-fallback', {
+            family: clip.family,
+            reason: 'pre-prompt-cancelled',
+          });
+          return this.mountStaticFallback(clip, root, signal);
+        }
+      }
+    }
+
     // Step 1: permission shim — tenant-policy gate, then permission probes.
     const permissionResult = await this.permissionShim.mount(clip);
 
@@ -114,6 +194,9 @@ export class InteractiveMountHarness {
       tenantPolicy: this.tenantPolicy,
       emitTelemetry: this.emitTelemetry,
       signal,
+      ...(mountOptions.permissionPrePrompt !== undefined
+        ? { permissionPrePrompt: mountOptions.permissionPrePrompt }
+        : {}),
     };
 
     const handle = await factory(context);
