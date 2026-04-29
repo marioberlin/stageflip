@@ -17,6 +17,38 @@ describe('contract types', () => {
     expect(PERMISSIVE_TENANT_POLICY.canMount('ai-chat')).toBe(true);
   });
 
+  it('T-385 AC #20 — MountContext.permissionPrePrompt is optional (T-306 backward compat)', () => {
+    // Pre-existing T-306 / T-383 / T-384 consumers MUST be able to construct
+    // a MountContext without supplying `permissionPrePrompt`. The field is
+    // optional per D-T385-4.
+    const root = document.createElement('div');
+    const controller = new AbortController();
+    const ctx: MountContext = {
+      clip: makeInteractiveClip(),
+      root,
+      permissions: [],
+      tenantPolicy: PERMISSIVE_TENANT_POLICY,
+      emitTelemetry: () => undefined,
+      signal: controller.signal,
+    };
+    expect(ctx.permissionPrePrompt).toBeUndefined();
+  });
+
+  it('T-385 — MountContext.permissionPrePrompt accepts a boolean when supplied', () => {
+    const root = document.createElement('div');
+    const controller = new AbortController();
+    const ctx: MountContext = {
+      clip: makeInteractiveClip(),
+      root,
+      permissions: [],
+      tenantPolicy: PERMISSIVE_TENANT_POLICY,
+      emitTelemetry: () => undefined,
+      signal: controller.signal,
+      permissionPrePrompt: true,
+    };
+    expect(ctx.permissionPrePrompt).toBe(true);
+  });
+
   it('T-383 — MountContext.frameSource is optional (T-306 backward compat)', () => {
     // Pre-existing T-306 consumers MUST be able to construct a MountContext
     // without supplying `frameSource`. The field is optional per D-T383-6.

@@ -151,6 +151,28 @@ describe('PermissionShim', () => {
     });
   });
 
+  it('T-385 AC #7 — clearCacheEntry removes only the named entry, sibling entries preserved', async () => {
+    const stream = makeFakeStream();
+    const getUserMedia = vi.fn().mockResolvedValue(stream);
+    const shim = new PermissionShim({ browser: makeBrowser(getUserMedia) });
+    // Seed two cache entries: shader:mic, shader:camera.
+    await shim.mount(makeInteractiveClip({ family: 'shader', permissions: ['mic'] }));
+    await shim.mount(makeInteractiveClip({ family: 'shader', permissions: ['camera'] }));
+    expect(getUserMedia).toHaveBeenCalledTimes(2);
+    // Clear only `shader:mic`.
+    shim.clearCacheEntry('shader', 'mic');
+    // Re-mount mic → re-prompt; re-mount camera → still cached.
+    await shim.mount(makeInteractiveClip({ family: 'shader', permissions: ['mic'] }));
+    expect(getUserMedia).toHaveBeenCalledTimes(3);
+    await shim.mount(makeInteractiveClip({ family: 'shader', permissions: ['camera'] }));
+    expect(getUserMedia).toHaveBeenCalledTimes(3);
+  });
+
+  it('T-385 AC #7 — clearCacheEntry on a non-existent entry is a no-op', () => {
+    const shim = new PermissionShim();
+    expect(() => shim.clearCacheEntry('shader', 'mic')).not.toThrow();
+  });
+
   it('clearCache resets the per-session grant cache', async () => {
     const stream = makeFakeStream();
     const getUserMedia = vi.fn().mockResolvedValue(stream);

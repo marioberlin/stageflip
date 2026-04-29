@@ -256,6 +256,153 @@ describe('InteractiveMountHarness', () => {
     controller.abort();
   });
 
+  it('T-385 AC #8 — undefined permissionPrePrompt matches T-306 baseline (no handler invoked)', async () => {
+    const handler = vi.fn();
+    const registry = new InteractiveClipRegistry();
+    registry.register('shader', makeStubFactory());
+    const harness = new InteractiveMountHarness({
+      registry,
+      permissionPrePromptHandler: handler,
+    });
+    await harness.mount(
+      makeInteractiveClip({ permissions: ['network'] }),
+      document.createElement('div'),
+      new AbortController().signal,
+    );
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('T-385 AC #9 — permissionPrePrompt:true confirm proceeds to factory', async () => {
+    const stream = makeFakeStream();
+    const handler = vi.fn(async () => 'confirm' as const);
+    const registry = new InteractiveClipRegistry();
+    const factory = vi.fn(makeStubFactory());
+    registry.register('shader', factory);
+    const permissionShim = new PermissionShim({
+      browser: { getUserMedia: async () => stream },
+    });
+    const harness = new InteractiveMountHarness({
+      registry,
+      permissionShim,
+      permissionPrePromptHandler: handler,
+    });
+    await harness.mount(
+      makeInteractiveClip({ permissions: ['mic'] }),
+      document.createElement('div'),
+      new AbortController().signal,
+      { permissionPrePrompt: true },
+    );
+    expect(handler).toHaveBeenCalledWith({ family: 'shader', permission: 'mic' });
+    expect(factory).toHaveBeenCalledTimes(1);
+  });
+
+  it('T-385 AC #9 — permissionPrePrompt:true cancel routes to static fallback (factory NOT invoked)', async () => {
+    const handler = vi.fn(async () => 'cancel' as const);
+    const getUserMedia = vi.fn();
+    const registry = new InteractiveClipRegistry();
+    const factory = vi.fn(makeStubFactory());
+    registry.register('shader', factory);
+    const permissionShim = new PermissionShim({ browser: { getUserMedia } });
+    const harness = new InteractiveMountHarness({
+      registry,
+      permissionShim,
+      permissionPrePromptHandler: handler,
+    });
+    const handle = await harness.mount(
+      makeInteractiveClip({ permissions: ['mic'] }),
+      document.createElement('div'),
+      new AbortController().signal,
+      { permissionPrePrompt: true },
+    );
+    expect(handler).toHaveBeenCalled();
+    expect(getUserMedia).not.toHaveBeenCalled();
+    expect(factory).not.toHaveBeenCalled();
+    expect(typeof handle.dispose).toBe('function');
+  });
+
+  it('T-385 AC #9 — pre-prompt cancel emits mount-fallback with reason pre-prompt-cancelled', async () => {
+    const emitTelemetry = vi.fn();
+    const handler = vi.fn(async () => 'cancel' as const);
+    const registry = new InteractiveClipRegistry();
+    registry.register('shader', makeStubFactory());
+    const harness = new InteractiveMountHarness({
+      registry,
+      emitTelemetry,
+      permissionPrePromptHandler: handler,
+    });
+    await harness.mount(
+      makeInteractiveClip({ permissions: ['mic'] }),
+      document.createElement('div'),
+      new AbortController().signal,
+      { permissionPrePrompt: true },
+    );
+    expect(emitTelemetry).toHaveBeenCalledWith('mount-fallback', {
+      family: 'shader',
+      reason: 'pre-prompt-cancelled',
+    });
+  });
+
+  it('T-385 — permissionPrePrompt:true with no permissions skips the handler', async () => {
+    const handler = vi.fn();
+    const registry = new InteractiveClipRegistry();
+    registry.register('shader', makeStubFactory());
+    const harness = new InteractiveMountHarness({
+      registry,
+      permissionPrePromptHandler: handler,
+    });
+    await harness.mount(
+      makeInteractiveClip({ permissions: [] }),
+      document.createElement('div'),
+      new AbortController().signal,
+      { permissionPrePrompt: true },
+    );
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('T-385 — permissionPrePrompt:true without a handler falls back to T-306 baseline', async () => {
+    const stream = makeFakeStream();
+    const registry = new InteractiveClipRegistry();
+    const factory = vi.fn(makeStubFactory());
+    registry.register('shader', factory);
+    const permissionShim = new PermissionShim({
+      browser: { getUserMedia: async () => stream },
+    });
+    const harness = new InteractiveMountHarness({ registry, permissionShim });
+    await harness.mount(
+      makeInteractiveClip({ permissions: ['mic'] }),
+      document.createElement('div'),
+      new AbortController().signal,
+      { permissionPrePrompt: true },
+    );
+    expect(factory).toHaveBeenCalledTimes(1);
+  });
+
+  it('T-385 — permissionPrePrompt forwards to MountContext when set', async () => {
+    let observedFlag: boolean | undefined;
+    const stream = makeFakeStream();
+    const registry = new InteractiveClipRegistry();
+    registry.register('shader', async (ctx) => {
+      observedFlag = ctx.permissionPrePrompt;
+      return { updateProps: () => undefined, dispose: () => undefined };
+    });
+    const permissionShim = new PermissionShim({
+      browser: { getUserMedia: async () => stream },
+    });
+    const handler = vi.fn(async () => 'confirm' as const);
+    const harness = new InteractiveMountHarness({
+      registry,
+      permissionShim,
+      permissionPrePromptHandler: handler,
+    });
+    await harness.mount(
+      makeInteractiveClip({ permissions: ['mic'] }),
+      document.createElement('div'),
+      new AbortController().signal,
+      { permissionPrePrompt: true },
+    );
+    expect(observedFlag).toBe(true);
+  });
+
   it('static-fallback path: pre-aborted signal disposes immediately', async () => {
     const registry = new InteractiveClipRegistry();
     registry.register('shader', makeStubFactory());
