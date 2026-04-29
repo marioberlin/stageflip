@@ -200,6 +200,31 @@ Invariant 5 is the most common bug class — clusters A/B/D/F/G is the
 required-sign-off set; C/E/H are exempt. The `na` exemption for text-free
 presets is narrow (preferredFont.license atom = `'na'`).
 
+## Parity fixtures (T-313)
+
+Per **ADR-004 §D5**, every preset requires a signed parity fixture before its
+cluster may merge. T-313 ships two CLIs and a workflow doc:
+
+- `pnpm generate-parity-fixture --preset=<id> [--frame=<n>] [--mark-signed]`
+  — auto-generates the canonical reference-frame fixture under
+  `parity-fixtures/<cluster>/<preset>/` (manifest.json + golden-frame-<n>.png
+  + thresholds.json). With `--mark-signed`, mutates the preset's
+  `signOff.parityFixture` frontmatter to `signed:YYYY-MM-DD`. Re-sign is
+  guarded by `--force` per ADR-004 §D5.
+- `pnpm check-cluster-eligibility --cluster=<letter|name>` — walks the
+  cluster, reports per-preset sign-off state, exits 0 when every preset is
+  signed (or `na`).
+
+The four-step product-owner-per-cluster workflow (generate → inspect → sign →
+cluster batch merge) is documented at
+[`docs/ops/parity-fixture-signoff.md`](../../../ops/parity-fixture-signoff.md).
+
+T-313 reuses the existing parity infrastructure at `packages/testing/fixtures/`
+(T-067) — the fixture-manifest schema is shared. The new top-level
+`parity-fixtures/` tree is preset-level (one bundle per preset); the existing
+`packages/testing/fixtures/` tree remains clip-runtime-level (per
+runtime+kind).
+
 ## Skill drift gate (T-310)
 
 `scripts/check-skill-drift.ts` (run as `pnpm check-skill-drift`) extends the
@@ -276,3 +301,4 @@ behavior. Output canonicality is pinned by AC #30 (100-invocation hash test).
 - T-307 (font-license registry — license vocabulary; **shipped**)
 - T-308 (`check-preset-integrity` CI gate — first downstream consumer)
 - T-310 (`check-skill-drift` preset-tree gate — tree-level coverage + id coherence)
+- T-313 (parity-fixture pipeline + sign-off workflow — `pnpm generate-parity-fixture`, `pnpm check-cluster-eligibility`, [`docs/ops/parity-fixture-signoff.md`](../../../ops/parity-fixture-signoff.md))
