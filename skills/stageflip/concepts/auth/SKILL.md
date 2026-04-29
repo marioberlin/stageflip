@@ -187,9 +187,60 @@ Out-of-scope deferrals from T-262:
 - Audit log of role changes (memberships record `lastModifiedBy`,
   but no queryable audit surface ships in T-262).
 
+## Permission flow UX (T-385)
+
+The interactive runtime tier (T-306) ships `PermissionShim` — the
+mount-time gate that consults `tenantPolicy.canMount(family)` then
+walks `clip.liveMount.permissions`, prompting the user for `mic` /
+`camera` (network is a no-op) and caching grants per-(session, family).
+T-385 layers a user-facing UX over that primitive without changing the
+shim's contract.
+
+The package now exports a `permission-flow` subpath
+(`@stageflip/runtimes-interactive/permission-flow`) carrying:
+
+- `usePermissionFlow(clip, { shim, prePrompt?, emitTelemetry? })` —
+  React hook driving an exhaustive state machine
+  (`idle | pre-prompt | requesting | granted | denied`). The hook
+  calls `shim.mount()` on entering `requesting`, emits the D-T385-5
+  telemetry envelope (`permission.pre-prompt.shown` / `.confirmed` /
+  `.cancelled`, `permission.dialog.shown`, `permission.retry.clicked`
+  / `.granted` / `.denied`), and clears the failed permission's cache
+  entry via `shim.clearCacheEntry(family, permission)` on retry.
+  Tenant-denied retries are intentionally no-ops — tenant policy is
+  not user-overridable.
+- `<PermissionDenialBanner>` + `<PermissionPrePromptModal>` — default
+  visual surfaces. **All user-facing text comes through required
+  `messages` props; no English-string defaults live in the package**
+  (CLAUDE.md §10). Apps inject localised copy.
+- `PermissionShim.clearCacheEntry(family, permission)` — production-
+  callable per-key cache invalidation; the broader `clearCache()`
+  test-seam is preserved unchanged.
+
+Pre-prompt UX is opt-in per mount via
+`InteractiveMountHarness.mount(clip, root, signal, { permissionPrePrompt: true })`.
+The harness yields a pre-prompt render cycle (via the host-supplied
+`permissionPrePromptHandler` constructor option) BEFORE the browser
+permission dialog. On cancel, the mount routes to `staticFallback`
+with reason `'pre-prompt-cancelled'`. Default behaviour (flag absent)
+matches the T-306 baseline byte-for-byte.
+
+Pre-prompt is OFF by default. Per-permission research consistently
+shows that browser permission dialogs alone yield higher denial rates
+than dialogs preceded by an in-app explanation; clip families that
+declare non-empty permissions (`VoiceClip`, `AiChatClip`,
+`LiveDataClip`, `WebEmbedClip`, `AiGenerativeClip`) may *recommend*
+`prePrompt: true` in their skills but the host application owns the
+choice.
+
+`runtimes-interactive` is browser-only — no Node imports allowed in
+new files (browser-bundle hazard per `feedback_t304_lessons`).
+
 ## Related
 
 - Rate limits: `concepts/rate-limits/SKILL.md`
 - MCP: `concepts/mcp-integration/SKILL.md`
+- Runtimes (interactive tier): `concepts/runtimes/SKILL.md` §"Interactive runtime tier"
 - Tasks: T-262 (auth+tenancy, shipped), T-263 (rate limits),
-  T-271 (EU region).
+  T-271 (EU region), T-306 (PermissionShim primitive),
+  T-385 (permission-flow UX).
