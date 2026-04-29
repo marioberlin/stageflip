@@ -31,8 +31,26 @@ export {
   InteractiveClipNotRegisteredError,
   InteractiveMountHarness,
   type InteractiveMountHarnessOptions,
+  type InteractiveMountOptions,
+  type PermissionPrePromptHandler,
+  type PermissionPrePromptInvocation,
   registerInteractiveClip,
 } from './mount-harness.js';
+export {
+  INITIAL_PERMISSION_FLOW_STATE,
+  PermissionDenialBanner,
+  type PermissionDenialBannerProps,
+  type PermissionDenialMessages,
+  type PermissionFlowAction,
+  type PermissionFlowState,
+  permissionFlowReducer,
+  PermissionPrePromptModal,
+  type PermissionPrePromptModalProps,
+  type PermissionPrePromptMessages,
+  usePermissionFlow,
+  type UsePermissionFlowOptions,
+  type UsePermissionFlowReturn,
+} from './permission-flow/index.js';
 export {
   defaultPermissionBrowserApi,
   type EmitTelemetry,
