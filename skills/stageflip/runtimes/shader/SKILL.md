@@ -158,9 +158,123 @@ as string literals in consumer bundles. No `size-limit` entry yet.
 | `packages/runtimes/shader/src/clips/shader-bg.test.ts` | T-131d.2 — composition, uniforms, and schema coverage |
 | `packages/runtimes/shader/src/index.test.tsx` | Shape, gating, validation, GL lifecycle via stub |
 
+## Frontier-tier `ShaderClip` (T-383)
+
+The frame-deterministic shader runtime above is the §3 path. The
+**interactive-tier** sibling — `family: 'shader'` per ADR-005 §D1 — wraps
+the SAME `ShaderClipHost` so that `liveMount` (browser live-preview,
+display-interactive, on-device-player) and `staticFallback`-poster
+generation converge on identical pixels by construction (ADR-005 §D2).
+
+```ts
+import {
+  ShaderClipFactoryBuilder,
+  shaderClipFactory,
+} from '@stageflip/runtimes-interactive/clips/shader';
+import {
+  RecordModeFrameSource,
+  RAFFrameSource,
+  interactiveClipRegistry,
+} from '@stageflip/runtimes-interactive';
+
+// Side-effect: importing the subpath registers `shaderClipFactory` against
+// `interactiveClipRegistry` for `family: 'shader'`. Re-import throws.
+
+// Live preview drives ticks via rAF.
+const fs = new RAFFrameSource();
+// Record / parity tests drive ticks deterministically.
+const fs2 = new RecordModeFrameSource();
+fs2.advance(30); // emit 30 frame ticks in order
+```
+
+### Reuse-the-runtime pattern
+
+`ShaderClipFactoryBuilder.build()` produces a `ClipFactory` that mounts
+`ShaderClipHost`. The two paths share a single rendering core; convergence
+is enforced by AC #18 in T-383 (a unit test renders the same shader at
+the same frame via both paths and asserts identical GL call streams,
+epsilon = 0). The pattern is replicated by T-384 (`ThreeSceneClip` over
+`@stageflip/runtimes-three`).
+
+### `@uniformUpdater` JSDoc tag
+
+T-309's shader sub-rule fires inside `clips/shader/**` AND on any
+function carrying the `@uniformUpdater` JSDoc tag. The default updater
+ships as `defaultShaderUniforms(frame, ctx)` in
+`packages/runtimes/interactive/src/clips/shader/uniforms.ts`:
+
+```ts
+/** @uniformUpdater */
+export function defaultShaderUniforms(
+  frame: number,
+  ctx: { fps: number; resolution: readonly [number, number]; props: ShaderClipProps },
+): Readonly<Record<string, UniformValue>> {
+  return {
+    ...ctx.props.initialUniforms,
+    uFrame: frame,
+    uTime: frame / ctx.fps,
+    uResolution: [ctx.resolution[0], ctx.resolution[1]],
+  };
+}
+```
+
+The first parameter is named `frame: number` so the sub-rule's signature
+check (D-T309-2) finds it. The body must NOT call `Date.now`,
+`performance.now`, `Math.random`, `setTimeout`/`setInterval`, or
+`requestAnimationFrame`/`cancelAnimationFrame` — a uniform-updater is
+frame-deterministic by construction; reading anything else defeats
+ADR-005 §D2 convergence.
+
+### `MountContext.frameSource`
+
+Frame-driven families (`shader`, `three-scene`) consume a `FrameSource`
+via `MountContext.frameSource`:
+
+```ts
+export interface FrameSource {
+  subscribe(handler: (frame: number) => void): () => void;
+  current(): number;  // synchronous read for first paint
+}
+```
+
+Two implementations ship:
+
+- **`RAFFrameSource`** — wraps `requestAnimationFrame` for browser
+  live-preview. Lives at `runtimes-interactive/src/frame-source-raf.ts`,
+  ABOVE the `clips/shader/**` directory; not subject to the sub-rule's
+  path-based check.
+- **`RecordModeFrameSource`** — externally-driven via `advance(N)`.
+  Used by `renderer-cdp` in record mode and by the convergence test.
+
+A frame-driven family that mounts WITHOUT a `frameSource` throws
+`MissingFrameSourceError` — fail-fast surfaces integration bugs at the
+caller boundary rather than producing a frozen first paint.
+
+### `componentRef.module` resolution
+
+`InteractiveClip.liveMount.component.module` for a shader clip resolves to:
+
+```
+@stageflip/runtimes-interactive/clips/shader#ShaderClip
+```
+
+The subpath export points at
+`packages/runtimes/interactive/src/clips/shader/index.ts`, whose import
+side-effect registers `shaderClipFactory` against `interactiveClipRegistry`.
+
+### Telemetry
+
+The factory emits via `MountContext.emitTelemetry`:
+
+- `shader-clip.mount.start` — attrs: `family`, `fragmentShaderLength`, `width`, `height`.
+- `shader-clip.mount.success` — attrs: `family`, `timeToFirstPaintUs` (0 in this directory; renderer-cdp records real timing).
+- `shader-clip.mount.failure` — attrs: `family`, `reason: 'compile' | 'link' | 'context-loss' | 'invalid-props'`.
+- `shader-clip.dispose` — attrs: `family`.
+
 ## Related
 
 - Contract types + registry: `runtimes/contract/SKILL.md`
 - Determinism rules: `concepts/determinism/SKILL.md`
 - Parity fixture seeds: `packages/testing/fixtures/shader-*.json`
-- Owning tasks: T-065 (initial), T-067 (fixtures), T-068 (this doc).
+- Frontier-tier sibling: `concepts/runtimes/SKILL.md` §"Interactive runtime tier"
+- Owning tasks: T-065 (initial), T-067 (fixtures), T-068 (this doc), T-383 (frontier-tier wrap).
