@@ -11,3 +11,7 @@ export {
   type ShaderClipProps,
   type UniformValue,
 } from './shader-props.js';
+export {
+  threeSceneClipPropsSchema,
+  type ThreeSceneClipProps,
+} from './three-scene-props.js';

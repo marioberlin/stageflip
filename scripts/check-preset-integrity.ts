@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
 
 import { shaderClipPropsSchema } from '../packages/schema/src/clips/interactive/shader-props.js';
+import { threeSceneClipPropsSchema } from '../packages/schema/src/clips/interactive/three-scene-props.js';
 import { PresetRegistryLoadError } from '../packages/schema/src/presets/errors.js';
 import { parseFontLicenseExpression } from '../packages/schema/src/presets/font-license.js';
 import {
@@ -140,6 +141,7 @@ const INVARIANT_KEYS = [
   'bespoke-fallback',
   'interactive-staticFallback',
   'shader-props',
+  'three-scene-props',
   'typeDesign-signOff',
   'parityFixture-signOff',
   'compass-anchor',
@@ -305,6 +307,44 @@ export function checkShaderProps(args: {
     return {
       ok: false,
       message: `family 'shader' liveMount.props failed shaderClipPropsSchema: ${parsed.error.issues.map((i) => `${i.path.join('.') || '<root>'}: ${i.message}`).join('; ')}`,
+    };
+  }
+  return { ok: true };
+}
+
+/**
+ * Invariant 9 — when `family: 'three-scene'` is declared in raw frontmatter,
+ * the accompanying `liveMount.props` must parse against
+ * `threeSceneClipPropsSchema` (T-384 D-T384-3, AC #5). Mirrors the shader
+ * dispatch at invariant 8. Future Phase γ frontier families extend this
+ * pattern with their own per-family schemas — no new gate per family.
+ */
+export function checkThreeSceneProps(args: {
+  presetId: string;
+  raw: Record<string, unknown>;
+}): CheckResult {
+  const family = args.raw.family;
+  if (family !== 'three-scene') return { ok: true };
+  const liveMount = args.raw.liveMount;
+  if (liveMount === undefined || liveMount === null || typeof liveMount !== 'object') {
+    return {
+      ok: false,
+      message: `family 'three-scene' requires a 'liveMount' field with three-scene props (T-384)`,
+    };
+  }
+  const lm = liveMount as Record<string, unknown>;
+  const props = lm.props;
+  if (props === undefined) {
+    return {
+      ok: false,
+      message: `family 'three-scene' requires 'liveMount.props' parseable as threeSceneClipPropsSchema (T-384)`,
+    };
+  }
+  const parsed = threeSceneClipPropsSchema.safeParse(props);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: `family 'three-scene' liveMount.props failed threeSceneClipPropsSchema: ${parsed.error.issues.map((i) => `${i.path.join('.') || '<root>'}: ${i.message}`).join('; ')}`,
     };
   }
   return { ok: true };
@@ -539,6 +579,17 @@ export function runIntegrityChecks(opts: RunOpts): IntegrityReport {
           presetId: id,
           filePath,
           message: shaderResult.message,
+        });
+      }
+
+      // Invariant 9 — three-scene-props parsing (T-384). Same dispatch
+      // pattern; family discriminator routes to the per-family schema.
+      const threeSceneResult = checkThreeSceneProps({ presetId: id, raw });
+      if (!threeSceneResult.ok) {
+        buckets['three-scene-props'].errors.push({
+          presetId: id,
+          filePath,
+          message: threeSceneResult.message,
         });
       }
     }

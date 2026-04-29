@@ -26,7 +26,9 @@ export {
 } from './export-targets.js';
 export {
   shaderClipPropsSchema,
+  threeSceneClipPropsSchema,
   uniformValueSchema,
   type ShaderClipProps,
+  type ThreeSceneClipProps,
   type UniformValue,
 } from './interactive/index.js';
