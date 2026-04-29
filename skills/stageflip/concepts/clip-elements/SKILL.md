@@ -109,8 +109,15 @@ dispatched by `family`:
 | Family | Schema | Owning task |
 |---|---|---|
 | `shader` | `shaderClipPropsSchema` (`fragmentShader`, `width`, `height`, `initialUniforms`, `posterFrame`) | T-383 |
-| `three-scene` | TBD | T-384 |
+| `three-scene` | `threeSceneClipPropsSchema` (`setupRef`, `width`, `height`, `setupProps`, `posterFrame`, `prngSeed`) | T-384 |
 | `voice` / `ai-chat` / `live-data` / `web-embed` / `ai-generative` | TBD | T-385+ |
+
+The `three-scene` family introduces a new pattern: `setupRef` is a
+`<package>#<Symbol>` reference resolved via dynamic `import()` at mount
+time. This is the first preset-side use of `componentRefSchema` for a
+non-React-component import — three.js scenes are imperative JavaScript
+and cannot be serialised inline the way GLSL fragment shaders can. The
+regex still requires a PascalCase symbol after `#`.
 
 `check-preset-integrity` invariant 8 dispatches on `family`: when
 `family === 'shader'` is declared in raw frontmatter, `liveMount.props`

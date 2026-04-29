@@ -302,6 +302,16 @@ function — and `factory.ts` exposes `ShaderClipFactoryBuilder.build` /
 `runtimes/shader/SKILL.md` §"Frontier-tier ShaderClip" for the full
 factory + frame-source contract.
 
+T-384 ships the second γ-core family (`three-scene`) under
+`packages/runtimes/interactive/src/clips/three-scene/`. Its factory uses
+clean TOP-LEVEL FUNCTIONS — the static-class workaround is unnecessary
+under T-309a's tightened sub-rule. The directory adds a seeded PRNG
+(`createSeededPRNG`) and a mount-scoped rAF shim (`installRAFShim`)
+required by ADR-005 §D2; both are sub-rule-clean (no forbidden-API
+calls; assignment to `window.requestAnimationFrame` is not a call). See
+`runtimes/three/SKILL.md` §"Frontier-tier ThreeSceneClip" for the full
+contract.
+
 ### Browser-bundle posture
 
 The package is browser-side runtime. It MUST NOT import `fs`, `path`, or

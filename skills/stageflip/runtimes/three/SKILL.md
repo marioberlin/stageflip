@@ -148,10 +148,125 @@ uses three. No `size-limit` entry yet.
 | `packages/runtimes/three/src/clips/three-product-reveal.ts` | Canonical demo (scanned) |
 | `packages/runtimes/three/src/index.test.tsx` | Shape, gating, lifecycle via non-THREE handles |
 
+## Frontier-tier `ThreeSceneClip` (T-384)
+
+The seek-driven three-scene runtime above is the §3 path. The
+**interactive-tier** sibling — `family: 'three-scene'` per ADR-005 §D1 —
+wraps the SAME `ThreeClipHost` so that `liveMount` (browser live-preview,
+display-interactive, on-device-player) and `staticFallback`-poster
+generation converge on identical pixels by construction (ADR-005 §D2).
+
+```ts
+import {
+  ThreeSceneClipFactoryBuilder,
+  threeSceneClipFactory,
+} from '@stageflip/runtimes-interactive/clips/three-scene';
+import {
+  RecordModeFrameSource,
+  RAFFrameSource,
+  interactiveClipRegistry,
+} from '@stageflip/runtimes-interactive';
+
+// Side-effect: importing the subpath registers `threeSceneClipFactory`
+// against `interactiveClipRegistry` for `family: 'three-scene'`. Re-import
+// throws InteractiveClipFamilyAlreadyRegisteredError.
+```
+
+### Reuse-the-runtime pattern
+
+`ThreeSceneClipFactoryBuilder.build()` produces a `ClipFactory` that
+mounts `ThreeClipHost`. The two paths share a single rendering core;
+convergence is pinned by AC #26 (a unit test renders the same scene at
+the same frame via both paths and asserts identical scene-call streams,
+epsilon = 0). The pattern, first set by T-383 (`ShaderClip` over
+`@stageflip/runtimes-shader`) and replicated here, is now STRUCTURAL —
+every γ-core family wraps its existing §3 runtime rather than greenfield-
+ing a parallel implementation.
+
+### `setupRef` indirection
+
+Three.js scenes are imperative JavaScript and cannot be serialised inline
+the way GLSL fragment shaders can. The preset declares a
+`<package>#<Symbol>` reference under `setupRef`; the runtime resolves it
+at mount time via dynamic `import()` and asserts the resolved value is
+a function. This is the first non-React-component use of
+`componentRefSchema` (T-305) — `componentRef.module` regex still applies
+and constrains the symbol after `#` to PascalCase.
+
+### Seeded PRNG (D-T384-5)
+
+The wrapper supplies authors a deterministic random source. Authors
+read it from `props.__prng` inside their setup callback:
+
+```ts
+export const MySetup: ThreeClipSetup<{ __prng: SeededPRNG; count: number }> =
+  ({ container, width, height, props }) => {
+    const { __prng, count } = props;
+    // ... use __prng.random() in place of Math.random()
+  };
+```
+
+`__prng.random()` returns a deterministic float in `[0, 1)`. The same
+seed produces the same sequence across runs / nodes / OSes (xorshift32;
+pure 32-bit integer arithmetic). `__prng.reset()` returns to the seed-
+zero state — useful for replay scenarios (record-mode scrub-back,
+convergence comparison runs).
+
+`Math.random()` is forbidden inside `clips/three-scene/**` by T-309's
+path-based shader sub-rule (tightened by T-309a). The PRNG is the opt-in
+determinism path; authors who skip the seam see their preset rejected at
+the `check-determinism` gate.
+
+### rAF shim (D-T384-6) — caveats
+
+The wrapper installs a mount-scoped `requestAnimationFrame` shim that
+retargets `window.requestAnimationFrame` to the FrameSource clock. Two
+caveats are load-bearing:
+
+1. **Global mutation, LIFO scope.** Multiple concurrent ThreeSceneClip
+   mounts STACK their installs; uninstall is reverse-order safe. Out-of-
+   order uninstall is detected only structurally — keep dispose paths
+   tied to mount lifetimes.
+2. **Argument is the FRAME NUMBER, not a `DOMHighResTimeStamp`.**
+   Standard rAF passes a wall-clock-like float. The shim passes the
+   integer frame index emitted by the FrameSource. Libraries that read
+   the argument as wall-clock will misbehave; libraries that REQUIRE
+   true wall-clock are incompatible with the interactive tier and
+   authors must not bring them in.
+
+The shim file lives under `clips/three-scene/**` and is path-matched by
+T-309's tightened sub-rule. The body assigns to
+`window.requestAnimationFrame` (assignment is not a call) but does not
+INVOKE any forbidden API; sub-rule clean.
+
+### `componentRef.module` resolution
+
+`InteractiveClip.liveMount.component.module` for a three-scene clip
+resolves to:
+
+```
+@stageflip/runtimes-interactive/clips/three-scene#ThreeSceneClip
+```
+
+The subpath export points at
+`packages/runtimes/interactive/src/clips/three-scene/index.ts`, whose
+import side-effect registers `threeSceneClipFactory` against
+`interactiveClipRegistry`.
+
+### Telemetry
+
+The factory emits via `MountContext.emitTelemetry`:
+
+- `three-scene-clip.mount.start` — attrs: `family`, `width`, `height`, `setupRefModule`.
+- `three-scene-clip.mount.success` — attrs: `family`.
+- `three-scene-clip.mount.failure` — attrs: `family`, `reason: 'setup-throw' | 'setupRef-resolve' | 'invalid-props'`.
+- `three-scene-clip.dispose` — attrs: `family`.
+
 ## Related
 
 - Contract types + registry: `runtimes/contract/SKILL.md`
 - Determinism rules: `concepts/determinism/SKILL.md`
 - Parity fixture seed:
   `packages/testing/fixtures/three-three-product-reveal.json`
-- Owning tasks: T-066 (initial), T-067 (fixture), T-068 (this doc).
+- Frontier-tier sibling: `runtimes/shader/SKILL.md` §"Frontier-tier ShaderClip"
+- Owning tasks: T-066 (initial), T-067 (fixture), T-068 (this doc), T-384 (frontier-tier wrap).
