@@ -7,10 +7,19 @@
 // Deterministic render: the host never starts a THREE animation loop
 // (`renderer.setAnimationLoop`) and never uses requestAnimationFrame. The
 // render callback runs synchronously in a useEffect per frame change.
+//
+// Setup-effect dependency posture (T-384 D-T384-1): the setup effect re-
+// runs only when `setup`, `width`, `height`, or `prng` change — NOT when
+// `props` change. Prop updates flow through the per-frame render callback
+// where they belong. Re-running setup on every prop tick would tear down
+// + rebuild the scene, defeating the interactive tier's `updateProps`
+// contract (T-384 AC #11) and torching three.js's setup cost on every
+// frame the editor scrubbed across. The §3 path's tests never relied on
+// setup-on-prop-change; this is a conservative tightening.
 
 import { type ReactElement, useEffect, useRef } from 'react';
 
-import type { ThreeClipHandle, ThreeClipSetup } from './types.js';
+import type { SetupPRNG, ThreeClipHandle, ThreeClipSetup } from './types.js';
 
 export interface ThreeClipHostProps<P> {
   /** Clip's setup callback — constructs scene, appends renderer.domElement. */
@@ -27,6 +36,12 @@ export interface ThreeClipHostProps<P> {
   fps: number;
   /** Clip duration in frames — used to derive progress. May be Infinity. */
   clipDurationInFrames: number;
+  /**
+   * Optional seeded PRNG forwarded to `setup` by the interactive-tier
+   * frontier-clip wrapper (T-384). The §3 host wiring never sets this; the
+   * `ThreeSceneClip` factory always does.
+   */
+  prng?: SetupPRNG;
 }
 
 export function ThreeClipHost<P>({
@@ -37,16 +52,32 @@ export function ThreeClipHost<P>({
   localFrame,
   fps,
   clipDurationInFrames,
+  prng,
 }: ThreeClipHostProps<P>): ReactElement {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const handleRef = useRef<ThreeClipHandle<P> | null>(null);
+
+  // Capture the latest `props` in a ref so the setup effect can read the
+  // initial values without listing `props` as a dep — which would re-run
+  // setup on every prop change and tear down the scene.
+  const propsRef = useRef<P>(props);
+  propsRef.current = props;
 
   useEffect(() => {
     const container = containerRef.current;
     if (container === null) return;
     let handle: ThreeClipHandle<P> | null = null;
     try {
-      handle = setup({ container, width, height, props });
+      const setupArgs = {
+        container,
+        width,
+        height,
+        props: propsRef.current,
+      } as Parameters<ThreeClipSetup<P>>[0];
+      if (prng !== undefined) {
+        setupArgs.prng = prng;
+      }
+      handle = setup(setupArgs);
     } catch {
       // WebGL unavailable (happy-dom, disabled by user, etc.). Real browsers
       // always succeed; tests route through the factory-less infrastructure
@@ -58,8 +89,10 @@ export function ThreeClipHost<P>({
       handle?.dispose?.();
       handleRef.current = null;
     };
-    // setup + props identity changes re-run the lifecycle on purpose.
-  }, [setup, width, height, props]);
+    // Setup deps deliberately exclude `props`: prop updates flow through
+    // the render-effect below, NOT through a full setup teardown. See file
+    // header.
+  }, [setup, width, height, prng]);
 
   useEffect(() => {
     const handle = handleRef.current;
