@@ -285,6 +285,13 @@ check-determinism [shader sub-rule]: PASS (N uniform-updaters detected)
 implementations exist yet (T-340+). The sub-rule is vacuously PASS at
 HEAD.
 
+T-383 lands the first non-trivial target for the path-based check:
+`packages/runtimes/interactive/src/clips/shader/uniforms.ts` ships
+`defaultShaderUniforms(frame, ctx)` — a `@uniformUpdater`-tagged function
+satisfying both the path-based AND decorator-based opt-in. See
+`runtimes/shader/SKILL.md` §"Frontier-tier ShaderClip" for the full
+factory + frame-source contract.
+
 ### Browser-bundle posture
 
 The package is browser-side runtime. It MUST NOT import `fs`, `path`, or

@@ -23,6 +23,7 @@ import {
   checkFrontmatter,
   checkInteractiveStaticFallback,
   checkParityFixtureSignOff,
+  checkShaderProps,
   checkTypeDesignSignOff,
   formatReport,
   loadCompassAnchors,
@@ -622,6 +623,89 @@ describe('check-preset-integrity formatReport (AC #12)', () => {
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
+  });
+});
+
+// ---------- Invariant 8: shader-props (T-383 AC #4, #5) ----------
+
+describe('check-preset-integrity invariant 8: shader-props (T-383 AC #4, #5)', () => {
+  it('AC #5 — passes when family is omitted', () => {
+    const r = checkShaderProps({ presetId: 'p', raw: { clipKind: 'lowerThird' } });
+    expect(r.ok).toBe(true);
+  });
+
+  it('AC #5 — passes when family is non-shader (out of scope here)', () => {
+    const r = checkShaderProps({ presetId: 'p', raw: { family: 'voice' } });
+    expect(r.ok).toBe(true);
+  });
+
+  it('AC #4 — fails when family=shader without liveMount', () => {
+    const r = checkShaderProps({ presetId: 'p', raw: { family: 'shader' } });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/liveMount/);
+  });
+
+  it('AC #4 — fails when family=shader without liveMount.props', () => {
+    const r = checkShaderProps({ presetId: 'p', raw: { family: 'shader', liveMount: {} } });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/liveMount.props/);
+  });
+
+  it('AC #4 — fails when liveMount.props omits required fields', () => {
+    const r = checkShaderProps({
+      presetId: 'p',
+      raw: {
+        family: 'shader',
+        liveMount: { props: { fragmentShader: 'precision highp float; void main(){}' } },
+      },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/shaderClipPropsSchema/);
+  });
+
+  it('AC #4 — fails when fragmentShader is empty', () => {
+    const r = checkShaderProps({
+      presetId: 'p',
+      raw: {
+        family: 'shader',
+        liveMount: { props: { fragmentShader: '', width: 100, height: 100 } },
+      },
+    });
+    expect(r.ok).toBe(false);
+  });
+
+  it('AC #4 — fails when width is 0', () => {
+    const r = checkShaderProps({
+      presetId: 'p',
+      raw: {
+        family: 'shader',
+        liveMount: {
+          props: {
+            fragmentShader: 'precision highp float; void main(){}',
+            width: 0,
+            height: 100,
+          },
+        },
+      },
+    });
+    expect(r.ok).toBe(false);
+  });
+
+  it('AC #5 — passes for a valid shader-props payload', () => {
+    const r = checkShaderProps({
+      presetId: 'p',
+      raw: {
+        family: 'shader',
+        liveMount: {
+          props: {
+            fragmentShader: 'precision highp float; void main(){}',
+            width: 1280,
+            height: 720,
+          },
+        },
+      },
+    });
+    expect(r.ok).toBe(true);
   });
 });
 

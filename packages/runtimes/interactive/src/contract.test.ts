@@ -17,6 +17,22 @@ describe('contract types', () => {
     expect(PERMISSIVE_TENANT_POLICY.canMount('ai-chat')).toBe(true);
   });
 
+  it('T-383 — MountContext.frameSource is optional (T-306 backward compat)', () => {
+    // Pre-existing T-306 consumers MUST be able to construct a MountContext
+    // without supplying `frameSource`. The field is optional per D-T383-6.
+    const root = document.createElement('div');
+    const controller = new AbortController();
+    const ctx: MountContext = {
+      clip: makeInteractiveClip(),
+      root,
+      permissions: [],
+      tenantPolicy: PERMISSIVE_TENANT_POLICY,
+      emitTelemetry: () => undefined,
+      signal: controller.signal,
+    };
+    expect(ctx.frameSource).toBeUndefined();
+  });
+
   it('a ClipFactory can be defined and called with a valid MountContext', async () => {
     const onMount = vi.fn();
     const factory: ClipFactory = async (ctx) => {

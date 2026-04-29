@@ -22,6 +22,7 @@ import { fileURLToPath } from 'node:url';
 
 import matter from 'gray-matter';
 
+import { shaderClipPropsSchema } from '../packages/schema/src/clips/interactive/shader-props.js';
 import { PresetRegistryLoadError } from '../packages/schema/src/presets/errors.js';
 import { parseFontLicenseExpression } from '../packages/schema/src/presets/font-license.js';
 import {
@@ -138,6 +139,7 @@ const INVARIANT_KEYS = [
   'clipKind',
   'bespoke-fallback',
   'interactive-staticFallback',
+  'shader-props',
   'typeDesign-signOff',
   'parityFixture-signOff',
   'compass-anchor',
@@ -263,6 +265,46 @@ export function checkInteractiveStaticFallback(args: {
     return {
       ok: false,
       message: `interactive clipKind '${args.clipKind}' has empty staticFallback array (ADR-003 D2)`,
+    };
+  }
+  return { ok: true };
+}
+
+/**
+ * Invariant 8 — when `family: 'shader'` is declared in raw frontmatter, the
+ * accompanying `liveMount.props` must parse against `shaderClipPropsSchema`
+ * (T-383 D-T383-3, AC #4 + #5). The dispatch is keyed on `family`; future
+ * Phase γ frontier families (T-384+) extend this switch with their own
+ * per-family schemas. Missing `liveMount` or `liveMount.props` while
+ * `family: 'shader'` is declared is a violation: a shader-family preset
+ * without props is malformed.
+ */
+export function checkShaderProps(args: {
+  presetId: string;
+  raw: Record<string, unknown>;
+}): CheckResult {
+  const family = args.raw.family;
+  if (family !== 'shader') return { ok: true };
+  const liveMount = args.raw.liveMount;
+  if (liveMount === undefined || liveMount === null || typeof liveMount !== 'object') {
+    return {
+      ok: false,
+      message: `family 'shader' requires a 'liveMount' field with shader props (T-383)`,
+    };
+  }
+  const lm = liveMount as Record<string, unknown>;
+  const props = lm.props;
+  if (props === undefined) {
+    return {
+      ok: false,
+      message: `family 'shader' requires 'liveMount.props' parseable as shaderClipPropsSchema (T-383)`,
+    };
+  }
+  const parsed = shaderClipPropsSchema.safeParse(props);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: `family 'shader' liveMount.props failed shaderClipPropsSchema: ${parsed.error.issues.map((i) => `${i.path.join('.') || '<root>'}: ${i.message}`).join('; ')}`,
     };
   }
   return { ok: true };
@@ -487,6 +529,18 @@ export function runIntegrityChecks(opts: RunOpts): IntegrityReport {
           filePath,
           message: r.message,
         });
+
+      // Invariant 8 — shader-props parsing (T-383). Co-located with invariant 4
+      // because both peek at raw frontmatter; the family dispatch lets us avoid
+      // a second `matter()` parse per preset.
+      const shaderResult = checkShaderProps({ presetId: id, raw });
+      if (!shaderResult.ok) {
+        buckets['shader-props'].errors.push({
+          presetId: id,
+          filePath,
+          message: shaderResult.message,
+        });
+      }
     }
 
     // Invariant 5.

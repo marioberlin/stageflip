@@ -31,6 +31,8 @@ import { validateFragmentShader } from './validate.js';
 
 export type { GlContextFactory, UniformValue, UniformsForFrame } from './types.js';
 export { validateFragmentShader } from './validate.js';
+export { ShaderClipHost, type ShaderClipHostProps } from './host.js';
+export { defaultGlContextFactory } from './types.js';
 
 /**
  * Either a static GLSL fragment source (validated at define time — the

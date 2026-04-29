@@ -100,6 +100,24 @@ The seven frontier families enumerated by ADR-005 §D1:
 | `web-embed` | Sandboxed iframe (`network`) | poster screenshot |
 | `ai-generative` | Playback-time prompt → content (`network`) | curated example output |
 
+### Family discriminator (Phase γ)
+
+`liveMount.props` is `Record<string, unknown>` at the contract layer
+(T-305). Phase γ tasks narrow per-family with strict-shaped Zod schemas,
+dispatched by `family`:
+
+| Family | Schema | Owning task |
+|---|---|---|
+| `shader` | `shaderClipPropsSchema` (`fragmentShader`, `width`, `height`, `initialUniforms`, `posterFrame`) | T-383 |
+| `three-scene` | TBD | T-384 |
+| `voice` / `ai-chat` / `live-data` / `web-embed` / `ai-generative` | TBD | T-385+ |
+
+`check-preset-integrity` invariant 8 dispatches on `family`: when
+`family === 'shader'` is declared in raw frontmatter, `liveMount.props`
+must parse against `shaderClipPropsSchema` or the gate fails. New
+families register an additional dispatch case in the same invariant —
+no new gate per family.
+
 ### Static + live duality
 
 The duality is **load-bearing**. ADR-003 §D2 forbids bare-`liveMount` clips:
