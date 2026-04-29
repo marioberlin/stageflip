@@ -1327,6 +1327,9 @@ importers:
       '@stageflip/runtimes-shader':
         specifier: workspace:*
         version: link:../shader
+      '@stageflip/runtimes-three':
+        specifier: workspace:*
+        version: link:../three
       '@stageflip/schema':
         specifier: workspace:*
         version: link:../../schema

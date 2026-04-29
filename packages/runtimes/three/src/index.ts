@@ -24,6 +24,12 @@ import type {
 import { ThreeClipHost } from './host.js';
 import type { ThreeClipSetup } from './types.js';
 
+// Public surface for the interactive-tier `ThreeSceneClip` factory (T-384
+// D-T384-2). The host has been an internal-only export until now; T-384
+// re-exports it so `@stageflip/runtimes-interactive/clips/three-scene` can
+// wrap a single rendering core (ADR-005 §D2 convergence-by-construction).
+export { ThreeClipHost, type ThreeClipHostProps } from './host.js';
+
 export type {
   ThreeClipHandle,
   ThreeClipRenderArgs,

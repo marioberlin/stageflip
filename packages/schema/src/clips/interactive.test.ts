@@ -124,6 +124,29 @@ describe('interactiveClipSchema (T-305 ACs #1–#4, #6, #8, #9)', () => {
       expect(parsed.family).toBe(family);
     }
   });
+  // T-384 — discriminator-by-family pin for 'three-scene'. Mirror of T-383's
+  // family-coverage check; ensures the enum admits the family literal even
+  // before the per-family `liveMount.props` narrow lands at the gate layer.
+  it('T-384 — accepts family: three-scene with the canonical liveMount component ref', () => {
+    const parsed = interactiveClipSchema.parse({
+      ...VALID,
+      family: 'three-scene',
+      liveMount: {
+        component: {
+          module: '@stageflip/runtimes-interactive/clips/three-scene#ThreeSceneClip',
+        },
+        props: {
+          setupRef: { module: '@author/scene#MySetup' },
+          width: 1280,
+          height: 720,
+        },
+      },
+    });
+    expect(parsed.family).toBe('three-scene');
+    expect(parsed.liveMount.component.module).toBe(
+      '@stageflip/runtimes-interactive/clips/three-scene#ThreeSceneClip',
+    );
+  });
   it('AC #6 — permissions defaults to [] when omitted', () => {
     const parsed = interactiveClipSchema.parse({
       ...VALID,

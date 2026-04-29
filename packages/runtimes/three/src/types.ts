@@ -30,6 +30,19 @@ export interface ThreeClipHandle<P = unknown> {
   dispose?(): void;
 }
 
+/**
+ * Minimal seeded-PRNG shape supplied to `setup` by the interactive-tier
+ * frontier wrapper (T-384 D-T384-5, ADR-005 §D2). The §3 path
+ * (`createThreeRuntime` / `defineThreeClip`) does not pass `prng` — the
+ * field is therefore optional. Authors targeting BOTH paths read with
+ * `args.prng?.random()` and fall back to a frame-derived deterministic
+ * value when the §3 host is the caller.
+ */
+export interface SetupPRNG {
+  /** Returns a deterministic float in `[0, 1)`. */
+  random(): number;
+}
+
 /** Arguments passed to a clip's `setup` callback at mount time. */
 export interface ThreeClipSetupArgs<P = unknown> {
   /** Container div. Authors append `renderer.domElement` here. */
@@ -40,6 +53,15 @@ export interface ThreeClipSetupArgs<P = unknown> {
   height: number;
   /** Clip props. */
   props: P;
+  /**
+   * Optional seeded PRNG supplied by the interactive-tier frontier wrapper
+   * (T-384). The §3 `defineThreeClip` host does not pass this; the
+   * frontier-tier `ThreeSceneClip` factory always does. Authors targeting
+   * the frontier tier MUST use `prng.random()` rather than `Math.random()`
+   * — `Math.random()` is forbidden inside `clips/three-scene/**` by
+   * T-309's tightened sub-rule.
+   */
+  prng?: SetupPRNG;
 }
 
 export type ThreeClipSetup<P = unknown> = (args: ThreeClipSetupArgs<P>) => ThreeClipHandle<P>;

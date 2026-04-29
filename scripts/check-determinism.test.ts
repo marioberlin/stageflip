@@ -103,6 +103,20 @@ describe('T-309 AC #1, #2 — path-based shader sub-rule', () => {
     const result = scanShaderSubRule({ workspaceRoot: root });
     expect(result.violations.map((v) => v.api)).toContain('performance.now()');
   });
+
+  it('T-384 AC #17: synthetic three-scene setup with Math.random() FAILS', () => {
+    root = makeWorkspace([
+      {
+        rel: `${THREE_DIR}/foo.ts`,
+        source: `export function setup(frame: number): number {
+  return Math.random() * frame;
+}
+`,
+      },
+    ]);
+    const result = scanShaderSubRule({ workspaceRoot: root });
+    expect(result.violations.map((v) => v.api)).toContain('Math.random()');
+  });
 });
 
 // ---------- AC #3 / #4 — decorator-based positive + negative ----------

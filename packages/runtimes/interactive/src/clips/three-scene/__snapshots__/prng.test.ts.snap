@@ -1,0 +1,3 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`createSeededPRNG (T-384 AC #18, #19, #20) > AC #18 — sequence is stable across seed=0 default 1`] = `"0.316593533615,0.875706985127,0.483300162945,0.005915207090"`;

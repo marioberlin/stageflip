@@ -24,6 +24,7 @@ import {
   checkInteractiveStaticFallback,
   checkParityFixtureSignOff,
   checkShaderProps,
+  checkThreeSceneProps,
   checkTypeDesignSignOff,
   formatReport,
   loadCompassAnchors,
@@ -699,6 +700,101 @@ describe('check-preset-integrity invariant 8: shader-props (T-383 AC #4, #5)', (
         liveMount: {
           props: {
             fragmentShader: 'precision highp float; void main(){}',
+            width: 1280,
+            height: 720,
+          },
+        },
+      },
+    });
+    expect(r.ok).toBe(true);
+  });
+});
+
+// ---------- Invariant 9: three-scene-props (T-384 AC #5) ----------
+
+describe('check-preset-integrity invariant 9: three-scene-props (T-384 AC #5)', () => {
+  const VALID_REF = '@stageflip/runtimes-interactive/clips/three-scene#ThreeSceneClip';
+
+  it('passes when family is omitted', () => {
+    const r = checkThreeSceneProps({ presetId: 'p', raw: { clipKind: 'lowerThird' } });
+    expect(r.ok).toBe(true);
+  });
+
+  it('passes when family is non-three-scene (out of scope here)', () => {
+    const r = checkThreeSceneProps({ presetId: 'p', raw: { family: 'shader' } });
+    expect(r.ok).toBe(true);
+  });
+
+  it('fails when family=three-scene without liveMount', () => {
+    const r = checkThreeSceneProps({ presetId: 'p', raw: { family: 'three-scene' } });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/liveMount/);
+  });
+
+  it('fails when family=three-scene without liveMount.props', () => {
+    const r = checkThreeSceneProps({
+      presetId: 'p',
+      raw: { family: 'three-scene', liveMount: {} },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/liveMount.props/);
+  });
+
+  it('fails when liveMount.props omits required fields', () => {
+    const r = checkThreeSceneProps({
+      presetId: 'p',
+      raw: {
+        family: 'three-scene',
+        liveMount: { props: { setupRef: { module: VALID_REF } } },
+      },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/threeSceneClipPropsSchema/);
+  });
+
+  it('fails when width is 0', () => {
+    const r = checkThreeSceneProps({
+      presetId: 'p',
+      raw: {
+        family: 'three-scene',
+        liveMount: {
+          props: {
+            setupRef: { module: VALID_REF },
+            width: 0,
+            height: 100,
+          },
+        },
+      },
+    });
+    expect(r.ok).toBe(false);
+  });
+
+  it('fails when prngSeed is negative', () => {
+    const r = checkThreeSceneProps({
+      presetId: 'p',
+      raw: {
+        family: 'three-scene',
+        liveMount: {
+          props: {
+            setupRef: { module: VALID_REF },
+            width: 100,
+            height: 100,
+            prngSeed: -1,
+          },
+        },
+      },
+    });
+    expect(r.ok).toBe(false);
+  });
+
+  it('passes for a valid three-scene-props payload', () => {
+    const r = checkThreeSceneProps({
+      presetId: 'p',
+      raw: {
+        family: 'three-scene',
+        liveMount: {
+          props: {
+            setupRef: { module: VALID_REF },
             width: 1280,
             height: 720,
           },
