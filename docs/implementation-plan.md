@@ -764,12 +764,14 @@ phase. Renumbered / carried as T-137 / T-138 in Phase 6.
 | T-404 | Security hardening pass (response to T-403 findings) | L |
 | T-405 | Security sign-off for GA (recorded on ADR-005 ratification block) | S |
 
-**γ-followups (raised by T-383 PR review 2026-04-29; must land before T-384 starts)**
+**γ-followups (raised by post-merge review of γ-core / γ-live tasks; ordering constraints noted per row)**
 
 | ID | Task | Size |
 |---|---|---|
-| T-309a | Tighten `check-determinism` shader sub-rule — visit `MethodDeclaration` inside top-level classes under `clips/{shader,three-scene}/**`, OR drop path-based detection in favour of decorator-only opt-in. Raised by T-383 PR review (Major M-1): the path-based regime can be evaded by wrapping render-time logic in a static-only class, which T-383 did out of necessity. Must land before T-384 (`ThreeSceneClip`) so the workaround does not propagate. | S |
+| T-309a | Tighten `check-determinism` shader sub-rule — visit `MethodDeclaration` inside top-level classes under `clips/{shader,three-scene}/**`, OR drop path-based detection in favour of decorator-only opt-in. Raised by T-383 PR review (Major M-1): the path-based regime can be evaded by wrapping render-time logic in a static-only class, which T-383 did out of necessity. Must land before T-384 (`ThreeSceneClip`) so the workaround does not propagate. **DONE** — merged 2026-04-29 as PR #270. | S |
 | T-383a | Real-browser CI lane (or software-WebGL via `gl` / `headless-gl`) for `ShaderClip` pixel-level convergence. Raised by T-383 PR review (Major M-2): T-383's convergence test asserts GL-call-stream parity in happy-dom (a faithful proxy in practice but strictly weaker than the spec's "epsilon = 0 pixel-identical" requirement). Required before any cluster preset depends on cross-implementation pixel parity. | M |
+| T-386a | Variant-generation **size axis** — extend `VariantMatrixSpec` with a `sizes` axis (constraint-based layout adaptation across aspect ratios). Out-of-scope for T-386 by design (D-T386-8); the TypeScript `size?: never` marker on `VariantMatrixSpec` and the Zod `.strict()` reject are the placeholders. Independent of γ-live; pickable any time. | M |
+| T-388a | **Static-fallback generator registry** — replace the family-hardcoded `if (clip.family !== 'voice')` branch in `mount-harness.ts:resolveStaticFallbackElements` (PR #280) with a per-family registry parallel to `interactiveClipRegistry`. Must land before T-389 (`AiChatClip`) so the next γ-live family registers a generator instead of accumulating another `if`-branch. Raised post-T-388 merge by Orchestrator inspection 2026-04-30. | S |
 
 ### Phase γ-supporting (Track C, parallel)
 

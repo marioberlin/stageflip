@@ -140,6 +140,7 @@ pnpm check-licenses        # whitelist only
 pnpm check-remotion-imports # zero matches
 pnpm check-determinism     # ESLint scoped rule
 pnpm check-skill-drift     # skills ↔ source
+pnpm gen:tool-skills:check # tool skills regenerated when handler bundles change
 pnpm size-limit            # bundle budgets (if applicable)
 pnpm parity                # PSNR + SSIM on fixtures (if rendering touched)
 ```
@@ -194,6 +195,7 @@ Before opening a PR:
 - [ ] `pnpm check-remotion-imports` green.
 - [ ] `pnpm check-determinism` green.
 - [ ] `pnpm check-skill-drift` green.
+- [ ] `pnpm gen:tool-skills:check` green (run `pnpm gen:tool-skills` if a handler-bundle registry was touched).
 - [ ] Parity harness green if rendering affected.
 - [ ] File headers present on every new file.
 - [ ] TSDoc comments on every new public function.
