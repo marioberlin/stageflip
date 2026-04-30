@@ -4,7 +4,7 @@ id: skills/stageflip/runtimes/web-embed
 tier: runtime
 status: substantive
 last_updated: 2026-05-01
-owner_task: T-393
+owner_task: T-394
 related:
   - skills/stageflip/runtimes/contract/SKILL.md
   - skills/stageflip/runtimes/live-data/SKILL.md
@@ -25,7 +25,8 @@ factory just creates and disposes the DOM. Different from voice /
 ai-chat / live-data which all wrap a host-injected client.
 
 `liveMount` lands here (T-393). `staticFallback` (poster-frame
-screenshot) ships in T-394.
+screenshot) ships in T-394 — both halves of `family: 'web-embed'`
+are now structurally complete.
 
 ## When to reach for it
 
@@ -270,6 +271,88 @@ The package adds:
 
 `size-limit` budgets are enforced by the existing CI gate.
 
+## Static fallback (T-394)
+
+When the harness routes to the static path AND the clip's authored
+`staticFallback` is empty, `webEmbedStaticFallbackGenerator`
+substitutes a deterministic Element[] derived from the clip's
+`liveMount.props`:
+
+- A single `ImageElement` filling the clip's bounds with `src =
+  posterImage.src` (a `data:` URL baked at authoring time).
+- When `posterImage` is absent, a single placeholder `TextElement`
+  (empty text, `id: 'web-embed-static-fallback-placeholder'`) is
+  emitted instead. The host overrides via app-level i18n.
+
+### Schema addition (`posterImage?`)
+
+T-394 extends `webEmbedClipPropsSchema` with an optional
+`posterImage` field:
+
+```ts
+posterImage: z.object({
+  src: z.string().refine(s => s.startsWith('data:'), ...),
+  contentType: z.enum(['image/png', 'image/jpeg', 'image/webp']).optional(),
+}).strict().optional()
+```
+
+**v1 accepts ONLY `data:` URLs** (the refine enforces this).
+`http(s):` URLs are deferred per the out-of-scope deferral —
+accepting external URLs would push the fetch question to the
+frame-runtime export path, which `check-determinism` forbids inside
+`clips/**`. Widening to `http(s)` is gated on a determinism-skill
+ruling for the frame-runtime image-fetch path. ADR-005 §D1 footnote
+`^liveData-v1` documents the analogous LiveData chart deferral.
+
+Backward-compatible: T-393 fixtures without the field continue to
+validate. The schema-level `AssetRef` regex (`^asset:<id>$`) does
+not accept data URLs; the generator casts `src as
+ImageElement['src']` to bypass it (same posture as
+`defaultVoiceStaticFallback` — the data URL is the authoring-time
+bake, not a storage-resolved asset reference).
+
+### Layout
+
+The ImageElement fills the canvas exactly: `transform = { x: 0,
+y: 0, width, height, rotation: 0, opacity: 1 }`. No overflow guard
+needed — there's only one element either way.
+
+### Determinism
+
+Pure transformation. No `Math.random` / `Date.now` /
+`performance.now`. The poster URL is passed through verbatim into
+the ImageElement; no parsing, no fetching. Same posture as
+`defaultAiChatStaticFallback` (T-390), `defaultLiveDataStaticFallback`
+(T-392), and `defaultVoiceStaticFallback` (T-388).
+
+### Telemetry (privacy posture — D-T394-4)
+
+| Event | Attributes |
+|---|---|
+| `web-embed-clip.static-fallback.rendered` | `family`, `reason`, `width`, `height`, `hasPoster` boolean, `posterSrcLength` integer |
+
+**The poster URL string NEVER appears in telemetry attributes.**
+`posterSrcLength` is `posterImage.src.length` (or `0` when absent)
+— a 50KB inline data URL would balloon every telemetry event, so
+the integer length is what telemetry consumers get. Pinned via grep
+on captured event payloads in the static-fallback test (AC #11).
+
+The `reason` is forwarded verbatim from the harness — `'authored' |
+'permission-denied' | 'tenant-denied' | 'export-static'`.
+
+### Registration (T-388a)
+
+`packages/runtimes/interactive/src/clips/web-embed/index.ts` now
+side-effect-registers two things at subpath import time:
+
+```ts
+interactiveClipRegistry.register('web-embed', webEmbedClipFactory);  // T-393
+staticFallbackGeneratorRegistry.register('web-embed', webEmbedStaticFallbackGenerator);  // T-394
+```
+
+The harness's family-agnostic dispatch (T-388a) picks up the
+registration without further changes.
+
 ## Cross-references
 
 - T-389 / T-390 — sister AiChatClip pair (network permission,
@@ -277,7 +360,8 @@ The package adds:
 - T-391 / T-392 — sister LiveDataClip pair (closest in shape; same
   second-γ pattern, `network` permission). T-393 differs by having
   no provider seam.
-- T-388a — static-fallback generator registry T-394 will register
-  against.
+- T-388 / T-388a — voice static-fallback (the data-URL ImageElement
+  cast pattern T-394 reuses) and the static-fallback generator
+  registry T-394 registers against.
 - ADR-005 §D7 — credential scoping; the iframe's auth is the embedded
   page's responsibility, not the host's.

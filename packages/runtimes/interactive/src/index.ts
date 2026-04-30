@@ -149,3 +149,8 @@ export type {
   WebEmbedMessageHandler,
   WebEmbedMountFailureReason,
 } from './clips/web-embed/types.js';
+export {
+  defaultWebEmbedStaticFallback,
+  type DefaultWebEmbedStaticFallbackArgs,
+  webEmbedStaticFallbackGenerator,
+} from './clips/web-embed/static-fallback.js';
