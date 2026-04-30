@@ -75,6 +75,10 @@ export type {
   VoiceMountFailureReason,
 } from './clips/voice/types.js';
 export {
+  defaultVoiceStaticFallback,
+  type DefaultVoiceStaticFallbackArgs,
+} from './clips/voice/static-fallback.js';
+export {
   InMemoryTranscriptionProvider,
   type InMemoryTranscriptionProviderOptions,
   type ScriptedTranscriptStep,

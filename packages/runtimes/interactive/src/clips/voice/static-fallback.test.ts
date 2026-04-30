@@ -123,14 +123,15 @@ describe('defaultVoiceStaticFallback (T-388)', () => {
     expect(elements[0]?.type).toBe('image');
   });
 
-  it('SVG markup encodes the bar grid (32 bars by construction)', () => {
+  it('SVG markup encodes the bar grid (32 bars by construction, plus background rect)', () => {
     const elements = defaultVoiceStaticFallback({ width: 640, height: 360 });
     const image = elements.find((e) => e.type === 'image');
     if (!image || image.type !== 'image') throw new Error('expected image element');
-    // Decode the data URL — count `<rect ` occurrences. Default grid is 32.
+    // Decode the data URL — count `<rect ` occurrences. Default grid is 32
+    // bar rects plus one background rect = 33.
     const decoded = decodeURIComponent(image.src.replace(/^data:image\/svg\+xml,/, ''));
     const rectCount = (decoded.match(/<rect /g) ?? []).length;
-    expect(rectCount).toBe(32);
+    expect(rectCount).toBe(33);
   });
 
   it('SVG dimensions encode the supplied width/height', () => {

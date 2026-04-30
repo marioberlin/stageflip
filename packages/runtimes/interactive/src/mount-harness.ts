@@ -19,8 +19,14 @@
 //
 // Browser-safe: no Node imports.
 
-import type { InteractiveClip, InteractiveClipFamily, Permission } from '@stageflip/schema';
+import type {
+  Element,
+  InteractiveClip,
+  InteractiveClipFamily,
+  Permission,
+} from '@stageflip/schema';
 
+import { defaultVoiceStaticFallback } from './clips/voice/static-fallback.js';
 import type { ClipFactory, MountContext, MountHandle, TenantPolicy } from './contract.js';
 import { PERMISSIVE_TENANT_POLICY } from './contract.js';
 import { renderStaticFallback } from './fallback-rendering.js';
@@ -162,7 +168,7 @@ export class InteractiveMountHarness {
             family: clip.family,
             reason: 'pre-prompt-cancelled',
           });
-          return this.mountStaticFallback(clip, root, signal);
+          return this.mountStaticFallback(clip, root, signal, 'pre-prompt-cancelled');
         }
       }
     }
@@ -177,7 +183,7 @@ export class InteractiveMountHarness {
         family: clip.family,
         reason: permissionResult.reason,
       });
-      return this.mountStaticFallback(clip, root, signal);
+      return this.mountStaticFallback(clip, root, signal, permissionResult.reason);
     }
 
     // Step 2: resolve the factory.
@@ -211,13 +217,20 @@ export class InteractiveMountHarness {
    * Render `staticFallback` via React and return a MountHandle that
    * unmounts that root on dispose. `updateProps` is a no-op (the static
    * path is frozen at the schema's declared element array).
+   *
+   * T-388 D-T388-2 / D-T388-4 — when `clip.staticFallback` is empty AND
+   * the family has a registered default-poster generator (`voice` is the
+   * first such family), the harness substitutes the generator's output.
+   * Authored arrays are used verbatim.
    */
   private mountStaticFallback(
     clip: InteractiveClip,
     root: HTMLElement,
     signal: AbortSignal,
+    reason: string,
   ): MountHandle {
-    const fallback = renderStaticFallback(clip.staticFallback, root);
+    const elements = this.resolveStaticFallbackElements(clip, reason);
+    const fallback = renderStaticFallback(elements, root);
     let disposed = false;
     const dispose = (): void => {
       if (disposed) return;
@@ -236,6 +249,57 @@ export class InteractiveMountHarness {
       },
       dispose,
     };
+  }
+
+  /**
+   * Pick the Element[] to render on the static path. T-388 D-T388-4: for
+   * `family: 'voice'`, an empty `staticFallback` triggers the default
+   * waveform-poster generator. Authored arrays pass through unchanged.
+   *
+   * Per AC #14 telemetry privacy, `posterTextLength` is the integer
+   * length, NOT the body. This method emits the
+   * `voice-clip.static-fallback.rendered` event with the documented
+   * shape; downstream consumers (renderer-cdp / observability pipeline)
+   * key on the field names pinned here.
+   */
+  private resolveStaticFallbackElements(
+    clip: InteractiveClip,
+    reason: string,
+  ): ReadonlyArray<Element> {
+    if (clip.family !== 'voice') {
+      // Other families do not yet ship a default generator; the
+      // schema-level non-empty refine is the floor.
+      return clip.staticFallback;
+    }
+
+    if (clip.staticFallback.length > 0) {
+      // Authored fallback wins.
+      this.emitTelemetry('voice-clip.static-fallback.rendered', {
+        family: clip.family,
+        reason: 'authored',
+        width: clip.transform.width,
+        height: clip.transform.height,
+        posterTextLength: 0,
+      });
+      return clip.staticFallback;
+    }
+
+    const props = (clip.liveMount.props ?? {}) as { posterText?: unknown };
+    const posterText = typeof props.posterText === 'string' ? props.posterText : undefined;
+    const generated = defaultVoiceStaticFallback({
+      width: clip.transform.width,
+      height: clip.transform.height,
+      ...(posterText !== undefined ? { posterText } : {}),
+    });
+    this.emitTelemetry('voice-clip.static-fallback.rendered', {
+      family: clip.family,
+      reason,
+      width: clip.transform.width,
+      height: clip.transform.height,
+      // Privacy posture (AC #14): integer length, never the body.
+      posterTextLength: posterText !== undefined ? posterText.length : 0,
+    });
+    return generated;
   }
 
   /**
