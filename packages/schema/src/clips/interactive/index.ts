@@ -19,3 +19,7 @@ export {
   voiceClipPropsSchema,
   type VoiceClipProps,
 } from './voice-props.js';
+export {
+  aiChatClipPropsSchema,
+  type AiChatClipProps,
+} from './ai-chat-props.js';

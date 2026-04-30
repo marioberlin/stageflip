@@ -96,3 +96,19 @@ export {
   type WebSpeechApiTranscriptionProviderOptions,
   WebSpeechApiUnavailableError,
 } from './clips/voice/transcription-provider.js';
+export type {
+  AiChatClipMountHandle,
+  AiChatMountFailureReason,
+  TurnEvent,
+  TurnHandler,
+} from './clips/ai-chat/types.js';
+export { MultiTurnDisabledError } from './clips/ai-chat/types.js';
+export {
+  InMemoryLLMChatProvider,
+  type InMemoryLLMChatProviderOptions,
+  type LLMChatProvider,
+  type LLMChatStreamArgs,
+  RealLLMChatProvider,
+  type RealLLMChatProviderOptions,
+  type ScriptedTokenStep,
+} from './clips/ai-chat/llm-chat-provider.js';

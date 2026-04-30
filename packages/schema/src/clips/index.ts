@@ -25,10 +25,12 @@ export {
   type ResolvedClipPath,
 } from './export-targets.js';
 export {
+  aiChatClipPropsSchema,
   shaderClipPropsSchema,
   threeSceneClipPropsSchema,
   uniformValueSchema,
   voiceClipPropsSchema,
+  type AiChatClipProps,
   type ShaderClipProps,
   type ThreeSceneClipProps,
   type UniformValue,
