@@ -405,20 +405,43 @@ prevented from calling `globalThis.fetch` / `XMLHttpRequest` /
 `check-determinism` gate); the host-injected `Fetcher` is the only
 path. Same posture AiChat uses for `LLMProvider`.
 
-#### Pattern-evaluation outcome (D-T387-11 → D-T389-10 → D-T391-10)
+T-393 ships `WebEmbedClip` — the **fourth γ-live family**. Mounts a
+sandboxed `<iframe>` whose `src` is a clip-supplied URL; exposes
+`reload` / `postMessage` / origin-filtered `onMessage` via a typed
+`MountHandle`. **No provider seam** — the browser's `<iframe>` element
+IS the runtime; the factory just creates and disposes the DOM.
+`liveMount` ships at T-393; `staticFallback` (poster-frame screenshot
+as `ImageElement`) lands at T-394. The clip declares
+`permissions: ['network']` (no-op grant in v1) and emits
+`web-embed-clip.{mount,message,reload,dispose}.*` telemetry whose
+body-derived attributes are integers only (`byteLength`) — postMessage
+payload bodies NEVER in attributes. `message.dropped` reasons
+distinguish `'source-mismatch'` (rogue nested-iframe forging an origin)
+from `'origin-not-allowed'` (wrong origin) for security observability.
+The clip directory is structurally prevented from calling
+`globalThis.fetch` / `XMLHttpRequest` / `navigator.sendBeacon`
+(T-393 AC #25 grep-pinned); the iframe's network is the browser's,
+running in a separate document and out of scope for the clip's
+determinism.
 
-T-383 / T-384 / T-387 / T-389 / T-391 share four conventions
+#### Pattern-evaluation outcome (D-T387-11 → D-T389-10 → D-T391-10 → D-T393-10)
+
+T-383 / T-384 / T-387 / T-389 / T-391 / T-393 share four conventions
 (per-family schema file, subpath export, side-effect registration,
 telemetry-event naming). **None of these is "three similar lines of
 meaningful logic"** — they are conventions enforced by the spec
 template, not duplicated implementations.
 
 Per CLAUDE.md "three similar lines beat a premature abstraction":
-**no shared abstraction is extracted at T-387, T-389, or T-391.** The
-pattern-eval question raised at T-389 D-T389-10 is now closed by T-391
-D-T391-10's three-way comparison:
+**no shared abstraction is extracted at T-387, T-389, T-391, or
+T-393.** T-391 D-T391-10 ruled out `ProviderSeam<T>` extraction at
+the third application. T-393 D-T393-10 reaffirms the ruling at the
+**fourth** application — and strengthens it: WebEmbed has no provider
+seam at all, so the four shapes now span "no seam" through three
+different streaming/request shapes. A generic `ProviderSeam<T>` over
+four shapes including "no seam at all" is incoherent.
 
-1. **`ProviderSeam<T>` ruled out at T-391.** Compare the three seams:
+1. **`ProviderSeam<T>` ruled out across four shapes.** Compare:
    - `TranscriptionProvider.start({ stream, language, partial, onTranscript })` —
      streaming with a single discriminated-union callback
      (`onTranscript: (event: TranscriptEvent) => void` over
@@ -428,20 +451,22 @@ D-T391-10's three-way comparison:
      with one callback + many input fields + `AbortSignal`.
    - `LiveDataProvider.fetchOnce({ url, method, headers, body, signal })` —
      request/response, no callbacks, Promise-only.
-   The shapes share a host-injection convention (test-double pattern;
-   "host supplies the client") but no extractable abstraction. A
-   generic seam would either be too narrow (cancellation only) or
-   fight all three concrete shapes. **Future seams should follow the
-   convention without inheriting a generic shape.**
+   - **No seam** for `WebEmbedClip` — the browser's `<iframe>` is the
+     transport.
+   The first three shapes share a host-injection convention
+   (test-double pattern; "host supplies the client") but no
+   extractable abstraction. The fourth shape doesn't even have a
+   client to inject. **Future seams follow the convention without
+   inheriting a generic shape; future families with no upstream
+   client (like web-embed) follow the no-seam pattern.**
 2. **γ-live factory skeleton** — the state machine + dispose +
    abort wiring is structurally similar across γ-live factories,
    but uses different primitives (MediaRecorder vs. LLM stream vs.
-   one-shot fetch). Inlining stays shorter than abstracting; the
-   third application has not produced duplication of *logic*, only
-   shape.
+   one-shot fetch vs. iframe DOM). Inlining stays shorter than
+   abstracting; four applications have not produced duplication of
+   *logic*, only shape.
 
-Future families (T-393 web-embed, T-395 ai-generative) inherit this
-precedent.
+Future families (T-395 ai-generative) inherit this precedent.
 
 ### Permission flow UX (T-385)
 
