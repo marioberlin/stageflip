@@ -62,5 +62,6 @@ export type VoiceMountFailureReason =
   | 'permission-denied'
   | 'web-audio-unavailable'
   | 'web-speech-unavailable'
+  | 'transcription-failed'
   | 'media-recorder-unsupported-mime'
   | 'invalid-props';

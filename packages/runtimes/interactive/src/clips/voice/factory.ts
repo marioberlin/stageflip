@@ -17,7 +17,7 @@
 // Browser-safe: React 19 + DOM. No Node imports.
 
 import { type VoiceClipProps, voiceClipPropsSchema } from '@stageflip/schema';
-import { createElement, useCallback, useEffect, useState } from 'react';
+import { createElement } from 'react';
 import { flushSync } from 'react-dom';
 import { type Root, createRoot } from 'react-dom/client';
 
@@ -254,12 +254,17 @@ async function mountVoiceClip(
     } catch (err) {
       // Surface as mount.failure — transcription seam is required for the
       // clip's primary function. Tear down the partial graph.
+      // Web Speech unavailability is the canonical bootstrap failure on the
+      // default provider; any other rejection (custom provider, future
+      // cloud adapter blip) is reported as `transcription-failed` to keep
+      // telemetry honest. Reason set is pinned by `VoiceMountFailureReason`.
       const isWebSpeech = err instanceof Error && err.name === 'WebSpeechApiUnavailableError';
+      const reason: VoiceMountFailureReason = isWebSpeech
+        ? 'web-speech-unavailable'
+        : 'transcription-failed';
       ctx.emitTelemetry('voice-clip.mount.failure', {
         family,
-        reason: (isWebSpeech
-          ? 'web-speech-unavailable'
-          : 'web-speech-unavailable') satisfies VoiceMountFailureReason,
+        reason,
       });
       mediaGraph.dispose();
       state.mediaGraph = undefined;
@@ -347,29 +352,20 @@ async function mountVoiceClip(
  * Minimal React tree for the voice clip's visual surface. Per CLAUDE.md
  * §10, no English UI strings ship in the package — host apps style and
  * label via `data-*` attributes the surface exposes.
+ *
+ * The component is intentionally stateless: recording state lives on the
+ * `VoiceClipMountHandle`, not in the visual tree. Hosts that want a live
+ * `data-recording` indicator subscribe to `MountHandle.startRecording` /
+ * `stopRecording` and update their own DOM. A passive mirror in this
+ * component would lie (the setter is unreachable from the host).
  */
 function VoiceClipMount(): ReturnType<typeof createElement> {
-  // Local recording-state mirror for visual polish only (button label
-  // selector via data-recording attribute). The mount handle owns the
-  // actual recording state; this is a passive mirror.
-  const [isRecording] = useState(false);
-  const noopClick = useCallback(() => {
-    /* host wires up via the MountHandle's startRecording / stopRecording */
-  }, []);
-  // useEffect intentionally empty — no global side-effects from the
-  // visual layer; the factory's mount routine owns lifecycle.
-  useEffect(() => {
-    /* no-op */
-  }, []);
-
   return createElement(
     'div',
     { 'data-stageflip-voice-clip': 'true' },
     createElement('button', {
       type: 'button',
       'data-action': 'record',
-      'data-recording': isRecording ? 'true' : 'false',
-      onClick: noopClick,
     }),
     createElement('canvas', { 'data-role': 'level-meter' }),
     createElement('output', { 'data-role': 'transcript-live' }),

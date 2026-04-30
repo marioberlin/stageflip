@@ -392,6 +392,30 @@ describe('voiceClipFactory (T-387)', () => {
     handle.dispose();
   });
 
+  it('Reviewer M-1 — non-WebSpeech provider rejection → mount.failure transcription-failed', async () => {
+    // A custom or future cloud provider whose `start()` rejects with an
+    // ordinary Error (no WebSpeechApiUnavailableError name marker). The
+    // factory must classify this as 'transcription-failed' rather than
+    // misreporting it as 'web-speech-unavailable'.
+    const events: Array<[string, Record<string, unknown>]> = [];
+    const browser = makeFakeBrowser();
+    const failingProvider: TranscriptionProvider = {
+      start: async () => {
+        throw new Error('upstream provider rejected: 503 service unavailable');
+      },
+    };
+    const factory = VoiceClipFactoryBuilder.build({
+      browser: browser.api,
+      transcriptionProvider: failingProvider,
+    });
+    const ctx = makeContext({ emit: (e, a) => events.push([e, a]) });
+    const handle = await castVoice(factory, ctx);
+    await expect(handle.startRecording()).rejects.toThrow(/503/);
+    const failure = events.find((e) => e[0] === 'voice-clip.mount.failure');
+    expect(failure?.[1]).toMatchObject({ reason: 'transcription-failed' });
+    handle.dispose();
+  });
+
   it('AC #18, #19, #20, #21 — dispose() tears down recorder + tracks + analyser + transcription', async () => {
     const browser = makeFakeBrowser();
     const transcriptionStops: number[] = [];
@@ -700,10 +724,6 @@ describe('voiceClipFactory (T-387)', () => {
 
 // ---------- helpers ----------
 
-function identity<T>(x: T): T {
-  return x;
-}
-
 async function castVoice(
   factory: ClipFactory,
   ctx: MountContext,
@@ -720,10 +740,4 @@ async function castVoice(
     stopRecording: () => Promise<void>;
     onTranscript: (handler: (event: TranscriptEvent) => void) => () => void;
   };
-}
-
-function flushPromises(): Promise<void> {
-  return new Promise((resolve) => {
-    setImmediate(resolve);
-  });
 }
