@@ -235,6 +235,10 @@ describe('generateVariants — AC #18 determinism', () => {
     const b = [...generateVariants(source, spec)];
     expect(a.map((v) => v.cacheKey)).toEqual(b.map((v) => v.cacheKey));
     expect(a.map((v) => v.coordinate)).toEqual(b.map((v) => v.coordinate));
+    // Deep-equality on the transformed Documents — the AC's literal phrasing
+    // (PR-review m1 / 2026-04-30). Reference equality is unspecified across
+    // runs; structural-sharing within one run is asserted by AC #21.
+    expect(a.map((v) => v.document)).toEqual(b.map((v) => v.document));
   });
 });
 

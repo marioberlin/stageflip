@@ -29,12 +29,13 @@ export const ARRANGE_VARIANTS_BUNDLE_NAME = 'arrange-variants';
  *
  * The handler types against `MutationContext` and reads `persistVariant`
  * via a soft seam (`ctx as VariantPersistenceContext`). When the seam is
- * absent the handler falls back to the variant's `doc.meta.id` — which
- * the variant-gen layer derives deterministically from
- * `sha256(sourceDocId + coordinate)`. This optional-seam posture lets the
- * orchestrator register the bundle against a plain
- * `MutationContext`-typed router today; T-408 will widen to a real
- * `persistVariant` impl when the export-matrix routing layer ships.
+ * absent the handler returns `{ ok: false, reason: 'persistence_unavailable' }` —
+ * an explicit typed failure beats the prior synthetic-ID fallback (a
+ * synthetic ID would look like a real Document ID to the agent but
+ * resolve to nothing in storage; T-386 PR review M-1 / 2026-04-30). The
+ * orchestrator can still register the bundle against a plain
+ * `MutationContext`-typed router today; T-408 wires the seam when the
+ * export-matrix routing layer ships.
  */
 export interface VariantPersistenceContext extends MutationContext {
   persistVariant?(doc: Document): string | Promise<string>;
@@ -98,7 +99,7 @@ const arrangeVariantsOutput = z.discriminatedUnion('ok', [
   z
     .object({
       ok: z.literal(false),
-      reason: z.enum(['matrix_cap_exceeded']),
+      reason: z.enum(['matrix_cap_exceeded', 'persistence_unavailable']),
       detail: z.string().optional(),
     })
     .strict(),
@@ -109,7 +110,7 @@ const arrangeVariants: ToolHandler<ArrangeVariantsInput, ArrangeVariantsOutput, 
   name: 'arrange_variants',
   bundle: ARRANGE_VARIANTS_BUNDLE_NAME,
   description:
-    'Generate the message × locale variant matrix from the source document and the supplied `matrixSpec`. Persists each variant Document via the executor-supplied storage seam and returns `{ coordinate, documentId, cacheKey }` per variant — never full Document payloads (would blow the agent context). Empty matrix returns an empty `variants` array. Exceeding `matrixSpec.maxVariants` (default 100) returns `{ ok: false, reason: "matrix_cap_exceeded" }` with no partial output. Size axis is OUT OF SCOPE in T-386 (T-386a follow-up); passing `size:` is rejected by the schema.',
+    'Generate the message × locale variant matrix from the source document and the supplied `matrixSpec`. Persists each variant Document via the executor-supplied storage seam and returns `{ coordinate, documentId, cacheKey }` per variant — never full Document payloads (would blow the agent context). Empty matrix returns an empty `variants` array. Exceeding `matrixSpec.maxVariants` (default 100) returns `{ ok: false, reason: "matrix_cap_exceeded" }` with no partial output. When the executor has no `persistVariant` seam wired (pre-T-408), returns `{ ok: false, reason: "persistence_unavailable" }` rather than emitting unresolvable IDs. Size axis is OUT OF SCOPE in T-386 (T-386a follow-up); passing `size:` is rejected by the schema.',
   inputSchema: arrangeVariantsInput,
   outputSchema: arrangeVariantsOutput,
   handle: async (input, ctx) => {
@@ -131,14 +132,28 @@ const arrangeVariants: ToolHandler<ArrangeVariantsInput, ArrangeVariantsOutput, 
       }
       throw err;
     }
+    const persistSeam = (ctx as VariantPersistenceContext).persistVariant;
+    if (persistSeam === undefined) {
+      // Materialise the iterable so the matrix is fully validated by
+      // generateVariants (cap throw, schema enforcement) even though we
+      // refuse to return IDs. No partial output, no patches.
+      for (const _ of outputs) {
+        // intentionally empty
+      }
+      return {
+        ok: false,
+        reason: 'persistence_unavailable',
+        detail:
+          'arrange_variants requires `VariantPersistenceContext.persistVariant`; the executor has not wired the storage seam (pre-T-408). Refusing to emit synthetic Document IDs.',
+      };
+    }
     const variants: Array<{
       coordinate: { messageId?: string; locale?: string };
       documentId: string;
       cacheKey: string;
     }> = [];
-    const persistSeam = (ctx as VariantPersistenceContext).persistVariant;
     for (const v of outputs) {
-      const documentId = persistSeam ? await persistSeam(v.document) : v.document.meta.id;
+      const documentId = await persistSeam(v.document);
       variants.push({
         coordinate: v.coordinate,
         documentId,

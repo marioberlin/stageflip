@@ -146,6 +146,66 @@ describe('arrange_variants — AC #24 cap-exceeded', () => {
   });
 });
 
+describe('arrange_variants — persistence-unavailable (PR-review M-1, 2026-04-30)', () => {
+  it('returns ok:false reason `persistence_unavailable` when persistVariant seam is absent', async () => {
+    // Context WITHOUT persistVariant — pre-T-408 executor shape.
+    const ctxNoSeam = {
+      document: makeSourceDoc(),
+      patchSink: collectingSink(),
+    };
+    const r = await find('arrange_variants').handle(
+      {
+        matrixSpec: {
+          messages: [
+            { id: 'm1', slots: { headline: 'A' } },
+            { id: 'm2', slots: { headline: 'B' } },
+          ],
+        },
+      },
+      ctxNoSeam as unknown as MutationContext,
+    );
+    expect(r).toMatchObject({ ok: false, reason: 'persistence_unavailable' });
+    // Refusing to emit synthetic IDs — no variants array on the failure response.
+    expect((r as Record<string, unknown>).variants).toBeUndefined();
+    // Detail message references the missing seam.
+    expect((r as { detail: string }).detail).toMatch(/persistVariant/);
+  });
+
+  it('does not emit patches when persistVariant is absent (no partial output)', async () => {
+    const sink = collectingSink();
+    const ctxNoSeam = {
+      document: makeSourceDoc(),
+      patchSink: sink,
+    };
+    await find('arrange_variants').handle(
+      { matrixSpec: { messages: [{ id: 'm1', slots: { headline: 'A' } }] } },
+      ctxNoSeam as unknown as MutationContext,
+    );
+    expect(sink.drain()).toEqual([]);
+  });
+
+  it('still surfaces matrix_cap_exceeded ahead of persistence_unavailable when both apply', async () => {
+    const ctxNoSeam = {
+      document: makeSourceDoc(),
+      patchSink: collectingSink(),
+    };
+    const r = await find('arrange_variants').handle(
+      {
+        matrixSpec: {
+          messages: Array.from({ length: 4 }, (_, i) => ({
+            id: `m${i}`,
+            slots: { headline: 'X' },
+          })),
+          locales: Array.from({ length: 2 }, (_, i) => ({ tag: `l-${i}` })),
+          maxVariants: 5,
+        },
+      },
+      ctxNoSeam as unknown as MutationContext,
+    );
+    expect(r).toMatchObject({ ok: false, reason: 'matrix_cap_exceeded' });
+  });
+});
+
 describe('arrange_variants — coordinate echoed into the response', () => {
   it('echoes the matrix coordinate alongside each variant entry', async () => {
     const c = ctx(makeSourceDoc());
