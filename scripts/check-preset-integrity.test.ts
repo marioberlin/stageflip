@@ -24,6 +24,7 @@ import {
   checkInteractiveStaticFallback,
   checkParityFixtureSignOff,
   checkAiChatProps,
+  checkLiveDataProps,
   checkShaderProps,
   checkThreeSceneProps,
   checkTypeDesignSignOff,
@@ -994,6 +995,92 @@ describe('check-preset-integrity invariant 11: ai-chat-props (T-389 AC #5)', () 
             temperature: 0.4,
             multiTurn: true,
             posterFrame: 0,
+          },
+        },
+      },
+    });
+    expect(r.ok).toBe(true);
+  });
+});
+
+// ---------- Invariant 12: live-data-props (T-391 AC #5) ----------
+
+describe('check-preset-integrity invariant 12: live-data-props (T-391 AC #5)', () => {
+  it('passes when family is omitted', () => {
+    const r = checkLiveDataProps({ presetId: 'p', raw: { clipKind: 'lowerThird' } });
+    expect(r.ok).toBe(true);
+  });
+
+  it('passes when family is non-live-data (out of scope here)', () => {
+    const r = checkLiveDataProps({ presetId: 'p', raw: { family: 'shader' } });
+    expect(r.ok).toBe(true);
+  });
+
+  it('fails when family=live-data without liveMount', () => {
+    const r = checkLiveDataProps({ presetId: 'p', raw: { family: 'live-data' } });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/liveMount/);
+  });
+
+  it('fails when family=live-data without liveMount.props', () => {
+    const r = checkLiveDataProps({
+      presetId: 'p',
+      raw: { family: 'live-data', liveMount: {} },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/liveMount.props/);
+  });
+
+  it('fails when liveMount.props has a non-URL endpoint', () => {
+    const r = checkLiveDataProps({
+      presetId: 'p',
+      raw: {
+        family: 'live-data',
+        liveMount: { props: { endpoint: 'not-a-url' } },
+      },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/liveDataClipPropsSchema/);
+  });
+
+  it('fails when liveMount.props uses an unsupported method', () => {
+    const r = checkLiveDataProps({
+      presetId: 'p',
+      raw: {
+        family: 'live-data',
+        liveMount: {
+          props: { endpoint: 'https://example.com/api', method: 'PUT' },
+        },
+      },
+    });
+    expect(r.ok).toBe(false);
+  });
+
+  it('passes for a minimal valid live-data-props payload (defaults applied)', () => {
+    const r = checkLiveDataProps({
+      presetId: 'p',
+      raw: {
+        family: 'live-data',
+        liveMount: { props: { endpoint: 'https://example.com/api' } },
+      },
+    });
+    expect(r.ok).toBe(true);
+  });
+
+  it('passes for a complete live-data-props payload', () => {
+    const r = checkLiveDataProps({
+      presetId: 'p',
+      raw: {
+        family: 'live-data',
+        liveMount: {
+          props: {
+            endpoint: 'https://example.com/api',
+            method: 'POST',
+            headers: { 'X-Trace': 'abc' },
+            body: { q: 1 },
+            parseMode: 'json',
+            refreshTrigger: 'manual',
+            posterFrame: 7,
           },
         },
       },
