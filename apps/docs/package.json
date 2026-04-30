@@ -15,7 +15,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@astrojs/starlight": "0.31.0",
+    "@astrojs/starlight": "0.38.4",
     "astro": "5.1.5"
   },
   "devDependencies": {
