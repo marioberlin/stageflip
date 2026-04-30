@@ -52,11 +52,13 @@ Strategic context: Claude Design, launched 2026-04-17, positions "frontier desig
 | `ThreeSceneClip` | Three.js scene; seeded PRNG; `scene.tick(frame)` | Rendered still at canonical frame | none |
 | `VoiceClip` | Web Audio + MediaRecorder; transcript stream | Waveform silhouette + "Tap to speak" poster | `mic` |
 | `AiChatClip` | Scoped LLM chat with per-slide system prompt | Captured transcript rendered as text | `network` |
-| `LiveDataClip` | Endpoint fetch + chart primitive | Last cached value rendered via chart | `network` |
+| `LiveDataClip` | Endpoint fetch + chart primitive [^liveData-v1] | Last cached value rendered via chart [^liveData-v1] | `network` |
 | `WebEmbedClip` | Sandboxed iframe with allowlisted origin | Poster-frame screenshot | `network` |
 | `AiGenerativeClip` | Playback-time prompt → generated content slot | Curated example output rendered statically | `network` |
 
 All seven are declared `interactive: true` per ADR-003 §D2.
+
+[^liveData-v1]: T-391 / T-392 ship `LiveDataClip` v1 with **text-only** rendering. `liveMount` surfaces parsed data via `MountHandle.getData()` / `onData` and renders a default `<output>` with the JSON-pretty-printed body; `staticFallback` renders the cached snapshot as `TextElement`s (header + JSON pretty-print). Chart-aware rendering for both halves is a follow-up task gated on T-406 (Chart clip family, γ-supporting). The "+ chart primitive" / "via chart" wording above describes the eventual end state once T-406 is on `main`; v1 ships the data plumbing without it.
 
 ### D2. Shader and Three.js clips are frame-deterministic within the interactive tier
 
