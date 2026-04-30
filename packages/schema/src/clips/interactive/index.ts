@@ -32,4 +32,5 @@ export {
 export {
   webEmbedClipPropsSchema,
   type WebEmbedClipProps,
+  type WebEmbedPosterImage,
 } from './web-embed-props.js';
