@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { type ClipFactory, type MountContext, PERMISSIVE_TENANT_POLICY } from '../../contract.js';
 import { WebEmbedClipFactoryBuilder, type WebEmbedClipFactoryOptions } from './factory.js';
-import { type WebEmbedMessageEvent } from './types.js';
+import type { WebEmbedMessageEvent } from './types.js';
 
 interface MakeContextArgs {
   emit?: MountContext['emitTelemetry'];
