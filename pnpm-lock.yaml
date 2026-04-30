@@ -1327,6 +1327,9 @@ importers:
 
   packages/runtimes/interactive:
     dependencies:
+      '@stageflip/llm-abstraction':
+        specifier: workspace:*
+        version: link:../../llm-abstraction
       '@stageflip/runtimes-shader':
         specifier: workspace:*
         version: link:../shader

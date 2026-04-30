@@ -30,6 +30,11 @@
       "import": "./dist/clips/voice/index.js",
       "require": "./dist/clips/voice/index.cjs"
     },
+    "./clips/ai-chat": {
+      "types": "./dist/clips/ai-chat/index.d.ts",
+      "import": "./dist/clips/ai-chat/index.js",
+      "require": "./dist/clips/ai-chat/index.cjs"
+    },
     "./permission-flow": {
       "types": "./dist/permission-flow/index.d.ts",
       "import": "./dist/permission-flow/index.js",
@@ -38,13 +43,14 @@
   },
   "files": ["dist", "src"],
   "scripts": {
-    "build": "tsup src/index.ts src/contract-tests/index.ts src/clips/shader/index.ts src/clips/three-scene/index.ts src/clips/voice/index.ts src/permission-flow/index.ts --dts --format esm,cjs --clean",
-    "dev": "tsup src/index.ts src/contract-tests/index.ts src/clips/shader/index.ts src/clips/three-scene/index.ts src/clips/voice/index.ts src/permission-flow/index.ts --dts --format esm,cjs --watch",
+    "build": "tsup src/index.ts src/contract-tests/index.ts src/clips/shader/index.ts src/clips/three-scene/index.ts src/clips/voice/index.ts src/clips/ai-chat/index.ts src/permission-flow/index.ts --dts --format esm,cjs --clean",
+    "dev": "tsup src/index.ts src/contract-tests/index.ts src/clips/shader/index.ts src/clips/three-scene/index.ts src/clips/voice/index.ts src/clips/ai-chat/index.ts src/permission-flow/index.ts --dts --format esm,cjs --watch",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@stageflip/llm-abstraction": "workspace:*",
     "@stageflip/runtimes-shader": "workspace:*",
     "@stageflip/runtimes-three": "workspace:*",
     "@stageflip/schema": "workspace:*"
