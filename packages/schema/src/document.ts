@@ -8,6 +8,7 @@ import { layoutDescriptorSchema, slotDefinitionSchema } from './components.js';
 import { contentSchema } from './content/index.js';
 import { slideLayoutSchema, slideMasterSchema } from './templates.js';
 import { themeSchema } from './theme.js';
+import { variantSlotsSchema } from './variants/variant-slots.js';
 
 /** Current canonical schema version. Bump when the doc shape breaks. */
 export const SCHEMA_VERSION = 1;
@@ -69,6 +70,13 @@ export const documentSchema = z
     masters: z.array(slideMasterSchema).default([]),
     layouts: z.array(slideLayoutSchema).default([]),
     content: contentSchema,
+    /**
+     * Variant-generation slot bindings (T-386). Optional; absent on existing
+     * documents. Each slot points to an Element + property-path that
+     * `@stageflip/variant-gen` substitutes per matrix coordinate. The key is
+     * the author-chosen slot name; the value is the element / path pointer.
+     */
+    variantSlots: variantSlotsSchema.optional(),
   })
   .strict();
 export type Document = z.infer<typeof documentSchema>;
