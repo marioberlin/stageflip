@@ -22,6 +22,7 @@ import { fileURLToPath } from 'node:url';
 
 import matter from 'gray-matter';
 
+import { aiChatClipPropsSchema } from '../packages/schema/src/clips/interactive/ai-chat-props.js';
 import { shaderClipPropsSchema } from '../packages/schema/src/clips/interactive/shader-props.js';
 import { threeSceneClipPropsSchema } from '../packages/schema/src/clips/interactive/three-scene-props.js';
 import { voiceClipPropsSchema } from '../packages/schema/src/clips/interactive/voice-props.js';
@@ -76,6 +77,7 @@ export const VALID_CLIP_KINDS = new Set<string>([
   'shader',
   'three-scene',
   'voice',
+  'ai-chat',
   'webgl',
   // Generic element kinds — not a preset target today, but reserved.
   'text',
@@ -96,6 +98,7 @@ export const INTERACTIVE_CLIP_KINDS = new Set<string>([
   'shader',
   'three-scene',
   'voice',
+  'ai-chat',
   'webgl',
   'interactive-clip',
 ]);
@@ -144,6 +147,7 @@ const INVARIANT_KEYS = [
   'shader-props',
   'three-scene-props',
   'voice-props',
+  'ai-chat-props',
   'typeDesign-signOff',
   'parityFixture-signOff',
   'compass-anchor',
@@ -385,6 +389,45 @@ export function checkVoiceProps(args: {
     return {
       ok: false,
       message: `family 'voice' liveMount.props failed voiceClipPropsSchema: ${parsed.error.issues.map((i) => `${i.path.join('.') || '<root>'}: ${i.message}`).join('; ')}`,
+    };
+  }
+  return { ok: true };
+}
+
+/**
+ * Invariant 11 — when `family: 'ai-chat'` is declared in raw frontmatter, the
+ * accompanying `liveMount.props` must parse against `aiChatClipPropsSchema`
+ * (T-389 D-T389-2, AC #5). Mirrors the dispatch pattern set by invariants
+ * 8 (shader), 9 (three-scene), 10 (voice). Future Phase γ frontier
+ * families extend this pattern with their own per-family schemas — no
+ * new gate per family.
+ */
+export function checkAiChatProps(args: {
+  presetId: string;
+  raw: Record<string, unknown>;
+}): CheckResult {
+  const family = args.raw.family;
+  if (family !== 'ai-chat') return { ok: true };
+  const liveMount = args.raw.liveMount;
+  if (liveMount === undefined || liveMount === null || typeof liveMount !== 'object') {
+    return {
+      ok: false,
+      message: `family 'ai-chat' requires a 'liveMount' field with ai-chat props (T-389)`,
+    };
+  }
+  const lm = liveMount as Record<string, unknown>;
+  const props = lm.props;
+  if (props === undefined) {
+    return {
+      ok: false,
+      message: `family 'ai-chat' requires 'liveMount.props' parseable as aiChatClipPropsSchema (T-389)`,
+    };
+  }
+  const parsed = aiChatClipPropsSchema.safeParse(props);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: `family 'ai-chat' liveMount.props failed aiChatClipPropsSchema: ${parsed.error.issues.map((i) => `${i.path.join('.') || '<root>'}: ${i.message}`).join('; ')}`,
     };
   }
   return { ok: true };
@@ -640,6 +683,16 @@ export function runIntegrityChecks(opts: RunOpts): IntegrityReport {
           presetId: id,
           filePath,
           message: voiceResult.message,
+        });
+      }
+
+      // Invariant 11 — ai-chat-props parsing (T-389). Same dispatch.
+      const aiChatResult = checkAiChatProps({ presetId: id, raw });
+      if (!aiChatResult.ok) {
+        buckets['ai-chat-props'].errors.push({
+          presetId: id,
+          filePath,
+          message: aiChatResult.message,
         });
       }
     }
