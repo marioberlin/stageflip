@@ -26,7 +26,7 @@ Registration: see `@stageflip/engine`'s `registerArrangeVariantsBundle` (or equi
 
 ### `arrange_variants`
 
-Generate the message × locale variant matrix from the source document and the supplied `matrixSpec`. Persists each variant Document via the executor-supplied storage seam and returns `{ coordinate, documentId, cacheKey }` per variant — never full Document payloads (would blow the agent context). Empty matrix returns an empty `variants` array. Exceeding `matrixSpec.maxVariants` (default 100) returns `{ ok: false, reason: "matrix_cap_exceeded" }` with no partial output. Size axis is OUT OF SCOPE in T-386 (T-386a follow-up); passing `size:` is rejected by the schema.
+Generate the message × locale variant matrix from the source document and the supplied `matrixSpec`. Persists each variant Document via the executor-supplied storage seam and returns `{ coordinate, documentId, cacheKey }` per variant — never full Document payloads (would blow the agent context). Empty matrix returns an empty `variants` array. Exceeding `matrixSpec.maxVariants` (default 100) returns `{ ok: false, reason: "matrix_cap_exceeded" }` with no partial output. When the executor has no `persistVariant` seam wired (pre-T-408), returns `{ ok: false, reason: "persistence_unavailable" }` rather than emitting unresolvable IDs. Size axis is OUT OF SCOPE in T-386 (T-386a follow-up); passing `size:` is rejected by the schema.
 
 - `matrixSpec` (`object`)
 
