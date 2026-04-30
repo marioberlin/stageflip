@@ -9,7 +9,7 @@ import { type ClipFactory, type MountContext, PERMISSIVE_TENANT_POLICY } from '.
 import { InteractiveClipRegistry } from '../../registry.js';
 import { LiveDataClipFactoryBuilder, type LiveDataClipFactoryOptions } from './factory.js';
 import { InMemoryLiveDataProvider } from './live-data-provider.js';
-import { RefreshTriggerError, type DataEvent, type ErrorEvent } from './types.js';
+import { type DataEvent, type ErrorEvent, RefreshTriggerError } from './types.js';
 
 interface MakeContextArgs {
   emit?: MountContext['emitTelemetry'];

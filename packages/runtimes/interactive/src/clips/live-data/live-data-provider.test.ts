@@ -5,9 +5,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  type Fetcher,
   HostFetcherProvider,
   InMemoryLiveDataProvider,
-  type Fetcher,
 } from './live-data-provider.js';
 
 describe('HostFetcherProvider', () => {

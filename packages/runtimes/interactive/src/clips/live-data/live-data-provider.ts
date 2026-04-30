@@ -99,21 +99,19 @@ export interface LiveDataProvider {
  * The shape is structural — any callable matching this signature
  * works.
  */
-export interface Fetcher {
-  (
-    url: string,
-    init: {
-      method: string;
-      headers: Record<string, string>;
-      body: string | undefined;
-      signal: AbortSignal;
-    },
-  ): Promise<{
-    status: number;
-    text(): Promise<string>;
-    headers: { get(key: string): string | null };
-  }>;
-}
+export type Fetcher = (
+  url: string,
+  init: {
+    method: string;
+    headers: Record<string, string>;
+    body: string | undefined;
+    signal: AbortSignal;
+  },
+) => Promise<{
+  status: number;
+  text(): Promise<string>;
+  headers: { get(key: string): string | null };
+}>;
 
 /**
  * Construction options for {@link HostFetcherProvider}.
