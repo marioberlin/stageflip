@@ -642,6 +642,9 @@ importers:
       '@stageflip/schema':
         specifier: workspace:*
         version: link:../schema
+      '@stageflip/variant-gen':
+        specifier: workspace:*
+        version: link:../variant-gen
       zod:
         specifier: 3.25.76
         version: 3.25.76
@@ -1561,6 +1564,22 @@ importers:
       '@stageflip/runtimes-contract':
         specifier: workspace:*
         version: link:../runtimes/contract
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: 2.1.9
+        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+      vitest:
+        specifier: 2.1.9
+        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+
+  packages/variant-gen:
+    dependencies:
+      '@stageflip/schema':
+        specifier: workspace:*
+        version: link:../schema
+      zod:
+        specifier: 3.25.76
+        version: 3.25.76
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9

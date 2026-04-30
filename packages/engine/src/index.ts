@@ -135,3 +135,10 @@ export {
   DISPLAY_MODE_TOOL_DEFINITIONS,
   registerDisplayModeBundle,
 } from './handlers/display-mode/register.js';
+export {
+  ARRANGE_VARIANTS_BUNDLE_NAME,
+  ARRANGE_VARIANTS_HANDLERS,
+  ARRANGE_VARIANTS_TOOL_DEFINITIONS,
+  type VariantPersistenceContext,
+  registerArrangeVariantsBundle,
+} from './handlers/arrange-variants/register.js';

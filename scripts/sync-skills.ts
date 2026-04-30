@@ -12,6 +12,7 @@ import {
   CANONICAL_BUNDLES,
   ToolRouter,
   createCanonicalRegistry,
+  registerArrangeVariantsBundle,
   registerClipAnimationBundle,
   registerCreateMutateBundle,
   registerDataSourceBindingsBundle,
@@ -72,6 +73,7 @@ function buildPopulatedBundleRegistry(): BundleRegistry {
   registerSemanticLayoutBundle(registry, router);
   registerVideoModeBundle(registry, router);
   registerDisplayModeBundle(registry, router);
+  registerArrangeVariantsBundle(registry, router as ToolRouter<never>);
   return registry;
 }
 

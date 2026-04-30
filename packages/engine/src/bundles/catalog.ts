@@ -90,6 +90,12 @@ export const CANONICAL_BUNDLES: readonly ToolBundle[] = [
       'StageFlip.Display profile tools — file-size optimization planning, multi-size preview resolution (T-206 and onward).',
     tools: [],
   },
+  {
+    name: 'arrange-variants',
+    description:
+      'Variant generation — turn one canonical Document into a message × locale matrix of variants (T-386).',
+    tools: [],
+  },
 ];
 
 export const CANONICAL_BUNDLE_NAMES: readonly string[] = CANONICAL_BUNDLES.map((b) => b.name);

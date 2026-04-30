@@ -18,7 +18,7 @@ StageFlip ships ~80 semantic tools. An LLM context ballooning to 80 tool
 definitions wastes tokens and degrades plan quality. **Invariant I-9**: no
 agent context holds more than 30 tool definitions at once.
 
-## The 14 bundles
+## The 17 bundles
 
 | Bundle | Tools |
 |---|---|
@@ -36,6 +36,9 @@ agent context holds more than 30 tool definitions at once.
 | domain-finance-sales-okr | 27 |
 | data-source-bindings | 2 |
 | semantic-layout | 4 |
+| video-mode | 0 (T-185) |
+| display-mode | 0 (T-206) |
+| arrange-variants | 1 |
 
 Each bundle owns a cohesive capability slice. Tools belong to exactly one
 bundle.

@@ -60,6 +60,7 @@ a deterministic table-of-shapes for quick lookup.
 | `masters` | array<object> (default) | — |
 | `layouts` | array<object> (default) | — |
 | `content` | discriminated-union(mode) | ✓ |
+| `variantSlots` | record<string, object>? | — |
 
 ## DocumentMeta
 

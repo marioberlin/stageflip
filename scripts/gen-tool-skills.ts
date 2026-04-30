@@ -21,6 +21,7 @@ import path from 'node:path';
 import {
   CANONICAL_BUNDLES,
   createCanonicalRegistry,
+  registerArrangeVariantsBundle,
   registerReadBundle,
   registerCreateMutateBundle,
   registerTimingBundle,
@@ -59,6 +60,7 @@ const OWNER_TASK_MAP: Record<string, string> = {
   'semantic-layout': 'T-168',
   'video-mode': 'T-185',
   'display-mode': 'T-206',
+  'arrange-variants': 'T-386',
 };
 
 function populateRegistry() {
@@ -82,6 +84,7 @@ function populateRegistry() {
   registerDomainBundle(registry, router);
   registerDataSourceBindingsBundle(registry, router);
   registerSemanticLayoutBundle(registry, router);
+  registerArrangeVariantsBundle(registry, router);
   return registry;
 }
 

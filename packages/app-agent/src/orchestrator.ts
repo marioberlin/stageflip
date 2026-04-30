@@ -29,6 +29,7 @@ import {
   type DocumentSelection,
   ToolRouter,
   createCanonicalRegistry,
+  registerArrangeVariantsBundle,
   registerClipAnimationBundle,
   registerCreateMutateBundle,
   registerDataSourceBindingsBundle,
@@ -107,6 +108,7 @@ function populate(registry: BundleRegistry, router: ToolRouter<ExecutorContext>)
   registerSemanticLayoutBundle(registry, router);
   registerVideoModeBundle(registry, router);
   registerDisplayModeBundle(registry, router);
+  registerArrangeVariantsBundle(registry, router);
 }
 
 /**
