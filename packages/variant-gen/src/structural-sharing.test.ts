@@ -2,15 +2,15 @@
 // Structural sharing helpers (T-386 D-T386-5).
 
 import { describe, expect, it } from 'vitest';
-import {
-  replaceElementInDocument,
-  setNestedProperty,
-} from './structural-sharing.js';
+import { replaceElementInDocument, setNestedProperty } from './structural-sharing.js';
 
 interface FakeDoc {
   meta: { id: string };
   content:
-    | { mode: 'slide'; slides: Array<{ id: string; elements: Array<{ id: string; text?: string }> }> }
+    | {
+        mode: 'slide';
+        slides: Array<{ id: string; elements: Array<{ id: string; text?: string }> }>;
+      }
     | { mode: 'video'; tracks: ReadonlyArray<unknown> };
 }
 
@@ -50,8 +50,11 @@ describe('replaceElementInDocument — structural sharing (AC #21)', () => {
     if (source.content.mode !== 'slide' || updated.content.mode !== 'slide') {
       throw new Error('mode mismatch');
     }
-    const sourceEls = source.content.slides[0]!.elements;
-    const updatedEls = updated.content.slides[0]!.elements;
+    const sourceSlide = source.content.slides[0];
+    const updatedSlide = updated.content.slides[0];
+    if (!sourceSlide || !updatedSlide) throw new Error('expected slide-1');
+    const sourceEls = sourceSlide.elements;
+    const updatedEls = updatedSlide.elements;
     expect(updatedEls).toHaveLength(100);
     for (let i = 0; i < 100; i += 1) {
       if (i === 50) {

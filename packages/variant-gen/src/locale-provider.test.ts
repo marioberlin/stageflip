@@ -4,8 +4,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   InMemoryLocaleProvider,
-  StaticBundleLocaleProvider,
   type LocaleBundle,
+  StaticBundleLocaleProvider,
 } from './locale-provider.js';
 
 describe('InMemoryLocaleProvider', () => {

@@ -3,11 +3,19 @@
 
 import type { Document } from '@stageflip/schema';
 import { describe, expect, it } from 'vitest';
-import { generateVariants } from './generate.js';
 import { VariantMatrixCapExceededError } from './errors.js';
+import { generateVariants } from './generate.js';
 import { InMemoryLocaleProvider } from './locale-provider.js';
 
-function makeSourceDoc(variantSlots?: Record<string, { elementId: string; path: string }>): Document {
+function first<T>(arr: ReadonlyArray<T>): T {
+  const v = arr[0];
+  if (v === undefined) throw new Error('expected at least one element');
+  return v;
+}
+
+function makeSourceDoc(
+  variantSlots?: Record<string, { elementId: string; path: string }>,
+): Document {
   const doc: Record<string, unknown> = {
     meta: {
       id: 'doc-source',
@@ -130,13 +138,7 @@ describe('generateVariants — AC #11 row-major order', () => {
           { id: 'm2', slots: { headline: 'B' } },
           { id: 'm3', slots: { headline: 'C' } },
         ],
-        locales: [
-          { tag: 'en' },
-          { tag: 'de' },
-          { tag: 'fr' },
-          { tag: 'es' },
-          { tag: 'ja' },
-        ],
+        locales: [{ tag: 'en' }, { tag: 'de' }, { tag: 'fr' }, { tag: 'es' }, { tag: 'ja' }],
       }),
     ];
     expect(out).toHaveLength(15);
@@ -159,11 +161,11 @@ describe('generateVariants — AC #13 substitution', () => {
         messages: [{ id: 'm1', slots: { headline: 'Substituted' } }],
       }),
     ];
-    const v = out[0]!;
+    const v = first(out);
     if (v.document.content.mode !== 'slide') throw new Error('expected slide');
-    const textEl = v.document.content.slides[0]?.elements.find(
-      (e) => e.id === 'el-headline',
-    ) as { text: string } | undefined;
+    const textEl = v.document.content.slides[0]?.elements.find((e) => e.id === 'el-headline') as
+      | { text: string }
+      | undefined;
     expect(textEl?.text).toBe('Substituted');
   });
 });
@@ -206,17 +208,15 @@ describe('generateVariants — AC #14 maxVariants cap', () => {
   it('uses the default cap (100) when maxVariants is omitted', () => {
     const slots = { headline: { elementId: 'el-headline', path: 'text' } };
     const source = makeSourceDoc(slots);
-    expect(() =>
-      [
-        ...generateVariants(source, {
-          messages: Array.from({ length: 11 }, (_, i) => ({
-            id: `m${i}`,
-            slots: { headline: 'X' },
-          })),
-          locales: Array.from({ length: 11 }, (_, i) => ({ tag: `l-${i}` })),
-        }),
-      ],
-    ).toThrow(VariantMatrixCapExceededError);
+    expect(() => [
+      ...generateVariants(source, {
+        messages: Array.from({ length: 11 }, (_, i) => ({
+          id: `m${i}`,
+          slots: { headline: 'X' },
+        })),
+        locales: Array.from({ length: 11 }, (_, i) => ({ tag: `l-${i}` })),
+      }),
+    ]).toThrow(VariantMatrixCapExceededError);
   });
 });
 
@@ -279,12 +279,15 @@ describe('generateVariants — AC #21 structural sharing on a 100-element source
         messages: [{ id: 'm1', slots: { headline: 'changed' } }],
       }),
     ];
-    const v = out[0]!;
+    const v = first(out);
     if (v.document.content.mode !== 'slide' || source.content.mode !== 'slide') {
       throw new Error('mode mismatch');
     }
-    const variantEls = v.document.content.slides[0]!.elements;
-    const sourceEls = source.content.slides[0]!.elements;
+    const variantSlide = v.document.content.slides[0];
+    const sourceSlide = source.content.slides[0];
+    if (!variantSlide || !sourceSlide) throw new Error('expected slide-1');
+    const variantEls = variantSlide.elements;
+    const sourceEls = sourceSlide.elements;
     for (let i = 0; i < 100; i += 1) {
       if (i === 50) {
         expect(variantEls[i]).not.toBe(sourceEls[i]);
@@ -304,7 +307,7 @@ describe('generateVariants — variant.document.meta.id (per-variant identity)',
         messages: [{ id: 'm1', slots: { headline: 'A' } }],
       }),
     ];
-    const v = out[0]!;
+    const v = first(out);
     expect(v.document.meta.id).toContain('doc-source');
     expect(v.document.meta.id).not.toBe(source.meta.id);
   });
