@@ -1,5 +1,6 @@
 // packages/schema/src/clips/interactive/web-embed-props.test.ts
 // T-393 ACs #1–#4 — webEmbedClipPropsSchema parsing.
+// T-394 ACs #1–#5 — posterImage optional field.
 
 import { describe, expect, it } from 'vitest';
 
@@ -97,5 +98,94 @@ describe('webEmbedClipPropsSchema (T-393 AC #1)', () => {
       url: 'http://localhost:8080/embed',
     });
     expect(parsed.url).toBe('http://localhost:8080/embed');
+  });
+});
+
+describe('webEmbedClipPropsSchema posterImage (T-394 AC #1–#5)', () => {
+  const dataUrl =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII=';
+
+  it('T-394 AC #1 — accepts a valid posterImage with a data: URL', () => {
+    const parsed = webEmbedClipPropsSchema.parse({
+      ...validBase,
+      posterImage: { src: dataUrl, contentType: 'image/png' },
+    });
+    expect(parsed.posterImage?.src).toBe(dataUrl);
+    expect(parsed.posterImage?.contentType).toBe('image/png');
+  });
+
+  it('T-394 AC #1 — accepts posterImage without contentType', () => {
+    const parsed = webEmbedClipPropsSchema.parse({
+      ...validBase,
+      posterImage: { src: dataUrl },
+    });
+    expect(parsed.posterImage?.src).toBe(dataUrl);
+    expect(parsed.posterImage?.contentType).toBeUndefined();
+  });
+
+  it('T-394 AC #2 — https URL throws (v1 rejects http(s) per the out-of-scope deferral)', () => {
+    expect(() =>
+      webEmbedClipPropsSchema.parse({
+        ...validBase,
+        posterImage: { src: 'https://cdn.example.com/poster.png' },
+      }),
+    ).toThrow();
+  });
+
+  it('T-394 AC #2 — http URL throws', () => {
+    expect(() =>
+      webEmbedClipPropsSchema.parse({
+        ...validBase,
+        posterImage: { src: 'http://example.com/poster.png' },
+      }),
+    ).toThrow();
+  });
+
+  it('T-394 AC #3 — relative path throws (refine rejects)', () => {
+    expect(() =>
+      webEmbedClipPropsSchema.parse({
+        ...validBase,
+        posterImage: { src: 'relative/path.png' },
+      }),
+    ).toThrow();
+  });
+
+  it('T-394 AC #4 — extra keys on posterImage rejected (strict shape)', () => {
+    expect(() =>
+      webEmbedClipPropsSchema.parse({
+        ...validBase,
+        posterImage: { src: dataUrl, extra: true },
+      }),
+    ).toThrow();
+  });
+
+  it('T-394 AC #4 — invalid contentType throws', () => {
+    expect(() =>
+      webEmbedClipPropsSchema.parse({
+        ...validBase,
+        posterImage: { src: dataUrl, contentType: 'image/gif' },
+      }),
+    ).toThrow();
+  });
+
+  it('T-394 AC #5 — payload without posterImage still validates (backward-compat)', () => {
+    const parsed = webEmbedClipPropsSchema.parse(validBase);
+    expect(parsed.posterImage).toBeUndefined();
+  });
+
+  it('T-394 — accepts contentType image/jpeg', () => {
+    const parsed = webEmbedClipPropsSchema.parse({
+      ...validBase,
+      posterImage: { src: dataUrl, contentType: 'image/jpeg' },
+    });
+    expect(parsed.posterImage?.contentType).toBe('image/jpeg');
+  });
+
+  it('T-394 — accepts contentType image/webp', () => {
+    const parsed = webEmbedClipPropsSchema.parse({
+      ...validBase,
+      posterImage: { src: dataUrl, contentType: 'image/webp' },
+    });
+    expect(parsed.posterImage?.contentType).toBe('image/webp');
   });
 });
