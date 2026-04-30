@@ -55,7 +55,6 @@ export {
   __resetTurnIdCounterForTests,
 } from './llm-chat-provider.js';
 export {
-  type AiChatCapturedTurn,
   aiChatStaticFallbackGenerator,
   defaultAiChatStaticFallback,
   type DefaultAiChatStaticFallbackArgs,

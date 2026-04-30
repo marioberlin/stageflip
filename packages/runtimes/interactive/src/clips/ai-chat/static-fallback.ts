@@ -24,15 +24,14 @@
 // Browser-safe AND Node-safe: pure string + integer arithmetic. No DOM,
 // no canvas, no Node-only imports.
 
-import type { Element, TextElement, Transform } from '@stageflip/schema';
+import type {
+  AiChatCapturedTranscriptTurn,
+  Element,
+  TextElement,
+  Transform,
+} from '@stageflip/schema';
 
 import type { StaticFallbackGenerator } from '../../static-fallback-registry.js';
-
-/** One captured turn — same shape `aiChatClipPropsSchema` parses. */
-export interface AiChatCapturedTurn {
-  role: 'user' | 'assistant';
-  text: string;
-}
 
 /**
  * Args to {@link defaultAiChatStaticFallback}. Width/height are required;
@@ -49,7 +48,7 @@ export interface DefaultAiChatStaticFallbackArgs {
    * Pre-captured turn sequence. Absent OR empty → a single placeholder
    * TextElement (empty text) is rendered after the systemPrompt summary.
    */
-  capturedTranscript?: ReadonlyArray<AiChatCapturedTurn>;
+  capturedTranscript?: ReadonlyArray<AiChatCapturedTranscriptTurn>;
 }
 
 /** Maximum systemPrompt summary length (chars) — D-T390-2 documented cap. */
@@ -142,12 +141,15 @@ export function defaultAiChatStaticFallback(args: DefaultAiChatStaticFallbackArg
 
   // 4. One TextElement per turn. Stack vertically; cursor advances per
   //    row by `rowHeight + ROW_GAP_PX`. AC #11 pins fit-within-bounds;
-  //    AC #12 pins strict y-monotonicity.
+  //    AC #12 pins strict y-monotonicity. Turns whose origin would land
+  //    at or past the canvas bottom are dropped — emitting them with
+  //    `y >= height` would violate AC #11 even with `height: 0`.
   const rowHeight = computeRowHeight(height, capturedTranscript.length);
   for (let i = 0; i < capturedTranscript.length; i += 1) {
     const turn = capturedTranscript[i];
     if (turn === undefined) continue;
-    const remaining = Math.max(0, height - cursorY);
+    if (cursorY >= height) break;
+    const remaining = height - cursorY;
     const renderedHeight = Math.min(rowHeight, remaining);
     const turnTransform: Transform = {
       x: HORIZONTAL_PADDING_PX,
@@ -260,9 +262,11 @@ export const aiChatStaticFallbackGenerator: StaticFallbackGenerator = ({
  * payload would be a regression). Returns `undefined` for any
  * non-array, missing, or malformed value.
  */
-function readCapturedTranscript(raw: unknown): ReadonlyArray<AiChatCapturedTurn> | undefined {
+function readCapturedTranscript(
+  raw: unknown,
+): ReadonlyArray<AiChatCapturedTranscriptTurn> | undefined {
   if (!Array.isArray(raw)) return undefined;
-  const out: AiChatCapturedTurn[] = [];
+  const out: AiChatCapturedTranscriptTurn[] = [];
   for (const item of raw) {
     if (
       item !== null &&

@@ -147,6 +147,32 @@ describe('defaultAiChatStaticFallback (T-390)', () => {
     }
   });
 
+  it('AC #11 — many turns on a small canvas: every transform still fits (overflow drops trailing turns)', () => {
+    // 15 turns on a 200x200 canvas exceeds the available column once the
+    // MIN_ROW_HEIGHT_PX floor kicks in. Without the overflow guard, late
+    // turns would be emitted with `y > height` and `height: 0`, violating
+    // AC #11.
+    const turns: Array<{ role: 'user' | 'assistant'; text: string }> = Array.from(
+      { length: 15 },
+      (_, i) => ({ role: i % 2 === 0 ? 'user' : 'assistant', text: `turn ${i}` }),
+    );
+    const elements = defaultAiChatStaticFallback({
+      width: 200,
+      height: 200,
+      systemPrompt: 'p',
+      capturedTranscript: turns,
+    });
+    for (const el of elements) {
+      expect(el.transform.x).toBeGreaterThanOrEqual(0);
+      expect(el.transform.y).toBeGreaterThanOrEqual(0);
+      expect(el.transform.x + el.transform.width).toBeLessThanOrEqual(200);
+      expect(el.transform.y + el.transform.height).toBeLessThanOrEqual(200);
+    }
+    // At least the systemPrompt + one turn fits; trailing turns are dropped.
+    expect(elements.length).toBeGreaterThanOrEqual(2);
+    expect(elements.length).toBeLessThan(1 + turns.length);
+  });
+
   it('AC #12 — turn N transform.y is greater than turn N-1 transform.y (vertical stacking)', () => {
     const elements = defaultAiChatStaticFallback({
       width: 640,
