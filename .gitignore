@@ -8,6 +8,11 @@ build/
 .next/
 .turbo/
 *.tsbuildinfo
+# Next.js auto-generated env-types stub — emitted on `next dev` / `next build`.
+next-env.d.ts
+# Firebase Cloud Functions tsc output — emitted on `pnpm --filter firebase-functions build`
+# and on adjacent test commands. Source is firebase/functions/src/**.
+firebase/functions/lib/
 
 # Test artifacts
 coverage/
