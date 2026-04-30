@@ -1,5 +1,6 @@
 // packages/schema/src/clips/interactive/ai-chat-props.test.ts
 // T-389 ACs #1–#4 — aiChatClipPropsSchema parsing.
+// T-390 ACs #1–#4 — capturedTranscript optional field.
 
 import { describe, expect, it } from 'vitest';
 
@@ -148,5 +149,80 @@ describe('aiChatClipPropsSchema (T-389 AC #1)', () => {
         model: 'gpt-4o-mini',
       }),
     ).toThrow(/systemPrompt/);
+  });
+});
+
+describe('aiChatClipPropsSchema capturedTranscript (T-390 AC #1–#4)', () => {
+  it('T-390 AC #1 — accepts a non-empty capturedTranscript with valid roles', () => {
+    const parsed = aiChatClipPropsSchema.parse({
+      ...validBase,
+      capturedTranscript: [
+        { role: 'user', text: 'hi' },
+        { role: 'assistant', text: 'hello back' },
+      ],
+    });
+    expect(parsed.capturedTranscript).toEqual([
+      { role: 'user', text: 'hi' },
+      { role: 'assistant', text: 'hello back' },
+    ]);
+  });
+
+  it('T-390 AC #1 — accepts a single-turn capturedTranscript', () => {
+    const parsed = aiChatClipPropsSchema.parse({
+      ...validBase,
+      capturedTranscript: [{ role: 'user', text: 'hi' }],
+    });
+    expect(parsed.capturedTranscript).toHaveLength(1);
+  });
+
+  it('T-390 AC #2 — empty text in a turn throws', () => {
+    expect(() =>
+      aiChatClipPropsSchema.parse({
+        ...validBase,
+        capturedTranscript: [{ role: 'user', text: '' }],
+      }),
+    ).toThrow(/text/);
+  });
+
+  it('T-390 AC #3 — invalid role throws', () => {
+    expect(() =>
+      aiChatClipPropsSchema.parse({
+        ...validBase,
+        capturedTranscript: [{ role: 'invalid', text: 'x' }],
+      }),
+    ).toThrow();
+  });
+
+  it('T-390 AC #3 — system role rejected (only user/assistant accepted)', () => {
+    expect(() =>
+      aiChatClipPropsSchema.parse({
+        ...validBase,
+        capturedTranscript: [{ role: 'system', text: 'x' }],
+      }),
+    ).toThrow();
+  });
+
+  it('T-390 AC #4 — payload without capturedTranscript still validates (backward-compat)', () => {
+    const parsed = aiChatClipPropsSchema.parse(validBase);
+    expect(parsed.capturedTranscript).toBeUndefined();
+  });
+
+  it('T-390 — extra keys on a turn are rejected (strict array element)', () => {
+    expect(() =>
+      aiChatClipPropsSchema.parse({
+        ...validBase,
+        capturedTranscript: [{ role: 'user', text: 'hi', extra: true }],
+      }),
+    ).toThrow();
+  });
+
+  it('T-390 — empty array for capturedTranscript is permitted (absent transcript semantics)', () => {
+    // The generator's empty-transcript branch (placeholder element) covers
+    // both `undefined` and `[]`; the schema does NOT enforce non-empty.
+    const parsed = aiChatClipPropsSchema.parse({
+      ...validBase,
+      capturedTranscript: [],
+    });
+    expect(parsed.capturedTranscript).toEqual([]);
   });
 });
