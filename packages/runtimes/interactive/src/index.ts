@@ -142,3 +142,10 @@ export {
   type DefaultLiveDataStaticFallbackArgs,
   liveDataStaticFallbackGenerator,
 } from './clips/live-data/static-fallback.js';
+export type {
+  WebEmbedClipMountHandle,
+  WebEmbedMessageDropReason,
+  WebEmbedMessageEvent,
+  WebEmbedMessageHandler,
+  WebEmbedMountFailureReason,
+} from './clips/web-embed/types.js';

@@ -25,6 +25,7 @@ import matter from 'gray-matter';
 import { aiChatClipPropsSchema } from '../packages/schema/src/clips/interactive/ai-chat-props.js';
 import { liveDataClipPropsSchema } from '../packages/schema/src/clips/interactive/live-data-props.js';
 import { shaderClipPropsSchema } from '../packages/schema/src/clips/interactive/shader-props.js';
+import { webEmbedClipPropsSchema } from '../packages/schema/src/clips/interactive/web-embed-props.js';
 import { threeSceneClipPropsSchema } from '../packages/schema/src/clips/interactive/three-scene-props.js';
 import { voiceClipPropsSchema } from '../packages/schema/src/clips/interactive/voice-props.js';
 import { PresetRegistryLoadError } from '../packages/schema/src/presets/errors.js';
@@ -80,6 +81,7 @@ export const VALID_CLIP_KINDS = new Set<string>([
   'voice',
   'ai-chat',
   'live-data',
+  'web-embed',
   'webgl',
   // Generic element kinds — not a preset target today, but reserved.
   'text',
@@ -102,6 +104,7 @@ export const INTERACTIVE_CLIP_KINDS = new Set<string>([
   'voice',
   'ai-chat',
   'live-data',
+  'web-embed',
   'webgl',
   'interactive-clip',
 ]);
@@ -152,6 +155,7 @@ const INVARIANT_KEYS = [
   'voice-props',
   'ai-chat-props',
   'live-data-props',
+  'web-embed-props',
   'typeDesign-signOff',
   'parityFixture-signOff',
   'compass-anchor',
@@ -475,6 +479,43 @@ export function checkLiveDataProps(args: {
 }
 
 /**
+ * Invariant 13 — when `family: 'web-embed'` is declared in raw frontmatter, the
+ * accompanying `liveMount.props` must parse against `webEmbedClipPropsSchema`
+ * (T-393 D-T393-2, AC #5). Mirrors the dispatch pattern set by invariants
+ * 8 (shader), 9 (three-scene), 10 (voice), 11 (ai-chat), 12 (live-data).
+ */
+export function checkWebEmbedProps(args: {
+  presetId: string;
+  raw: Record<string, unknown>;
+}): CheckResult {
+  const family = args.raw.family;
+  if (family !== 'web-embed') return { ok: true };
+  const liveMount = args.raw.liveMount;
+  if (liveMount === undefined || liveMount === null || typeof liveMount !== 'object') {
+    return {
+      ok: false,
+      message: `family 'web-embed' requires a 'liveMount' field with web-embed props (T-393)`,
+    };
+  }
+  const lm = liveMount as Record<string, unknown>;
+  const props = lm.props;
+  if (props === undefined) {
+    return {
+      ok: false,
+      message: `family 'web-embed' requires 'liveMount.props' parseable as webEmbedClipPropsSchema (T-393)`,
+    };
+  }
+  const parsed = webEmbedClipPropsSchema.safeParse(props);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: `family 'web-embed' liveMount.props failed webEmbedClipPropsSchema: ${parsed.error.issues.map((i) => `${i.path.join('.') || '<root>'}: ${i.message}`).join('; ')}`,
+    };
+  }
+  return { ok: true };
+}
+
+/**
  * Invariant 5 — clusters A/B/D/F/G must have `signOff.typeDesign` populated
  * (AC #6, #7). The clusters scoping is the most common bug class: invariant 5
  * does NOT apply to weather, data, ar.
@@ -744,6 +785,16 @@ export function runIntegrityChecks(opts: RunOpts): IntegrityReport {
           presetId: id,
           filePath,
           message: liveDataResult.message,
+        });
+      }
+
+      // Invariant 13 — web-embed-props parsing (T-393). Same dispatch.
+      const webEmbedResult = checkWebEmbedProps({ presetId: id, raw });
+      if (!webEmbedResult.ok) {
+        buckets['web-embed-props'].errors.push({
+          presetId: id,
+          filePath,
+          message: webEmbedResult.message,
         });
       }
     }

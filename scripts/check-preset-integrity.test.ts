@@ -29,6 +29,7 @@ import {
   checkThreeSceneProps,
   checkTypeDesignSignOff,
   checkVoiceProps,
+  checkWebEmbedProps,
   formatReport,
   loadCompassAnchors,
   runIntegrityChecks,
@@ -1080,6 +1081,91 @@ describe('check-preset-integrity invariant 12: live-data-props (T-391 AC #5)', (
             body: { q: 1 },
             parseMode: 'json',
             refreshTrigger: 'manual',
+            posterFrame: 7,
+          },
+        },
+      },
+    });
+    expect(r.ok).toBe(true);
+  });
+});
+
+// ---------- Invariant 13: web-embed-props (T-393 AC #5) ----------
+
+describe('check-preset-integrity invariant 13: web-embed-props (T-393 AC #5)', () => {
+  it('passes when family is omitted', () => {
+    const r = checkWebEmbedProps({ presetId: 'p', raw: { clipKind: 'lowerThird' } });
+    expect(r.ok).toBe(true);
+  });
+
+  it('passes when family is non-web-embed (out of scope here)', () => {
+    const r = checkWebEmbedProps({ presetId: 'p', raw: { family: 'shader' } });
+    expect(r.ok).toBe(true);
+  });
+
+  it('fails when family=web-embed without liveMount', () => {
+    const r = checkWebEmbedProps({ presetId: 'p', raw: { family: 'web-embed' } });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/liveMount/);
+  });
+
+  it('fails when family=web-embed without liveMount.props', () => {
+    const r = checkWebEmbedProps({
+      presetId: 'p',
+      raw: { family: 'web-embed', liveMount: {} },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/liveMount.props/);
+  });
+
+  it('fails when liveMount.props has a non-URL url', () => {
+    const r = checkWebEmbedProps({
+      presetId: 'p',
+      raw: {
+        family: 'web-embed',
+        liveMount: { props: { url: 'not-a-url' } },
+      },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/webEmbedClipPropsSchema/);
+  });
+
+  it('fails when liveMount.props has a non-array sandbox', () => {
+    const r = checkWebEmbedProps({
+      presetId: 'p',
+      raw: {
+        family: 'web-embed',
+        liveMount: {
+          props: { url: 'https://example.com', sandbox: 'allow-scripts' },
+        },
+      },
+    });
+    expect(r.ok).toBe(false);
+  });
+
+  it('passes for a minimal valid web-embed-props payload (defaults applied)', () => {
+    const r = checkWebEmbedProps({
+      presetId: 'p',
+      raw: {
+        family: 'web-embed',
+        liveMount: { props: { url: 'https://example.com/embed' } },
+      },
+    });
+    expect(r.ok).toBe(true);
+  });
+
+  it('passes for a complete web-embed-props payload', () => {
+    const r = checkWebEmbedProps({
+      presetId: 'p',
+      raw: {
+        family: 'web-embed',
+        liveMount: {
+          props: {
+            url: 'https://example.com/embed',
+            sandbox: ['allow-scripts'],
+            allowedOrigins: ['https://example.com'],
+            width: 800,
+            height: 600,
             posterFrame: 7,
           },
         },
