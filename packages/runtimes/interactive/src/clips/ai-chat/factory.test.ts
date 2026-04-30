@@ -260,6 +260,42 @@ describe('aiChatClipFactory (T-389)', () => {
     handle.dispose();
   });
 
+  it('Reviewer Minor #1 — reset() during in-flight turn aborts the controller and discards the post-await history append', async () => {
+    let observedSignal: AbortSignal | undefined;
+    let aborted = false;
+    let resolveTurn!: (value: { finalText: string; turnId: string }) => void;
+    const provider: LLMChatProvider = {
+      streamTurn: (args) =>
+        new Promise((resolve) => {
+          observedSignal = args.signal;
+          args.signal.addEventListener('abort', () => {
+            aborted = true;
+            // Provider semantics: on abort, resolve with whatever's
+            // accumulated. The post-await guard in the factory must catch
+            // this and refuse to write back into the cleared history.
+            resolve({ finalText: 'late assistant reply', turnId: 'turn-late' });
+          });
+          resolveTurn = resolve;
+        }),
+    };
+    const factory = buildFactory({ chatProvider: provider });
+    const ctx = makeContext();
+    const handle = await castChat(factory, ctx);
+    // Start a turn but don't resolve it.
+    const sendPromise = handle.send('user-msg-during-flight');
+    // Reset while the turn is in-flight.
+    handle.reset();
+    expect(aborted).toBe(true);
+    expect(observedSignal?.aborted).toBe(true);
+    // Allow the now-aborted turn's resolution promise to settle.
+    await sendPromise.catch(() => {
+      /* aborted; resolves cleanly because the provider resolves on abort */
+    });
+    // History MUST be empty — no post-await write-back from the in-flight turn.
+    expect(handle.__test__.historySize()).toBe(0);
+    handle.dispose();
+  });
+
   // ----- Resource cleanup (AC #15–#19) -----
 
   it('AC #15 — dispose() aborts the in-flight streamTurn (spy on AbortController)', async () => {

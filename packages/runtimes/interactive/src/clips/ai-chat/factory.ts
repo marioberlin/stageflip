@@ -320,6 +320,22 @@ async function mountAiChatClip(
 
   const reset = (): void => {
     if (state.disposed) return;
+    // Abort any in-flight turn FIRST. Without this, a streaming turn that
+    // resolves after `reset()` writes its `{user, assistant}` pair back into
+    // the (now-cleared) history at the post-await `state.history.push` call —
+    // surprising the host. Mirrors `dispose`'s abort discipline; the
+    // post-await guard at the streamTurn call site is keyed on
+    // `state.activeAbort === abort`, so clearing the controller here also
+    // suppresses the history append for the now-aborted turn.
+    // Reviewer Minor #1 (T-389 PR review, 2026-04-30).
+    if (state.activeAbort !== undefined) {
+      try {
+        state.activeAbort.abort();
+      } catch {
+        /* defensive */
+      }
+      state.activeAbort = undefined;
+    }
     state.history.length = 0;
     state.singleTurnConsumed = false;
   };
