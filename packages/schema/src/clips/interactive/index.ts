@@ -21,5 +21,6 @@ export {
 } from './voice-props.js';
 export {
   aiChatClipPropsSchema,
+  type AiChatCapturedTranscriptTurn,
   type AiChatClipProps,
 } from './ai-chat-props.js';
