@@ -3,8 +3,8 @@ title: Live Data Runtime
 id: skills/stageflip/runtimes/live-data
 tier: runtime
 status: substantive
-last_updated: 2026-04-30
-owner_task: T-391
+last_updated: 2026-05-01
+owner_task: T-392
 related:
   - skills/stageflip/runtimes/contract/SKILL.md
   - skills/stageflip/runtimes/ai-chat/SKILL.md
@@ -25,7 +25,8 @@ configured endpoint at mount time, surfaces parsed data through a
 typed `MountHandle`, emits typed lifecycle telemetry.
 
 `liveMount` lands here (T-391). `staticFallback` (cached snapshot
-rendered as text) ships in T-392. Chart-aware rendering for both halves
+rendered as text) ships in T-392 — both halves of `family: 'live-data'`
+are now structurally complete. Chart-aware rendering for both halves
 is a follow-up task gated on T-406 (Chart clip family, γ-supporting);
 see ADR-005 §D1 footnote `^liveData-v1`.
 
@@ -300,12 +301,98 @@ The package adds:
 
 `size-limit` budgets are enforced by the existing CI gate.
 
+## Static fallback (T-392)
+
+When the harness routes to the static path AND the clip's authored
+`staticFallback` is empty, `liveDataStaticFallbackGenerator`
+substitutes a deterministic Element[] derived from the clip's
+`liveMount.props`:
+
+- A header `TextElement` summarising the cached snapshot's metadata:
+  `${endpoint} · status ${status} · captured ${capturedAt}` (truncated
+  to 200 chars).
+- A body `TextElement` carrying the JSON-pretty-printed snapshot body
+  (`JSON.stringify(body, null, 2)`, truncated to 4000 chars).
+- When `cachedSnapshot` is absent, a single placeholder TextElement
+  (empty text, `id: 'live-data-static-fallback-placeholder'`) is
+  emitted instead. The host overrides via app-level i18n.
+
+### Schema addition (`cachedSnapshot?`)
+
+T-392 extends `liveDataClipPropsSchema` with an optional
+`cachedSnapshot` field:
+
+```ts
+cachedSnapshot: z.object({
+  capturedAt: z.string().min(1),   // ISO-8601 timestamp; display only
+  status: z.number().int(),        // HTTP status code at capture time
+  body: z.unknown(),               // arbitrary JSON-shaped value
+}).strict().optional()
+```
+
+Backward-compatible: T-391 fixtures without the field continue to
+validate. Strict shape on the snapshot rejects extra keys (typo
+guard).
+
+### Layout
+
+Header → ROW_GAP → body. Both elements are clamped to fit within
+`(width, height)` per AC #11; the body element is dropped on
+overflow rather than emitted with `y > height` (T-390 D-T390-2 /
+fix C-1 discipline reused). Vertical monotonicity (AC #12):
+`body.transform.y > header.transform.y`.
+
+### Determinism
+
+Pure transformation. Uses only string + integer arithmetic,
+`String.prototype.slice` for truncation, and `JSON.stringify(body,
+null, 2)` for the body pretty-print (V8 / SpiderMonkey / JSC
+implementations are spec-deterministic — same input → same output
+byte-for-byte). No `Math.random`, no `Date.now`, no `performance.now`.
+Same posture as `defaultAiChatStaticFallback` (T-390) and
+`defaultVoiceStaticFallback` (T-388).
+
+`safeStringify` wraps `JSON.stringify` in try/catch with a
+`'<unserializable>'` sentinel — defensive against circular structures
+in `body` (the schema accepts `unknown`).
+
+### Telemetry (privacy posture — D-T392-4)
+
+| Event | Attributes |
+|---|---|
+| `live-data-clip.static-fallback.rendered` | `family`, `reason`, `width`, `height`, `hasSnapshot` boolean, `bodyByteLength` integer |
+
+**The response body NEVER appears in telemetry attributes.**
+`bodyByteLength` is computed via `safeStringify(body).length` and
+attached as an integer. The `endpoint` string is NOT attached to the
+static-fallback event (it appears on the live-mount events instead;
+the static path doesn't need it for observability). Pinned via grep
+on captured event payloads in the static-fallback test (AC #13).
+
+The `reason` is forwarded verbatim from the harness — `'authored' |
+'permission-denied' | 'tenant-denied' | 'export-static'` — so
+telemetry consumers can attribute the path.
+
+### Registration (T-388a)
+
+`packages/runtimes/interactive/src/clips/live-data/index.ts` now
+side-effect-registers two things at subpath import time:
+
+```ts
+interactiveClipRegistry.register('live-data', liveDataClipFactory);  // T-391
+staticFallbackGeneratorRegistry.register('live-data', liveDataStaticFallbackGenerator);  // T-392
+```
+
+The harness's family-agnostic dispatch (T-388a) picks up the
+registration without further changes — there is no family-hardcoded
+branch in `mount-harness.ts`.
+
 ## Cross-references
 
 - T-389 / T-390 — sister AiChatClip pair. Same second-γ pattern, same
   host-injected-client posture, same telemetry-privacy invariant.
-- T-388a — static-fallback generator registry T-392 will register
-  against.
+- T-388a — static-fallback generator registry. T-392 registers the
+  cached-snapshot generator against this registry.
 - T-406 — chart family (γ-supporting); follow-up task wires chart-aware
   rendering once on `main`. ADR-005 §D1 footnote `^liveData-v1`
   documents the v1 (text-only) vs end-state (chart) split.

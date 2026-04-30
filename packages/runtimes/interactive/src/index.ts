@@ -137,3 +137,8 @@ export {
   type LiveDataProvider,
   type ScriptedResponse,
 } from './clips/live-data/live-data-provider.js';
+export {
+  defaultLiveDataStaticFallback,
+  type DefaultLiveDataStaticFallbackArgs,
+  liveDataStaticFallbackGenerator,
+} from './clips/live-data/static-fallback.js';

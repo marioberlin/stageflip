@@ -1,13 +1,17 @@
 // packages/runtimes/interactive/src/clips/live-data/index.ts
 // Subpath module for `@stageflip/runtimes-interactive/clips/live-data`.
-// Importing this module has ONE SIDE EFFECT (T-391 D-T391-9):
+// Importing this module has TWO SIDE EFFECTS (T-391 D-T391-9 +
+// T-392 D-T392-5):
 //
 //   1. registers `liveDataClipFactory` with `interactiveClipRegistry`
-//      for `family: 'live-data'`.
-//
-// T-392 will add a second side-effect (registering the
-// `liveDataStaticFallbackGenerator` with `staticFallbackGeneratorRegistry`)
-// when the cached-snapshot fallback ships.
+//      for `family: 'live-data'`;
+//   2. registers the cached-snapshot `StaticFallbackGenerator`
+//      (wrapping `defaultLiveDataStaticFallback`) with
+//      `staticFallbackGeneratorRegistry` for `family: 'live-data'`.
+//      The generator emits the
+//      `live-data-clip.static-fallback.rendered` event with integer-
+//      length attributes only (D-T392-4 privacy posture; hasSnapshot
+//      boolean + bodyByteLength integer, never the body).
 //
 // `componentRefSchema.module` references resolve here at deploy time:
 //
@@ -23,10 +27,15 @@
 // per D-T391-6.
 
 import { interactiveClipRegistry } from '../../registry.js';
+import { staticFallbackGeneratorRegistry } from '../../static-fallback-registry.js';
 import { liveDataClipFactory } from './factory.js';
+import { liveDataStaticFallbackGenerator } from './static-fallback.js';
 
 // Side-effect 1: register the factory (T-391).
 interactiveClipRegistry.register('live-data', liveDataClipFactory);
+
+// Side-effect 2: register the cached-snapshot generator (T-392).
+staticFallbackGeneratorRegistry.register('live-data', liveDataStaticFallbackGenerator);
 
 // Re-exports — typed surface for direct programmatic use.
 export {
@@ -45,6 +54,11 @@ export {
   type LiveDataProvider,
   type ScriptedResponse,
 } from './live-data-provider.js';
+export {
+  defaultLiveDataStaticFallback,
+  type DefaultLiveDataStaticFallbackArgs,
+  liveDataStaticFallbackGenerator,
+} from './static-fallback.js';
 export {
   type DataEvent,
   type DataHandler,

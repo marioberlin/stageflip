@@ -18,6 +18,22 @@
 import { z } from 'zod';
 
 /**
+ * Per-snapshot shape inside {@link liveDataClipPropsSchema.cachedSnapshot}
+ * (T-392 D-T392-1). Strict: extra keys are rejected so authoring-time
+ * typos do not silently become a no-op in the static-fallback render.
+ */
+const cachedSnapshotSchema = z
+  .object({
+    /** ISO-8601 timestamp at which the snapshot was captured (display only). */
+    capturedAt: z.string().min(1, 'cachedSnapshot.capturedAt must be a non-empty string'),
+    /** Status code at capture time (display only). */
+    status: z.number().int('cachedSnapshot.status must be an integer'),
+    /** Parsed body. The schema accepts arbitrary JSON-shaped values. */
+    body: z.unknown(),
+  })
+  .strict();
+
+/**
  * `liveMount.props` shape for `family: 'live-data'`. Strict-shaped: unknown
  * keys are rejected so a typo at author time does not silently become a
  * no-op.
@@ -47,6 +63,10 @@ import { z } from 'zod';
  * - `posterFrame` — Frame at which `staticFallback` (T-392 cached
  *   snapshot) is sampled. Convention reused from shader / three-scene /
  *   voice / ai-chat (D-T391-2 + clip-elements skill).
+ * - `cachedSnapshot` (T-392 D-T392-1) — optional captured response
+ *   payload the `defaultLiveDataStaticFallback` generator renders on
+ *   the static path. Strict shape: `{ capturedAt, status, body }`.
+ *   Absent → the generator emits a single placeholder element.
  */
 export const liveDataClipPropsSchema = z
   .object({
@@ -57,8 +77,12 @@ export const liveDataClipPropsSchema = z
     parseMode: z.enum(['json', 'text']).default('json'),
     refreshTrigger: z.enum(['mount-only', 'manual']).default('mount-only'),
     posterFrame: z.number().int().nonnegative().default(0),
+    cachedSnapshot: cachedSnapshotSchema.optional(),
   })
   .strict();
+
+/** Inferred shape of {@link liveDataClipPropsSchema.cachedSnapshot}. */
+export type LiveDataCachedSnapshot = z.infer<typeof cachedSnapshotSchema>;
 
 /** Inferred shape of {@link liveDataClipPropsSchema}. */
 export type LiveDataClipProps = z.infer<typeof liveDataClipPropsSchema>;

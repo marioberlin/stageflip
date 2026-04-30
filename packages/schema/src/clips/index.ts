@@ -33,6 +33,7 @@ export {
   voiceClipPropsSchema,
   type AiChatCapturedTranscriptTurn,
   type AiChatClipProps,
+  type LiveDataCachedSnapshot,
   type LiveDataClipProps,
   type ShaderClipProps,
   type ThreeSceneClipProps,
