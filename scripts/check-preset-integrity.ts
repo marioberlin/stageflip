@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
 
 import { aiChatClipPropsSchema } from '../packages/schema/src/clips/interactive/ai-chat-props.js';
+import { liveDataClipPropsSchema } from '../packages/schema/src/clips/interactive/live-data-props.js';
 import { shaderClipPropsSchema } from '../packages/schema/src/clips/interactive/shader-props.js';
 import { threeSceneClipPropsSchema } from '../packages/schema/src/clips/interactive/three-scene-props.js';
 import { voiceClipPropsSchema } from '../packages/schema/src/clips/interactive/voice-props.js';
@@ -78,6 +79,7 @@ export const VALID_CLIP_KINDS = new Set<string>([
   'three-scene',
   'voice',
   'ai-chat',
+  'live-data',
   'webgl',
   // Generic element kinds — not a preset target today, but reserved.
   'text',
@@ -99,6 +101,7 @@ export const INTERACTIVE_CLIP_KINDS = new Set<string>([
   'three-scene',
   'voice',
   'ai-chat',
+  'live-data',
   'webgl',
   'interactive-clip',
 ]);
@@ -148,6 +151,7 @@ const INVARIANT_KEYS = [
   'three-scene-props',
   'voice-props',
   'ai-chat-props',
+  'live-data-props',
   'typeDesign-signOff',
   'parityFixture-signOff',
   'compass-anchor',
@@ -434,6 +438,43 @@ export function checkAiChatProps(args: {
 }
 
 /**
+ * Invariant 12 — when `family: 'live-data'` is declared in raw frontmatter, the
+ * accompanying `liveMount.props` must parse against `liveDataClipPropsSchema`
+ * (T-391 D-T391-2, AC #5). Mirrors the dispatch pattern set by invariants
+ * 8 (shader), 9 (three-scene), 10 (voice), 11 (ai-chat).
+ */
+export function checkLiveDataProps(args: {
+  presetId: string;
+  raw: Record<string, unknown>;
+}): CheckResult {
+  const family = args.raw.family;
+  if (family !== 'live-data') return { ok: true };
+  const liveMount = args.raw.liveMount;
+  if (liveMount === undefined || liveMount === null || typeof liveMount !== 'object') {
+    return {
+      ok: false,
+      message: `family 'live-data' requires a 'liveMount' field with live-data props (T-391)`,
+    };
+  }
+  const lm = liveMount as Record<string, unknown>;
+  const props = lm.props;
+  if (props === undefined) {
+    return {
+      ok: false,
+      message: `family 'live-data' requires 'liveMount.props' parseable as liveDataClipPropsSchema (T-391)`,
+    };
+  }
+  const parsed = liveDataClipPropsSchema.safeParse(props);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: `family 'live-data' liveMount.props failed liveDataClipPropsSchema: ${parsed.error.issues.map((i) => `${i.path.join('.') || '<root>'}: ${i.message}`).join('; ')}`,
+    };
+  }
+  return { ok: true };
+}
+
+/**
  * Invariant 5 — clusters A/B/D/F/G must have `signOff.typeDesign` populated
  * (AC #6, #7). The clusters scoping is the most common bug class: invariant 5
  * does NOT apply to weather, data, ar.
@@ -693,6 +734,16 @@ export function runIntegrityChecks(opts: RunOpts): IntegrityReport {
           presetId: id,
           filePath,
           message: aiChatResult.message,
+        });
+      }
+
+      // Invariant 12 — live-data-props parsing (T-391). Same dispatch.
+      const liveDataResult = checkLiveDataProps({ presetId: id, raw });
+      if (!liveDataResult.ok) {
+        buckets['live-data-props'].errors.push({
+          presetId: id,
+          filePath,
+          message: liveDataResult.message,
         });
       }
     }
