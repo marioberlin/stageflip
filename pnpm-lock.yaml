@@ -642,6 +642,9 @@ importers:
       '@stageflip/schema':
         specifier: workspace:*
         version: link:../schema
+      '@stageflip/variant-gen':
+        specifier: workspace:*
+        version: link:../variant-gen
       zod:
         specifier: 3.25.76
         version: 3.25.76

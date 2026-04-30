@@ -11,10 +11,7 @@
       "require": "./dist/index.cjs"
     }
   },
-  "files": [
-    "dist",
-    "src"
-  ],
+  "files": ["dist", "src"],
   "scripts": {
     "build": "tsup src/index.ts --dts --format esm,cjs --clean",
     "dev": "tsup src/index.ts --dts --format esm,cjs --watch",
@@ -25,6 +22,7 @@
   "dependencies": {
     "@stageflip/llm-abstraction": "workspace:*",
     "@stageflip/schema": "workspace:*",
+    "@stageflip/variant-gen": "workspace:*",
     "zod": "3.25.76"
   },
   "devDependencies": {

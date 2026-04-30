@@ -17,9 +17,7 @@ describe('registerArrangeVariantsBundle', () => {
     const router = new ToolRouter<VariantPersistenceContext>();
     registerArrangeVariantsBundle(registry, router);
     const tools = registry.get(ARRANGE_VARIANTS_BUNDLE_NAME)?.tools ?? [];
-    expect(tools.map((t) => t.name)).toEqual(
-      ARRANGE_VARIANTS_TOOL_DEFINITIONS.map((t) => t.name),
-    );
+    expect(tools.map((t) => t.name)).toEqual(ARRANGE_VARIANTS_TOOL_DEFINITIONS.map((t) => t.name));
   });
 
   it('registers every handler on the router', () => {
@@ -41,8 +39,7 @@ describe('registerArrangeVariantsBundle', () => {
   });
 
   it('every handler declares bundle === "arrange-variants"', () => {
-    for (const h of ARRANGE_VARIANTS_HANDLERS)
-      expect(h.bundle).toBe(ARRANGE_VARIANTS_BUNDLE_NAME);
+    for (const h of ARRANGE_VARIANTS_HANDLERS) expect(h.bundle).toBe(ARRANGE_VARIANTS_BUNDLE_NAME);
   });
 
   it('tool count stays within the I-9 budget (≤30)', () => {
