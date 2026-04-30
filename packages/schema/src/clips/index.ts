@@ -28,7 +28,9 @@ export {
   shaderClipPropsSchema,
   threeSceneClipPropsSchema,
   uniformValueSchema,
+  voiceClipPropsSchema,
   type ShaderClipProps,
   type ThreeSceneClipProps,
   type UniformValue,
+  type VoiceClipProps,
 } from './interactive/index.js';

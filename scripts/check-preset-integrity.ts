@@ -24,6 +24,7 @@ import matter from 'gray-matter';
 
 import { shaderClipPropsSchema } from '../packages/schema/src/clips/interactive/shader-props.js';
 import { threeSceneClipPropsSchema } from '../packages/schema/src/clips/interactive/three-scene-props.js';
+import { voiceClipPropsSchema } from '../packages/schema/src/clips/interactive/voice-props.js';
 import { PresetRegistryLoadError } from '../packages/schema/src/presets/errors.js';
 import { parseFontLicenseExpression } from '../packages/schema/src/presets/font-license.js';
 import {
@@ -142,6 +143,7 @@ const INVARIANT_KEYS = [
   'interactive-staticFallback',
   'shader-props',
   'three-scene-props',
+  'voice-props',
   'typeDesign-signOff',
   'parityFixture-signOff',
   'compass-anchor',
@@ -345,6 +347,44 @@ export function checkThreeSceneProps(args: {
     return {
       ok: false,
       message: `family 'three-scene' liveMount.props failed threeSceneClipPropsSchema: ${parsed.error.issues.map((i) => `${i.path.join('.') || '<root>'}: ${i.message}`).join('; ')}`,
+    };
+  }
+  return { ok: true };
+}
+
+/**
+ * Invariant 10 — when `family: 'voice'` is declared in raw frontmatter, the
+ * accompanying `liveMount.props` must parse against `voiceClipPropsSchema`
+ * (T-387 D-T387-2, AC #4). Mirrors the dispatch pattern set by invariants
+ * 8 (shader) and 9 (three-scene). Future Phase γ frontier families extend
+ * this pattern with their own per-family schemas — no new gate per family.
+ */
+export function checkVoiceProps(args: {
+  presetId: string;
+  raw: Record<string, unknown>;
+}): CheckResult {
+  const family = args.raw.family;
+  if (family !== 'voice') return { ok: true };
+  const liveMount = args.raw.liveMount;
+  if (liveMount === undefined || liveMount === null || typeof liveMount !== 'object') {
+    return {
+      ok: false,
+      message: `family 'voice' requires a 'liveMount' field with voice props (T-387)`,
+    };
+  }
+  const lm = liveMount as Record<string, unknown>;
+  const props = lm.props;
+  if (props === undefined) {
+    return {
+      ok: false,
+      message: `family 'voice' requires 'liveMount.props' parseable as voiceClipPropsSchema (T-387)`,
+    };
+  }
+  const parsed = voiceClipPropsSchema.safeParse(props);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: `family 'voice' liveMount.props failed voiceClipPropsSchema: ${parsed.error.issues.map((i) => `${i.path.join('.') || '<root>'}: ${i.message}`).join('; ')}`,
     };
   }
   return { ok: true };
@@ -590,6 +630,16 @@ export function runIntegrityChecks(opts: RunOpts): IntegrityReport {
           presetId: id,
           filePath,
           message: threeSceneResult.message,
+        });
+      }
+
+      // Invariant 10 — voice-props parsing (T-387). Same dispatch.
+      const voiceResult = checkVoiceProps({ presetId: id, raw });
+      if (!voiceResult.ok) {
+        buckets['voice-props'].errors.push({
+          presetId: id,
+          filePath,
+          message: voiceResult.message,
         });
       }
     }
