@@ -41,4 +41,5 @@ export {
   type UniformValue,
   type VoiceClipProps,
   type WebEmbedClipProps,
+  type WebEmbedPosterImage,
 } from './interactive/index.js';

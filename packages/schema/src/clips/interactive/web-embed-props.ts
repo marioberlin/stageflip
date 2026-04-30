@@ -13,9 +13,35 @@
 // T-394 (D-T394-1) extends this schema with the optional
 // `posterImage?: { src, contentType? }` field consumed by
 // `defaultWebEmbedStaticFallback`. T-393 fixtures that omit the field
-// continue to validate; the field is fully optional and lands in T-394.
+// continue to validate; the field is fully optional. v1 accepts ONLY
+// `data:` URLs (the refine in `posterImageSchema` enforces this);
+// `http(s):` URLs are deferred per the out-of-scope table in the spec.
 
 import { z } from 'zod';
+
+/**
+ * Captured poster screenshot for the static fallback (T-394 D-T394-1).
+ * Strict-shaped: extra keys are rejected so authoring-time typos do
+ * not silently become a no-op in the static-fallback render.
+ *
+ * v1 accepts ONLY `data:` URLs (inline-baked at authoring time).
+ * `http(s):` URLs are out of scope — they would intersect the
+ * determinism floor (the frame-runtime would have to fetch the image
+ * at export time, which `check-determinism` forbids inside `clips/**`).
+ * Widening the schema is a separate task gated on a determinism-skill
+ * ruling for the external-image fetch path.
+ */
+const posterImageSchema = z
+  .object({
+    src: z
+      .string()
+      .refine(
+        (s) => s.startsWith('data:'),
+        'posterImage.src must be a data: URL in v1; http(s) URLs are deferred per the out-of-scope table',
+      ),
+    contentType: z.enum(['image/png', 'image/jpeg', 'image/webp']).optional(),
+  })
+  .strict();
 
 /**
  * `liveMount.props` shape for `family: 'web-embed'`. Strict-shaped:
@@ -43,6 +69,11 @@ import { z } from 'zod';
  * - `posterFrame` — frame at which `staticFallback` (T-394
  *   poster screenshot) is sampled. Convention reused from shader /
  *   three-scene / voice / ai-chat / live-data.
+ * - `posterImage` (T-394 D-T394-1) — optional captured poster
+ *   screenshot the `defaultWebEmbedStaticFallback` generator renders
+ *   on the static path. Strict shape: `{ src, contentType? }`. v1
+ *   accepts ONLY `data:` URLs. Absent → the generator emits a single
+ *   placeholder TextElement.
  */
 export const webEmbedClipPropsSchema = z
   .object({
@@ -52,8 +83,12 @@ export const webEmbedClipPropsSchema = z
     width: z.number().int().positive().optional(),
     height: z.number().int().positive().optional(),
     posterFrame: z.number().int().nonnegative().default(0),
+    posterImage: posterImageSchema.optional(),
   })
   .strict();
+
+/** Inferred shape of {@link webEmbedClipPropsSchema.posterImage}. */
+export type WebEmbedPosterImage = z.infer<typeof posterImageSchema>;
 
 /** Inferred shape of {@link webEmbedClipPropsSchema}. */
 export type WebEmbedClipProps = z.infer<typeof webEmbedClipPropsSchema>;
