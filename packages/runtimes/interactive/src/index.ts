@@ -68,3 +68,19 @@ export {
 export { type FrameSource, MissingFrameSourceError } from './frame-source.js';
 export { RAFFrameSource, type RAFFrameSourceOptions } from './frame-source-raf.js';
 export { RecordModeFrameSource } from './frame-source-record.js';
+export type {
+  TranscriptEvent,
+  TranscriptHandler,
+  VoiceClipMountHandle,
+  VoiceMountFailureReason,
+} from './clips/voice/types.js';
+export {
+  InMemoryTranscriptionProvider,
+  type InMemoryTranscriptionProviderOptions,
+  type ScriptedTranscriptStep,
+  type TranscriptionProvider,
+  type TranscriptionStartArgs,
+  WebSpeechApiTranscriptionProvider,
+  type WebSpeechApiTranscriptionProviderOptions,
+  WebSpeechApiUnavailableError,
+} from './clips/voice/transcription-provider.js';
