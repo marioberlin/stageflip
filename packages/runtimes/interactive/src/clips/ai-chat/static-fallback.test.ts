@@ -168,8 +168,9 @@ describe('defaultAiChatStaticFallback (T-390)', () => {
     );
     expect(turnElements.length).toBeGreaterThanOrEqual(3);
     for (let i = 1; i < turnElements.length; i += 1) {
-      const prev = turnElements[i - 1]!;
-      const curr = turnElements[i]!;
+      const prev = turnElements[i - 1];
+      const curr = turnElements[i];
+      if (prev === undefined || curr === undefined) throw new Error('expected turn pair');
       expect(curr.transform.y).toBeGreaterThan(prev.transform.y);
     }
   });
@@ -237,7 +238,9 @@ describe('aiChatStaticFallbackGenerator (T-390 ACs #8, #10, #13)', () => {
       emitTelemetry: (e, attrs) => events.push([e, attrs]),
     });
     expect(events).toHaveLength(1);
-    const [name, attrs] = events[0]!;
+    const first = events[0];
+    if (first === undefined) throw new Error('expected one telemetry event');
+    const [name, attrs] = first;
     expect(name).toBe('ai-chat-clip.static-fallback.rendered');
     expect(attrs).toMatchObject({
       family: 'ai-chat',
@@ -273,7 +276,9 @@ describe('aiChatStaticFallbackGenerator (T-390 ACs #8, #10, #13)', () => {
       reason: 'authored',
       emitTelemetry: (e, attrs) => events.push([e, attrs]),
     });
-    const [, attrs] = events[0]!;
+    const first = events[0];
+    if (first === undefined) throw new Error('expected one telemetry event');
+    const [, attrs] = first;
     expect(attrs.transcriptTurnCount).toBe(0);
   });
 
