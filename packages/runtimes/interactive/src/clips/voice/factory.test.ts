@@ -10,8 +10,10 @@ import { type ClipFactory, type MountContext, PERMISSIVE_TENANT_POLICY } from '.
 import { InteractiveMountHarness } from '../../mount-harness.js';
 import { PermissionShim } from '../../permission-shim.js';
 import { InteractiveClipRegistry } from '../../registry.js';
+import { StaticFallbackGeneratorRegistry } from '../../static-fallback-registry.js';
 import { type VoiceClipFactoryBrowserApi, VoiceClipFactoryBuilder } from './factory.js';
 import type { MediaGraphBrowserApi } from './media-graph.js';
+import { voiceStaticFallbackGenerator } from './static-fallback.js';
 import {
   InMemoryTranscriptionProvider,
   type TranscriptionProvider,
@@ -550,8 +552,15 @@ describe('voiceClipFactory (T-387)', () => {
       browser: { getUserMedia: async () => Promise.reject(new Error('denied')) },
     });
     const events: Array<[string, Record<string, unknown>]> = [];
+    // T-388a: harness dispatches static-path generators via the
+    // staticFallbackGeneratorRegistry. Inject a fresh one with the voice
+    // generator pre-registered so this test does not depend on (and does
+    // not pollute) the module-level singleton.
+    const generatorRegistry = new StaticFallbackGeneratorRegistry();
+    generatorRegistry.register('voice', voiceStaticFallbackGenerator);
     const harness = new InteractiveMountHarness({
       registry,
+      staticFallbackGeneratorRegistry: generatorRegistry,
       permissionShim: denyingShim,
       emitTelemetry: (e, a) => events.push([e, a]),
     });
@@ -595,8 +604,15 @@ describe('voiceClipFactory (T-387)', () => {
       browser: { getUserMedia: async () => Promise.reject(new Error('denied')) },
     });
     const events: Array<[string, Record<string, unknown>]> = [];
+    // T-388a: harness dispatches static-path generators via the
+    // staticFallbackGeneratorRegistry. Inject a fresh one with the voice
+    // generator pre-registered so this test does not depend on (and does
+    // not pollute) the module-level singleton.
+    const generatorRegistry = new StaticFallbackGeneratorRegistry();
+    generatorRegistry.register('voice', voiceStaticFallbackGenerator);
     const harness = new InteractiveMountHarness({
       registry,
+      staticFallbackGeneratorRegistry: generatorRegistry,
       permissionShim: denyingShim,
       emitTelemetry: (e, a) => events.push([e, a]),
     });
@@ -623,8 +639,15 @@ describe('voiceClipFactory (T-387)', () => {
       browser: { getUserMedia: async () => Promise.reject(new Error('denied')) },
     });
     const events: Array<[string, Record<string, unknown>]> = [];
+    // T-388a: harness dispatches static-path generators via the
+    // staticFallbackGeneratorRegistry. Inject a fresh one with the voice
+    // generator pre-registered so this test does not depend on (and does
+    // not pollute) the module-level singleton.
+    const generatorRegistry = new StaticFallbackGeneratorRegistry();
+    generatorRegistry.register('voice', voiceStaticFallbackGenerator);
     const harness = new InteractiveMountHarness({
       registry,
+      staticFallbackGeneratorRegistry: generatorRegistry,
       permissionShim: denyingShim,
       emitTelemetry: (e, a) => events.push([e, a]),
     });
@@ -653,8 +676,15 @@ describe('voiceClipFactory (T-387)', () => {
       browser: { getUserMedia: async () => Promise.reject(new Error('denied')) },
     });
     const events: Array<[string, Record<string, unknown>]> = [];
+    // T-388a: harness dispatches static-path generators via the
+    // staticFallbackGeneratorRegistry. Inject a fresh one with the voice
+    // generator pre-registered so this test does not depend on (and does
+    // not pollute) the module-level singleton.
+    const generatorRegistry = new StaticFallbackGeneratorRegistry();
+    generatorRegistry.register('voice', voiceStaticFallbackGenerator);
     const harness = new InteractiveMountHarness({
       registry,
+      staticFallbackGeneratorRegistry: generatorRegistry,
       permissionShim: denyingShim,
       emitTelemetry: (e, a) => events.push([e, a]),
     });

@@ -1,6 +1,13 @@
 // packages/runtimes/interactive/src/mount-harness.test.ts
 // T-306 AC #15–#18 — InteractiveMountHarness orchestration. AC #15 is the
 // security-critical sequence (tenant → permission → registry → factory).
+//
+// T-388a — harness dispatches static-path generators via the
+// `StaticFallbackGeneratorRegistry`; the family-hardcoded
+// `if (clip.family !== 'voice')` literal is gone (AC #11 grep assertion).
+
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
@@ -9,6 +16,10 @@ import type { ClipFactory } from './contract.js';
 import { InteractiveClipNotRegisteredError, InteractiveMountHarness } from './mount-harness.js';
 import { PermissionShim } from './permission-shim.js';
 import { InteractiveClipRegistry } from './registry.js';
+import {
+  type StaticFallbackGenerator,
+  StaticFallbackGeneratorRegistry,
+} from './static-fallback-registry.js';
 
 function makeFakeStream(): MediaStream {
   return { getTracks: () => [{ stop: vi.fn() }] } as unknown as MediaStream;
@@ -401,6 +412,140 @@ describe('InteractiveMountHarness', () => {
       { permissionPrePrompt: true },
     );
     expect(observedFlag).toBe(true);
+  });
+
+  // ---------- T-388a — static-fallback generator registry ----------
+
+  it('T-388a AC #8 — voice generator registered + empty staticFallback → generator output rendered with routing reason', async () => {
+    const registry = new InteractiveClipRegistry();
+    registry.register('voice', makeStubFactory());
+    const generatorRegistry = new StaticFallbackGeneratorRegistry();
+    const calls: Array<{ reason: string; family: string }> = [];
+    const generator: StaticFallbackGenerator = ({ clip, reason, emitTelemetry }) => {
+      calls.push({ reason, family: clip.family });
+      emitTelemetry('voice-clip.static-fallback.rendered', {
+        family: clip.family,
+        reason,
+      });
+      return [];
+    };
+    generatorRegistry.register('voice', generator);
+    const events: Array<[string, Record<string, unknown>]> = [];
+    const denyingShim = new PermissionShim({
+      browser: {
+        getUserMedia: async () => {
+          throw new DOMException('Denied');
+        },
+      },
+    });
+    const harness = new InteractiveMountHarness({
+      registry,
+      staticFallbackGeneratorRegistry: generatorRegistry,
+      permissionShim: denyingShim,
+      emitTelemetry: (e, a) => events.push([e, a]),
+    });
+    const clip = makeInteractiveClip({ family: 'voice', permissions: ['mic'] });
+    (clip as unknown as { staticFallback: unknown[] }).staticFallback = [];
+    await harness.mount(clip, document.createElement('div'), new AbortController().signal);
+    expect(calls).toEqual([{ reason: 'permission-denied', family: 'voice' }]);
+    const rendered = events.find((e) => e[0] === 'voice-clip.static-fallback.rendered');
+    expect(rendered?.[1]).toMatchObject({ reason: 'permission-denied', family: 'voice' });
+  });
+
+  it('T-388a AC #9 / D-T388a-3 — authored staticFallback wins AND generator is still called with reason: authored', async () => {
+    const registry = new InteractiveClipRegistry();
+    registry.register('voice', makeStubFactory());
+    const generatorRegistry = new StaticFallbackGeneratorRegistry();
+    const calls: string[] = [];
+    const generator: StaticFallbackGenerator = ({ reason, emitTelemetry }) => {
+      calls.push(reason);
+      // The generator's RETURN is ignored on the authored path; emit
+      // telemetry to prove the generator ran.
+      emitTelemetry('voice-clip.static-fallback.rendered', { reason });
+      // Return a sentinel that, if it leaked into rendering, would be
+      // observable; AC #9 pins that it does NOT leak.
+      return [
+        {
+          id: 'sentinel-from-generator',
+          type: 'text',
+          transform: { x: 0, y: 0, width: 1, height: 1, rotation: 0, opacity: 1 },
+          visible: true,
+          locked: false,
+          animations: [],
+          text: 'should-not-render',
+        },
+      ] as never;
+    };
+    generatorRegistry.register('voice', generator);
+    const events: Array<[string, Record<string, unknown>]> = [];
+    const denyingShim = new PermissionShim({
+      browser: {
+        getUserMedia: async () => {
+          throw new DOMException('Denied');
+        },
+      },
+    });
+    const harness = new InteractiveMountHarness({
+      registry,
+      staticFallbackGeneratorRegistry: generatorRegistry,
+      permissionShim: denyingShim,
+      emitTelemetry: (e, a) => events.push([e, a]),
+    });
+    const root = document.createElement('div');
+    // makeInteractiveClip ships an authored staticFallback (single text
+    // 'Static fallback'). The harness MUST use it verbatim while still
+    // invoking the generator with reason 'authored'.
+    await harness.mount(
+      makeInteractiveClip({ family: 'voice', permissions: ['mic'] }),
+      root,
+      new AbortController().signal,
+    );
+    expect(calls).toEqual(['authored']);
+    const rendered = events.find((e) => e[0] === 'voice-clip.static-fallback.rendered');
+    expect(rendered?.[1]).toMatchObject({ reason: 'authored' });
+    // Authored array's text — NOT the sentinel — was rendered.
+    const span = root.querySelector('span[data-stageflip-fallback="text"]');
+    expect(span?.textContent).toBe('Static fallback');
+  });
+
+  it('T-388a AC #10 — family with no generator registered + empty staticFallback returns empty array (no throw)', async () => {
+    const registry = new InteractiveClipRegistry();
+    registry.register('ai-chat', makeStubFactory());
+    const generatorRegistry = new StaticFallbackGeneratorRegistry();
+    // Intentionally do NOT register an ai-chat generator.
+    const denyingShim = new PermissionShim({
+      tenantPolicy: { canMount: () => false },
+      browser: {
+        getUserMedia: async () => {
+          throw new DOMException('should-not-be-called');
+        },
+      },
+    });
+    const harness = new InteractiveMountHarness({
+      registry,
+      staticFallbackGeneratorRegistry: generatorRegistry,
+      permissionShim: denyingShim,
+    });
+    const root = document.createElement('div');
+    const clip = makeInteractiveClip({ family: 'ai-chat' });
+    (clip as unknown as { staticFallback: unknown[] }).staticFallback = [];
+    // Tenant-deny → static path. No generator + empty array → no throw,
+    // empty render.
+    const handle = await harness.mount(clip, root, new AbortController().signal);
+    expect(typeof handle.dispose).toBe('function');
+    handle.dispose();
+  });
+
+  it("T-388a AC #11 — mount-harness.ts source no longer contains the literal `clip.family !== 'voice'`", () => {
+    // Anchor on the package's working directory rather than
+    // `import.meta.url` — happy-dom does not expose a file:// URL.
+    // `pnpm --filter @stageflip/runtimes-interactive test` runs from the
+    // package root.
+    const sourcePath = resolve(process.cwd(), 'src/mount-harness.ts');
+    const source = readFileSync(sourcePath, 'utf8');
+    expect(source.includes("clip.family !== 'voice'")).toBe(false);
+    // Doubly guard against double-quoted variant.
+    expect(source.includes('clip.family !== "voice"')).toBe(false);
   });
 
   it('static-fallback path: pre-aborted signal disposes immediately', async () => {

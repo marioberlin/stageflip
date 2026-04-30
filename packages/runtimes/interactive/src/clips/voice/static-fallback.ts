@@ -24,6 +24,7 @@
 import type { Element, ImageElement, TextElement, Transform } from '@stageflip/schema';
 
 import { createSeededPRNG } from '../../prng.js';
+import type { StaticFallbackGenerator } from '../../static-fallback-registry.js';
 
 /**
  * Args to {@link defaultVoiceStaticFallback}. Width/height are required;
@@ -176,3 +177,38 @@ function clamp(value: number, lo: number, hi: number): number {
   if (value > hi) return hi;
   return value;
 }
+
+/**
+ * `StaticFallbackGenerator` wrapper for `family: 'voice'` per T-388a
+ * D-T388a-2. Reads `posterText` from `clip.liveMount.props`, calls
+ * `defaultVoiceStaticFallback` with the clip's transform-derived
+ * dimensions, and emits the `voice-clip.static-fallback.rendered`
+ * telemetry event with the same shape T-388 pinned (AC #14 privacy:
+ * `posterTextLength` is the integer length, never the body).
+ *
+ * Exported so `clips/voice/index.ts` (the production side-effect
+ * registration site) and tests share the same wrapper — no drift between
+ * the registered behaviour and what tests assert against.
+ */
+export const voiceStaticFallbackGenerator: StaticFallbackGenerator = ({
+  clip,
+  reason,
+  emitTelemetry,
+}) => {
+  const props = (clip.liveMount.props ?? {}) as { posterText?: unknown };
+  const posterText = typeof props.posterText === 'string' ? props.posterText : undefined;
+  const generated = defaultVoiceStaticFallback({
+    width: clip.transform.width,
+    height: clip.transform.height,
+    ...(posterText !== undefined ? { posterText } : {}),
+  });
+  emitTelemetry('voice-clip.static-fallback.rendered', {
+    family: clip.family,
+    reason,
+    width: clip.transform.width,
+    height: clip.transform.height,
+    // Privacy posture (T-388 AC #14): integer length, never the body.
+    posterTextLength: posterText !== undefined ? posterText.length : 0,
+  });
+  return generated;
+};
