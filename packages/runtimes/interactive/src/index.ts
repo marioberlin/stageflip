@@ -117,3 +117,23 @@ export {
   defaultAiChatStaticFallback,
   type DefaultAiChatStaticFallbackArgs,
 } from './clips/ai-chat/static-fallback.js';
+export type {
+  DataEvent,
+  DataHandler,
+  ErrorEvent,
+  ErrorHandler,
+  LiveDataClipMountHandle,
+  LiveDataMountFailureReason,
+} from './clips/live-data/types.js';
+export { RefreshTriggerError } from './clips/live-data/types.js';
+export {
+  HostFetcherProvider,
+  type HostFetcherProviderOptions,
+  InMemoryLiveDataProvider,
+  type InMemoryLiveDataProviderOptions,
+  type Fetcher,
+  type LiveDataFetchArgs,
+  type LiveDataFetchResult,
+  type LiveDataProvider,
+  type ScriptedResponse,
+} from './clips/live-data/live-data-provider.js';

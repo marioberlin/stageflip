@@ -382,8 +382,9 @@ describe('liveDataClipFactory — permission posture (T-391 AC #19)', () => {
 describe('clip directory hard-rule compliance (T-391 AC #26)', () => {
   it('AC #26 — clip directory contains no direct fetch / XMLHttpRequest / sendBeacon references', async () => {
     const { readdirSync, readFileSync, statSync } = await import('node:fs');
-    const { join } = await import('node:path');
-    const dir = new URL('.', import.meta.url).pathname;
+    const { join, dirname } = await import('node:path');
+    const { fileURLToPath } = await import('node:url');
+    const dir = dirname(fileURLToPath(import.meta.url));
     const files = readdirSync(dir).filter((f) => {
       if (f.endsWith('.test.ts') || f.endsWith('.test.tsx')) return false;
       if (f.endsWith('.snap')) return false;
