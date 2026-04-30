@@ -111,7 +111,8 @@ dispatched by `family`:
 | `shader` | `shaderClipPropsSchema` (`fragmentShader`, `width`, `height`, `initialUniforms`, `posterFrame`) | T-383 |
 | `three-scene` | `threeSceneClipPropsSchema` (`setupRef`, `width`, `height`, `setupProps`, `posterFrame`, `prngSeed`) | T-384 |
 | `voice` | `voiceClipPropsSchema` (`mimeType`, `maxDurationMs`, `partialTranscripts`, `language`, `posterFrame`) | T-387 |
-| `ai-chat` / `live-data` / `web-embed` / `ai-generative` | TBD | T-389+ |
+| `ai-chat` | `aiChatClipPropsSchema` (`systemPrompt`, `provider`, `model`, `maxTokens`, `temperature`, `multiTurn`, `posterFrame`) | T-389 |
+| `live-data` / `web-embed` / `ai-generative` | TBD | T-391+ |
 
 The `posterFrame` field convention introduced by `shader` and
 `three-scene` is reused by `voice` for `staticFallback` waveform-poster
@@ -128,9 +129,10 @@ regex still requires a PascalCase symbol after `#`.
 `check-preset-integrity` invariant 8 dispatches on `family`: when
 `family === 'shader'` is declared in raw frontmatter, `liveMount.props`
 must parse against `shaderClipPropsSchema` or the gate fails.
-Invariant 9 covers `three-scene`; invariant 10 covers `voice` (T-387).
-New families register an additional dispatch case in the same
-invariant series — no new gate per family.
+Invariant 9 covers `three-scene`; invariant 10 covers `voice` (T-387);
+invariant 11 covers `ai-chat` (T-389). New families register an
+additional dispatch case in the same invariant series — no new gate
+per family.
 
 ### Static + live duality
 

@@ -370,27 +370,51 @@ three-scene):
   on against a `staticFallback` poster.
 - Permission-bound — voice uses `mic`; the others use `network`.
 
-The `clips/voice/**` directory is **outside the shader sub-rule scope**
-(path-matched at `clips/{shader,three-scene}/**` only). The broad
-`check-determinism` exemption for `packages/runtimes/interactive/**`
-applies; voice naturally uses `Date.now()` / `performance.now()` for
-recording duration + transcript timestamps. See
-`runtimes/voice/SKILL.md` for the full contract.
+The `clips/voice/**` and `clips/ai-chat/**` directories are
+**outside the shader sub-rule scope** (path-matched at
+`clips/{shader,three-scene}/**` only). The broad `check-determinism`
+exemption for `packages/runtimes/interactive/**` applies; voice
+naturally uses `Date.now()` / `performance.now()` for recording
+duration + transcript timestamps; ai-chat does the same for turn
+timestamps + `durationMs` telemetry. See `runtimes/voice/SKILL.md`
+and `runtimes/ai-chat/SKILL.md` for the full contracts.
 
-#### Pattern-evaluation outcome (D-T387-11)
+T-389 ships `AiChatClip` — the **second γ-live family**. Wraps
+`@stageflip/llm-abstraction`'s provider-neutral `LLMProvider` to
+expose a per-slide scoped chat. `liveMount` is shipped at T-389;
+`staticFallback` (captured transcript) lands at T-390. The clip
+declares `permissions: ['network']` (no-op grant in v1 per ADR-003
+§D6) and emits `ai-chat-clip.{mount,turn,dispose}.*` telemetry whose
+text-derived attributes are integers only (`userMessageLength`,
+`tokenCount`) — neither user-message body nor assistant-completion
+body appears in attributes.
 
-T-383 / T-384 / T-387 share four conventions (per-family schema file,
-subpath export, side-effect registration, telemetry-event naming).
-**None of these is "three similar lines of meaningful logic"** — they
-are conventions enforced by the spec template, not duplicated
-implementations.
+#### Pattern-evaluation outcome (D-T387-11 → D-T389-10)
+
+T-383 / T-384 / T-387 / T-389 share four conventions (per-family
+schema file, subpath export, side-effect registration,
+telemetry-event naming). **None of these is "three similar lines of
+meaningful logic"** — they are conventions enforced by the spec
+template, not duplicated implementations.
 
 Per CLAUDE.md "three similar lines beat a premature abstraction":
-**no shared abstraction is extracted at T-387**. Conventions are not
-duplications. Future families (T-389 ai-chat, T-391 live-data,
-T-393 web-embed, T-395 ai-generative) inherit this precedent. If
-genuine logic duplication appears at T-389+, that is when extraction
-earns its place.
+**no shared abstraction is extracted at T-387 or T-389**. Conventions
+are not duplications. Two specific candidates remain on the shelf:
+
+1. **`ProviderSeam<T>`** — `TranscriptionProvider` (T-387) and
+   `LLMChatProvider` (T-389) share a shape: interface + start /
+   stream + tests via an in-memory impl. With only two seams it isn't
+   yet three-similar-lines. **A third provider seam at T-391
+   (LiveDataClip's data-fetch path) would earn the extraction.**
+2. **γ-live factory skeleton** — the state machine + dispose +
+   abort wiring is structurally similar across γ-live factories,
+   but uses different primitives (MediaRecorder vs. LLM stream vs.
+   future fetch). Inlining stays shorter than abstracting until a
+   third application demonstrates duplication of *logic*, not just
+   shape.
+
+Future families (T-391 live-data, T-393 web-embed, T-395
+ai-generative) inherit this precedent.
 
 ### Permission flow UX (T-385)
 
