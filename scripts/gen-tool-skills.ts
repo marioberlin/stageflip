@@ -21,6 +21,7 @@ import path from 'node:path';
 import {
   CANONICAL_BUNDLES,
   createCanonicalRegistry,
+  registerArrangeVariantsBundle,
   registerReadBundle,
   registerCreateMutateBundle,
   registerTimingBundle,
@@ -35,6 +36,7 @@ import {
   registerDomainBundle,
   registerDataSourceBindingsBundle,
   registerSemanticLayoutBundle,
+  type VariantPersistenceContext,
   ToolRouter,
 } from '../packages/engine/src/index.js';
 import type { ExecutorContext } from '../packages/agent/src/index.js';
@@ -59,6 +61,7 @@ const OWNER_TASK_MAP: Record<string, string> = {
   'semantic-layout': 'T-168',
   'video-mode': 'T-185',
   'display-mode': 'T-206',
+  'arrange-variants': 'T-386',
 };
 
 function populateRegistry() {
@@ -82,6 +85,12 @@ function populateRegistry() {
   registerDomainBundle(registry, router);
   registerDataSourceBindingsBundle(registry, router);
   registerSemanticLayoutBundle(registry, router);
+  // arrange-variants needs a wider context (VariantPersistenceContext extends
+  // MutationContext); cast since the generator only inspects registry metadata.
+  registerArrangeVariantsBundle(
+    registry,
+    router as unknown as ToolRouter<ExecutorContext & VariantPersistenceContext>,
+  );
   return registry;
 }
 
