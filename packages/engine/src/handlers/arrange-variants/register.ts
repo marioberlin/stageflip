@@ -3,7 +3,7 @@
 
 import type { BundleRegistry } from '../../bundles/registry.js';
 import type { ToolRouter } from '../../router/router.js';
-import type { ToolHandler } from '../../router/types.js';
+import type { MutationContext, ToolHandler } from '../../router/types.js';
 import {
   ARRANGE_VARIANTS_BUNDLE_NAME,
   ARRANGE_VARIANTS_HANDLERS,
@@ -20,11 +20,13 @@ export {
 
 /**
  * Register the `arrange-variants` bundle onto a registry + router pair.
- * Handlers type against `VariantPersistenceContext`; the executor
- * narrows `ExecutorContext` so the tool can call `persistVariant`. A
- * test seam lives in the bundle's own `handlers.test.ts`.
+ * Handlers type against `MutationContext`; the persistence seam lives at
+ * `VariantPersistenceContext.persistVariant` and is read off `ctx` via a
+ * soft cast (handler-side optional). The executor (T-408) widens
+ * `ExecutorContext` with a real `persistVariant` impl when the
+ * export-matrix routing layer ships.
  */
-export function registerArrangeVariantsBundle<TContext extends VariantPersistenceContext>(
+export function registerArrangeVariantsBundle<TContext extends MutationContext>(
   registry: BundleRegistry,
   router: ToolRouter<TContext>,
 ): void {

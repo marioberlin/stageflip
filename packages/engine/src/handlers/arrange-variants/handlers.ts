@@ -23,17 +23,21 @@ export const ARRANGE_VARIANTS_BUNDLE_NAME = 'arrange-variants';
 
 /**
  * Persistence seam — the executor (T-408) wires this to real storage; tests
- * stub it with an in-memory recorder. Synchronous; persistence latency
- * lives below the seam so the variant-gen tool stays
- * synchronous-by-shape with the engine's other bundles.
+ * stub it with an in-memory recorder. Authoring this as a separate
+ * interface (rather than a required field on `MutationContext`) keeps
+ * existing handler bundles unaffected.
  *
- * Returns the persisted variant Document's id (which the variant-gen layer
- * already derives from `sha256(sourceDocId + coordinate)` via
- * `doc.meta.id`; the seam exists so the executor can override storage
- * without forking the handler).
+ * The handler types against `MutationContext` and reads `persistVariant`
+ * via a soft seam (`ctx as VariantPersistenceContext`). When the seam is
+ * absent the handler falls back to the variant's `doc.meta.id` — which
+ * the variant-gen layer derives deterministically from
+ * `sha256(sourceDocId + coordinate)`. This optional-seam posture lets the
+ * orchestrator register the bundle against a plain
+ * `MutationContext`-typed router today; T-408 will widen to a real
+ * `persistVariant` impl when the export-matrix routing layer ships.
  */
 export interface VariantPersistenceContext extends MutationContext {
-  persistVariant(doc: Document): string | Promise<string>;
+  persistVariant?(doc: Document): string | Promise<string>;
 }
 
 // ---------------------------------------------------------------------------
@@ -101,11 +105,7 @@ const arrangeVariantsOutput = z.discriminatedUnion('ok', [
 ]);
 type ArrangeVariantsOutput = z.infer<typeof arrangeVariantsOutput>;
 
-const arrangeVariants: ToolHandler<
-  ArrangeVariantsInput,
-  ArrangeVariantsOutput,
-  VariantPersistenceContext
-> = {
+const arrangeVariants: ToolHandler<ArrangeVariantsInput, ArrangeVariantsOutput, MutationContext> = {
   name: 'arrange_variants',
   bundle: ARRANGE_VARIANTS_BUNDLE_NAME,
   description:
@@ -136,8 +136,9 @@ const arrangeVariants: ToolHandler<
       documentId: string;
       cacheKey: string;
     }> = [];
+    const persistSeam = (ctx as VariantPersistenceContext).persistVariant;
     for (const v of outputs) {
-      const documentId = await ctx.persistVariant(v.document);
+      const documentId = persistSeam ? await persistSeam(v.document) : v.document.meta.id;
       variants.push({
         coordinate: v.coordinate,
         documentId,
@@ -152,15 +153,8 @@ const arrangeVariants: ToolHandler<
 // Barrel
 // ---------------------------------------------------------------------------
 
-export const ARRANGE_VARIANTS_HANDLERS: readonly ToolHandler<
-  unknown,
-  unknown,
-  VariantPersistenceContext
->[] = [arrangeVariants] as unknown as readonly ToolHandler<
-  unknown,
-  unknown,
-  VariantPersistenceContext
->[];
+export const ARRANGE_VARIANTS_HANDLERS: readonly ToolHandler<unknown, unknown, MutationContext>[] =
+  [arrangeVariants] as unknown as readonly ToolHandler<unknown, unknown, MutationContext>[];
 
 export const ARRANGE_VARIANTS_TOOL_DEFINITIONS: readonly LLMToolDefinition[] = [
   {
