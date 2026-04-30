@@ -182,6 +182,7 @@ import {
   InteractiveMountHarness,
   PermissionShim,
   interactiveClipRegistry,
+  staticFallbackGeneratorRegistry,
   contractTestSuite,         // from /contract-tests subpath
 } from '@stageflip/runtimes-interactive';
 ```
@@ -191,8 +192,50 @@ import {
 - **`PermissionShim`** — mount-time permission gate.
 - **`interactiveClipRegistry`** — module-level singleton; Phase γ clip
   packages call `register('shader', shaderFactory)` at import time.
+- **`staticFallbackGeneratorRegistry`** (T-388a) — parallel module-level
+  singleton holding per-family default-poster generators. See
+  §"Dual-registry pattern" below.
 - **`contractTestSuite(factory)`** — Vitest `describe` block every Phase γ
   family runs against its own factory.
+
+#### Dual-registry pattern (T-388a)
+
+Each γ-live family that ships a default poster registers TWO things at
+module-load time, both as side-effect imports of `clips/<family>/index.ts`:
+
+```ts
+// packages/runtimes/interactive/src/clips/voice/index.ts
+interactiveClipRegistry.register('voice', voiceClipFactory);
+staticFallbackGeneratorRegistry.register('voice', voiceStaticFallbackGenerator);
+```
+
+The harness consults BOTH registries when mounting:
+
+- `interactiveClipRegistry.resolve(clip.family)` returns the live-mount
+  factory or `undefined` (in which case the harness throws
+  `InteractiveClipNotRegisteredError` on the grant path).
+- `staticFallbackGeneratorRegistry.resolve(clip.family)` returns the
+  default-poster generator or `undefined`. On the static path:
+  - generator + `staticFallback.length === 0` → render the generator's
+    Element[] output;
+  - generator + `staticFallback.length  > 0` → render the AUTHORED
+    Element[]; the generator is still invoked with `reason: 'authored'`
+    so per-family telemetry fires (D-T388a-3) but its return is ignored;
+  - no generator + `staticFallback.length  > 0` → render the AUTHORED
+    Element[];
+  - no generator + `staticFallback.length === 0` → render an empty
+    array (the schema's non-empty refine prevents this in practice).
+
+Two specific registries beat one generic `Registry<K, V>` — per
+CLAUDE.md "three similar lines beat a premature abstraction", two
+registries don't earn extraction. Future γ-live families (T-389
+ai-chat, T-391 live-data, T-393 web-embed, T-395 ai-generative)
+register their own generator (or none) without touching the harness.
+
+T-388a replaces the family-hardcoded `if (clip.family !== 'voice')`
+branch the T-388 / PR #280 mount-harness shipped as a known workaround.
+The literal does not appear in `mount-harness.ts` post-T-388a (CI grep
+assertion in `mount-harness.test.ts`).
 
 ### Mount flow + security model
 
@@ -224,7 +267,9 @@ harness.mount(clip, root, signal):
 - On any denial, the harness renders `staticFallback` via
   `renderStaticFallback` (React 19 root API). The export pipeline (per
   ADR-003 §D3) continues to function — the live mount degrades, the
-  document still ships.
+  document still ships. Static-path Element[] selection routes through
+  `staticFallbackGeneratorRegistry` per T-388a — see §"Dual-registry
+  pattern" above.
 - Permission cache is session-scoped (instance lifetime). A page reload
   resets it; the user's browser-level permission state persists
   independently.

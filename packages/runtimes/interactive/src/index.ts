@@ -65,6 +65,13 @@ export {
   InteractiveClipRegistry,
   interactiveClipRegistry,
 } from './registry.js';
+export {
+  StaticFallbackGeneratorAlreadyRegisteredError,
+  type StaticFallbackGenerator,
+  type StaticFallbackGeneratorContext,
+  StaticFallbackGeneratorRegistry,
+  staticFallbackGeneratorRegistry,
+} from './static-fallback-registry.js';
 export { type FrameSource, MissingFrameSourceError } from './frame-source.js';
 export { RAFFrameSource, type RAFFrameSourceOptions } from './frame-source-raf.js';
 export { RecordModeFrameSource } from './frame-source-record.js';
@@ -77,6 +84,7 @@ export type {
 export {
   defaultVoiceStaticFallback,
   type DefaultVoiceStaticFallbackArgs,
+  voiceStaticFallbackGenerator,
 } from './clips/voice/static-fallback.js';
 export {
   InMemoryTranscriptionProvider,

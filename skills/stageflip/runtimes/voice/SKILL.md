@@ -162,13 +162,16 @@ A cloud provider (Whisper / AssemblyAI / Deepgram) is **deferred to
 Phase 14** ADR-006 (T-426a, sister to T-426 TTS adapter). The seam is
 in place; cloud adapters do not land at T-387.
 
-## Static fallback (T-388)
+## Static fallback (T-388 + T-388a)
 
 The mount-harness routes to `staticFallback` whenever permission is
 denied (mic gate refused, tenant policy refused, pre-prompt cancelled).
 T-388 ships a deterministic default poster for `family: 'voice'`: a
 stylised SVG waveform silhouette plus an optional centred overlay
-caption.
+caption. T-388a wires the dispatch through a per-family
+`StaticFallbackGeneratorRegistry` (see
+`concepts/runtimes/SKILL.md` §"Dual-registry pattern") — voice was
+the family-hardcoded `if`-branch; the registry generalises it.
 
 ### Default-poster generator
 
@@ -209,18 +212,33 @@ sub-rule's scope (`clips/{shader,three-scene}/**` only). The broad
 comply anyway because byte-for-byte equality is the architectural
 floor.
 
-### Routing (D-T388-4)
+### Routing (D-T388-4 + T-388a D-T388a-2/3)
 
-The harness's static-path routine substitutes the default automatically
-when `clip.staticFallback` is empty. Authored arrays pass through
-unchanged. No factory change is needed to opt in:
+`clips/voice/index.ts` registers the wrapper
+`voiceStaticFallbackGenerator` against
+`staticFallbackGeneratorRegistry` at module-load time, parallel to the
+existing `interactiveClipRegistry.register('voice', voiceClipFactory)`
+side effect. The harness's static-path routine then dispatches via
+`staticFallbackGeneratorRegistry.resolve(clip.family)`:
 
 ```
-clip.staticFallback.length === 0 + clip.family === 'voice'
-  → harness calls defaultVoiceStaticFallback(...)
-  → renders the result via renderStaticFallback
-  → emits voice-clip.static-fallback.rendered
+clip.family === 'voice':
+  resolve('voice') → voiceStaticFallbackGenerator (registered at import)
+
+  clip.staticFallback.length === 0
+    → call generator(clip, reason, emitTelemetry)
+    → renders the generator's Element[] via renderStaticFallback
+    → emits voice-clip.static-fallback.rendered with `reason`
+
+  clip.staticFallback.length  > 0
+    → call generator(clip, 'authored', emitTelemetry)  # telemetry only
+    → generator's RETURN value is IGNORED on this path
+    → renders the AUTHORED Element[] verbatim
+    → emits voice-clip.static-fallback.rendered with reason='authored'
 ```
+
+Per D-T388a-3, the generator is still invoked on the authored path so
+per-family telemetry fires; only its return value is discarded.
 
 ### Telemetry — `voice-clip.static-fallback.rendered`
 
