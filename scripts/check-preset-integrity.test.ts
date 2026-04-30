@@ -23,6 +23,7 @@ import {
   checkFrontmatter,
   checkInteractiveStaticFallback,
   checkParityFixtureSignOff,
+  checkAiChatProps,
   checkShaderProps,
   checkThreeSceneProps,
   checkTypeDesignSignOff,
@@ -879,6 +880,119 @@ describe('check-preset-integrity invariant 10: voice-props (T-387 AC #4)', () =>
             maxDurationMs: 30_000,
             partialTranscripts: true,
             language: 'en-US',
+            posterFrame: 0,
+          },
+        },
+      },
+    });
+    expect(r.ok).toBe(true);
+  });
+});
+
+// ---------- Invariant 11: ai-chat-props (T-389 AC #5) ----------
+
+describe('check-preset-integrity invariant 11: ai-chat-props (T-389 AC #5)', () => {
+  it('passes when family is omitted', () => {
+    const r = checkAiChatProps({ presetId: 'p', raw: { clipKind: 'lowerThird' } });
+    expect(r.ok).toBe(true);
+  });
+
+  it('passes when family is non-ai-chat (out of scope here)', () => {
+    const r = checkAiChatProps({ presetId: 'p', raw: { family: 'shader' } });
+    expect(r.ok).toBe(true);
+  });
+
+  it('fails when family=ai-chat without liveMount', () => {
+    const r = checkAiChatProps({ presetId: 'p', raw: { family: 'ai-chat' } });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/liveMount/);
+  });
+
+  it('fails when family=ai-chat without liveMount.props', () => {
+    const r = checkAiChatProps({
+      presetId: 'p',
+      raw: { family: 'ai-chat', liveMount: {} },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/liveMount.props/);
+  });
+
+  it('fails when liveMount.props has empty systemPrompt', () => {
+    const r = checkAiChatProps({
+      presetId: 'p',
+      raw: {
+        family: 'ai-chat',
+        liveMount: {
+          props: { systemPrompt: '', provider: 'openai', model: 'gpt-4o-mini' },
+        },
+      },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/aiChatClipPropsSchema/);
+  });
+
+  it('fails when liveMount.props has out-of-range temperature', () => {
+    const r = checkAiChatProps({
+      presetId: 'p',
+      raw: {
+        family: 'ai-chat',
+        liveMount: {
+          props: {
+            systemPrompt: 'sp',
+            provider: 'openai',
+            model: 'gpt-4o-mini',
+            temperature: 2.5,
+          },
+        },
+      },
+    });
+    expect(r.ok).toBe(false);
+  });
+
+  it('fails when liveMount.props has maxTokens=0', () => {
+    const r = checkAiChatProps({
+      presetId: 'p',
+      raw: {
+        family: 'ai-chat',
+        liveMount: {
+          props: {
+            systemPrompt: 'sp',
+            provider: 'openai',
+            model: 'gpt-4o-mini',
+            maxTokens: 0,
+          },
+        },
+      },
+    });
+    expect(r.ok).toBe(false);
+  });
+
+  it('passes for a minimal valid ai-chat-props payload (defaults applied)', () => {
+    const r = checkAiChatProps({
+      presetId: 'p',
+      raw: {
+        family: 'ai-chat',
+        liveMount: {
+          props: { systemPrompt: 'sp', provider: 'openai', model: 'gpt-4o-mini' },
+        },
+      },
+    });
+    expect(r.ok).toBe(true);
+  });
+
+  it('passes for a complete ai-chat-props payload', () => {
+    const r = checkAiChatProps({
+      presetId: 'p',
+      raw: {
+        family: 'ai-chat',
+        liveMount: {
+          props: {
+            systemPrompt: 'You are a helpful assistant.',
+            provider: 'anthropic',
+            model: 'claude-3-5-sonnet-latest',
+            maxTokens: 256,
+            temperature: 0.4,
+            multiTurn: true,
             posterFrame: 0,
           },
         },
