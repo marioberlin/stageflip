@@ -277,6 +277,15 @@ describe('liveDataClipFactory — resource cleanup (T-391 AC #16, #17)', () => {
     const factory = buildFactory({ provider });
     const ctx = makeContext();
     const handle = await factory(ctx);
+    // Drain the queueMicrotask deferral so the mount-time fetch starts
+    // and `provider.fetchOnce` is actually invoked. Without this drain,
+    // dispose() runs before the microtask body fires, the fetch never
+    // launches, and `observedSignal` stays undefined — making this AC
+    // check the dispose-before-fetch-start path, not the
+    // dispose-while-fetch-in-flight path AC #16 actually pins.
+    await new Promise((r) => setTimeout(r, 0));
+    expect(observedSignal).toBeDefined();
+    expect(observedSignal?.aborted).toBe(false);
     handle.dispose();
     expect(observedSignal?.aborted).toBe(true);
   });
@@ -347,12 +356,13 @@ describe('liveDataClipFactory — telemetry privacy (T-391 AC #18)', () => {
     handle.dispose();
   });
 
-  it('AC #18 — fetch.error attributes contain errorKind but NEVER the body', async () => {
+  it('AC #18 — fetch.error attributes contain errorKind but NEVER the error message body', async () => {
     const events: Array<[string, Record<string, unknown>]> = [];
+    const errorMessage = 'UPSTREAM_LEAKING_BODY';
     const provider = new InMemoryLiveDataProvider({
       scripted: {
         'https://example.com/data': {
-          rejectWith: Object.assign(new Error('UPSTREAM_LEAKING_BODY'), { kind: 'network' }),
+          rejectWith: Object.assign(new Error(errorMessage), { kind: 'network' }),
         },
       },
     });
@@ -363,6 +373,10 @@ describe('liveDataClipFactory — telemetry privacy (T-391 AC #18)', () => {
     const err = events.find(([e]) => e === 'live-data-clip.fetch.error');
     expect(err).toBeDefined();
     expect(err?.[1].errorKind).toBeDefined();
+    // Privacy posture: the error's `.message` field MUST NOT appear in any
+    // captured telemetry attribute. Grep the full serialised event array.
+    const serialised = JSON.stringify(events);
+    expect(serialised).not.toContain(errorMessage);
     handle.dispose();
   });
 });
