@@ -389,32 +389,59 @@ text-derived attributes are integers only (`userMessageLength`,
 `tokenCount`) — neither user-message body nor assistant-completion
 body appears in attributes.
 
-#### Pattern-evaluation outcome (D-T387-11 → D-T389-10)
+T-391 ships `LiveDataClip` — the **third γ-live family**. Wraps a
+host-injected `Fetcher` callable to fetch a single response from a
+configured endpoint at mount time. `liveMount` is shipped at T-391;
+`staticFallback` (cached snapshot rendered as text) lands at T-392.
+Chart-aware rendering for both halves is gated on T-406 (Chart family,
+γ-supporting); ADR-005 §D1 footnote `^liveData-v1` documents the v1
+(text-only) vs end-state (chart) split. The clip declares
+`permissions: ['network']` (no-op grant in v1) and emits
+`live-data-clip.{mount,fetch,dispose}.*` telemetry whose body-derived
+attributes are integers only (`bodyByteLength`) — the response body
+NEVER appears in attributes. The clip directory is **structurally**
+prevented from calling `globalThis.fetch` / `XMLHttpRequest` /
+`navigator.sendBeacon` (T-391 AC #26 grep-pinned + the existing
+`check-determinism` gate); the host-injected `Fetcher` is the only
+path. Same posture AiChat uses for `LLMProvider`.
 
-T-383 / T-384 / T-387 / T-389 share four conventions (per-family
-schema file, subpath export, side-effect registration,
+#### Pattern-evaluation outcome (D-T387-11 → D-T389-10 → D-T391-10)
+
+T-383 / T-384 / T-387 / T-389 / T-391 share four conventions
+(per-family schema file, subpath export, side-effect registration,
 telemetry-event naming). **None of these is "three similar lines of
 meaningful logic"** — they are conventions enforced by the spec
 template, not duplicated implementations.
 
 Per CLAUDE.md "three similar lines beat a premature abstraction":
-**no shared abstraction is extracted at T-387 or T-389**. Conventions
-are not duplications. Two specific candidates remain on the shelf:
+**no shared abstraction is extracted at T-387, T-389, or T-391.** The
+pattern-eval question raised at T-389 D-T389-10 is now closed by T-391
+D-T391-10's three-way comparison:
 
-1. **`ProviderSeam<T>`** — `TranscriptionProvider` (T-387) and
-   `LLMChatProvider` (T-389) share a shape: interface + start /
-   stream + tests via an in-memory impl. With only two seams it isn't
-   yet three-similar-lines. **A third provider seam at T-391
-   (LiveDataClip's data-fetch path) would earn the extraction.**
+1. **`ProviderSeam<T>` ruled out at T-391.** Compare the three seams:
+   - `TranscriptionProvider.start({ stream, language, partial, onTranscript })` —
+     streaming with a single discriminated-union callback
+     (`onTranscript: (event: TranscriptEvent) => void` over
+     `{ kind: 'partial' | 'final' | 'error', ... }`); cancellation via
+     the factory's `MediaGraph.dispose`, no `signal` in the public args.
+   - `LLMChatProvider.streamTurn({ ..., onToken, signal })` — streaming
+     with one callback + many input fields + `AbortSignal`.
+   - `LiveDataProvider.fetchOnce({ url, method, headers, body, signal })` —
+     request/response, no callbacks, Promise-only.
+   The shapes share a host-injection convention (test-double pattern;
+   "host supplies the client") but no extractable abstraction. A
+   generic seam would either be too narrow (cancellation only) or
+   fight all three concrete shapes. **Future seams should follow the
+   convention without inheriting a generic shape.**
 2. **γ-live factory skeleton** — the state machine + dispose +
    abort wiring is structurally similar across γ-live factories,
    but uses different primitives (MediaRecorder vs. LLM stream vs.
-   future fetch). Inlining stays shorter than abstracting until a
-   third application demonstrates duplication of *logic*, not just
+   one-shot fetch). Inlining stays shorter than abstracting; the
+   third application has not produced duplication of *logic*, only
    shape.
 
-Future families (T-391 live-data, T-393 web-embed, T-395
-ai-generative) inherit this precedent.
+Future families (T-393 web-embed, T-395 ai-generative) inherit this
+precedent.
 
 ### Permission flow UX (T-385)
 
