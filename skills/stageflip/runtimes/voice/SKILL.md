@@ -4,7 +4,7 @@ id: skills/stageflip/runtimes/voice
 tier: runtime
 status: substantive
 last_updated: 2026-04-29
-owner_task: T-387
+owner_task: T-388
 related:
   - skills/stageflip/runtimes/contract/SKILL.md
   - skills/stageflip/concepts/runtimes/SKILL.md
@@ -25,7 +25,7 @@ via `MediaRecorder`, streams an audio level signal via Web Audio
 (or any injected `TranscriptionProvider`).
 
 `liveMount` lands here (T-387). `staticFallback` (waveform poster) is
-T-388, a sister S-sized task.
+T-388 — both halves of `family: 'voice'` are now structurally complete.
 
 ## When to reach for it
 
@@ -97,6 +97,7 @@ voiceClipPropsSchema = z.object({
   partialTranscripts: z.boolean().default(true),
   language: z.string().min(1).default('en-US'),
   posterFrame: z.number().int().nonnegative().default(0),
+  posterText: z.string().min(1).optional(),
 }).strict();
 ```
 
@@ -104,6 +105,9 @@ voiceClipPropsSchema = z.object({
 unsupported MIME → `mount.failure` reason
 `'media-recorder-unsupported-mime'`. `posterFrame` reuses the
 shader / three-scene convention for `staticFallback` poster sampling.
+`posterText` (T-388 D-T388-1) is the optional overlay-copy slot for the
+default waveform poster — host-supplied; the package ships no English
+defaults.
 
 ### Permissions (`['mic']`)
 
@@ -157,6 +161,87 @@ T-387 ships two implementations:
 A cloud provider (Whisper / AssemblyAI / Deepgram) is **deferred to
 Phase 14** ADR-006 (T-426a, sister to T-426 TTS adapter). The seam is
 in place; cloud adapters do not land at T-387.
+
+## Static fallback (T-388)
+
+The mount-harness routes to `staticFallback` whenever permission is
+denied (mic gate refused, tenant policy refused, pre-prompt cancelled).
+T-388 ships a deterministic default poster for `family: 'voice'`: a
+stylised SVG waveform silhouette plus an optional centred overlay
+caption.
+
+### Default-poster generator
+
+```ts
+import { defaultVoiceStaticFallback } from
+  '@stageflip/runtimes-interactive/clips/voice';
+
+defaultVoiceStaticFallback({
+  width: 640,
+  height: 360,
+  posterText: 'Tap to speak',  // optional
+  silhouetteSeed: 0,            // optional, default 0
+}): Element[];
+```
+
+Returns an `Element[]`:
+
+1. An `ImageElement` whose `src` is a `data:image/svg+xml,…` URL —
+   32 evenly-spaced bars of pseudo-random heights centred vertically
+   on a light-grey background. The transform fills the supplied
+   `(width, height)`.
+2. A centred `TextElement` rendering `posterText` when present;
+   omitted when `posterText` is `undefined`.
+
+### Determinism contract (AC #4 / #15)
+
+The generator is **byte-for-byte deterministic** across calls. Same
+`(width, height, posterText, silhouetteSeed)` → same `Element[]`. No
+`Math.random`, no `Date.now`. Bar-height variation comes from the
+seeded PRNG primitive at `packages/runtimes/interactive/src/prng.ts`
+(extracted from `clips/three-scene/prng.ts` per D-T388-3 — the third
+application earned the move; legacy import path preserved via
+re-export shim, AC #11).
+
+The generator's path lives at `clips/voice/**`, OUT of the shader
+sub-rule's scope (`clips/{shader,three-scene}/**` only). The broad
+§3 interactive-tier exemption applies, but the generator chooses to
+comply anyway because byte-for-byte equality is the architectural
+floor.
+
+### Routing (D-T388-4)
+
+The harness's static-path routine substitutes the default automatically
+when `clip.staticFallback` is empty. Authored arrays pass through
+unchanged. No factory change is needed to opt in:
+
+```
+clip.staticFallback.length === 0 + clip.family === 'voice'
+  → harness calls defaultVoiceStaticFallback(...)
+  → renders the result via renderStaticFallback
+  → emits voice-clip.static-fallback.rendered
+```
+
+### Telemetry — `voice-clip.static-fallback.rendered`
+
+Emitted by the harness on every static-fallback render for
+`family: 'voice'`:
+
+| Attribute | Value |
+|---|---|
+| `family` | `'voice'` |
+| `reason` | `'permission-denied' \| 'tenant-denied' \| 'pre-prompt-cancelled' \| 'authored'` |
+| `width` | `clip.transform.width` |
+| `height` | `clip.transform.height` |
+| `posterTextLength` | integer length of `posterText` (or 0). **Privacy: never the body.** |
+
+### Cluster-author override
+
+A cluster author can ship their own `staticFallback` Element[] via the
+clip schema's authored field. The default generator runs ONLY when the
+authored array is empty; authored content ALWAYS wins (AC #13). Future
+work covers tooling for authors to generate a poster from a recorded
+sample (out of scope at T-388 — schema + reference fixture only).
 
 ## Resource cleanup contract (D-T387-8)
 
@@ -231,7 +316,9 @@ shipping cost for the recogniser itself.
 | `packages/runtimes/interactive/src/clips/voice/transcription-provider.ts` | `TranscriptionProvider` interface + `WebSpeechApiTranscriptionProvider` + `InMemoryTranscriptionProvider` |
 | `packages/runtimes/interactive/src/clips/voice/media-graph.ts` | `MediaGraph` — `MediaRecorder` + `AnalyserNode` setup + teardown |
 | `packages/runtimes/interactive/src/clips/voice/index.ts` | Subpath module + side-effect registry registration |
-| `packages/schema/src/clips/interactive/voice-props.ts` | `voiceClipPropsSchema` |
+| `packages/runtimes/interactive/src/clips/voice/static-fallback.ts` | `defaultVoiceStaticFallback` — deterministic SVG silhouette + posterText overlay (T-388) |
+| `packages/runtimes/interactive/src/prng.ts` | Seeded PRNG primitive (extracted from `clips/three-scene/prng.ts` per T-388 D-T388-3) |
+| `packages/schema/src/clips/interactive/voice-props.ts` | `voiceClipPropsSchema` (incl. `posterText?` per T-388 D-T388-1) |
 
 ## Pattern-evaluation outcome (T-387 D-T387-11)
 
@@ -261,5 +348,5 @@ is when extraction earns its place.
 - Permission flow UX (T-385): `concepts/auth/SKILL.md`
 - Frontier-tier ShaderClip (T-383): `runtimes/shader/SKILL.md`
 - Frontier-tier ThreeSceneClip (T-384): `runtimes/three/SKILL.md`
-- Owning task: T-387 (this doc + factory). Sister: T-388 (waveform
-  poster `staticFallback`).
+- Owning tasks: T-387 (`liveMount`) + T-388 (`staticFallback` waveform
+  poster). Both halves of `family: 'voice'` are now live.

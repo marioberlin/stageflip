@@ -536,6 +536,137 @@ describe('voiceClipFactory (T-387)', () => {
     expect((final?.[1] as Record<string, unknown>).text).toBeUndefined();
   });
 
+  // ---------- T-388 — staticFallback default-poster routing ----------
+
+  it('T-388 AC #12 — denied permission with empty staticFallback → harness substitutes default waveform poster', async () => {
+    const browser = makeFakeBrowser();
+    const factory = VoiceClipFactoryBuilder.build({
+      browser: browser.api,
+      transcriptionProvider: new InMemoryTranscriptionProvider({ scripted: [] }),
+    });
+    const registry = new InteractiveClipRegistry();
+    registry.register('voice', factory);
+    const denyingShim = new PermissionShim({
+      browser: { getUserMedia: async () => Promise.reject(new Error('denied')) },
+    });
+    const events: Array<[string, Record<string, unknown>]> = [];
+    const harness = new InteractiveMountHarness({
+      registry,
+      permissionShim: denyingShim,
+      emitTelemetry: (e, a) => events.push([e, a]),
+    });
+    const ctx = makeContext();
+    // Empty staticFallback — harness MUST route to defaultVoiceStaticFallback.
+    (ctx.clip as unknown as { staticFallback: unknown[] }).staticFallback = [];
+    (ctx.clip.liveMount.props as Record<string, unknown>).posterText = 'Tap to speak';
+    await harness.mount(ctx.clip, ctx.root, new AbortController().signal);
+    // Default poster: an <img data-stageflip-fallback="image"> rendered into root.
+    const img = ctx.root.querySelector('img[data-stageflip-fallback="image"]');
+    expect(img).not.toBeNull();
+    expect(img?.getAttribute('src')?.startsWith('data:image/svg+xml,')).toBe(true);
+    // posterText present → text element rendered too.
+    const span = ctx.root.querySelector('span[data-stageflip-fallback="text"]');
+    expect(span?.textContent).toBe('Tap to speak');
+
+    // T-388 AC #14 — telemetry emitted with documented attribute shape.
+    const rendered = events.find((e) => e[0] === 'voice-clip.static-fallback.rendered');
+    expect(rendered).toBeDefined();
+    expect(rendered?.[1]).toMatchObject({
+      reason: 'permission-denied',
+      width: ctx.clip.transform.width,
+      height: ctx.clip.transform.height,
+      posterTextLength: 'Tap to speak'.length,
+    });
+    // Privacy: posterText body MUST NOT appear in telemetry attributes.
+    for (const v of Object.values(rendered?.[1] ?? {})) {
+      expect(v === 'Tap to speak').toBe(false);
+    }
+  });
+
+  it('T-388 AC #13 — denied permission with authored staticFallback → harness uses authored value', async () => {
+    const browser = makeFakeBrowser();
+    const factory = VoiceClipFactoryBuilder.build({
+      browser: browser.api,
+      transcriptionProvider: new InMemoryTranscriptionProvider({ scripted: [] }),
+    });
+    const registry = new InteractiveClipRegistry();
+    registry.register('voice', factory);
+    const denyingShim = new PermissionShim({
+      browser: { getUserMedia: async () => Promise.reject(new Error('denied')) },
+    });
+    const events: Array<[string, Record<string, unknown>]> = [];
+    const harness = new InteractiveMountHarness({
+      registry,
+      permissionShim: denyingShim,
+      emitTelemetry: (e, a) => events.push([e, a]),
+    });
+    const ctx = makeContext();
+    // Authored staticFallback (the default from makeContext is a single
+    // `image` with src `'poster.png'`). The harness MUST use it verbatim.
+    await harness.mount(ctx.clip, ctx.root, new AbortController().signal);
+    const img = ctx.root.querySelector('img[data-stageflip-fallback="image"]');
+    expect(img?.getAttribute('src')).toBe('poster.png');
+    // Authored path → reason 'authored'.
+    const rendered = events.find((e) => e[0] === 'voice-clip.static-fallback.rendered');
+    expect(rendered?.[1]).toMatchObject({ reason: 'authored' });
+  });
+
+  it('T-388 AC #14 — telemetry posterTextLength is integer length, never the body', async () => {
+    const browser = makeFakeBrowser();
+    const factory = VoiceClipFactoryBuilder.build({
+      browser: browser.api,
+      transcriptionProvider: new InMemoryTranscriptionProvider({ scripted: [] }),
+    });
+    const registry = new InteractiveClipRegistry();
+    registry.register('voice', factory);
+    const denyingShim = new PermissionShim({
+      browser: { getUserMedia: async () => Promise.reject(new Error('denied')) },
+    });
+    const events: Array<[string, Record<string, unknown>]> = [];
+    const harness = new InteractiveMountHarness({
+      registry,
+      permissionShim: denyingShim,
+      emitTelemetry: (e, a) => events.push([e, a]),
+    });
+    const ctx = makeContext();
+    (ctx.clip as unknown as { staticFallback: unknown[] }).staticFallback = [];
+    const secret = 'this is some private localised copy';
+    (ctx.clip.liveMount.props as Record<string, unknown>).posterText = secret;
+    await harness.mount(ctx.clip, ctx.root, new AbortController().signal);
+    const rendered = events.find((e) => e[0] === 'voice-clip.static-fallback.rendered');
+    expect(rendered?.[1].posterTextLength).toBe(secret.length);
+    // No attribute carries the body string itself.
+    for (const v of Object.values(rendered?.[1] ?? {})) {
+      expect(v).not.toBe(secret);
+    }
+  });
+
+  it('T-388 — empty staticFallback + no posterText → default poster image only (no text element)', async () => {
+    const browser = makeFakeBrowser();
+    const factory = VoiceClipFactoryBuilder.build({
+      browser: browser.api,
+      transcriptionProvider: new InMemoryTranscriptionProvider({ scripted: [] }),
+    });
+    const registry = new InteractiveClipRegistry();
+    registry.register('voice', factory);
+    const denyingShim = new PermissionShim({
+      browser: { getUserMedia: async () => Promise.reject(new Error('denied')) },
+    });
+    const events: Array<[string, Record<string, unknown>]> = [];
+    const harness = new InteractiveMountHarness({
+      registry,
+      permissionShim: denyingShim,
+      emitTelemetry: (e, a) => events.push([e, a]),
+    });
+    const ctx = makeContext();
+    (ctx.clip as unknown as { staticFallback: unknown[] }).staticFallback = [];
+    await harness.mount(ctx.clip, ctx.root, new AbortController().signal);
+    expect(ctx.root.querySelector('img[data-stageflip-fallback="image"]')).not.toBeNull();
+    expect(ctx.root.querySelector('span[data-stageflip-fallback="text"]')).toBeNull();
+    const rendered = events.find((e) => e[0] === 'voice-clip.static-fallback.rendered');
+    expect(rendered?.[1]).toMatchObject({ posterTextLength: 0 });
+  });
+
   it('AC #25 — denied permission gate routes to staticFallback', async () => {
     const browser = makeFakeBrowser();
     const transcriptionStops: number[] = [];

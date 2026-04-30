@@ -31,6 +31,10 @@ import { z } from 'zod';
  *   at the host application's discretion.
  * - `posterFrame` — frame at which `staticFallback` (T-388 waveform poster)
  *   is sampled. Default 0; convention reused from shader / three-scene.
+ * - `posterText` (T-388 D-T388-1) — optional overlay copy rendered above the
+ *   waveform poster on the static path. App-supplied; the package ships no
+ *   English defaults (CLAUDE.md §10). Non-empty when present. Consumed by
+ *   `defaultVoiceStaticFallback` to build the centred TextElement.
  */
 export const voiceClipPropsSchema = z
   .object({
@@ -43,6 +47,7 @@ export const voiceClipPropsSchema = z
     partialTranscripts: z.boolean().default(true),
     language: z.string().min(1, 'language must be a non-empty BCP-47 tag').default('en-US'),
     posterFrame: z.number().int().nonnegative().default(0),
+    posterText: z.string().min(1, 'posterText must be a non-empty string').optional(),
   })
   .strict();
 

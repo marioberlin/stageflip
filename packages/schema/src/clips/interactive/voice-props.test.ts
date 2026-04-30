@@ -1,5 +1,6 @@
 // packages/schema/src/clips/interactive/voice-props.test.ts
 // T-387 ACs #1–#3 — voiceClipPropsSchema parsing.
+// T-388 ACs #1–#3 — `posterText?` field shape (optional, non-empty).
 
 import { describe, expect, it } from 'vitest';
 
@@ -92,5 +93,38 @@ describe('voiceClipPropsSchema (T-387 AC #1)', () => {
         partialTranscripts: 'yes',
       }),
     ).toThrow();
+  });
+
+  // ----- T-388 — posterText slot -----
+
+  it('T-388 AC #1 — accepts a non-empty posterText string', () => {
+    const parsed = voiceClipPropsSchema.parse({
+      posterText: 'Tap to speak',
+    });
+    expect(parsed.posterText).toBe('Tap to speak');
+  });
+
+  it('T-388 AC #2 — empty posterText throws', () => {
+    expect(() =>
+      voiceClipPropsSchema.parse({
+        posterText: '',
+      }),
+    ).toThrow(/posterText/);
+  });
+
+  it('T-388 AC #3 — payload without posterText still validates (T-387 backward-compat)', () => {
+    const parsed = voiceClipPropsSchema.parse({
+      mimeType: 'audio/webm',
+      maxDurationMs: 30_000,
+      partialTranscripts: true,
+      language: 'en-US',
+      posterFrame: 0,
+    });
+    expect(parsed.posterText).toBeUndefined();
+  });
+
+  it('T-388 — posterText is optional even with all other defaults populated', () => {
+    const parsed = voiceClipPropsSchema.parse({});
+    expect(parsed.posterText).toBeUndefined();
   });
 });

@@ -37,6 +37,10 @@ export {
   type MediaGraphOptions,
 } from './media-graph.js';
 export {
+  defaultVoiceStaticFallback,
+  type DefaultVoiceStaticFallbackArgs,
+} from './static-fallback.js';
+export {
   InMemoryTranscriptionProvider,
   type InMemoryTranscriptionProviderOptions,
   type ScriptedTranscriptStep,
