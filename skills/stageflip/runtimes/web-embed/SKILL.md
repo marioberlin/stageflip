@@ -108,6 +108,10 @@ webEmbedClipPropsSchema = z.object({
   width: z.number().int().positive().optional(),    // defaults to clip transform
   height: z.number().int().positive().optional(),
   posterFrame: z.number().int().nonnegative().default(0),
+  posterImage: z.object({                           // T-394: data: URL only in v1
+    src: z.string().refine((s) => s.startsWith('data:'), ...),
+    contentType: z.enum(['image/png', 'image/jpeg', 'image/webp']).optional(),
+  }).strict().optional(),
 }).strict();
 ```
 
@@ -118,7 +122,11 @@ tokens are permitted at tenant level). Default `[]` = fully sandboxed
 (no scripts, no same-origin, no forms, no popups). `allowedOrigins`
 is the postMessage filter — empty / undefined → `onMessage` never
 fires. `width` / `height` are optional positive integers; default to
-the clip transform's dimensions. `posterFrame` follows the
+the clip transform's dimensions. `posterImage` (T-394) is the
+optional captured screenshot the static-fallback generator renders;
+v1 accepts ONLY `data:` URLs (the refine fires for `http(s):` and
+relative paths) — see §"Static fallback (T-394)" below for the
+full rationale. `posterFrame` follows the
 shader / three-scene / voice / ai-chat / live-data convention; T-394
 consumes it.
 
