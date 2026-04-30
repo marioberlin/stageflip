@@ -26,12 +26,14 @@ export {
 } from './export-targets.js';
 export {
   aiChatClipPropsSchema,
+  liveDataClipPropsSchema,
   shaderClipPropsSchema,
   threeSceneClipPropsSchema,
   uniformValueSchema,
   voiceClipPropsSchema,
   type AiChatCapturedTranscriptTurn,
   type AiChatClipProps,
+  type LiveDataClipProps,
   type ShaderClipProps,
   type ThreeSceneClipProps,
   type UniformValue,

@@ -24,3 +24,7 @@ export {
   type AiChatCapturedTranscriptTurn,
   type AiChatClipProps,
 } from './ai-chat-props.js';
+export {
+  liveDataClipPropsSchema,
+  type LiveDataClipProps,
+} from './live-data-props.js';
