@@ -4,7 +4,7 @@ id: skills/stageflip/runtimes/ai-chat
 tier: runtime
 status: substantive
 last_updated: 2026-04-29
-owner_task: T-389
+owner_task: T-390
 related:
   - skills/stageflip/runtimes/contract/SKILL.md
   - skills/stageflip/runtimes/voice/SKILL.md
@@ -24,8 +24,8 @@ a scoped chat with a per-slide system prompt baked into the schema;
 streams tokens to subscribers; emits typed lifecycle telemetry.
 
 `liveMount` lands here (T-389). `staticFallback` (captured transcript)
-is T-390 — until that ships, the harness routes the static path to the
-authored `staticFallback` array verbatim.
+ships in T-390 — both halves of `family: 'ai-chat'` are now structurally
+complete.
 
 ## When to reach for it
 
@@ -258,8 +258,9 @@ The package adds:
 | `packages/runtimes/interactive/src/clips/ai-chat/types.ts` | `TurnEvent`, `AiChatClipMountHandle`, `MultiTurnDisabledError`, failure-reason enum |
 | `packages/runtimes/interactive/src/clips/ai-chat/factory.ts` | `aiChatClipFactory` + `AiChatClipFactoryBuilder` + React mount tree |
 | `packages/runtimes/interactive/src/clips/ai-chat/llm-chat-provider.ts` | `LLMChatProvider` interface + `RealLLMChatProvider` (wraps `@stageflip/llm-abstraction`) + `InMemoryLLMChatProvider` (tests) |
-| `packages/runtimes/interactive/src/clips/ai-chat/index.ts` | Subpath module + side-effect registry registration |
-| `packages/schema/src/clips/interactive/ai-chat-props.ts` | `aiChatClipPropsSchema` |
+| `packages/runtimes/interactive/src/clips/ai-chat/index.ts` | Subpath module + side-effect registry registration (factory + static-fallback generator) |
+| `packages/runtimes/interactive/src/clips/ai-chat/static-fallback.ts` | `defaultAiChatStaticFallback` + `aiChatStaticFallbackGenerator` (T-390) |
+| `packages/schema/src/clips/interactive/ai-chat-props.ts` | `aiChatClipPropsSchema` (incl. `capturedTranscript?` per T-390) |
 
 ## Pattern-evaluation outcome (T-389 D-T389-10)
 
@@ -289,16 +290,88 @@ at T-391 — that is when the three-similar-lines rule fires.
 Future Implementers (T-391 live-data, T-393 web-embed, T-395
 ai-generative) inherit this precedent.
 
-## Static fallback (T-390 — pending)
+## Static fallback (T-390)
 
-T-390 (S-sized, separate plan row) ships
-`defaultAiChatStaticFallback` + `aiChatStaticFallbackGenerator` and
-extends `aiChatClipPropsSchema` with an optional
-`capturedTranscript?: Array<{ role, text }>` field. Until T-390
-merges, `family: 'ai-chat'` clips MUST author a non-empty
-`staticFallback` array (the schema's non-empty refine enforces it
-at parse time); the harness renders that authored array verbatim on
-the static path.
+T-390 ships `defaultAiChatStaticFallback` + the
+`aiChatStaticFallbackGenerator` registered against the T-388a
+`staticFallbackGeneratorRegistry`. When the harness routes to the
+static path AND the clip's authored `staticFallback` is empty, the
+generator's output is rendered. When the authored array is non-empty,
+the authored array wins but the generator is STILL invoked with
+`reason: 'authored'` so the per-family telemetry continues to fire
+(D-T388a-3 contract).
+
+### `capturedTranscript?` schema field (D-T390-1)
+
+```ts
+aiChatClipPropsSchema = z.object({
+  // ... T-389 fields ...
+  capturedTranscript: z
+    .array(z.object({
+      role: z.enum(['user', 'assistant']),
+      text: z.string().min(1),
+    }).strict())
+    .optional(),
+}).strict();
+```
+
+Optional. Existing T-389 fixtures without the field continue to
+validate. Strict per-turn shape: extra keys reject at parse time.
+
+### Generator output shape (D-T390-2)
+
+`defaultAiChatStaticFallback` returns:
+
+1. A `TextElement` rendering the truncated `systemPrompt`
+   (`id: 'ai-chat-static-fallback-system-prompt'`). The systemPrompt
+   is sliced at 200 characters with an ellipsis appended.
+2. One `TextElement` per turn in `capturedTranscript`
+   (`id: 'ai-chat-static-fallback-turn-<i>-<role>'`); `align` is
+   `'right'` for `user` turns and `'left'` for `assistant` turns.
+   `transform.y` is strictly monotonic across turns (AC #12).
+3. When `capturedTranscript` is absent or empty: a single placeholder
+   TextElement (`id: 'ai-chat-static-fallback-placeholder'`, empty
+   `text`) is appended in place of the turn list. The host overrides
+   the visible copy via app-level i18n (CLAUDE.md §10).
+
+Every transform fits within `(width, height)` — pinned by AC #11.
+
+### Determinism (D-T390-3)
+
+Pure transformation over `(width, height, systemPrompt,
+capturedTranscript)`. No `Math.random`, no `Date.now`, no
+`performance.now`. Same posture as `defaultVoiceStaticFallback`
+(T-388 D-T388-3). Byte-for-byte equality across two calls is the
+architectural floor (AC #5).
+
+### Telemetry (D-T390-4)
+
+`ai-chat-clip.static-fallback.rendered` attributes:
+
+| Attribute | Type |
+|---|---|
+| `family` | `'ai-chat'` |
+| `reason` | `'permission-denied' \| 'tenant-denied' \| 'pre-prompt-cancelled' \| 'authored'` |
+| `width` | integer |
+| `height` | integer |
+| `transcriptTurnCount` | integer (turn count, NOT bodies) |
+| `systemPromptLength` | integer (length, NOT body) |
+
+**Privacy posture**: integer lengths only. The systemPrompt body and
+per-turn bodies are NEVER attached to telemetry. Same posture as
+T-389 D-T389-8 (`userMessageLength`, `tokenCount`). Pinned via grep
+on captured event payloads in the static-fallback test.
+
+### Registration (D-T390-5)
+
+```ts
+// packages/runtimes/interactive/src/clips/ai-chat/index.ts
+interactiveClipRegistry.register('ai-chat', aiChatClipFactory);
+staticFallbackGeneratorRegistry.register('ai-chat', aiChatStaticFallbackGenerator);
+```
+
+The harness's family-agnostic dispatch (T-388a) picks up the
+registration without further changes.
 
 ## Related
 
@@ -306,4 +379,4 @@ the static path.
 - Permission flow UX (T-385): `concepts/auth/SKILL.md`
 - Sister γ-live family (voice, T-387 + T-388): `runtimes/voice/SKILL.md`
 - LLM primitive being wrapped: `@stageflip/llm-abstraction`
-- Owning task: T-389 (`liveMount`); pairs with T-390 (`staticFallback`).
+- Owning tasks: T-389 (`liveMount`) + T-390 (`staticFallback`). Family is structurally complete.

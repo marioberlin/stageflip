@@ -30,6 +30,7 @@ export {
   threeSceneClipPropsSchema,
   uniformValueSchema,
   voiceClipPropsSchema,
+  type AiChatCapturedTranscriptTurn,
   type AiChatClipProps,
   type ShaderClipProps,
   type ThreeSceneClipProps,

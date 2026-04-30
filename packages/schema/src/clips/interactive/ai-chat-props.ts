@@ -10,11 +10,24 @@
 // `feedback_t304_lessons.md` any new file under this package must keep
 // the browser-bundle hazard surface zero.
 //
-// T-390 (sister task) will add an optional `capturedTranscript?` field to
-// this schema for the captured-transcript static fallback. T-389 keeps the
-// shape cleanly separable so T-390's addition is a single optional field.
+// T-390 (D-T390-1) extends this schema with the optional
+// `capturedTranscript?: Array<{ role: 'user' | 'assistant'; text: string }>`
+// field consumed by `defaultAiChatStaticFallback`. T-389 fixtures that omit
+// the field continue to validate (AC #4); the field is fully optional.
 
 import { z } from 'zod';
+
+/**
+ * Per-turn shape inside {@link aiChatClipPropsSchema.capturedTranscript}.
+ * Strict: extra keys are rejected so authoring-time typos do not silently
+ * become a no-op in the static-fallback render.
+ */
+const capturedTranscriptTurnSchema = z
+  .object({
+    role: z.enum(['user', 'assistant']),
+    text: z.string().min(1, 'capturedTranscript[].text must be a non-empty string'),
+  })
+  .strict();
 
 /**
  * `liveMount.props` shape for `family: 'ai-chat'`. Strict-shaped: unknown
@@ -38,6 +51,11 @@ import { z } from 'zod';
  * - `posterFrame` — frame at which `staticFallback` (T-390 captured
  *   transcript) is sampled. Convention reused from shader / three-scene /
  *   voice (D-T389-2 + clip-elements skill).
+ * - `capturedTranscript` (T-390 D-T390-1) — optional pre-captured turn
+ *   sequence the `defaultAiChatStaticFallback` generator renders on the
+ *   static path. Each turn is a strict `{ role: 'user' | 'assistant', text }`
+ *   object; `text` is non-empty. Absent OR empty array → the generator
+ *   emits a single placeholder element instead.
  */
 export const aiChatClipPropsSchema = z
   .object({
@@ -52,8 +70,12 @@ export const aiChatClipPropsSchema = z
       .default(0.7),
     multiTurn: z.boolean().default(true),
     posterFrame: z.number().int().nonnegative().default(0),
+    capturedTranscript: z.array(capturedTranscriptTurnSchema).optional(),
   })
   .strict();
+
+/** Inferred per-turn shape consumed by the static-fallback generator. */
+export type AiChatCapturedTranscriptTurn = z.infer<typeof capturedTranscriptTurnSchema>;
 
 /** Inferred shape of {@link aiChatClipPropsSchema}. */
 export type AiChatClipProps = z.infer<typeof aiChatClipPropsSchema>;

@@ -112,3 +112,8 @@ export {
   type RealLLMChatProviderOptions,
   type ScriptedTokenStep,
 } from './clips/ai-chat/llm-chat-provider.js';
+export {
+  aiChatStaticFallbackGenerator,
+  defaultAiChatStaticFallback,
+  type DefaultAiChatStaticFallbackArgs,
+} from './clips/ai-chat/static-fallback.js';
