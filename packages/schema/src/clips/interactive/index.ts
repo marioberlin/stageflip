@@ -15,3 +15,7 @@ export {
   threeSceneClipPropsSchema,
   type ThreeSceneClipProps,
 } from './three-scene-props.js';
+export {
+  voiceClipPropsSchema,
+  type VoiceClipProps,
+} from './voice-props.js';

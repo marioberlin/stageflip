@@ -26,6 +26,7 @@ import {
   checkShaderProps,
   checkThreeSceneProps,
   checkTypeDesignSignOff,
+  checkVoiceProps,
   formatReport,
   loadCompassAnchors,
   runIntegrityChecks,
@@ -797,6 +798,88 @@ describe('check-preset-integrity invariant 9: three-scene-props (T-384 AC #5)', 
             setupRef: { module: VALID_REF },
             width: 1280,
             height: 720,
+          },
+        },
+      },
+    });
+    expect(r.ok).toBe(true);
+  });
+});
+
+// ---------- Invariant 10: voice-props (T-387 AC #4) ----------
+
+describe('check-preset-integrity invariant 10: voice-props (T-387 AC #4)', () => {
+  it('passes when family is omitted', () => {
+    const r = checkVoiceProps({ presetId: 'p', raw: { clipKind: 'lowerThird' } });
+    expect(r.ok).toBe(true);
+  });
+
+  it('passes when family is non-voice (out of scope here)', () => {
+    const r = checkVoiceProps({ presetId: 'p', raw: { family: 'shader' } });
+    expect(r.ok).toBe(true);
+  });
+
+  it('fails when family=voice without liveMount', () => {
+    const r = checkVoiceProps({ presetId: 'p', raw: { family: 'voice' } });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/liveMount/);
+  });
+
+  it('fails when family=voice without liveMount.props', () => {
+    const r = checkVoiceProps({
+      presetId: 'p',
+      raw: { family: 'voice', liveMount: {} },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/liveMount.props/);
+  });
+
+  it('fails when liveMount.props has maxDurationMs=0', () => {
+    const r = checkVoiceProps({
+      presetId: 'p',
+      raw: {
+        family: 'voice',
+        liveMount: { props: { maxDurationMs: 0 } },
+      },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/voiceClipPropsSchema/);
+  });
+
+  it('fails when liveMount.props has empty language', () => {
+    const r = checkVoiceProps({
+      presetId: 'p',
+      raw: {
+        family: 'voice',
+        liveMount: { props: { language: '' } },
+      },
+    });
+    expect(r.ok).toBe(false);
+  });
+
+  it('passes for a minimal valid voice-props payload (defaults applied)', () => {
+    const r = checkVoiceProps({
+      presetId: 'p',
+      raw: {
+        family: 'voice',
+        liveMount: { props: {} },
+      },
+    });
+    expect(r.ok).toBe(true);
+  });
+
+  it('passes for a complete voice-props payload', () => {
+    const r = checkVoiceProps({
+      presetId: 'p',
+      raw: {
+        family: 'voice',
+        liveMount: {
+          props: {
+            mimeType: 'audio/webm',
+            maxDurationMs: 30_000,
+            partialTranscripts: true,
+            language: 'en-US',
+            posterFrame: 0,
           },
         },
       },
