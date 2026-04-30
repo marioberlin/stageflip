@@ -36,7 +36,6 @@ import {
   registerDomainBundle,
   registerDataSourceBindingsBundle,
   registerSemanticLayoutBundle,
-  type VariantPersistenceContext,
   ToolRouter,
 } from '../packages/engine/src/index.js';
 import type { ExecutorContext } from '../packages/agent/src/index.js';
@@ -85,12 +84,7 @@ function populateRegistry() {
   registerDomainBundle(registry, router);
   registerDataSourceBindingsBundle(registry, router);
   registerSemanticLayoutBundle(registry, router);
-  // arrange-variants needs a wider context (VariantPersistenceContext extends
-  // MutationContext); cast since the generator only inspects registry metadata.
-  registerArrangeVariantsBundle(
-    registry,
-    router as unknown as ToolRouter<ExecutorContext & VariantPersistenceContext>,
-  );
+  registerArrangeVariantsBundle(registry, router);
   return registry;
 }
 

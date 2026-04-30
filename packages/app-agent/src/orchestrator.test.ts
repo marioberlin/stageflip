@@ -2,7 +2,7 @@
 // packages/app-agent/src/orchestrator.test.ts
 // Smoke tests for the shared orchestrator wiring (T-187b). The triad's
 // internals have their own unit tests in @stageflip/agent; these tests
-// verify only the wiring: registry is populated with all 16 bundles,
+// verify only the wiring: registry is populated with all 17 bundles,
 // env-based provider construction throws cleanly when the API key is
 // absent, and createOrchestrator returns the expected shape. Node env —
 // Anthropic SDK construction fails in happy-dom and the orchestrator is
@@ -71,10 +71,10 @@ describe('buildProviderFromEnv', () => {
 });
 
 describe('createOrchestrator', () => {
-  it('registers all 16 handler bundles on the router', () => {
+  it('registers all 17 handler bundles on the router', () => {
     const deps = createOrchestrator(fakeProvider());
     const summaries = deps.registry.list();
-    expect(summaries.length).toBe(16);
+    expect(summaries.length).toBe(17);
     let totalTools = 0;
     for (const s of summaries) {
       expect(s.toolCount).toBeGreaterThan(0);
