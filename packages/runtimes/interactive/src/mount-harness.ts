@@ -26,12 +26,15 @@ import type {
   Permission,
 } from '@stageflip/schema';
 
-import { defaultVoiceStaticFallback } from './clips/voice/static-fallback.js';
 import type { ClipFactory, MountContext, MountHandle, TenantPolicy } from './contract.js';
 import { PERMISSIVE_TENANT_POLICY } from './contract.js';
 import { renderStaticFallback } from './fallback-rendering.js';
 import { type EmitTelemetry, NOOP_EMIT_TELEMETRY, PermissionShim } from './permission-shim.js';
 import { type InteractiveClipRegistry, interactiveClipRegistry } from './registry.js';
+import {
+  type StaticFallbackGeneratorRegistry,
+  staticFallbackGeneratorRegistry,
+} from './static-fallback-registry.js';
 
 /**
  * Information passed to a `PermissionPrePromptHandler` so the host can
@@ -88,6 +91,13 @@ export class InteractiveClipNotRegisteredError extends Error {
 export interface InteractiveMountHarnessOptions {
   /** Override the registry — tests inject a fresh one to avoid global state. */
   registry?: InteractiveClipRegistry;
+  /**
+   * T-388a — override the static-fallback generator registry. Tests
+   * inject a fresh one to avoid cross-test singleton pollution; production
+   * code uses the module-level `staticFallbackGeneratorRegistry` populated
+   * at clip-package import time.
+   */
+  staticFallbackGeneratorRegistry?: StaticFallbackGeneratorRegistry;
   /** Override the permission shim — tests inject a stub. */
   permissionShim?: PermissionShim;
   /** Tenant-policy hook; permissive default. */
@@ -112,6 +122,7 @@ export interface InteractiveMountHarnessOptions {
  */
 export class InteractiveMountHarness {
   private readonly registry: InteractiveClipRegistry;
+  private readonly staticFallbackGeneratorRegistry: StaticFallbackGeneratorRegistry;
   private readonly permissionShim: PermissionShim;
   private readonly tenantPolicy: TenantPolicy;
   private readonly emitTelemetry: EmitTelemetry;
@@ -119,6 +130,8 @@ export class InteractiveMountHarness {
 
   constructor(options: InteractiveMountHarnessOptions = {}) {
     this.registry = options.registry ?? interactiveClipRegistry;
+    this.staticFallbackGeneratorRegistry =
+      options.staticFallbackGeneratorRegistry ?? staticFallbackGeneratorRegistry;
     this.tenantPolicy = options.tenantPolicy ?? PERMISSIVE_TENANT_POLICY;
     this.emitTelemetry = options.emitTelemetry ?? NOOP_EMIT_TELEMETRY;
     this.permissionShim =
@@ -218,10 +231,11 @@ export class InteractiveMountHarness {
    * unmounts that root on dispose. `updateProps` is a no-op (the static
    * path is frozen at the schema's declared element array).
    *
-   * T-388 D-T388-2 / D-T388-4 — when `clip.staticFallback` is empty AND
-   * the family has a registered default-poster generator (`voice` is the
-   * first such family), the harness substitutes the generator's output.
-   * Authored arrays are used verbatim.
+   * T-388 D-T388-2 / D-T388-4 + T-388a D-T388a-3 — when
+   * `clip.staticFallback` is empty AND the family has a registered
+   * default-poster generator, the harness substitutes the generator's
+   * output. Authored arrays are used verbatim. Dispatch is family-
+   * agnostic via `staticFallbackGeneratorRegistry`.
    */
   private mountStaticFallback(
     clip: InteractiveClip,
@@ -252,54 +266,54 @@ export class InteractiveMountHarness {
   }
 
   /**
-   * Pick the Element[] to render on the static path. T-388 D-T388-4: for
-   * `family: 'voice'`, an empty `staticFallback` triggers the default
-   * waveform-poster generator. Authored arrays pass through unchanged.
+   * Pick the Element[] to render on the static path. Family-agnostic per
+   * T-388a D-T388a-3: dispatches via `staticFallbackGeneratorRegistry`.
    *
-   * Per AC #14 telemetry privacy, `posterTextLength` is the integer
-   * length, NOT the body. This method emits the
-   * `voice-clip.static-fallback.rendered` event with the documented
-   * shape; downstream consumers (renderer-cdp / observability pipeline)
-   * key on the field names pinned here.
+   * Two paths:
+   *
+   * 1. `clip.staticFallback.length > 0` — the authored array wins. If the
+   *    family has a generator registered, the generator is still invoked
+   *    with `reason: 'authored'` so the family's telemetry continues to
+   *    fire on the authored path (matches T-388 AC #13 shape). The
+   *    generator's RETURN value is ignored on this path; the authored
+   *    array is what gets rendered.
+   * 2. `clip.staticFallback.length === 0` — the registered generator's
+   *    output is rendered. If no generator is registered for the family,
+   *    we fall through to the empty authored array (the schema's
+   *    non-empty refine prevents this in practice).
    */
   private resolveStaticFallbackElements(
     clip: InteractiveClip,
     reason: string,
   ): ReadonlyArray<Element> {
-    if (clip.family !== 'voice') {
-      // Other families do not yet ship a default generator; the
-      // schema-level non-empty refine is the floor.
-      return clip.staticFallback;
-    }
+    const generator = this.staticFallbackGeneratorRegistry.resolve(clip.family);
 
     if (clip.staticFallback.length > 0) {
-      // Authored fallback wins.
-      this.emitTelemetry('voice-clip.static-fallback.rendered', {
-        family: clip.family,
-        reason: 'authored',
-        width: clip.transform.width,
-        height: clip.transform.height,
-        posterTextLength: 0,
-      });
+      // Authored fallback wins. Still call the generator (with reason
+      // 'authored') so per-family telemetry fires; ignore its return.
+      if (generator !== undefined) {
+        generator({
+          clip,
+          reason: 'authored',
+          emitTelemetry: this.emitTelemetry,
+        });
+      }
       return clip.staticFallback;
     }
 
-    const props = (clip.liveMount.props ?? {}) as { posterText?: unknown };
-    const posterText = typeof props.posterText === 'string' ? props.posterText : undefined;
-    const generated = defaultVoiceStaticFallback({
-      width: clip.transform.width,
-      height: clip.transform.height,
-      ...(posterText !== undefined ? { posterText } : {}),
-    });
-    this.emitTelemetry('voice-clip.static-fallback.rendered', {
-      family: clip.family,
+    if (generator === undefined) {
+      // No authored fallback AND no registered generator. The schema's
+      // non-empty refine would have rejected this at parse time;
+      // defensive return preserves the (empty) array. The harness's React
+      // root renders nothing.
+      return clip.staticFallback;
+    }
+
+    return generator({
+      clip,
       reason,
-      width: clip.transform.width,
-      height: clip.transform.height,
-      // Privacy posture (AC #14): integer length, never the body.
-      posterTextLength: posterText !== undefined ? posterText.length : 0,
+      emitTelemetry: this.emitTelemetry,
     });
-    return generated;
   }
 
   /**
