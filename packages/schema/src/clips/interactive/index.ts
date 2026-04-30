@@ -29,3 +29,7 @@ export {
   type LiveDataCachedSnapshot,
   type LiveDataClipProps,
 } from './live-data-props.js';
+export {
+  webEmbedClipPropsSchema,
+  type WebEmbedClipProps,
+} from './web-embed-props.js';

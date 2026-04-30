@@ -31,6 +31,7 @@ export {
   threeSceneClipPropsSchema,
   uniformValueSchema,
   voiceClipPropsSchema,
+  webEmbedClipPropsSchema,
   type AiChatCapturedTranscriptTurn,
   type AiChatClipProps,
   type LiveDataCachedSnapshot,
@@ -39,4 +40,5 @@ export {
   type ThreeSceneClipProps,
   type UniformValue,
   type VoiceClipProps,
+  type WebEmbedClipProps,
 } from './interactive/index.js';
