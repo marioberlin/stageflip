@@ -26,5 +26,6 @@ export {
 } from './ai-chat-props.js';
 export {
   liveDataClipPropsSchema,
+  type LiveDataCachedSnapshot,
   type LiveDataClipProps,
 } from './live-data-props.js';
