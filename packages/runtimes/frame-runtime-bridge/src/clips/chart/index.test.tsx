@@ -52,6 +52,12 @@ describe('chartPropsSchema (T-406 AC #1-#4)', () => {
     expect(() => chartPropsSchema.parse({ ...validBase, data: 'random-string' })).toThrow();
   });
 
+  it('AC #2 — `parse()` (not just safeParse) surfaces T-167 message', () => {
+    // Earlier revisions monkey-patched safeParse only; this guards the
+    // preprocess-based fix that runs through both parse paths.
+    expect(() => chartPropsSchema.parse({ ...validBase, data: 'ds:abc' })).toThrow(/T-167/);
+  });
+
   it('AC #3 — empty labels + series arrays accepted (no error)', () => {
     expect(() =>
       chartPropsSchema.parse({ ...validBase, data: { labels: [], series: [] } }),
@@ -88,8 +94,32 @@ describe('chartClip ClipDefinition (T-406 AC #21, #22)', () => {
     expect(chartClip.kind).toBe('chart');
   });
 
-  it('AC #22 — chartClip carries a propsSchema', () => {
+  it('chartClip carries a propsSchema', () => {
     expect((chartClip as { propsSchema?: unknown }).propsSchema).toBeDefined();
+  });
+
+  it('AC #22 — `chart` is in the bridge clipKind allowlist (LIVE_RUNTIME_MANIFEST)', async () => {
+    // The bridge's clipKind allowlist lives in
+    // `packages/skills-sync/src/live-runtime-manifest.ts`
+    // (LIVE_RUNTIME_MANIFEST) — that's the canonical "what kinds does
+    // the frame-runtime bridge accept" table consumed by host-bundle
+    // parity tests + skill catalog generation. The fixture-manifest
+    // KNOWN_KINDS map in packages/testing is a different allowlist
+    // (fixtures-only) that chart will join when the chart parity
+    // fixture lands. We grep the source so this test does not require
+    // adding `@stageflip/skills-sync` as a dep of the bridge package.
+    const { readFileSync } = await import('node:fs');
+    const { fileURLToPath } = await import('node:url');
+    const here = fileURLToPath(import.meta.url);
+    const repoRoot = here.replace(
+      /\/packages\/runtimes\/frame-runtime-bridge\/src\/clips\/chart\/index\.test\.tsx$/,
+      '',
+    );
+    const manifestSrc = readFileSync(
+      `${repoRoot}/packages/skills-sync/src/live-runtime-manifest.ts`,
+      'utf8',
+    );
+    expect(manifestSrc).toMatch(/'chart'/);
   });
 
   it('chartClip carries themeSlots covering all renderer color slots', () => {

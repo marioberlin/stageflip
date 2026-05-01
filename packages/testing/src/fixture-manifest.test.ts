@@ -89,6 +89,14 @@ const KNOWN_KINDS: ReadonlyMap<string, string> = new Map([
   ['hook-moment', 'frame-runtime'],
   ['product-reveal', 'frame-runtime'],
   ['beat-synced-text', 'frame-runtime'],
+  // T-406 chart family (`chart` clipKind) is registered with the
+  // frame-runtime bridge but intentionally NOT added to KNOWN_KINDS
+  // here yet — `KNOWN_KINDS` is a fixture-manifest allowlist (every
+  // entry must have a parity fixture under packages/testing/fixtures),
+  // and chart fixtures land in a follow-up task. The clipKind allowlist
+  // for the bridge runtime itself lives in
+  // `packages/skills-sync/src/live-runtime-manifest.ts` (LIVE_RUNTIME_MANIFEST),
+  // which T-406 already updates.
 ]);
 
 function listFixtureFiles(): string[] {

@@ -487,6 +487,6 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // T-406 — Chart clip family (unified ChartElement renderer over 7
   // chartKinds). Distinct from the standalone chart-build / pie-chart-
   // build / line-chart-draw clips above; Cluster E presets bind to
-  // this `chart` clipKind. 32 → 33 clips.
+  // this `chart` clipKind. 42 → 43 clips.
   chartClip,
 ];

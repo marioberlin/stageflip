@@ -6,6 +6,7 @@ import { render } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { describe, expect, it } from 'vitest';
 
+import { ENTRANCE_FRACTION } from './constants.js';
 import { ScatterChart } from './scatter.js';
 
 function renderAtFrame(node: ReactElement, frame: number, durationInFrames = 60) {
@@ -49,6 +50,13 @@ describe('ScatterChart (T-406 AC #11)', () => {
   it('determinism — same render twice → identical SVG', () => {
     const a = renderAtFrame(<ScatterChart data={data} legend axes />, 30);
     const b = renderAtFrame(<ScatterChart data={data} legend axes />, 30);
+    expect(a.container.innerHTML).toBe(b.container.innerHTML);
+  });
+
+  it('AC #13 — animation has settled past floor(0.6 * durationInFrames)', () => {
+    const settled = Math.floor(60 * ENTRANCE_FRACTION) + 1;
+    const a = renderAtFrame(<ScatterChart data={data} legend axes />, settled);
+    const b = renderAtFrame(<ScatterChart data={data} legend axes />, 59);
     expect(a.container.innerHTML).toBe(b.container.innerHTML);
   });
 });

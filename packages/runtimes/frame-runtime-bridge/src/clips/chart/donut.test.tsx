@@ -6,6 +6,7 @@ import { render } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { describe, expect, it } from 'vitest';
 
+import { ENTRANCE_FRACTION } from './constants.js';
 import { DonutChart, INNER_RADIUS_FRACTION } from './donut.js';
 
 function renderAtFrame(node: ReactElement, frame: number, durationInFrames = 60) {
@@ -31,5 +32,12 @@ describe('DonutChart (T-406 AC #10)', () => {
 
   it('AC #10 — INNER_RADIUS_FRACTION is 0.55 (v1 default)', () => {
     expect(INNER_RADIUS_FRACTION).toBe(0.55);
+  });
+
+  it('AC #13 — animation has settled past floor(0.6 * durationInFrames)', () => {
+    const settled = Math.floor(60 * ENTRANCE_FRACTION) + 1;
+    const a = renderAtFrame(<DonutChart data={data} legend />, settled);
+    const b = renderAtFrame(<DonutChart data={data} legend />, 59);
+    expect(a.container.innerHTML).toBe(b.container.innerHTML);
   });
 });

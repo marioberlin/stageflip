@@ -197,9 +197,11 @@ binding default colour props to `palette.*` roles (T-131a).
 editor look respectively.
 
 The barrel `ALL_BRIDGE_CLIPS` is the canonical iterable that the
-cdp-host-bundle passes to `createFrameRuntimeBridge`. All 33 bridge
-clips are registered through it — see the tranche ledger below for
-the breakdown.
+cdp-host-bundle passes to `createFrameRuntimeBridge`. All 43 bridge
+clips are registered through it (32 reference-clip ports across ten
+tranches + 10 profile-tier clips for StageFlip.Video and
+StageFlip.Display + the 1 unified T-406 chart family) — see the
+tranche ledger below for the breakdown.
 
 ## Implementation map
 
@@ -209,7 +211,7 @@ the breakdown.
 | `src/index.test.tsx` | T-061, T-131b.1 | Runtime shape, render behaviour, window gating, props passthrough, schema/themeSlots passthrough |
 | `src/clips/*.tsx` | T-131b/d/e/f | Thirty-two reference-clip ports across ten tranches (light / medium / heavy / bridge-eligible lottie-three-shader / audit-driven standalones / bake-tier video+image / audio tranche / dashboard composites f.2a/b/c / financial statement f.3 / animated-map SVG fallback d.4) |
 | `src/clips/chart/*.tsx` | T-406 | Unified `chart` clip family — one ClipDefinition consuming `ChartElement`-shaped props, dispatching to seven per-kind renderers (bar / line / area / pie / donut / scatter / combo). See `runtimes/chart/SKILL.md`. |
-| `src/clips/index.ts` | T-131b/d/e/f, T-406 | Barrel + `ALL_BRIDGE_CLIPS` constant (33 clips: 32 reference-clip ports + the unified `chart` family) |
+| `src/clips/index.ts` | T-131b/d/e/f, T-183, T-202, T-406 | Barrel + `ALL_BRIDGE_CLIPS` constant (43 clips: 32 reference-clip ports + 10 StageFlip.Video / StageFlip.Display profile clips + the unified `chart` family) |
 | `src/clips/_dashboard-utils.ts` | T-131f.2a | Private shared helpers for the dashboard composites (trend schema, value formatter, colour constants) |
 
 ## Tranche ledger

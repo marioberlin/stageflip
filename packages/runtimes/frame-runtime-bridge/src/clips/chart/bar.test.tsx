@@ -58,4 +58,20 @@ describe('BarChart (T-406 AC #6, #13)', () => {
     );
     expect(container.querySelectorAll('[data-testid^="chart-bar-rect-"]').length).toBe(0);
   });
+
+  it('v1 single-series-only: multi-series input renders only series[0]', () => {
+    // Documented limitation in BarChart's JSDoc — combo chart covers the
+    // dual-series case; multi-series stacked bars are deferred. Asserted
+    // here so the contract is regression-pinned.
+    const multi = {
+      labels: ['Q1', 'Q2', 'Q3'],
+      series: [
+        { name: 'Sales', values: [10, 20, 30] },
+        { name: 'Forecast', values: [12, 22, 32] },
+      ],
+    };
+    const { container } = renderAtFrame(<BarChart data={multi} legend axes />, 60);
+    // Only series[0]'s 3 values render → 3 rects, not 6.
+    expect(container.querySelectorAll('[data-testid^="chart-bar-rect-"]').length).toBe(3);
+  });
 });

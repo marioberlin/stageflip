@@ -35,62 +35,42 @@ import { ScatterChart } from './scatter.js';
  * time. The error message names T-167 so the consumer knows where
  * the resolution layer will land.
  */
+/**
+ * T-167-citing message attached to any `DataSourceRef` rejection.
+ * Exported so tests can grep against the canonical wording.
+ */
+export const DATASOURCE_REF_REJECTION_MESSAGE =
+  'chart data must be inline ChartData in v1; DataSourceRef resolution lands in T-167 (data-source-bindings bundle).';
+
+/**
+ * Pre-validation gate: reject `DataSourceRef`-shaped strings on the
+ * `data` field before the inner `chartDataSchema.parse()` runs. Using
+ * `z.preprocess` ensures BOTH `parse()` and `safeParse()` surface the
+ * T-167 message — earlier revisions monkey-patched `safeParse` only,
+ * leaving `parse()` callers with the bare Zod "Expected object,
+ * received string" error.
+ */
+const dataField = z.preprocess((input, ctx) => {
+  if (typeof input === 'string') {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: DATASOURCE_REF_REJECTION_MESSAGE,
+    });
+    return z.NEVER;
+  }
+  return input;
+}, chartDataSchema);
+
 export const chartPropsSchema = z
   .object({
     chartKind: chartKindSchema,
-    data: chartDataSchema.refine(
-      () => true,
-      // The refine here is a no-op; the union narrowing happens
-      // because we use `chartDataSchema` directly (NOT the wider
-      // `z.union([chartDataSchema, dataSourceRefSchema])` that the
-      // ChartElement schema uses). Strings (DataSourceRef shape)
-      // fail the object-shape check on `chartDataSchema` and produce
-      // a Zod error. The error message is augmented below.
-    ),
+    data: dataField,
     legend: z.boolean().default(true),
     axes: z.boolean().default(true),
   })
   .strict();
 
 export type ChartProps = z.infer<typeof chartPropsSchema>;
-
-/**
- * Wrap parse to surface a more helpful T-167-citing error when a
- * `DataSourceRef` is supplied. Default Zod errors say "Expected
- * object, received string" which is correct but doesn't point at the
- * deferral.
- */
-const baseParse = chartPropsSchema.safeParse.bind(chartPropsSchema);
-const augmentedSafeParse = (input: unknown): ReturnType<typeof baseParse> => {
-  const result = baseParse(input);
-  if (!result.success) {
-    // Inject a top-level annotation referencing T-167 for any string
-    // value of `data`. Implementers can rely on either the original
-    // Zod issues OR this annotation.
-    const augmented = result.error.issues.map((issue) => {
-      if (
-        issue.path.length === 1 &&
-        issue.path[0] === 'data' &&
-        typeof (input as { data?: unknown })?.data === 'string'
-      ) {
-        return {
-          ...issue,
-          message: `${issue.message} — chart data must be inline ChartData in v1; DataSourceRef resolution lands in T-167 (data-source-bindings bundle).`,
-        };
-      }
-      return issue;
-    });
-    return {
-      success: false,
-      error: { ...result.error, issues: augmented } as typeof result.error,
-    } as ReturnType<typeof baseParse>;
-  }
-  return result;
-};
-// Replace the schema's safeParse with the augmented version for
-// runtime + test consumers. The type stays the same.
-(chartPropsSchema as unknown as { safeParse: typeof augmentedSafeParse }).safeParse =
-  augmentedSafeParse;
 
 /**
  * Dispatch on `chartKind` to the per-kind renderer. All seven kinds

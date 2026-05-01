@@ -78,6 +78,18 @@ Cluster E presets bind to clipKind `chart` and supply
 — those have separate props schemas and remain available only for
 direct preset-target use cases.
 
+## Per-kind constraints (v1)
+
+- **bar**: single-series-only. Multi-series input renders only
+  `series[0]`; subsequent series are silently dropped. Multi-series
+  stacked bars are a v2 enhancement; the dual-series case is covered
+  by `combo`.
+- **pie / donut**: single-series-only by construction (one set of
+  slice shares). Subsequent series ignored.
+- **line / area / scatter**: multi-series with per-series stagger.
+- **combo**: `series[0]` renders as bars, `series[1+]` as draw-on
+  lines.
+
 ## Animation contract
 
 All seven kinds share one entrance contract:

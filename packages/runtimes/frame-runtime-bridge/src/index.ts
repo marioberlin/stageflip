@@ -125,13 +125,11 @@ export function createFrameRuntimeBridge(
   };
 }
 
-// Re-export demo clips. T-131b.1 light tranche (5) + T-131b.2 medium
-// tranche (5) + T-131b.3 heavy tranche (4) + T-131d bridge-eligible
-// portion of the lottie/three/shader tier (2: scene-3d, particles) +
-// T-131f.1 bridge standalones (4: code-block, image-gallery,
-// timeline-milestones, audio-visualizer). `ALL_BRIDGE_CLIPS` exposes
-// all 20. shader-bg / lottie-player / animated-map are deferred — see
-// plan-row T-131d. audio-visualizer's real-audio path is a follow-up.
+// Re-export demo clips. T-131b/d/e/f tranches (32 reference-clip ports)
+// plus the T-406 unified `chart` family (1 ClipDefinition dispatching to
+// 7 per-kind renderers). `ALL_BRIDGE_CLIPS` exposes all 43.
+// shader-bg / lottie-player / animated-map mapbox-gl path are deferred —
+// see plan-row T-131d. audio-visualizer's real-audio path is a follow-up.
 export {
   ALL_BRIDGE_CLIPS,
   AnimatedProgressBar,
@@ -150,6 +148,10 @@ export {
   type ChartBuildProps,
   chartBuildClip,
   chartBuildPropsSchema,
+  ChartClip,
+  type ChartProps,
+  chartClip,
+  chartPropsSchema,
   CodeBlock,
   type CodeBlockProps,
   type CodeLanguage,

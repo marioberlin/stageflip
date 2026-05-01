@@ -16,7 +16,7 @@ stagger 5 frames, `EASE_OUT_EXPO` curve, settled at
 `elementBase`; no `DataSourceRef` — rejected at parse time with a
 T-167-citing error until the data-source-bindings bundle lands).
 
-Registered in `ALL_BRIDGE_CLIPS` (32 → 33 clips). Coexists with the
+Registered in `ALL_BRIDGE_CLIPS` (42 → 43 clips). Coexists with the
 existing standalone T-131b chart clips (`chart-build`,
 `pie-chart-build`, `line-chart-draw`); does not replace them
 (D-T406-9). Cluster E presets (T-355–T-360) bind to the unified
