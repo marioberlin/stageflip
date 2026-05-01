@@ -1,5 +1,6 @@
 // packages/schema/src/clips/interactive/ai-generative-props.test.ts
 // T-395 ACs #1–#5 — aiGenerativeClipPropsSchema parsing.
+// T-396 ACs #1–#5 — curatedExample optional field.
 
 import { describe, expect, it } from 'vitest';
 
@@ -95,5 +96,94 @@ describe('aiGenerativeClipPropsSchema (T-395 AC #1)', () => {
       negativePrompt: '',
     });
     expect(parsed.negativePrompt).toBe('');
+  });
+});
+
+describe('aiGenerativeClipPropsSchema curatedExample (T-396 AC #1–#5)', () => {
+  const dataUrl =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII=';
+
+  it('T-396 AC #1 — accepts a valid curatedExample with a data: URL', () => {
+    const parsed = aiGenerativeClipPropsSchema.parse({
+      ...validBase,
+      curatedExample: { src: dataUrl, contentType: 'image/png' },
+    });
+    expect(parsed.curatedExample?.src).toBe(dataUrl);
+    expect(parsed.curatedExample?.contentType).toBe('image/png');
+  });
+
+  it('T-396 AC #1 — accepts curatedExample without contentType', () => {
+    const parsed = aiGenerativeClipPropsSchema.parse({
+      ...validBase,
+      curatedExample: { src: dataUrl },
+    });
+    expect(parsed.curatedExample?.src).toBe(dataUrl);
+    expect(parsed.curatedExample?.contentType).toBeUndefined();
+  });
+
+  it('T-396 AC #2 — https URL throws (v1 rejects http(s) per the out-of-scope deferral)', () => {
+    expect(() =>
+      aiGenerativeClipPropsSchema.parse({
+        ...validBase,
+        curatedExample: { src: 'https://cdn.example.com/example.png' },
+      }),
+    ).toThrow();
+  });
+
+  it('T-396 AC #2 — http URL throws', () => {
+    expect(() =>
+      aiGenerativeClipPropsSchema.parse({
+        ...validBase,
+        curatedExample: { src: 'http://example.com/example.png' },
+      }),
+    ).toThrow();
+  });
+
+  it('T-396 AC #3 — relative path throws (refine rejects)', () => {
+    expect(() =>
+      aiGenerativeClipPropsSchema.parse({
+        ...validBase,
+        curatedExample: { src: 'relative/path.png' },
+      }),
+    ).toThrow();
+  });
+
+  it('T-396 AC #4 — extra keys on curatedExample rejected (strict shape)', () => {
+    expect(() =>
+      aiGenerativeClipPropsSchema.parse({
+        ...validBase,
+        curatedExample: { src: dataUrl, extra: true },
+      }),
+    ).toThrow();
+  });
+
+  it('T-396 AC #4 — invalid contentType throws', () => {
+    expect(() =>
+      aiGenerativeClipPropsSchema.parse({
+        ...validBase,
+        curatedExample: { src: dataUrl, contentType: 'image/gif' },
+      }),
+    ).toThrow();
+  });
+
+  it('T-396 AC #5 — payload without curatedExample still validates (backward-compat)', () => {
+    const parsed = aiGenerativeClipPropsSchema.parse(validBase);
+    expect(parsed.curatedExample).toBeUndefined();
+  });
+
+  it('T-396 — accepts contentType image/jpeg', () => {
+    const parsed = aiGenerativeClipPropsSchema.parse({
+      ...validBase,
+      curatedExample: { src: dataUrl, contentType: 'image/jpeg' },
+    });
+    expect(parsed.curatedExample?.contentType).toBe('image/jpeg');
+  });
+
+  it('T-396 — accepts contentType image/webp', () => {
+    const parsed = aiGenerativeClipPropsSchema.parse({
+      ...validBase,
+      curatedExample: { src: dataUrl, contentType: 'image/webp' },
+    });
+    expect(parsed.curatedExample?.contentType).toBe('image/webp');
   });
 });
