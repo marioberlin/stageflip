@@ -197,7 +197,7 @@ binding default colour props to `palette.*` roles (T-131a).
 editor look respectively.
 
 The barrel `ALL_BRIDGE_CLIPS` is the canonical iterable that the
-cdp-host-bundle passes to `createFrameRuntimeBridge`. All 31 bridge
+cdp-host-bundle passes to `createFrameRuntimeBridge`. All 33 bridge
 clips are registered through it — see the tranche ledger below for
 the breakdown.
 
@@ -207,8 +207,9 @@ the breakdown.
 |---|---|---|
 | `src/index.ts` | T-061, T-131b.1 | `defineFrameClip` (+ `propsSchema` / `themeSlots` passthrough) + `createFrameRuntimeBridge` + clip re-exports |
 | `src/index.test.tsx` | T-061, T-131b.1 | Runtime shape, render behaviour, window gating, props passthrough, schema/themeSlots passthrough |
-| `src/clips/*.tsx` | T-131b/d/e/f | Thirty-one reference-clip ports across ten tranches (light / medium / heavy / bridge-eligible lottie-three-shader / audit-driven standalones / bake-tier video+image / audio tranche / dashboard composites f.2a/b/c / financial statement f.3 / animated-map SVG fallback d.4) |
-| `src/clips/index.ts` | T-131b/d/e/f | Barrel + `ALL_BRIDGE_CLIPS` constant (31 clips) |
+| `src/clips/*.tsx` | T-131b/d/e/f | Thirty-two reference-clip ports across ten tranches (light / medium / heavy / bridge-eligible lottie-three-shader / audit-driven standalones / bake-tier video+image / audio tranche / dashboard composites f.2a/b/c / financial statement f.3 / animated-map SVG fallback d.4) |
+| `src/clips/chart/*.tsx` | T-406 | Unified `chart` clip family — one ClipDefinition consuming `ChartElement`-shaped props, dispatching to seven per-kind renderers (bar / line / area / pie / donut / scatter / combo). See `runtimes/chart/SKILL.md`. |
+| `src/clips/index.ts` | T-131b/d/e/f, T-406 | Barrel + `ALL_BRIDGE_CLIPS` constant (33 clips: 32 reference-clip ports + the unified `chart` family) |
 | `src/clips/_dashboard-utils.ts` | T-131f.2a | Private shared helpers for the dashboard composites (trend schema, value formatter, colour constants) |
 
 ## Tranche ledger
@@ -225,6 +226,7 @@ the breakdown.
 | Dashboards · standalones | T-131f.2a, .2b | hr-, marketing-, product-, okr-dashboard | Option B flat-prop schemas; `_dashboard-utils.ts` shared |
 | Dashboards · composites | T-131f.2c, .3 | sales-dashboard, financial-statement | Inlined private sub-components |
 | Animated map (SVG fallback) | T-131d.4 | animated-map | `mapbox-gl` real-tiles path deliberately not ported — network tile fetches + imperative `useEffect` DOM mutation violate determinism. Ships the SVG simulation only (the reference's own no-token default). Closes reference-clip coverage at 32/32. |
+| Unified chart family | T-406 | chart | One ClipDefinition (`kind: 'chart'`) consuming `ChartElement`-shaped props with `chartKind` discriminator. Dispatches to bar / line / area / pie / donut / scatter / combo renderers. NOT a reference-clip port — a new family that Cluster E presets bind to. Coexists with the standalone T-131b chart clips (chart-build / pie-chart-build / line-chart-draw); does not replace them (D-T406-9). See `runtimes/chart/SKILL.md`. |
 
 ## Related
 
