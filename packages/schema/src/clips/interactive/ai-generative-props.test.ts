@@ -1,0 +1,99 @@
+// packages/schema/src/clips/interactive/ai-generative-props.test.ts
+// T-395 ACs #1–#5 — aiGenerativeClipPropsSchema parsing.
+
+import { describe, expect, it } from 'vitest';
+
+import { aiGenerativeClipPropsSchema } from './ai-generative-props.js';
+
+const validBase = {
+  prompt: 'a watercolor painting of a sunrise',
+  provider: 'openai',
+  model: 'dall-e-3',
+} as const;
+
+describe('aiGenerativeClipPropsSchema (T-395 AC #1)', () => {
+  it('AC #1 — accepts a complete payload', () => {
+    const parsed = aiGenerativeClipPropsSchema.parse({
+      prompt: 'a watercolor painting of a sunrise',
+      provider: 'stability',
+      model: 'stable-diffusion-xl',
+      negativePrompt: 'no text, no watermark',
+      seed: 12345,
+      width: 1024,
+      height: 1024,
+      posterFrame: 7,
+    });
+    expect(parsed.prompt).toBe('a watercolor painting of a sunrise');
+    expect(parsed.provider).toBe('stability');
+    expect(parsed.model).toBe('stable-diffusion-xl');
+    expect(parsed.negativePrompt).toBe('no text, no watermark');
+    expect(parsed.seed).toBe(12345);
+    expect(parsed.width).toBe(1024);
+    expect(parsed.height).toBe(1024);
+    expect(parsed.posterFrame).toBe(7);
+  });
+
+  it('AC #1 — defaults populate when optional fields omitted', () => {
+    const parsed = aiGenerativeClipPropsSchema.parse(validBase);
+    expect(parsed.posterFrame).toBe(0);
+    expect(parsed.negativePrompt).toBeUndefined();
+    expect(parsed.seed).toBeUndefined();
+    expect(parsed.width).toBeUndefined();
+    expect(parsed.height).toBeUndefined();
+  });
+
+  it('AC #2 — empty prompt throws', () => {
+    expect(() => aiGenerativeClipPropsSchema.parse({ ...validBase, prompt: '' })).toThrow(/prompt/);
+  });
+
+  it('AC #3 — empty provider throws', () => {
+    expect(() => aiGenerativeClipPropsSchema.parse({ ...validBase, provider: '' })).toThrow(
+      /provider/,
+    );
+  });
+
+  it('AC #3 — empty model throws', () => {
+    expect(() => aiGenerativeClipPropsSchema.parse({ ...validBase, model: '' })).toThrow(/model/);
+  });
+
+  it('AC #4 — non-integer seed throws', () => {
+    expect(() => aiGenerativeClipPropsSchema.parse({ ...validBase, seed: 1.5 })).toThrow();
+  });
+
+  it('AC #5 — non-positive width throws', () => {
+    expect(() => aiGenerativeClipPropsSchema.parse({ ...validBase, width: 0 })).toThrow();
+    expect(() => aiGenerativeClipPropsSchema.parse({ ...validBase, width: -10 })).toThrow();
+  });
+
+  it('AC #5 — non-positive height throws', () => {
+    expect(() => aiGenerativeClipPropsSchema.parse({ ...validBase, height: 0 })).toThrow();
+    expect(() => aiGenerativeClipPropsSchema.parse({ ...validBase, height: -10 })).toThrow();
+  });
+
+  it('AC #5 — non-integer width throws', () => {
+    expect(() => aiGenerativeClipPropsSchema.parse({ ...validBase, width: 320.5 })).toThrow();
+  });
+
+  it('rejects extra top-level fields (strict)', () => {
+    expect(() => aiGenerativeClipPropsSchema.parse({ ...validBase, sneaky: true })).toThrow();
+  });
+
+  it('rejects negative posterFrame', () => {
+    expect(() => aiGenerativeClipPropsSchema.parse({ ...validBase, posterFrame: -1 })).toThrow();
+  });
+
+  it('rejects payload missing prompt entirely', () => {
+    expect(() =>
+      aiGenerativeClipPropsSchema.parse({ provider: 'openai', model: 'dall-e-3' }),
+    ).toThrow(/prompt/);
+  });
+
+  it('accepts negativePrompt as optional empty-string-rejection-not-applied (free-form prose)', () => {
+    // negativePrompt is just a string; the schema does not enforce min(1).
+    const parsed = aiGenerativeClipPropsSchema.parse({
+      ...validBase,
+      negativePrompt: '',
+    });
+    expect(parsed.negativePrompt).toBe('');
+  });
+});
