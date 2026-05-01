@@ -15,7 +15,8 @@
 // `defaultAiGenerativeStaticFallback`. T-395 fixtures that omit the
 // field continue to validate; the field is fully optional. v1
 // accepts ONLY `data:` URLs (the refine in `curatedExampleSchema`
-// enforces this) — same posture as T-394's posterImage.
+// enforces this) — same posture as T-394's posterImage (the F-2
+// fix from spec PR #289 review).
 //
 // v1 IS IMAGE-ONLY. The schema does NOT carry a `modality` field — a
 // single-value enum has no purpose. When a second modality lands
@@ -25,13 +26,6 @@
 // out-of-scope deferral. ADR-006 (Phase 14) covers the authoring-
 // time asset-generation counterpart (frozen files); T-395/T-396 are
 // the playback-time counterpart.
-//
-// T-396 (D-T396-1) extends this schema with the optional
-// `curatedExample?: { src, contentType? }` field consumed by
-// `defaultAiGenerativeStaticFallback`. v1 accepts ONLY `data:` URLs
-// — same posture as T-394's posterImage (the F-2 fix from spec PR
-// #289 review). T-395 fixtures that omit the field continue to
-// validate.
 
 import { z } from 'zod';
 
