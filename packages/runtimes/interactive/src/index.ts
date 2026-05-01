@@ -169,6 +169,11 @@ export {
   type ScriptedAiGenerativeResult,
 } from './clips/ai-generative/ai-generative-provider.js';
 export {
+  defaultAiGenerativeStaticFallback,
+  type DefaultAiGenerativeStaticFallbackArgs,
+  aiGenerativeStaticFallbackGenerator,
+} from './clips/ai-generative/static-fallback.js';
+export {
   defaultWebEmbedStaticFallback,
   type DefaultWebEmbedStaticFallbackArgs,
   webEmbedStaticFallbackGenerator,

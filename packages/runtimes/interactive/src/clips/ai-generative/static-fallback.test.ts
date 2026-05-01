@@ -15,8 +15,8 @@ import type { InteractiveClip } from '@stageflip/schema';
 
 import { staticFallbackGeneratorRegistry } from '../../static-fallback-registry.js';
 import {
-  defaultAiGenerativeStaticFallback,
   aiGenerativeStaticFallbackGenerator,
+  defaultAiGenerativeStaticFallback,
 } from './static-fallback.js';
 
 const SAMPLE_DATA_URL =
