@@ -101,6 +101,9 @@ export const LIVE_RUNTIME_MANIFEST: ClipsCatalogPkg = {
         // T-202b — StageFlip.Display profile clips: data tranche
         'price-reveal',
         'product-carousel',
+        // T-406 — unified chart family (consumes ChartElement; dispatches
+        // on chartKind to bar/line/area/pie/donut/scatter/combo)
+        'chart',
       ],
     },
   ],
