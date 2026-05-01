@@ -2,7 +2,7 @@
 title: AI Generative Runtime
 id: skills/stageflip/runtimes/ai-generative
 tier: runtime
-status: placeholder
+status: substantive
 last_updated: 2026-05-01
 owner_task: T-395
 related:
@@ -18,69 +18,36 @@ related:
 
 # AI Generative Runtime
 
-**Status**: placeholder. This file exists so the
-`orchestrator/T-395-T-396-specs` spec PR has a target for
-`check-skill-drift` and so future readers can locate the planned
-runtime. Substantive content lands in **T-395** (liveMount) and
-**T-396** (staticFallback). See `docs/tasks/T-395.md` and
-`docs/tasks/T-396.md`.
-
-## Planned shape (preview)
-
-`@stageflip/runtimes-interactive/clips/ai-generative` will ship the
-fifth (and final) **γ-live** family. Standalone interactive-tier clip
+`@stageflip/runtimes-interactive/clips/ai-generative` ships the
+**fifth and final** γ-live family. Standalone interactive-tier clip
 — no §3 runtime to reuse, no frame-source dependency, no convergence
 test. At mount time the factory feeds `liveMount.props.prompt` to a
 host-injected `AiGenerativeProvider`, awaits the generated artifact
-(a `Blob` + `contentType`), and renders it into an `<img>` element
-under the supplied root.
+(a `Blob` + `contentType`), and renders it into a single `<img>`
+element under the supplied root.
 
-- `liveMount` (T-395) — playback-time generation via host-injected
-  provider; one-shot at mount + manual `regenerate()` only (no
-  streaming in v1).
-- `staticFallback` (T-396) — curated example output rendered as
-  an `ImageElement`. Same posture as T-394's `posterImage`.
+`liveMount` lands here (T-395). `staticFallback` (curated example
+output rendered as `ImageElement`) ships in T-396. After T-396
+merges, all five γ-live family pairs ship and Phase 13 γ-live
+coverage is closed.
 
-**v1 is image-only.** The schema does NOT carry a `modality` field
-in v1 — a single-value enum has no purpose. Audio / video / 3D
-modalities are deferred to a future task; when a second modality
-lands, the field is added with `z.enum(['image', 'audio', ...]).default('image')`
-as a non-breaking change. ADR-006 (Phase 14) covers authoring-time
-asset generation (frozen files); T-395/T-396 are the playback-time
-counterpart.
+**v1 is image-only.** Audio / video / 3D modalities are deferred to
+a future task (the schema has no `modality` field; adding one when
+a second modality lands is a non-breaking change). ADR-006 (Phase 14)
+covers the authoring-time asset-generation counterpart (frozen
+files); T-395/T-396 are the playback-time counterpart.
 
-## Hard rules
-
-The clip directory must contain **no** direct `fetch` /
-`XMLHttpRequest` / `navigator.sendBeacon`. Production generation
-goes through the host-injected `AiGenerativeProvider`. Same posture
-AiChat (T-389) and LiveData (T-391) use. Pinned by T-395 AC #26
-(grep-driven structural assertion) plus the existing
-`check-determinism` gate.
-
-Prompt body, `negativePrompt` body, and generated blob bytes MUST
-NOT appear in telemetry attributes. `promptLength` and
-`blobByteLength` integers only. Same posture as T-389 / T-391 /
-T-393.
-
-**Blob-URL revocation**: `URL.createObjectURL` creates a hidden GC
-root not handled by ordinary DOM teardown. `dispose()` MUST call
-`URL.revokeObjectURL` for every blob URL the factory created — a
-leaked blob URL holds the blob in browser memory indefinitely
-(measurable cost: one slide × one clip × one regenerate ≈ 200KB
-held forever). Pinned by T-395 D-T395-7 / AC #15.
-
-## When to reach for it (planned)
+## When to reach for it
 
 - A presentation that wants a fresh visual at mount time —
-  generated cover art for a slide deck, illustration for a topic,
+  generated cover art for a slide, illustration for a topic,
   per-prompt example for a demo.
 - An interactive teaching surface that demonstrates generative-AI
   output for a chosen prompt.
 - Any presentation where the artifact MUST regenerate on demand
   (host-driven `regenerate()`).
 
-## When NOT (planned)
+## When NOT
 
 - Frozen / pre-baked assets. Use Phase 14 (ADR-006) authoring-time
   generation — the result lands in storage and is consumed by
@@ -92,6 +59,270 @@ held forever). Pinned by T-395 D-T395-7 / AC #15.
 - Authenticated providers whose credentials must be in the schema.
   Auth is the host's responsibility — the host's `Generator`
   adapter injects credentials at request time (ADR-005 §D7).
+
+## Architecture
+
+The factory is event-driven; nothing here ticks on a frame. The
+mount-harness security model still applies:
+
+```
+harness.mount(aiGenerativeClip, root, signal):
+  1. permissionShim.mount(clip)         # 'network' → no-op grant in v1
+       → tenant-denied: render staticFallback (T-396 once on main)
+  2. registry.resolve('ai-generative')  # registered at subpath import time
+  3. factory(MountContext)              # builds <img> + handle
+  4. signal.abort → handle.dispose()    # idempotent teardown
+```
+
+The factory returns an `AiGenerativeClipMountHandle`:
+
+```ts
+interface AiGenerativeClipMountHandle extends MountHandle {
+  regenerate(): Promise<void>;
+  getResult(): { blob: Blob; contentType: string } | undefined;
+  onResult(handler: (e: ResultEvent) => void): () => void;
+  onError(handler: (e: ErrorEvent) => void): () => void;
+}
+```
+
+The mount-time generation is deferred via `queueMicrotask` so callers
+can subscribe `onResult` / `onError` after the factory's promise
+resolves but before the generation settles. Without the deferral the
+very first resolution races subscriber attachment. Same pattern as
+T-391 / T-394.
+
+`regenerate()` aborts any in-flight generation, then runs a fresh
+`generateOnce` via the provider. Returns when the generation settles.
+
+### Visual surface
+
+A single `<img>` element, no React tree (same posture as T-393
+WebEmbed). On generation resolve, the factory sets `img.src` to
+`URL.createObjectURL(blob)`:
+
+```html
+<img
+  data-stageflip-ai-generative-clip="true"
+  width="1024"
+  height="1024"
+  src="blob:..."
+/>
+```
+
+Sized via `width` / `height` attributes (props overrides, then clip
+transform fallback). Hosts that want overlay UI compose at the
+application layer.
+
+### Schema (`aiGenerativeClipPropsSchema`)
+
+```ts
+aiGenerativeClipPropsSchema = z.object({
+  prompt: z.string().min(1),                        // baked-in, per-clip identity
+  provider: z.string().min(1),                      // 'openai' | 'stability' | tenant-supplied
+  model: z.string().min(1),                         // 'dall-e-3' | 'stable-diffusion-xl' | ...
+  negativePrompt: z.string().optional(),            // provider-specific support
+  seed: z.number().int().optional(),                // provider-specific support
+  width: z.number().int().positive().optional(),    // defaults to clip transform
+  height: z.number().int().positive().optional(),
+  posterFrame: z.number().int().nonnegative().default(0),
+}).strict();
+```
+
+**No `modality` field in v1.** A single-value enum has no purpose.
+Adding the field later (e.g.
+`z.enum(['image', 'audio', ...]).default('image')`) is a non-breaking
+change for existing fixtures.
+
+`prompt` is the clip's identity — empty rejects. `provider` accepts
+any non-empty string so tenant-supplied adapters extend without a
+schema bump. `negativePrompt` and `seed` are forwarded verbatim;
+providers that don't honour them ignore them. `width` / `height` are
+optional positive integers; default to the clip transform's
+dimensions (some providers require specific values like DALL-E's
+256/512/1024 squares — the host's adapter is responsible for
+validation/quantisation). `posterFrame` follows the convention
+established by all six prior families; T-396 consumes it.
+
+### Permissions (`['network']`)
+
+The clip declares `permissions: ['network']`. The shim treats
+`network` as a no-op grant in v1 (ADR-003 §D6 follow-up adds tenant
+allowlists later). **Pre-prompt is OFF by default** for `network`-
+only clips — same posture as AiChat / LiveData / WebEmbed — the
+no-op grant short-circuits without a user-visible browser dialog so
+a pre-prompt would be redundant. Hosts CAN opt in via
+`MountContext.permissionPrePrompt: true` if they want to gate
+generation behind an in-app explanation modal.
+
+### `componentRef.module` resolution
+
+```
+@stageflip/runtimes-interactive/clips/ai-generative#AiGenerativeClip
+```
+
+The subpath export points at
+`packages/runtimes/interactive/src/clips/ai-generative/index.ts`,
+whose import side-effect registers `aiGenerativeClipFactory` against
+`interactiveClipRegistry`. T-395 does NOT register a static-fallback
+generator — T-396 lands that registration alongside
+`defaultAiGenerativeStaticFallback`.
+
+## AiGenerativeProvider seam
+
+```ts
+interface AiGenerativeProvider {
+  generateOnce(args: {
+    prompt: string;
+    negativePrompt?: string;
+    model: string;
+    width?: number;
+    height?: number;
+    seed?: number;
+    signal: AbortSignal;
+  }): Promise<{ blob: Blob; contentType: string }>;
+}
+```
+
+T-395 ships two implementations:
+
+1. **`HostInjectedAiGenerativeProvider({ generator })`** — wraps a
+   host-supplied `Generator` callable. The host's adapter is the
+   seam where provider SDKs (OpenAI / Stability / Replicate) /
+   API tokens / tenant moderation live. The clip directory **NEVER**
+   references `globalThis.fetch` directly per CLAUDE.md §3 (T-395
+   AC #26 grep-pinned). Same posture AiChat (T-389) / LiveData
+   (T-391) use.
+2. **`InMemoryAiGenerativeProvider({ scripted })`** — resolves a
+   scripted `Record<prompt, ScriptedResult>`. Used by tests;
+   production code never instantiates. Honours an already-aborted
+   signal with an `AbortError`-named Error.
+
+A `@stageflip/ai-generative-abstraction` package mirroring
+`@stageflip/llm-abstraction` is a **future asset-gen task** —
+Phase 14 ADR-006 covers the pattern. T-395 ships only the seam.
+
+### Why no default real provider?
+
+CLAUDE.md §3 forbids `fetch()` / `XMLHttpRequest` /
+`navigator.sendBeacon` inside `packages/runtimes/**/src/clips/**`.
+The host-injected `Generator` pattern is the cleanest way to honour
+this: the clip code never touches the global; the host (or an
+upstream abstraction package) does. This mirrors AiChat's posture
+exactly.
+
+### contentType pass-through
+
+Real generative SDKs sometimes return non-`image/*` content types
+(DALL-E may return `application/octet-stream`; Stable Diffusion
+APIs vary). The factory does NOT validate `contentType.startsWith
+('image/')` — it passes the value through to telemetry and to
+`URL.createObjectURL(blob)`. If the browser cannot render the
+artifact as an image, it shows a broken-image icon. The
+`contentType` attribute on `generate.resolved` lets observability
+detect this. Hosts that need stricter behaviour wrap their
+`Generator` with validation (the documented escalation option (c) —
+per-provider adapter coercion in the host).
+
+## Resource cleanup contract (D-T395-7)
+
+`MountHandle.dispose()` MUST tear down — in this order:
+
+1. `AbortController.abort()` on the active per-generation
+   controller (if a generation is in flight). The provider's
+   `signal`-aware path surfaces the rejection.
+2. **`URL.revokeObjectURL` on the active blob URL.** The blob URL
+   is a hidden GC root not handled by ordinary DOM teardown —
+   without revocation the browser holds the blob indefinitely
+   (~200KB per regenerate × N clips × M slides = unbounded growth).
+   This is the architectural floor for T-395; AC #15 pins both
+   `createObjectURL` and `revokeObjectURL` calls so a future
+   refactor that drops one fails loudly.
+3. Drop the resolved-result reference (`state.latestResult =
+   undefined`).
+4. Unsubscribe all `onResult` and `onError` handlers.
+5. Detach the `<img>` element from the root
+   (`img.parentNode.removeChild(img)`).
+6. Emit `ai-generative-clip.dispose`.
+
+`signal.abort` triggers the SAME path. `dispose` is idempotent —
+calling twice (or N times) is a no-op (the second-call exit short-
+circuits at `state.disposed`).
+
+A leaked generation costs the host's API quota — measurable cost.
+A leaked blob URL leaks browser memory. Both are pinned in tests.
+
+## Telemetry (privacy posture — D-T395-8)
+
+The factory emits via `MountContext.emitTelemetry`:
+
+| Event | Attributes |
+|---|---|
+| `ai-generative-clip.mount.start` | `family`, `provider`, `model`, `promptLength` integer |
+| `ai-generative-clip.mount.success` | `family` |
+| `ai-generative-clip.mount.failure` | `family`, `reason: 'invalid-props' \| 'generator-unavailable' \| 'permission-denied'`, `issues?` |
+| `ai-generative-clip.generate.started` | `family`, `requestId`, `promptLength` integer |
+| `ai-generative-clip.generate.resolved` | `family`, `requestId`, `durationMs`, `blobByteLength` integer, `contentType` |
+| `ai-generative-clip.generate.error` | `family`, `requestId`, `errorKind: 'generate-error' \| 'aborted'` |
+| `ai-generative-clip.dispose` | `family` |
+
+**Prompt body, negativePrompt body, and generated blob bytes NEVER
+appear in telemetry attributes.** The privacy posture is a per-event
+invariant: text-derived attributes are integers only
+(`promptLength`); blob-derived attributes are integers only
+(`blobByteLength`). Pinned via three grep tests in
+`factory.test.ts` (resolved path, mount.start path, generate.error
+path) — AC #18.
+
+`provider`, `model`, and `contentType` ARE included — they are
+configuration / response metadata, not user content. `errorKind`
+is a fixed enum.
+
+## Determinism contract
+
+AI generative is **event-driven**, not frame-driven. There is no
+convergence test (D-T395-6) and no `frameSource` dependency. The
+interactive tier's broad `check-determinism` exemption (ADR-003 §D5)
+applies; the shader sub-rule does NOT (path-matched at
+`clips/{shader,three-scene}/**` only). The factory uses
+`Date.now()` / `performance.now()` for `durationMs` measurements —
+wall-clock by definition.
+
+The clip directory is **structurally** prevented from calling
+`globalThis.fetch` / `XMLHttpRequest` / `navigator.sendBeacon`: the
+factory test grep-walks every non-test file in `clips/ai-generative/`
+and fails if any match (AC #26). This is the stronger guarantee that
+backstops `check-determinism`.
+
+## Hard rules
+
+The clip directory must contain **no** direct `fetch` /
+`XMLHttpRequest` / `navigator.sendBeacon`. Production generation
+goes through the host-injected `Generator`. Pinned by T-395 AC #26
+plus the existing `check-determinism` gate.
+
+Prompt body, `negativePrompt` body, and generated blob bytes MUST
+NOT appear in telemetry attributes. `promptLength` and
+`blobByteLength` integers only.
+
+`URL.createObjectURL` MUST be paired with `URL.revokeObjectURL` on
+dispose. A leaked blob URL holds the blob in browser memory
+indefinitely.
+
+## Bundle + size
+
+The package adds:
+
+- `clips/ai-generative/types.ts` — public types, no runtime cost.
+- `clips/ai-generative/ai-generative-provider.ts` — interface +
+  two thin classes (`HostInjectedAiGenerativeProvider` is
+  essentially a callable wrapper; `InMemoryAiGenerativeProvider`
+  is a small Promise wrapper).
+- `clips/ai-generative/factory.ts` — the factory + the
+  generation-lifecycle state machine + blob-URL discipline.
+- `clips/ai-generative/index.ts` — subpath entry, side-effect
+  register, re-exports.
+
+`size-limit` budgets are enforced by the existing CI gate.
 
 ## Cross-references
 
@@ -109,4 +340,4 @@ held forever). Pinned by T-395 D-T395-7 / AC #15.
   host's responsibility, not the clip's.
 - ADR-006 (Phase 14) — authoring-time asset generation; the
   frontier-vs-asset-gen split per `docs/implementation-plan.md`
-  line 873.
+  Phase 14 header.
