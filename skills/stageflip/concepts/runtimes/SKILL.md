@@ -424,24 +424,48 @@ The clip directory is structurally prevented from calling
 running in a separate document and out of scope for the clip's
 determinism.
 
-#### Pattern-evaluation outcome (D-T387-11 → D-T389-10 → D-T391-10 → D-T393-10)
+T-395 ships `AiGenerativeClip` — the **fifth and final γ-live family**.
+At mount time the factory feeds `liveMount.props.prompt` to a host-
+injected `AiGenerativeProvider`, awaits the generated artifact (a
+`Blob` + `contentType`), and renders it into a single `<img>` element
+under `ctx.root` via `URL.createObjectURL(blob)`. `liveMount` ships at
+T-395; `staticFallback` (curated example output as `ImageElement`)
+lands at T-396. v1 is image-only; audio/video/3D modalities are
+deferred (the schema has no `modality` field — adding one is a non-
+breaking change). ADR-006 (Phase 14) covers the authoring-time
+asset-generation counterpart (frozen files); T-395/T-396 are the
+playback-time counterpart. The clip declares `permissions: ['network']`
+(no-op grant in v1) and emits
+`ai-generative-clip.{mount,generate,dispose}.*` telemetry whose text
+and binary-derived attributes are integers only (`promptLength`,
+`blobByteLength`) — prompt body, negativePrompt body, and generated
+blob bytes NEVER appear in attributes. The disposal contract is
+load-bearing: `URL.createObjectURL` is a hidden GC root not handled
+by ordinary DOM teardown, so `dispose()` MUST call
+`URL.revokeObjectURL` (~200KB per regenerate × N clips × M slides =
+unbounded growth otherwise). Pinned by T-395 D-T395-7 / AC #15
+(spies on both `createObjectURL` and `revokeObjectURL` so a future
+refactor that drops one fails loudly).
 
-T-383 / T-384 / T-387 / T-389 / T-391 / T-393 share four conventions
-(per-family schema file, subpath export, side-effect registration,
-telemetry-event naming). **None of these is "three similar lines of
-meaningful logic"** — they are conventions enforced by the spec
-template, not duplicated implementations.
+#### Pattern-evaluation outcome (D-T387-11 → D-T389-10 → D-T391-10 → D-T393-10 → D-T395-10)
+
+T-383 / T-384 / T-387 / T-389 / T-391 / T-393 / T-395 share four
+conventions (per-family schema file, subpath export, side-effect
+registration, telemetry-event naming). **None of these is "three
+similar lines of meaningful logic"** — they are conventions enforced
+by the spec template, not duplicated implementations.
 
 Per CLAUDE.md "three similar lines beat a premature abstraction":
-**no shared abstraction is extracted at T-387, T-389, T-391, or
-T-393.** T-391 D-T391-10 ruled out `ProviderSeam<T>` extraction at
-the third application. T-393 D-T393-10 reaffirms the ruling at the
-**fourth** application — and strengthens it: WebEmbed has no provider
-seam at all, so the four shapes now span "no seam" through three
-different streaming/request shapes. A generic `ProviderSeam<T>` over
-four shapes including "no seam at all" is incoherent.
+**no shared abstraction is extracted at T-387, T-389, T-391, T-393,
+or T-395.** T-391 D-T391-10 ruled out `ProviderSeam<T>` extraction
+at the third application. T-393 D-T393-10 reaffirmed the ruling at
+the fourth application. T-395 D-T395-10 reaffirms again at the
+**fifth and final** γ-live application — and strengthens it: the
+five shapes now span "no seam" through four different shapes
+including a binary-output variant. A generic `ProviderSeam<T>` over
+five shapes including "no seam at all" is incoherent.
 
-1. **`ProviderSeam<T>` ruled out across four shapes.** Compare:
+1. **`ProviderSeam<T>` ruled out across five shapes.** Compare:
    - `TranscriptionProvider.start({ stream, language, partial, onTranscript })` —
      streaming with a single discriminated-union callback
      (`onTranscript: (event: TranscriptEvent) => void` over
@@ -450,23 +474,32 @@ four shapes including "no seam at all" is incoherent.
    - `LLMChatProvider.streamTurn({ ..., onToken, signal })` — streaming
      with one callback + many input fields + `AbortSignal`.
    - `LiveDataProvider.fetchOnce({ url, method, headers, body, signal })` —
-     request/response, no callbacks, Promise-only.
+     request/response, no callbacks, **text-shaped** Promise output.
    - **No seam** for `WebEmbedClip` — the browser's `<iframe>` is the
      transport.
-   The first three shapes share a host-injection convention
-   (test-double pattern; "host supplies the client") but no
-   extractable abstraction. The fourth shape doesn't even have a
-   client to inject. **Future seams follow the convention without
-   inheriting a generic shape; future families with no upstream
-   client (like web-embed) follow the no-seam pattern.**
+   - `AiGenerativeProvider.generateOnce({ prompt, ..., signal })` —
+     request/response, no callbacks, **binary-Blob-shaped** Promise
+     output.
+   Four of five shapes share a host-injection convention (test-double
+   pattern; "host supplies the client") but no extractable
+   abstraction. The fifth (web-embed) doesn't even have a client to
+   inject. The "binary vs text output" axis is the most recent
+   concrete difference — distinguishes T-395 from T-391 in a way
+   that matters for downstream consumers (parsing, `<img src>` vs
+   `<output>` rendering, blob-URL revocation requirements).
+   **Future seams follow the convention without inheriting a generic
+   shape; future families with no upstream client (like web-embed)
+   follow the no-seam pattern.**
 2. **γ-live factory skeleton** — the state machine + dispose +
    abort wiring is structurally similar across γ-live factories,
    but uses different primitives (MediaRecorder vs. LLM stream vs.
-   one-shot fetch vs. iframe DOM). Inlining stays shorter than
-   abstracting; four applications have not produced duplication of
-   *logic*, only shape.
+   one-shot fetch vs. iframe DOM vs. blob-bearing generation).
+   Inlining stays shorter than abstracting; five applications have
+   not produced duplication of *logic*, only shape.
 
-Future families (T-395 ai-generative) inherit this precedent.
+**Phase 13 γ-live family coverage is now closed at five families.**
+Future asset-generation families ship under Phase 14 / ADR-006 with
+their own seam pattern documented separately.
 
 ### Permission flow UX (T-385)
 

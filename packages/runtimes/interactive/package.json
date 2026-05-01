@@ -45,6 +45,11 @@
       "import": "./dist/clips/web-embed/index.js",
       "require": "./dist/clips/web-embed/index.cjs"
     },
+    "./clips/ai-generative": {
+      "types": "./dist/clips/ai-generative/index.d.ts",
+      "import": "./dist/clips/ai-generative/index.js",
+      "require": "./dist/clips/ai-generative/index.cjs"
+    },
     "./permission-flow": {
       "types": "./dist/permission-flow/index.d.ts",
       "import": "./dist/permission-flow/index.js",
@@ -53,8 +58,8 @@
   },
   "files": ["dist", "src"],
   "scripts": {
-    "build": "tsup src/index.ts src/contract-tests/index.ts src/clips/shader/index.ts src/clips/three-scene/index.ts src/clips/voice/index.ts src/clips/ai-chat/index.ts src/clips/live-data/index.ts src/clips/web-embed/index.ts src/permission-flow/index.ts --dts --format esm,cjs --clean",
-    "dev": "tsup src/index.ts src/contract-tests/index.ts src/clips/shader/index.ts src/clips/three-scene/index.ts src/clips/voice/index.ts src/clips/ai-chat/index.ts src/clips/live-data/index.ts src/clips/web-embed/index.ts src/permission-flow/index.ts --dts --format esm,cjs --watch",
+    "build": "tsup src/index.ts src/contract-tests/index.ts src/clips/shader/index.ts src/clips/three-scene/index.ts src/clips/voice/index.ts src/clips/ai-chat/index.ts src/clips/live-data/index.ts src/clips/web-embed/index.ts src/clips/ai-generative/index.ts src/permission-flow/index.ts --dts --format esm,cjs --clean",
+    "dev": "tsup src/index.ts src/contract-tests/index.ts src/clips/shader/index.ts src/clips/three-scene/index.ts src/clips/voice/index.ts src/clips/ai-chat/index.ts src/clips/live-data/index.ts src/clips/web-embed/index.ts src/clips/ai-generative/index.ts src/permission-flow/index.ts --dts --format esm,cjs --watch",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src",
     "test": "vitest run --passWithNoTests"

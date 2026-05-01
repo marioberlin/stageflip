@@ -28,6 +28,7 @@ import {
   checkShaderProps,
   checkThreeSceneProps,
   checkTypeDesignSignOff,
+  checkAiGenerativeProps,
   checkVoiceProps,
   checkWebEmbedProps,
   formatReport,
@@ -1166,6 +1167,97 @@ describe('check-preset-integrity invariant 13: web-embed-props (T-393 AC #5)', (
             allowedOrigins: ['https://example.com'],
             width: 800,
             height: 600,
+            posterFrame: 7,
+          },
+        },
+      },
+    });
+    expect(r.ok).toBe(true);
+  });
+});
+
+// ---------- Invariant 14: ai-generative-props (T-395 AC #6) ----------
+
+describe('check-preset-integrity invariant 14: ai-generative-props (T-395 AC #6)', () => {
+  it('passes when family is omitted', () => {
+    const r = checkAiGenerativeProps({ presetId: 'p', raw: { clipKind: 'lowerThird' } });
+    expect(r.ok).toBe(true);
+  });
+
+  it('passes when family is non-ai-generative (out of scope here)', () => {
+    const r = checkAiGenerativeProps({ presetId: 'p', raw: { family: 'shader' } });
+    expect(r.ok).toBe(true);
+  });
+
+  it('fails when family=ai-generative without liveMount', () => {
+    const r = checkAiGenerativeProps({ presetId: 'p', raw: { family: 'ai-generative' } });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/liveMount/);
+  });
+
+  it('fails when family=ai-generative without liveMount.props', () => {
+    const r = checkAiGenerativeProps({
+      presetId: 'p',
+      raw: { family: 'ai-generative', liveMount: {} },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/liveMount.props/);
+  });
+
+  it('fails when liveMount.props has empty prompt', () => {
+    const r = checkAiGenerativeProps({
+      presetId: 'p',
+      raw: {
+        family: 'ai-generative',
+        liveMount: {
+          props: { prompt: '', provider: 'openai', model: 'dall-e-3' },
+        },
+      },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/aiGenerativeClipPropsSchema/);
+  });
+
+  it('fails when liveMount.props has non-positive width', () => {
+    const r = checkAiGenerativeProps({
+      presetId: 'p',
+      raw: {
+        family: 'ai-generative',
+        liveMount: {
+          props: { prompt: 'p', provider: 'openai', model: 'dall-e-3', width: 0 },
+        },
+      },
+    });
+    expect(r.ok).toBe(false);
+  });
+
+  it('passes for a minimal valid ai-generative-props payload (defaults applied)', () => {
+    const r = checkAiGenerativeProps({
+      presetId: 'p',
+      raw: {
+        family: 'ai-generative',
+        liveMount: {
+          props: { prompt: 'p', provider: 'openai', model: 'dall-e-3' },
+        },
+      },
+    });
+    expect(r.ok).toBe(true);
+  });
+
+  it('passes for a complete ai-generative-props payload', () => {
+    const r = checkAiGenerativeProps({
+      presetId: 'p',
+      raw: {
+        family: 'ai-generative',
+        liveMount: {
+          props: {
+            prompt: 'a watercolor painting',
+            provider: 'stability',
+            model: 'stable-diffusion-xl',
+            negativePrompt: 'no text',
+            seed: 42,
+            width: 1024,
+            height: 1024,
             posterFrame: 7,
           },
         },

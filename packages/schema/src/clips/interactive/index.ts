@@ -34,3 +34,7 @@ export {
   type WebEmbedClipProps,
   type WebEmbedPosterImage,
 } from './web-embed-props.js';
+export {
+  aiGenerativeClipPropsSchema,
+  type AiGenerativeClipProps,
+} from './ai-generative-props.js';

@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
 
 import { aiChatClipPropsSchema } from '../packages/schema/src/clips/interactive/ai-chat-props.js';
+import { aiGenerativeClipPropsSchema } from '../packages/schema/src/clips/interactive/ai-generative-props.js';
 import { liveDataClipPropsSchema } from '../packages/schema/src/clips/interactive/live-data-props.js';
 import { shaderClipPropsSchema } from '../packages/schema/src/clips/interactive/shader-props.js';
 import { webEmbedClipPropsSchema } from '../packages/schema/src/clips/interactive/web-embed-props.js';
@@ -82,6 +83,7 @@ export const VALID_CLIP_KINDS = new Set<string>([
   'ai-chat',
   'live-data',
   'web-embed',
+  'ai-generative',
   'webgl',
   // Generic element kinds — not a preset target today, but reserved.
   'text',
@@ -105,6 +107,7 @@ export const INTERACTIVE_CLIP_KINDS = new Set<string>([
   'ai-chat',
   'live-data',
   'web-embed',
+  'ai-generative',
   'webgl',
   'interactive-clip',
 ]);
@@ -156,6 +159,7 @@ const INVARIANT_KEYS = [
   'ai-chat-props',
   'live-data-props',
   'web-embed-props',
+  'ai-generative-props',
   'typeDesign-signOff',
   'parityFixture-signOff',
   'compass-anchor',
@@ -516,6 +520,43 @@ export function checkWebEmbedProps(args: {
 }
 
 /**
+ * Invariant 14 — when `family: 'ai-generative'` is declared in raw frontmatter,
+ * the accompanying `liveMount.props` must parse against
+ * `aiGenerativeClipPropsSchema` (T-395 D-T395-2, AC #6). Mirrors the dispatch
+ * pattern set by invariants 8/9/10/11/12/13.
+ */
+export function checkAiGenerativeProps(args: {
+  presetId: string;
+  raw: Record<string, unknown>;
+}): CheckResult {
+  const family = args.raw.family;
+  if (family !== 'ai-generative') return { ok: true };
+  const liveMount = args.raw.liveMount;
+  if (liveMount === undefined || liveMount === null || typeof liveMount !== 'object') {
+    return {
+      ok: false,
+      message: `family 'ai-generative' requires a 'liveMount' field with ai-generative props (T-395)`,
+    };
+  }
+  const lm = liveMount as Record<string, unknown>;
+  const props = lm.props;
+  if (props === undefined) {
+    return {
+      ok: false,
+      message: `family 'ai-generative' requires 'liveMount.props' parseable as aiGenerativeClipPropsSchema (T-395)`,
+    };
+  }
+  const parsed = aiGenerativeClipPropsSchema.safeParse(props);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: `family 'ai-generative' liveMount.props failed aiGenerativeClipPropsSchema: ${parsed.error.issues.map((i) => `${i.path.join('.') || '<root>'}: ${i.message}`).join('; ')}`,
+    };
+  }
+  return { ok: true };
+}
+
+/**
  * Invariant 5 — clusters A/B/D/F/G must have `signOff.typeDesign` populated
  * (AC #6, #7). The clusters scoping is the most common bug class: invariant 5
  * does NOT apply to weather, data, ar.
@@ -795,6 +836,16 @@ export function runIntegrityChecks(opts: RunOpts): IntegrityReport {
           presetId: id,
           filePath,
           message: webEmbedResult.message,
+        });
+      }
+
+      // Invariant 14 — ai-generative-props parsing (T-395). Same dispatch.
+      const aiGenerativeResult = checkAiGenerativeProps({ presetId: id, raw });
+      if (!aiGenerativeResult.ok) {
+        buckets['ai-generative-props'].errors.push({
+          presetId: id,
+          filePath,
+          message: aiGenerativeResult.message,
         });
       }
     }
