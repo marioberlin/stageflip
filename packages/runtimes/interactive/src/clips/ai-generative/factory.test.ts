@@ -6,9 +6,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { type ClipFactory, type MountContext, PERMISSIVE_TENANT_POLICY } from '../../contract.js';
-import { AiGenerativeClipFactoryBuilder, type AiGenerativeClipFactoryOptions } from './factory.js';
 import { InMemoryAiGenerativeProvider } from './ai-generative-provider.js';
-import type { ResultEvent, ErrorEvent } from './types.js';
+import { AiGenerativeClipFactoryBuilder, type AiGenerativeClipFactoryOptions } from './factory.js';
+import type { ErrorEvent, ResultEvent } from './types.js';
 
 function pngBlob(payload = new Uint8Array([0x89, 0x50, 0x4e, 0x47])): Blob {
   return new Blob([payload], { type: 'image/png' });

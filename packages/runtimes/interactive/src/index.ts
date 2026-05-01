@@ -149,6 +149,25 @@ export type {
   WebEmbedMessageHandler,
   WebEmbedMountFailureReason,
 } from './clips/web-embed/types.js';
+export type {
+  AiGenerativeClipMountHandle,
+  AiGenerativeMountFailureReason,
+  ErrorEvent as AiGenerativeErrorEvent,
+  ErrorHandler as AiGenerativeErrorHandler,
+  ResultEvent as AiGenerativeResultEvent,
+  ResultHandler as AiGenerativeResultHandler,
+} from './clips/ai-generative/types.js';
+export {
+  type AiGenerativeArgs,
+  type AiGenerativeProvider,
+  type AiGenerativeResult,
+  type Generator as AiGenerator,
+  HostInjectedAiGenerativeProvider,
+  type HostInjectedAiGenerativeProviderOptions,
+  InMemoryAiGenerativeProvider,
+  type InMemoryAiGenerativeProviderOptions,
+  type ScriptedAiGenerativeResult,
+} from './clips/ai-generative/ai-generative-provider.js';
 export {
   defaultWebEmbedStaticFallback,
   type DefaultWebEmbedStaticFallbackArgs,

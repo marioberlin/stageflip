@@ -5,9 +5,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  type Generator,
   HostInjectedAiGenerativeProvider,
   InMemoryAiGenerativeProvider,
-  type Generator,
 } from './ai-generative-provider.js';
 
 function pngBlob(): Blob {
