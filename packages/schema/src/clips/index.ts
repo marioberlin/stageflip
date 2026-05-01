@@ -36,6 +36,7 @@ export {
   type AiChatCapturedTranscriptTurn,
   type AiChatClipProps,
   type AiGenerativeClipProps,
+  type AiGenerativeCuratedExample,
   type LiveDataCachedSnapshot,
   type LiveDataClipProps,
   type ShaderClipProps,
