@@ -26,6 +26,7 @@ export {
 } from './export-targets.js';
 export {
   aiChatClipPropsSchema,
+  aiGenerativeClipPropsSchema,
   liveDataClipPropsSchema,
   shaderClipPropsSchema,
   threeSceneClipPropsSchema,
@@ -34,6 +35,7 @@ export {
   webEmbedClipPropsSchema,
   type AiChatCapturedTranscriptTurn,
   type AiChatClipProps,
+  type AiGenerativeClipProps,
   type LiveDataCachedSnapshot,
   type LiveDataClipProps,
   type ShaderClipProps,
