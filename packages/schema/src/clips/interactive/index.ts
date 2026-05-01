@@ -37,4 +37,5 @@ export {
 export {
   aiGenerativeClipPropsSchema,
   type AiGenerativeClipProps,
+  type AiGenerativeCuratedExample,
 } from './ai-generative-props.js';

@@ -4,7 +4,7 @@ id: skills/stageflip/runtimes/ai-generative
 tier: runtime
 status: substantive
 last_updated: 2026-05-01
-owner_task: T-395
+owner_task: T-396
 related:
   - skills/stageflip/runtimes/contract/SKILL.md
   - skills/stageflip/runtimes/ai-chat/SKILL.md
@@ -27,9 +27,9 @@ host-injected `AiGenerativeProvider`, awaits the generated artifact
 element under the supplied root.
 
 `liveMount` lands here (T-395). `staticFallback` (curated example
-output rendered as `ImageElement`) ships in T-396. After T-396
-merges, all five γ-live family pairs ship and Phase 13 γ-live
-coverage is closed.
+output rendered as `ImageElement`) ships in T-396 — both halves of
+`family: 'ai-generative'` are now structurally complete. **All five
+γ-live family pairs ship; Phase 13 γ-live coverage is closed.**
 
 **v1 is image-only.** Audio / video / 3D modalities are deferred to
 a future task (the schema has no `modality` field; adding one when
@@ -125,6 +125,10 @@ aiGenerativeClipPropsSchema = z.object({
   width: z.number().int().positive().optional(),    // defaults to clip transform
   height: z.number().int().positive().optional(),
   posterFrame: z.number().int().nonnegative().default(0),
+  curatedExample: z.object({                        // T-396: data: URL only in v1
+    src: z.string().refine((s) => s.startsWith('data:'), ...),
+    contentType: z.enum(['image/png', 'image/jpeg', 'image/webp']).optional(),
+  }).strict().optional(),
 }).strict();
 ```
 
@@ -136,7 +140,11 @@ change for existing fixtures.
 `prompt` is the clip's identity — empty rejects. `provider` accepts
 any non-empty string so tenant-supplied adapters extend without a
 schema bump. `negativePrompt` and `seed` are forwarded verbatim;
-providers that don't honour them ignore them. `width` / `height` are
+providers that don't honour them ignore them. `curatedExample`
+(T-396) is the optional captured curated-example artifact the
+static-fallback generator renders; v1 accepts ONLY `data:` URLs (the
+refine fires for `http(s):` and relative paths) — see §"Static
+fallback (T-396)" below for the full rationale. `width` / `height` are
 optional positive integers; default to the clip transform's
 dimensions (some providers require specific values like DALL-E's
 256/512/1024 squares — the host's adapter is responsible for
@@ -324,6 +332,85 @@ The package adds:
 
 `size-limit` budgets are enforced by the existing CI gate.
 
+## Static fallback (T-396)
+
+When the harness routes to the static path AND the clip's authored
+`staticFallback` is empty, `aiGenerativeStaticFallbackGenerator`
+substitutes a deterministic Element[] derived from the clip's
+`liveMount.props`:
+
+- A single `ImageElement` filling the clip's bounds with `src =
+  curatedExample.src` (a `data:` URL baked at authoring time).
+- When `curatedExample` is absent, a single placeholder
+  `TextElement` (empty text, `id:
+  'ai-generative-static-fallback-placeholder'`) is emitted instead.
+  The host overrides via app-level i18n.
+
+### Schema addition (`curatedExample?`)
+
+T-396 extends `aiGenerativeClipPropsSchema` with an optional
+`curatedExample` field:
+
+```ts
+curatedExample: z.object({
+  src: z.string().refine(s => s.startsWith('data:'), ...),
+  contentType: z.enum(['image/png', 'image/jpeg', 'image/webp']).optional(),
+}).strict().optional()
+```
+
+**v1 accepts ONLY `data:` URLs** (the refine enforces this).
+`http(s):` URLs are deferred per the out-of-scope deferral —
+accepting external URLs would push the fetch question to the
+frame-runtime export path, which `check-determinism` forbids inside
+`clips/**`. Same posture as T-394 D-T394-1 (web-embed posterImage).
+
+Backward-compatible: T-395 fixtures without the field continue to
+validate. The schema-level `AssetRef` regex (`^asset:<id>$`) does
+not accept data URLs; the generator casts `src as
+ImageElement['src']` to bypass it (same posture as T-388 / T-394).
+
+### Layout
+
+The ImageElement fills the canvas exactly: `transform = { x: 0,
+y: 0, width, height, rotation: 0, opacity: 1 }`. No overflow guard
+needed — there's only one element either way.
+
+### Determinism
+
+Pure transformation. No `Math.random` / `Date.now` /
+`performance.now`. The example URL is passed through verbatim into
+the ImageElement; no parsing, no fetching. Same posture as T-388 /
+T-390 / T-392 / T-394.
+
+### Telemetry (privacy posture — D-T396-4)
+
+| Event | Attributes |
+|---|---|
+| `ai-generative-clip.static-fallback.rendered` | `family`, `reason`, `width`, `height`, `hasExample` boolean, `exampleSrcLength` integer |
+
+**The example URL string NEVER appears in telemetry attributes.**
+`exampleSrcLength` is `curatedExample.src.length` (or `0` when
+absent) — a 50KB inline data URL would balloon every telemetry
+event, so the integer length is what telemetry consumers get.
+Pinned via grep on captured event payloads in the static-fallback
+test (AC #11).
+
+The `reason` is forwarded verbatim from the harness — `'authored' |
+'permission-denied' | 'tenant-denied' | 'export-static'`.
+
+### Registration (T-388a)
+
+`packages/runtimes/interactive/src/clips/ai-generative/index.ts`
+now side-effect-registers two things at subpath import time:
+
+```ts
+interactiveClipRegistry.register('ai-generative', aiGenerativeClipFactory);  // T-395
+staticFallbackGeneratorRegistry.register('ai-generative', aiGenerativeStaticFallbackGenerator);  // T-396
+```
+
+The harness's family-agnostic dispatch (T-388a) picks up the
+registration without further changes.
+
 ## Cross-references
 
 - T-389 / T-390 — sister AiChatClip pair. Closest in shape (same
@@ -332,10 +419,12 @@ The package adds:
 - T-391 / T-392 — sister LiveDataClip pair. Closest in transport
   shape (request/response with `signal`); AiGenerative differs by
   having binary `Blob` output instead of text.
-- T-393 / T-394 — sister WebEmbedClip pair. Closest in DOM
-  surface (no React tree; single mounted element under `ctx.root`).
-- T-388a — static-fallback generator registry T-396 will register
-  against.
+- T-393 / T-394 — sister WebEmbedClip pair. Closest in static-
+  fallback shape (T-396 reuses T-394's data-URL ImageElement
+  pattern verbatim, modulo the field name).
+- T-388 / T-388a — voice static-fallback (the data-URL ImageElement
+  cast pattern T-396 reuses) and the static-fallback generator
+  registry T-396 registers against.
 - ADR-005 §D7 — credential scoping; the provider's auth is the
   host's responsibility, not the clip's.
 - ADR-006 (Phase 14) — authoring-time asset generation; the

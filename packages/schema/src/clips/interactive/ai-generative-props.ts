@@ -15,7 +15,8 @@
 // `defaultAiGenerativeStaticFallback`. T-395 fixtures that omit the
 // field continue to validate; the field is fully optional. v1
 // accepts ONLY `data:` URLs (the refine in `curatedExampleSchema`
-// enforces this) — same posture as T-394's posterImage.
+// enforces this) — same posture as T-394's posterImage (the F-2
+// fix from spec PR #289 review).
 //
 // v1 IS IMAGE-ONLY. The schema does NOT carry a `modality` field — a
 // single-value enum has no purpose. When a second modality lands
@@ -27,6 +28,32 @@
 // the playback-time counterpart.
 
 import { z } from 'zod';
+
+/**
+ * Captured curated example for the static fallback (T-396
+ * D-T396-1). Strict-shaped: extra keys are rejected so authoring-
+ * time typos do not silently become a no-op in the static-fallback
+ * render.
+ *
+ * v1 accepts ONLY `data:` URLs (inline-baked at authoring time).
+ * `http(s):` URLs are out of scope — they would intersect the
+ * determinism floor (the frame-runtime would have to fetch the
+ * image at export time, which `check-determinism` forbids inside
+ * `clips/**`). Widening the schema is a separate task gated on a
+ * determinism-skill ruling for the external-image fetch path. Same
+ * posture as T-394 D-T394-1 (web-embed posterImage).
+ */
+const curatedExampleSchema = z
+  .object({
+    src: z
+      .string()
+      .refine(
+        (s) => s.startsWith('data:'),
+        'curatedExample.src must be a data: URL in v1; http(s) URLs are deferred per the out-of-scope table',
+      ),
+    contentType: z.enum(['image/png', 'image/jpeg', 'image/webp']).optional(),
+  })
+  .strict();
 
 /**
  * `liveMount.props` shape for `family: 'ai-generative'`. Strict-
@@ -56,6 +83,11 @@ import { z } from 'zod';
  * - `posterFrame` — frame at which `staticFallback` (T-396 curated
  *   example) is sampled. Convention reused from shader /
  *   three-scene / voice / ai-chat / live-data / web-embed.
+ * - `curatedExample` (T-396 D-T396-1) — optional captured curated
+ *   example the `defaultAiGenerativeStaticFallback` generator
+ *   renders on the static path. Strict shape: `{ src, contentType? }`.
+ *   v1 accepts ONLY `data:` URLs. Absent → the generator emits a
+ *   single placeholder TextElement.
  */
 export const aiGenerativeClipPropsSchema = z
   .object({
@@ -67,8 +99,12 @@ export const aiGenerativeClipPropsSchema = z
     width: z.number().int().positive().optional(),
     height: z.number().int().positive().optional(),
     posterFrame: z.number().int().nonnegative().default(0),
+    curatedExample: curatedExampleSchema.optional(),
   })
   .strict();
+
+/** Inferred shape of {@link aiGenerativeClipPropsSchema.curatedExample}. */
+export type AiGenerativeCuratedExample = z.infer<typeof curatedExampleSchema>;
 
 /** Inferred shape of {@link aiGenerativeClipPropsSchema}. */
 export type AiGenerativeClipProps = z.infer<typeof aiGenerativeClipPropsSchema>;
