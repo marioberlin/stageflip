@@ -1,13 +1,13 @@
 // packages/runtimes/frame-runtime-bridge/src/clips/chart/line.test.tsx
 // T-406 AC #7 + #13 — line renderer.
 
-import { describe, expect, it } from 'vitest';
-import { render } from '@testing-library/react';
 import { FrameProvider, type VideoConfig } from '@stageflip/frame-runtime';
+import { render } from '@testing-library/react';
 import type { ReactElement } from 'react';
+import { describe, expect, it } from 'vitest';
 
-import { LineChart } from './line.js';
 import { ENTRANCE_FRACTION } from './constants.js';
+import { LineChart } from './line.js';
 
 function renderAtFrame(node: ReactElement, frame: number, durationInFrames = 60) {
   const cfg: VideoConfig = { width: 1920, height: 1080, fps: 30, durationInFrames };

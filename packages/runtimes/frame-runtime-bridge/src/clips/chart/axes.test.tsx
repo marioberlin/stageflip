@@ -1,15 +1,16 @@
 // packages/runtimes/frame-runtime-bridge/src/clips/chart/axes.test.tsx
 // T-406 — shared axis renderer used by bar / line / area / scatter / combo.
 
-import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 
 import { Axes } from './axes.js';
 
 describe('Axes', () => {
   it('renders both x and y axis lines + tick labels', () => {
     const { container } = render(
-      <svg width={1920} height={1080}>
+      <svg width={1920} height={1080} role="img" aria-label="axes test">
+        <title>axes test</title>
         <Axes
           width={1920}
           height={1080}
@@ -35,7 +36,8 @@ describe('Axes', () => {
 
   it('omits the axis when omit prop is true', () => {
     const { container } = render(
-      <svg width={1920} height={1080}>
+      <svg width={1920} height={1080} role="img" aria-label="axes omit test">
+        <title>axes omit test</title>
         <Axes
           width={1920}
           height={1080}

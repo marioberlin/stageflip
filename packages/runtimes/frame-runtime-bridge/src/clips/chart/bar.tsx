@@ -9,7 +9,6 @@ import type { ReactElement } from 'react';
 import type { ChartData } from '@stageflip/schema';
 
 import { Axes } from './axes.js';
-import { Legend } from './legend.js';
 import {
   CANVAS_H,
   CANVAS_W,
@@ -20,6 +19,7 @@ import {
   type Palette,
   STAGGER_FRAMES,
 } from './constants.js';
+import { Legend } from './legend.js';
 
 export interface BarChartProps {
   data: ChartData;

@@ -11,15 +11,19 @@
 // presets (T-355–T-360) bind to this `chart` clipKind, NOT to the
 // standalone clips.
 
-import { chartDataSchema, chartKindSchema } from '@stageflip/schema';
 import type { ClipDefinition } from '@stageflip/runtimes-contract';
+import { chartDataSchema, chartKindSchema } from '@stageflip/schema';
 import type { ReactElement } from 'react';
 import { z } from 'zod';
 
 import { defineFrameClip } from '../../index.js';
 import { AreaChart } from './area.js';
 import { BarChart } from './bar.js';
+import { ComboChart } from './combo.js';
+import { DonutChart } from './donut.js';
 import { LineChart } from './line.js';
+import { PieChart } from './pie.js';
+import { ScatterChart } from './scatter.js';
 
 /**
  * Props shape for the unified chart family. Structural subset of
@@ -89,9 +93,9 @@ const augmentedSafeParse = (input: unknown): ReturnType<typeof baseParse> => {
   augmentedSafeParse;
 
 /**
- * Dispatch on `chartKind`. The pie / donut / scatter / combo cases
- * are implemented in commit 3 of the T-406 PR; commit 2 ships the
- * dispatcher with placeholder fallbacks that throw a typed error.
+ * Dispatch on `chartKind` to the per-kind renderer. All seven kinds
+ * (bar / line / area / pie / donut / scatter / combo) are implemented
+ * in T-406; the switch is exhaustive over `chartKindSchema`.
  */
 export function ChartClip(props: ChartProps): ReactElement {
   switch (props.chartKind) {
@@ -101,13 +105,14 @@ export function ChartClip(props: ChartProps): ReactElement {
       return <LineChart data={props.data} legend={props.legend} axes={props.axes} />;
     case 'area':
       return <AreaChart data={props.data} legend={props.legend} axes={props.axes} />;
-    default:
-      // Pie / donut / scatter / combo are implemented in commit 3.
-      // Returning an empty <svg> here keeps the dispatcher type-safe;
-      // commit 3 swaps each case to its real renderer.
-      throw new Error(
-        `ChartClip: chartKind '${props.chartKind}' not yet implemented in this commit (T-406 commit 3 ships pie / donut / scatter / combo).`,
-      );
+    case 'pie':
+      return <PieChart data={props.data} legend={props.legend} />;
+    case 'donut':
+      return <DonutChart data={props.data} legend={props.legend} />;
+    case 'scatter':
+      return <ScatterChart data={props.data} legend={props.legend} axes={props.axes} />;
+    case 'combo':
+      return <ComboChart data={props.data} legend={props.legend} axes={props.axes} />;
   }
 }
 

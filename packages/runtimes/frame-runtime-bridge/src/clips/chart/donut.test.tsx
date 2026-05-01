@@ -1,10 +1,10 @@
 // packages/runtimes/frame-runtime-bridge/src/clips/chart/donut.test.tsx
 // T-406 AC #10 — donut renderer.
 
-import { describe, expect, it } from 'vitest';
-import { render } from '@testing-library/react';
 import { FrameProvider, type VideoConfig } from '@stageflip/frame-runtime';
+import { render } from '@testing-library/react';
 import type { ReactElement } from 'react';
+import { describe, expect, it } from 'vitest';
 
 import { DonutChart, INNER_RADIUS_FRACTION } from './donut.js';
 

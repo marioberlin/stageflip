@@ -1,10 +1,10 @@
 // packages/runtimes/frame-runtime-bridge/src/clips/chart/area.test.tsx
 // T-406 AC #8 + #13 — area renderer.
 
-import { describe, expect, it } from 'vitest';
-import { render } from '@testing-library/react';
 import { FrameProvider, type VideoConfig } from '@stageflip/frame-runtime';
+import { render } from '@testing-library/react';
 import type { ReactElement } from 'react';
+import { describe, expect, it } from 'vitest';
 
 import { AreaChart } from './area.js';
 import { ENTRANCE_FRACTION } from './constants.js';

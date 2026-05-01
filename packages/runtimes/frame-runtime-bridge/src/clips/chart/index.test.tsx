@@ -3,12 +3,12 @@
 // DataSourceRef rejection + ALL_BRIDGE_CLIPS registration + KNOWN_KINDS
 // allowlist.
 
-import { describe, expect, it } from 'vitest';
-import { render } from '@testing-library/react';
 import { FrameProvider, type VideoConfig } from '@stageflip/frame-runtime';
+import { render } from '@testing-library/react';
 import type { ReactElement } from 'react';
+import { describe, expect, it } from 'vitest';
 
-import { ChartClip, chartPropsSchema, chartClip } from './index.js';
+import { ChartClip, chartClip, chartPropsSchema } from './index.js';
 
 const validBase = {
   chartKind: 'bar' as const,

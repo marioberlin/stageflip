@@ -10,7 +10,6 @@ import type { ReactElement } from 'react';
 import type { ChartData } from '@stageflip/schema';
 
 import { Axes } from './axes.js';
-import { Legend } from './legend.js';
 import {
   CANVAS_H,
   CANVAS_W,
@@ -21,6 +20,7 @@ import {
   type Palette,
   STAGGER_FRAMES,
 } from './constants.js';
+import { Legend } from './legend.js';
 
 export interface AreaChartProps {
   data: ChartData;
@@ -120,10 +120,12 @@ export function AreaChart({
         // Fill polygon: line points + baseline closing path. Opacity
         // animates from 0 to 0.3 over the entrance window so the fill
         // sweep is perceived as a reveal.
+        const lastPoint = points[points.length - 1];
+        const firstPoint = points[0];
         const polygonPoints = [
           ...points.map((p) => `${p.x},${p.y}`),
-          ...(points.length > 0
-            ? [`${points[points.length - 1]!.x},${baselineY}`, `${points[0]!.x},${baselineY}`]
+          ...(lastPoint !== undefined && firstPoint !== undefined
+            ? [`${lastPoint.x},${baselineY}`, `${firstPoint.x},${baselineY}`]
             : []),
         ].join(' ');
         const fillOpacity = interpolate(frame, [delay, delay + buildFrames], [0, 0.3], {

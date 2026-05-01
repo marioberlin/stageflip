@@ -1,10 +1,10 @@
 // packages/runtimes/frame-runtime-bridge/src/clips/chart/bar.test.tsx
 // T-406 AC #6 + #13 — bar renderer.
 
-import { describe, expect, it } from 'vitest';
-import { render } from '@testing-library/react';
 import { FrameProvider, type VideoConfig } from '@stageflip/frame-runtime';
+import { render } from '@testing-library/react';
 import type { ReactElement } from 'react';
+import { describe, expect, it } from 'vitest';
 
 import { BarChart } from './bar.js';
 import { ENTRANCE_FRACTION } from './constants.js';
@@ -39,7 +39,8 @@ describe('BarChart (T-406 AC #6, #13)', () => {
     const heights = rects.map((r) => Number(r.getAttribute('height') ?? '0'));
     // Heights should be monotonically increasing (values are 10/20/30/40).
     for (let i = 1; i < heights.length; i++) {
-      expect(heights[i]).toBeGreaterThanOrEqual(heights[i - 1]!);
+      const prev = heights[i - 1] ?? 0;
+      expect(heights[i]).toBeGreaterThanOrEqual(prev);
     }
   });
 
