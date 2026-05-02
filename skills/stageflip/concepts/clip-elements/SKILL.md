@@ -28,6 +28,15 @@ can carry. Three element types specifically carry **motion**:
 Every other element type (`text`, `image`, `video`, `audio`, `shape`,
 `group`, `chart`, `table`, `embed`, `code`) is structural / static.
 
+`chart` has a dedicated frame-deterministic renderer family — T-406's
+unified `chart` ClipDefinition in
+`@stageflip/runtimes-frame-runtime-bridge` — that consumes
+`ChartElement`-shaped props (minus `elementBase` + minus the
+`DataSourceRef` branch) and dispatches on `chartKind` to seven per-kind
+SVG renderers. See `skills/stageflip/runtimes/chart/SKILL.md` for the
+runtime contract; `ChartElement`'s schema lives in
+`packages/schema/src/elements/chart.ts`.
+
 ## `BlenderClip`
 
 ```ts

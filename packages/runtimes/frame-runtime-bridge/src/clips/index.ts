@@ -352,12 +352,23 @@ export {
   animatedMapPropsSchema,
 } from './animated-map.js';
 
+// T-406 — Chart clip family. Unified ChartElement renderer over 7
+// chartKinds. Distinct from the standalone chart-build / pie-chart-
+// build / line-chart-draw clips (T-131b) which remain available.
+export {
+  ChartClip,
+  type ChartProps,
+  chartClip,
+  chartPropsSchema,
+} from './chart/index.js';
+
 import { animatedMapClip } from './animated-map.js';
 import { animatedValueClip } from './animated-value.js';
 import { audioVisualizerReactiveClip } from './audio-visualizer-reactive.js';
 import { audioVisualizerClip } from './audio-visualizer.js';
 import { beatSyncedTextClip } from './beat-synced-text.js';
 import { chartBuildClip } from './chart-build.js';
+import { chartClip } from './chart/index.js';
 import { clickOverlayClip } from './click-overlay.js';
 import { codeBlockClip } from './code-block.js';
 import { comparisonTableClip } from './comparison-table.js';
@@ -473,4 +484,9 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // T-202b — StageFlip.Display profile clips: data tranche.
   priceRevealClip,
   productCarouselClip,
+  // T-406 — Chart clip family (unified ChartElement renderer over 7
+  // chartKinds). Distinct from the standalone chart-build / pie-chart-
+  // build / line-chart-draw clips above; Cluster E presets bind to
+  // this `chart` clipKind. 42 → 43 clips.
+  chartClip,
 ];
