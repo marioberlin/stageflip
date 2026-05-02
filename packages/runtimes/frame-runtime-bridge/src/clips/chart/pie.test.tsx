@@ -32,10 +32,16 @@ describe('PieChart (T-406 AC #9, #13)', () => {
 
   it('AC #9 — at frame 0, slices have zero terminal angle (animation pre-start)', () => {
     const { container } = renderAtFrame(<PieChart data={data} legend />, 0);
-    // At frame 0, every slice path should be empty / zero-angle.
-    // Total slice angle sum at duration → 360°; at frame 0 → 0°.
-    const slices = container.querySelectorAll('[data-testid^="chart-pie-slice-"]');
+    // At frame 0, every slice path is empty (`arcPath()` returns '' when
+    // `endAngle - startAngle <= 0`). Total slice angle sum at the
+    // settled frame → 360°; at frame 0 → 0°.
+    const slices = Array.from(
+      container.querySelectorAll('[data-testid^="chart-pie-slice-"]'),
+    ) as SVGPathElement[];
     expect(slices.length).toBe(4);
+    for (const slice of slices) {
+      expect(slice.getAttribute('d')).toBe('');
+    }
   });
 
   it('AC #13 — animation has settled past floor(0.6 * durationInFrames)', () => {
