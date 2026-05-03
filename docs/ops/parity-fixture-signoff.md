@@ -155,6 +155,20 @@ The standalone `generate-preset-parity-fixture.ts` script keeps its
 backward-compat behavior — it always exits 1 with `rendering pipeline
 unavailable: ...` because no renderer is bound.
 
+## Pending follow-up tasks
+
+- **T-359b — re-promote T-359 (`f1-sector-purple-green`) to `signed:<date>`.**
+  T-359a (this task) lands all the unblock infrastructure
+  (`bindProductionRenderer` hook + `bigNumber → animated-value` resolver
+  entry + `--variant=sessionBest|personalBest|neutral` flag + per-manifest
+  atomic sign-off). T-359a D-T359a-6 explicitly descopes the actual run
+  to a follow-up because producing real golden PNGs requires Chrome +
+  the `Formula1 Display` BYO font + an end-to-end CDP render that cannot
+  be validated in the test environment. T-359b runs the prod-bound
+  generator on T-359, signs off the three goldens, and flips
+  `signOff.parityFixture: pending-user-review` →
+  `signOff.parityFixture: signed:<date>`. Closes T-359 AC #14–#16.
+
 ## Out-of-scope items (deferred per T-313 + T-359a §"Out of scope")
 
 - Multi-frame fixtures (loop-entry + mid-hold + loop-exit) within a single

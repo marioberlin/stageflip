@@ -19,6 +19,12 @@
 // `@stageflip/runtimes-frame-runtime-bridge`, and (lazily) puppeteer-side
 // machinery. `packages/parity-cli` is already a Node-only package; no new
 // browser-bundle exposure (T-359a D-T359a-9, browser-bundle hazard memo).
+//
+// Follow-up: T-359b runs this prod-bound generator on T-359
+// (`f1-sector-purple-green`) to flip its `signOff.parityFixture` from
+// `pending-user-review` → `signed:<date>`, closing the carve-out from
+// T-359a D-T359a-6. See `docs/ops/parity-fixture-signoff.md`
+// §"Pending follow-up tasks".
 
 import { type RIRDocument, rirDocumentSchema } from '@stageflip/rir';
 

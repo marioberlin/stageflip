@@ -1126,36 +1126,61 @@ describe('runGenerate — multi-variant render loop (T-359a AC #3, #5)', () => {
   });
 
   it('single-variant invocation byte-identical to T-313 baseline (AC #11)', async () => {
-    // Render twice with the same args, no --variant. The two manifests must
-    // match byte-for-byte (no `variants` key, identical layout).
-    const presetsRoot = writeSyntheticTree({
+    // Render twice with the same args, no --variant. Both manifests + golden
+    // files must be byte-identical (idempotent), AND the manifest must omit
+    // the `variants` key entirely + use the no-suffix golden filename — i.e.,
+    // the exact T-313 on-disk shape.
+    const presetsRoot1 = writeSyntheticTree({
       presets: [{ cluster: 'news', id: 'cnn-classic' }],
     });
-    const fixturesRoot = makeFixturesRoot();
+    const presetsRoot2 = writeSyntheticTree({
+      presets: [{ cluster: 'news', id: 'cnn-classic' }],
+    });
+    const fixturesRoot1 = makeFixturesRoot();
+    const fixturesRoot2 = makeFixturesRoot();
     try {
-      const r = await runGenerate(
+      const r1 = await runGenerate(
         [
           '--preset=cnn-classic',
-          `--presets-root=${presetsRoot}`,
-          `--fixtures-root=${fixturesRoot}`,
+          `--presets-root=${presetsRoot1}`,
+          `--fixtures-root=${fixturesRoot1}`,
         ],
         { renderer: stubRenderer },
       );
-      expect(r.exitCode).toBe(0);
-      const manifest = JSON.parse(
-        readFileSync(join(fixturesRoot, 'news', 'cnn-classic', 'manifest.json'), 'utf8'),
+      const r2 = await runGenerate(
+        [
+          '--preset=cnn-classic',
+          `--presets-root=${presetsRoot2}`,
+          `--fixtures-root=${fixturesRoot2}`,
+        ],
+        { renderer: stubRenderer },
       );
-      expect(manifest.variants).toBeUndefined();
+      expect(r1.exitCode).toBe(0);
+      expect(r2.exitCode).toBe(0);
+
+      // Byte-identity: read both manifest files as raw bytes and compare.
+      const manifestPath1 = join(fixturesRoot1, 'news', 'cnn-classic', 'manifest.json');
+      const manifestPath2 = join(fixturesRoot2, 'news', 'cnn-classic', 'manifest.json');
+      const bytes1 = readFileSync(manifestPath1);
+      const bytes2 = readFileSync(manifestPath2);
+      expect(bytes1.equals(bytes2)).toBe(true);
+
+      // T-313 baseline shape: no `variants` key in the JSON; suffix-free
+      // golden filename. A future field added unconditionally would fail
+      // the sibling shape assertions below — guards against shape drift.
+      const manifest = JSON.parse(bytes1.toString('utf8'));
+      expect(manifest).not.toHaveProperty('variants');
       expect(manifest.referenceFrames).toEqual([DEFAULT_CANONICAL_FRAME]);
-      // The single golden file uses the no-suffix shape.
       expect(
         existsSync(
-          join(fixturesRoot, 'news', 'cnn-classic', `golden-frame-${DEFAULT_CANONICAL_FRAME}.png`),
+          join(fixturesRoot1, 'news', 'cnn-classic', `golden-frame-${DEFAULT_CANONICAL_FRAME}.png`),
         ),
       ).toBe(true);
     } finally {
-      rmSync(presetsRoot, { recursive: true, force: true });
-      rmSync(fixturesRoot, { recursive: true, force: true });
+      rmSync(presetsRoot1, { recursive: true, force: true });
+      rmSync(presetsRoot2, { recursive: true, force: true });
+      rmSync(fixturesRoot1, { recursive: true, force: true });
+      rmSync(fixturesRoot2, { recursive: true, force: true });
     }
   });
 });
