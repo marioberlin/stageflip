@@ -16,8 +16,23 @@ parity-fixtures/<cluster>/<preset-id>/
 $ pnpm generate-parity-fixture --preset=<id> [--frame=<n>] [--mark-signed] [--force]
 ```
 
+For presets with multiple visual states, pass `--variant=<name>` one or more
+times (or `--variant=a,b,c`) per **T-359a**:
+
+```
+$ pnpm tsx scripts/generate-preset-parity-fixture.ts \
+    --preset=f1-sector-purple-green \
+    --variant=sessionBest --variant=personalBest --variant=neutral \
+    --frame=60 --mark-signed
+```
+
+The on-disk shape becomes `golden-frame-<n>-<variant>.png` (one per declared
+variant) plus a `manifest.json` carrying an object-keyed `variants` field.
+Single-variant invocations still produce the byte-identical T-313 shape (no
+`variants` key, single `golden-frame-<n>.png`).
+
 See `docs/ops/parity-fixture-signoff.md` for the four-step sign-off workflow
-(generate → inspect → sign → cluster merge).
+(generate → inspect → sign → cluster merge) and the multi-variant section.
 
 ## Existing parity infrastructure
 

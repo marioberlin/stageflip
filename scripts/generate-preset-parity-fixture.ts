@@ -21,14 +21,12 @@
 
 import {
   closeSync,
-  existsSync,
   fsyncSync,
   mkdirSync,
   openSync,
   readFileSync,
   renameSync,
   unlinkSync,
-  writeFileSync,
   writeSync,
 } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -78,18 +76,32 @@ export const DEFAULT_THRESHOLDS = {
 
 // ---------- types ----------
 
-/** A renderer that produces a PNG buffer for a single (preset, frame) pair. */
+/** A composition shape — width / height / fps / durationInFrames in frames. */
+export interface FixtureComposition {
+  width: number;
+  height: number;
+  fps: number;
+  durationInFrames: number;
+}
+
+/** A renderer that produces a PNG buffer for a single (preset, frame, variant?) tuple. */
 export interface FixtureRenderer {
   /**
    * Render `args.preset` at `args.frame` against `args.composition` and return
    * the PNG byte buffer. Implementations may throw `RenderUnavailableError` to
    * signal the rendering pipeline isn't reachable (AC #4 — clean error vs.
    * crash).
+   *
+   * `args.variant`, when present, names the variant being rendered (T-359a
+   * D-T359a-1). Single-variant invocations omit it; the renderer is expected
+   * to use it as the `state` (or otherwise variant-discriminating) prop value
+   * passed to the bound clipKind component.
    */
   render(args: {
     preset: Preset;
-    composition: typeof DEFAULT_COMPOSITION;
+    composition: FixtureComposition;
     frame: number;
+    variant?: string;
   }): Promise<Uint8Array> | Uint8Array;
 }
 
@@ -102,6 +114,12 @@ export class RenderUnavailableError extends Error {
     super(message);
     this.name = 'RenderUnavailableError';
   }
+}
+
+/** Per-variant entry in the multi-variant manifest (T-359a D-T359a-1). */
+export interface PresetFixtureVariantEntry {
+  /** Frames captured for this variant. v1: single frame mirroring `referenceFrames`. */
+  frames: number[];
 }
 
 /** The shape written to `manifest.json`. */
@@ -130,6 +148,12 @@ export interface PresetFixtureManifest {
     preferred: { family: string; license: string };
     fallback: { family: string; weight: number; license: string } | undefined;
   };
+  /**
+   * Object-keyed multi-variant slot (T-359a D-T359a-1). Present only when one
+   * or more `--variant=<name>` flags were passed; absent for single-variant
+   * legacy manifests so the on-disk shape is byte-identical to T-313 (AC #11).
+   */
+  variants?: Record<string, PresetFixtureVariantEntry>;
 }
 
 // ---------- pure helpers ----------
@@ -150,15 +174,24 @@ export function findPresetById(args: {
 /**
  * Build the manifest for a (preset, frame) pair. Pure — no I/O. The result is
  * what gets serialized into `manifest.json`.
+ *
+ * When `args.variants` is provided and non-empty, the returned manifest carries
+ * an object-keyed `variants` field (T-359a D-T359a-1) and the goldens pattern
+ * widens to include `${variant}`. When omitted (or empty), the manifest matches
+ * the T-313 single-variant shape byte-for-byte (AC #11).
  */
 export function buildManifest(args: {
   preset: Preset;
   frame: number;
-  composition?: typeof DEFAULT_COMPOSITION;
+  composition?: FixtureComposition;
+  variants?: readonly string[];
 }): PresetFixtureManifest {
   const composition = args.composition ?? DEFAULT_COMPOSITION;
   const fm = args.preset.frontmatter;
-  return {
+  const variants = args.variants ?? [];
+  const isMulti = variants.length > 0;
+
+  const base: PresetFixtureManifest = {
     name: fm.id,
     cluster: fm.cluster,
     kind: fm.clipKind,
@@ -170,7 +203,10 @@ export function buildManifest(args: {
       durationInFrames: composition.durationInFrames,
     },
     referenceFrames: [args.frame],
-    goldens: { dir: '.', pattern: 'golden-frame-${frame}.png' },
+    goldens: {
+      dir: '.',
+      pattern: isMulti ? 'golden-frame-${frame}-${variant}.png' : 'golden-frame-${frame}.png',
+    },
     fonts: {
       preferred: {
         family: fm.preferredFont.family,
@@ -186,6 +222,16 @@ export function buildManifest(args: {
           : undefined,
     },
   };
+
+  if (isMulti) {
+    const variantsMap: Record<string, PresetFixtureVariantEntry> = {};
+    for (const v of variants) {
+      variantsMap[v] = { frames: [args.frame] };
+    }
+    base.variants = variantsMap;
+  }
+
+  return base;
 }
 
 /** Compute the on-disk output directory for a preset's fixture artifacts. */
@@ -300,6 +346,13 @@ export interface CliArgs {
   presetsRoot: string;
   fixturesRoot: string;
   help: boolean;
+  /**
+   * Variant names declared via `--variant=<name>` (repeatable, comma-
+   * separated). Empty array means single-variant legacy mode (T-313 shape,
+   * AC #11). Order is the operator's declaration order; duplicates are
+   * de-duplicated by `parseArgs`.
+   */
+  variants: string[];
 }
 
 const DEFAULT_CLI_ARGS: CliArgs = {
@@ -310,7 +363,14 @@ const DEFAULT_CLI_ARGS: CliArgs = {
   presetsRoot: PRESETS_ROOT_DEFAULT,
   fixturesRoot: FIXTURES_ROOT_DEFAULT,
   help: false,
+  variants: [],
 };
+
+/**
+ * Variant-name regex — camelCase, must start lowercase letter, no hyphens.
+ * Per T-359a D-T359a-8.
+ */
+export const VARIANT_NAME_REGEX = /^[a-z][a-zA-Z0-9]*$/;
 
 /**
  * Parse argv (`['--preset=cnn-classic', '--frame=42', ...]`). Pure — never
@@ -320,8 +380,12 @@ export function parseArgs(argv: readonly string[]): {
   args: CliArgs;
   errors: string[];
 } {
-  const args: CliArgs = { ...DEFAULT_CLI_ARGS };
+  // Fresh `variants` array per invocation — the spread copies the default's
+  // empty array reference, but parseArgs may push into it; without a fresh
+  // allocation, repeated parseArgs calls would mutate shared state.
+  const args: CliArgs = { ...DEFAULT_CLI_ARGS, variants: [] };
   const errors: string[] = [];
+  const variantSet = new Set<string>();
 
   for (const raw of argv) {
     if (raw === '--help' || raw === '-h') {
@@ -362,6 +426,24 @@ export function parseArgs(argv: readonly string[]): {
       case 'fixtures-root':
         args.fixturesRoot = value;
         break;
+      case 'variant': {
+        // T-359a D-T359a-8: comma-separated form folded into the same set as
+        // repeated `--variant=` flags. Empty entries are an error (e.g. `a,,b`).
+        const parts = value.split(',');
+        for (const part of parts) {
+          if (!VARIANT_NAME_REGEX.test(part)) {
+            errors.push(
+              `--variant '${part}' must match ${VARIANT_NAME_REGEX.source} (camelCase, no hyphens)`,
+            );
+            continue;
+          }
+          if (!variantSet.has(part)) {
+            variantSet.add(part);
+            args.variants.push(part);
+          }
+        }
+        break;
+      }
       default:
         errors.push(`unknown flag '--${key}'`);
     }
@@ -374,6 +456,7 @@ export function usage(): string {
   return [
     'Usage: pnpm generate-parity-fixture --preset=<id>',
     '                                    [--frame=<n>]',
+    '                                    [--variant=<name>]...',
     '                                    [--mark-signed] [--force]',
     '                                    [--presets-root=<path>]',
     '                                    [--fixtures-root=<path>]',
@@ -382,6 +465,13 @@ export function usage(): string {
     '  parity-fixtures/<cluster>/<preset>/manifest.json',
     '  parity-fixtures/<cluster>/<preset>/golden-frame-<n>.png',
     '  parity-fixtures/<cluster>/<preset>/thresholds.json',
+    '',
+    'Multi-variant (T-359a):',
+    '  Pass --variant=<name> one or more times (or --variant=a,b,c) to render',
+    '  one golden per declared variant, written as golden-frame-<n>-<variant>.png.',
+    '  The manifest gains an object-keyed `variants` field. Variant names must',
+    '  match camelCase (^[a-z][a-zA-Z0-9]*$). With --mark-signed, ALL declared',
+    '  variants must render cleanly — partial failure aborts the sign-off.',
     '',
     "Pass --mark-signed to update the preset's signOff.parityFixture to signed:<today>",
     '(use --force to re-sign an already-signed preset).',
@@ -455,39 +545,65 @@ export async function runGenerate(argv: readonly string[], opts: RunOpts): Promi
   });
   mkdirSync(outDir, { recursive: true });
 
-  // Render.
-  let png: Uint8Array;
-  try {
-    const result = opts.renderer.render({
-      preset,
-      composition: DEFAULT_COMPOSITION,
-      frame: args.frame,
-    });
-    png = result instanceof Promise ? await result : result;
-  } catch (err) {
-    if (err instanceof RenderUnavailableError) {
-      stderr.push(`rendering pipeline unavailable: ${err.message}`);
+  // Multi-variant render loop (T-359a). With no `--variant` flags this
+  // collapses to a single render with `variant: undefined`, preserving the
+  // T-313 single-variant filename `golden-frame-<n>.png` (AC #11).
+  const isMulti = args.variants.length > 0;
+  const renderTargets: ReadonlyArray<{ variant: string | undefined; goldenPath: string }> = isMulti
+    ? args.variants.map((v) => ({
+        variant: v,
+        goldenPath: resolve(outDir, `golden-frame-${args.frame}-${v}.png`),
+      }))
+    : [{ variant: undefined, goldenPath: resolve(outDir, `golden-frame-${args.frame}.png`) }];
+
+  // Render every target BEFORE writing any artifact. This preserves the
+  // atomic-per-manifest sign-off invariant (T-359a D-T359a-2 / AC #5):
+  // partial render failure leaves the on-disk fixture untouched and aborts
+  // before any frontmatter mutation.
+  const renderedPngs: Uint8Array[] = [];
+  for (const target of renderTargets) {
+    try {
+      const result = opts.renderer.render({
+        preset,
+        composition: DEFAULT_COMPOSITION,
+        frame: args.frame,
+        ...(target.variant !== undefined ? { variant: target.variant } : {}),
+      });
+      renderedPngs.push(result instanceof Promise ? await result : result);
+    } catch (err) {
+      if (err instanceof RenderUnavailableError) {
+        stderr.push(`rendering pipeline unavailable: ${err.message}`);
+        return { exitCode: 1, stdout, stderr, written };
+      }
+      const tag = target.variant !== undefined ? ` (variant '${target.variant}')` : '';
+      stderr.push(
+        `render failed for preset '${fm.id}'${tag}: ${err instanceof Error ? err.message : String(err)}`,
+      );
       return { exitCode: 1, stdout, stderr, written };
     }
-    stderr.push(
-      `render failed for preset '${fm.id}': ${err instanceof Error ? err.message : String(err)}`,
-    );
-    return { exitCode: 1, stdout, stderr, written };
   }
 
   // Write artifacts.
-  const manifest = buildManifest({ preset, frame: args.frame });
+  const manifest = buildManifest({
+    preset,
+    frame: args.frame,
+    ...(isMulti ? { variants: args.variants } : {}),
+  });
   const manifestPath = resolve(outDir, 'manifest.json');
-  const goldenPath = resolve(outDir, `golden-frame-${args.frame}.png`);
   const thresholdsPath = resolve(outDir, 'thresholds.json');
 
   writeFileAtomic(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   written.push(manifestPath);
   stdout.push(`wrote ${manifestPath}`);
 
-  writeFileAtomic(goldenPath, png);
-  written.push(goldenPath);
-  stdout.push(`wrote ${goldenPath}`);
+  for (let i = 0; i < renderTargets.length; i++) {
+    const target = renderTargets[i];
+    const png = renderedPngs[i];
+    if (target === undefined || png === undefined) continue; // unreachable; guards noUncheckedIndexedAccess.
+    writeFileAtomic(target.goldenPath, png);
+    written.push(target.goldenPath);
+    stdout.push(`wrote ${target.goldenPath}`);
+  }
 
   writeFileAtomic(thresholdsPath, `${JSON.stringify(DEFAULT_THRESHOLDS, null, 2)}\n`);
   written.push(thresholdsPath);
@@ -531,24 +647,62 @@ function defaultToday(): string {
   return formatUtcDate(new Date());
 }
 
-// ---------- production renderer ----------
+// ---------- production renderer (T-359a — bindProductionRenderer hook) ----------
 
 /**
- * Production renderer that defers to `@stageflip/renderer-cdp`. Imported lazily
- * so test environments without Chrome+ffmpeg don't pay the import cost. When
- * the import or render fails, throws {@link RenderUnavailableError} so the CLI
- * can produce the AC #4 message rather than a stack trace.
+ * The current production-renderer impl. Module-scoped late binding (T-359a
+ * D-T359a-3): the standalone script entrypoint observes the unbound default
+ * and surfaces the clean "unavailable" error; `packages/parity-cli`'s
+ * `generate-fixture` bin calls {@link bindProductionRenderer} at module load
+ * to swap in the real puppeteer/CDP-backed renderer.
+ *
+ * Module-scoped state is acceptable here per CLAUDE.md §3 (scripts/** is
+ * outside the determinism-gated scope) and per D-T359a-9 (operator invokes
+ * once per process — no shared-mutation hazard).
  */
-export const productionRenderer: FixtureRenderer = {
-  async render(_args) {
-    // T-313 v1 ships the orchestration; the actual @stageflip/renderer-cdp
-    // wiring is the operational pipeline (existing from earlier phases). We
-    // surface a clean "unavailable" error here when invoked outside that
-    // pipeline so the CLI's exit-1 message is helpful rather than a crash.
+const UNBOUND_RENDERER: FixtureRenderer = {
+  render(_args) {
     throw new RenderUnavailableError(
       'production renderer not bound — invoke from within the parity-prime pipeline ' +
         '(packages/parity-cli) or pass an explicit renderer in tests',
     );
+  },
+};
+
+let _productionRendererImpl: FixtureRenderer = UNBOUND_RENDERER;
+
+/**
+ * Bind the production-renderer implementation. Called by
+ * `packages/parity-cli` at process start; safe to call repeatedly (last-wins
+ * semantics). Tests should prefer the {@link FixtureRenderer} DI parameter
+ * to `runGenerate` over binding the singleton.
+ *
+ * T-359a D-T359a-3 / AC #8.
+ */
+export function bindProductionRenderer(renderer: FixtureRenderer): void {
+  _productionRendererImpl = renderer;
+}
+
+/**
+ * Reset the production-renderer impl to the unbound default. Test-only —
+ * the underscore prefix marks it as not part of the public API. Tests use it
+ * to keep the module-scoped `_productionRendererImpl` from leaking across
+ * test boundaries.
+ */
+export function __resetProductionRendererForTests(): void {
+  _productionRendererImpl = UNBOUND_RENDERER;
+}
+
+/**
+ * Production renderer surface. Defers every call to whichever
+ * {@link FixtureRenderer} is currently bound — `UNBOUND_RENDERER` until
+ * `bindProductionRenderer` swaps in the real impl. The standalone script's
+ * `main()` invokes this; backward compat with T-313's "unavailable" error
+ * (AC #9) is preserved by the unbound default.
+ */
+export const productionRenderer: FixtureRenderer = {
+  render(args) {
+    return _productionRendererImpl.render(args);
   },
 };
 

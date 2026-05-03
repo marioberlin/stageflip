@@ -30,6 +30,8 @@ import {
   DEFAULT_THRESHOLDS,
   type FixtureRenderer,
   RenderUnavailableError,
+  __resetProductionRendererForTests,
+  bindProductionRenderer,
   buildManifest,
   findPresetById,
   fixtureDirFor,
@@ -787,21 +789,21 @@ describe('runGenerate — --mark-signed flow (AC #5/6)', () => {
 // ---------- productionRenderer / usage ----------
 
 describe('productionRenderer', () => {
-  it('throws RenderUnavailableError until wired into the parity-prime pipeline', async () => {
+  it('throws RenderUnavailableError until wired into the parity-prime pipeline', () => {
+    __resetProductionRendererForTests();
     const root = writeSyntheticTree({ presets: [{ cluster: 'news', id: 'cnn-classic' }] });
     try {
       const preset = findPresetById({ presetId: 'cnn-classic', presetsRoot: root });
       if (!preset) throw new Error('test setup');
-      await expect(
-        Promise.resolve(
-          productionRenderer.render({
-            preset,
-            composition: DEFAULT_COMPOSITION,
-            frame: 0,
-          }),
-        ),
-      ).rejects.toBeInstanceOf(RenderUnavailableError);
+      expect(() =>
+        productionRenderer.render({
+          preset,
+          composition: DEFAULT_COMPOSITION,
+          frame: 0,
+        }),
+      ).toThrow(RenderUnavailableError);
     } finally {
+      __resetProductionRendererForTests();
       rmSync(root, { recursive: true, force: true });
     }
   });
@@ -841,5 +843,431 @@ describe('subprocess CLI', () => {
     );
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('rendering pipeline unavailable');
+  });
+});
+
+// ---------- T-359a — multi-variant parseArgs ----------
+
+describe('parseArgs — --variant (T-359a AC #1, #2)', () => {
+  it('accepts a single --variant', () => {
+    const { args, errors } = parseArgs(['--preset=p', '--variant=sessionBest']);
+    expect(errors).toEqual([]);
+    expect(args.variants).toEqual(['sessionBest']);
+  });
+
+  it('accepts repeated --variant flags (AC #1)', () => {
+    const { args, errors } = parseArgs([
+      '--preset=p',
+      '--variant=sessionBest',
+      '--variant=personalBest',
+      '--variant=neutral',
+    ]);
+    expect(errors).toEqual([]);
+    expect(args.variants).toEqual(['sessionBest', 'personalBest', 'neutral']);
+  });
+
+  it('accepts comma-separated --variant value (AC #1)', () => {
+    const { args, errors } = parseArgs([
+      '--preset=p',
+      '--variant=sessionBest,personalBest,neutral',
+    ]);
+    expect(errors).toEqual([]);
+    expect(args.variants).toEqual(['sessionBest', 'personalBest', 'neutral']);
+  });
+
+  it('mixes repeated + comma-separated and dedups in declared order', () => {
+    const { args, errors } = parseArgs([
+      '--preset=p',
+      '--variant=a,b',
+      '--variant=b',
+      '--variant=c',
+    ]);
+    expect(errors).toEqual([]);
+    expect(args.variants).toEqual(['a', 'b', 'c']);
+  });
+
+  it('rejects invalid variant names (AC #2)', () => {
+    const { errors } = parseArgs(['--preset=p', '--variant=Bad-Name']);
+    expect(errors[0]).toMatch(/--variant.*Bad-Name/);
+  });
+
+  it('rejects variant starting with uppercase (AC #2)', () => {
+    const { errors } = parseArgs(['--preset=p', '--variant=SessionBest']);
+    expect(errors[0]).toMatch(/--variant/);
+  });
+
+  it('rejects empty variant in comma list (AC #2)', () => {
+    const { errors } = parseArgs(['--preset=p', '--variant=a,,b']);
+    expect(errors[0]).toMatch(/--variant/);
+  });
+
+  it('default variants is empty array (single-variant legacy)', () => {
+    const { args } = parseArgs(['--preset=p']);
+    expect(args.variants).toEqual([]);
+  });
+});
+
+// ---------- T-359a — buildManifest multi-variant ----------
+
+describe('buildManifest — multi-variant shape (T-359a AC #4, #11)', () => {
+  it('omits variants field when no variants supplied (single-variant legacy AC #11)', () => {
+    const root = writeSyntheticTree({
+      presets: [{ cluster: 'news', id: 'cnn-classic' }],
+    });
+    try {
+      const preset = findPresetById({ presetId: 'cnn-classic', presetsRoot: root });
+      if (!preset) throw new Error('test setup');
+      const manifest = buildManifest({ preset, frame: 60 });
+      expect(manifest.variants).toBeUndefined();
+      expect(manifest.referenceFrames).toEqual([60]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('populates object-keyed variants when variants supplied (AC #4)', () => {
+    const root = writeSyntheticTree({
+      presets: [{ cluster: 'data', id: 'f1-sector' }],
+    });
+    try {
+      const preset = findPresetById({ presetId: 'f1-sector', presetsRoot: root });
+      if (!preset) throw new Error('test setup');
+      const manifest = buildManifest({
+        preset,
+        frame: 60,
+        variants: ['sessionBest', 'personalBest', 'neutral'],
+      });
+      expect(manifest.variants).toBeDefined();
+      expect(manifest.variants).toEqual({
+        sessionBest: { frames: [60] },
+        personalBest: { frames: [60] },
+        neutral: { frames: [60] },
+      });
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps referenceFrames present alongside variants for legacy readers', () => {
+    const root = writeSyntheticTree({
+      presets: [{ cluster: 'data', id: 'f1-sector' }],
+    });
+    try {
+      const preset = findPresetById({ presetId: 'f1-sector', presetsRoot: root });
+      if (!preset) throw new Error('test setup');
+      const manifest = buildManifest({
+        preset,
+        frame: 60,
+        variants: ['a', 'b'],
+      });
+      expect(manifest.referenceFrames).toEqual([60]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('uses variant-aware goldens pattern when variants supplied', () => {
+    const root = writeSyntheticTree({
+      presets: [{ cluster: 'data', id: 'f1-sector' }],
+    });
+    try {
+      const preset = findPresetById({ presetId: 'f1-sector', presetsRoot: root });
+      if (!preset) throw new Error('test setup');
+      const manifest = buildManifest({
+        preset,
+        frame: 60,
+        variants: ['a', 'b'],
+      });
+      expect(manifest.goldens.pattern).toContain('${variant}');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+// ---------- T-359a — runGenerate multi-variant ----------
+
+describe('runGenerate — multi-variant render loop (T-359a AC #3, #5)', () => {
+  it('writes one golden per variant with -<variant> suffix (AC #3)', async () => {
+    const presetsRoot = writeSyntheticTree({
+      presets: [{ cluster: 'data', id: 'f1-sector' }],
+    });
+    const fixturesRoot = makeFixturesRoot();
+    const calls: string[] = [];
+    const variantRenderer: FixtureRenderer = {
+      render: (args) => {
+        calls.push(args.variant ?? '<none>');
+        return STUB_PNG;
+      },
+    };
+    try {
+      const r = await runGenerate(
+        [
+          '--preset=f1-sector',
+          '--variant=sessionBest',
+          '--variant=personalBest',
+          '--variant=neutral',
+          `--presets-root=${presetsRoot}`,
+          `--fixtures-root=${fixturesRoot}`,
+        ],
+        { renderer: variantRenderer },
+      );
+      expect(r.exitCode).toBe(0);
+      const dir = join(fixturesRoot, 'data', 'f1-sector');
+      expect(existsSync(join(dir, 'golden-frame-60-sessionBest.png'))).toBe(true);
+      expect(existsSync(join(dir, 'golden-frame-60-personalBest.png'))).toBe(true);
+      expect(existsSync(join(dir, 'golden-frame-60-neutral.png'))).toBe(true);
+      expect(existsSync(join(dir, 'manifest.json'))).toBe(true);
+      const manifest = JSON.parse(readFileSync(join(dir, 'manifest.json'), 'utf8'));
+      expect(manifest.variants).toEqual({
+        sessionBest: { frames: [60] },
+        personalBest: { frames: [60] },
+        neutral: { frames: [60] },
+      });
+      expect(calls).toEqual(['sessionBest', 'personalBest', 'neutral']);
+    } finally {
+      rmSync(presetsRoot, { recursive: true, force: true });
+      rmSync(fixturesRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('partial-render failure aborts before frontmatter mutation (AC #5)', async () => {
+    const presetsRoot = writeSyntheticTree({
+      presets: [{ cluster: 'data', id: 'f1-sector' }],
+    });
+    const fixturesRoot = makeFixturesRoot();
+    const partialRenderer: FixtureRenderer = {
+      render: (args) => {
+        if (args.variant === 'personalBest') throw new Error('boom for personalBest');
+        return STUB_PNG;
+      },
+    };
+    try {
+      const r = await runGenerate(
+        [
+          '--preset=f1-sector',
+          '--variant=sessionBest',
+          '--variant=personalBest',
+          '--variant=neutral',
+          '--mark-signed',
+          `--presets-root=${presetsRoot}`,
+          `--fixtures-root=${fixturesRoot}`,
+        ],
+        { renderer: partialRenderer, today: () => '2026-05-03' },
+      );
+      expect(r.exitCode).toBe(1);
+      expect(r.stderr.join('\n')).toContain('personalBest');
+      const updated = readFileSync(join(presetsRoot, 'data', 'f1-sector.md'), 'utf8');
+      const parsed = matter(updated);
+      expect((parsed.data as { signOff: { parityFixture: string } }).signOff.parityFixture).toBe(
+        'pending-user-review',
+      );
+    } finally {
+      rmSync(presetsRoot, { recursive: true, force: true });
+      rmSync(fixturesRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('--mark-signed succeeds when all variants render (AC #5)', async () => {
+    const presetsRoot = writeSyntheticTree({
+      presets: [{ cluster: 'data', id: 'f1-sector' }],
+    });
+    const fixturesRoot = makeFixturesRoot();
+    try {
+      const r = await runGenerate(
+        [
+          '--preset=f1-sector',
+          '--variant=sessionBest',
+          '--variant=personalBest',
+          '--variant=neutral',
+          '--mark-signed',
+          `--presets-root=${presetsRoot}`,
+          `--fixtures-root=${fixturesRoot}`,
+        ],
+        { renderer: stubRenderer, today: () => '2026-05-03' },
+      );
+      expect(r.exitCode).toBe(0);
+      const updated = readFileSync(join(presetsRoot, 'data', 'f1-sector.md'), 'utf8');
+      const parsed = matter(updated);
+      expect((parsed.data as { signOff: { parityFixture: string } }).signOff.parityFixture).toBe(
+        'signed:2026-05-03',
+      );
+    } finally {
+      rmSync(presetsRoot, { recursive: true, force: true });
+      rmSync(fixturesRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('multi-variant idempotency: re-run overwrites cleanly (AC #6)', async () => {
+    const presetsRoot = writeSyntheticTree({
+      presets: [{ cluster: 'data', id: 'f1-sector' }],
+    });
+    const fixturesRoot = makeFixturesRoot();
+    try {
+      const argsList = [
+        '--preset=f1-sector',
+        '--variant=a',
+        '--variant=b',
+        `--presets-root=${presetsRoot}`,
+        `--fixtures-root=${fixturesRoot}`,
+      ];
+      const r1 = await runGenerate(argsList, { renderer: stubRenderer });
+      expect(r1.exitCode).toBe(0);
+      const dir = join(fixturesRoot, 'data', 'f1-sector');
+      const m1 = readFileSync(join(dir, 'manifest.json'), 'utf8');
+      const r2 = await runGenerate(argsList, { renderer: stubRenderer });
+      expect(r2.exitCode).toBe(0);
+      const m2 = readFileSync(join(dir, 'manifest.json'), 'utf8');
+      expect(m2).toBe(m1);
+    } finally {
+      rmSync(presetsRoot, { recursive: true, force: true });
+      rmSync(fixturesRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('single-variant invocation byte-identical to T-313 baseline (AC #11)', async () => {
+    // Render twice with the same args, no --variant. Both manifests + golden
+    // files must be byte-identical (idempotent), AND the manifest must omit
+    // the `variants` key entirely + use the no-suffix golden filename — i.e.,
+    // the exact T-313 on-disk shape.
+    const presetsRoot1 = writeSyntheticTree({
+      presets: [{ cluster: 'news', id: 'cnn-classic' }],
+    });
+    const presetsRoot2 = writeSyntheticTree({
+      presets: [{ cluster: 'news', id: 'cnn-classic' }],
+    });
+    const fixturesRoot1 = makeFixturesRoot();
+    const fixturesRoot2 = makeFixturesRoot();
+    try {
+      const r1 = await runGenerate(
+        [
+          '--preset=cnn-classic',
+          `--presets-root=${presetsRoot1}`,
+          `--fixtures-root=${fixturesRoot1}`,
+        ],
+        { renderer: stubRenderer },
+      );
+      const r2 = await runGenerate(
+        [
+          '--preset=cnn-classic',
+          `--presets-root=${presetsRoot2}`,
+          `--fixtures-root=${fixturesRoot2}`,
+        ],
+        { renderer: stubRenderer },
+      );
+      expect(r1.exitCode).toBe(0);
+      expect(r2.exitCode).toBe(0);
+
+      // Byte-identity: read both manifest files as raw bytes and compare.
+      const manifestPath1 = join(fixturesRoot1, 'news', 'cnn-classic', 'manifest.json');
+      const manifestPath2 = join(fixturesRoot2, 'news', 'cnn-classic', 'manifest.json');
+      const bytes1 = readFileSync(manifestPath1);
+      const bytes2 = readFileSync(manifestPath2);
+      expect(bytes1.equals(bytes2)).toBe(true);
+
+      // T-313 baseline shape: no `variants` key in the JSON; suffix-free
+      // golden filename. A future field added unconditionally would fail
+      // the sibling shape assertions below — guards against shape drift.
+      const manifest = JSON.parse(bytes1.toString('utf8'));
+      expect(manifest).not.toHaveProperty('variants');
+      expect(manifest.referenceFrames).toEqual([DEFAULT_CANONICAL_FRAME]);
+      expect(
+        existsSync(
+          join(fixturesRoot1, 'news', 'cnn-classic', `golden-frame-${DEFAULT_CANONICAL_FRAME}.png`),
+        ),
+      ).toBe(true);
+    } finally {
+      rmSync(presetsRoot1, { recursive: true, force: true });
+      rmSync(presetsRoot2, { recursive: true, force: true });
+      rmSync(fixturesRoot1, { recursive: true, force: true });
+      rmSync(fixturesRoot2, { recursive: true, force: true });
+    }
+  });
+});
+
+// ---------- T-359a — bindProductionRenderer ----------
+
+describe('bindProductionRenderer (T-359a AC #7, #8, #9)', () => {
+  it('production renderer throws RenderUnavailableError before binding (AC #9 baseline)', () => {
+    __resetProductionRendererForTests();
+    const root = writeSyntheticTree({ presets: [{ cluster: 'news', id: 'cnn-classic' }] });
+    try {
+      const preset = findPresetById({ presetId: 'cnn-classic', presetsRoot: root });
+      if (!preset) throw new Error('test setup');
+      expect(() =>
+        productionRenderer.render({
+          preset,
+          composition: DEFAULT_COMPOSITION,
+          frame: 0,
+        }),
+      ).toThrow(RenderUnavailableError);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+      __resetProductionRendererForTests();
+    }
+  });
+
+  it('bindProductionRenderer swaps the impl; production renderer then defers to it (AC #8)', async () => {
+    const root = writeSyntheticTree({ presets: [{ cluster: 'news', id: 'cnn-classic' }] });
+    try {
+      const preset = findPresetById({ presetId: 'cnn-classic', presetsRoot: root });
+      if (!preset) throw new Error('test setup');
+      bindProductionRenderer({
+        render: () => new Uint8Array([1, 2, 3, 4]),
+      });
+      const result = await Promise.resolve(
+        productionRenderer.render({ preset, composition: DEFAULT_COMPOSITION, frame: 0 }),
+      );
+      expect(Array.from(result)).toEqual([1, 2, 3, 4]);
+    } finally {
+      __resetProductionRendererForTests();
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('after reset, production renderer reverts to RenderUnavailableError (AC #9)', () => {
+    const root = writeSyntheticTree({ presets: [{ cluster: 'news', id: 'cnn-classic' }] });
+    try {
+      const preset = findPresetById({ presetId: 'cnn-classic', presetsRoot: root });
+      if (!preset) throw new Error('test setup');
+      bindProductionRenderer({ render: () => new Uint8Array([9]) });
+      __resetProductionRendererForTests();
+      expect(() =>
+        productionRenderer.render({ preset, composition: DEFAULT_COMPOSITION, frame: 0 }),
+      ).toThrow(RenderUnavailableError);
+    } finally {
+      __resetProductionRendererForTests();
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('end-to-end: bound renderer drives a multi-variant runGenerate', async () => {
+    const presetsRoot = writeSyntheticTree({
+      presets: [{ cluster: 'data', id: 'f1-sector' }],
+    });
+    const fixturesRoot = makeFixturesRoot();
+    try {
+      bindProductionRenderer({
+        render: (args) => new Uint8Array([0x89, 0x50, 0x4e, 0x47, args.variant?.length ?? 0]),
+      });
+      const r = await runGenerate(
+        [
+          '--preset=f1-sector',
+          '--variant=sessionBest',
+          '--variant=neutral',
+          `--presets-root=${presetsRoot}`,
+          `--fixtures-root=${fixturesRoot}`,
+        ],
+        { renderer: productionRenderer },
+      );
+      expect(r.exitCode).toBe(0);
+      const dir = join(fixturesRoot, 'data', 'f1-sector');
+      expect(existsSync(join(dir, 'golden-frame-60-sessionBest.png'))).toBe(true);
+      expect(existsSync(join(dir, 'golden-frame-60-neutral.png'))).toBe(true);
+    } finally {
+      __resetProductionRendererForTests();
+      rmSync(presetsRoot, { recursive: true, force: true });
+      rmSync(fixturesRoot, { recursive: true, force: true });
+    }
   });
 });

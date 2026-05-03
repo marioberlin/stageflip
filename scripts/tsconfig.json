@@ -10,7 +10,10 @@
     "check-preset-integrity.ts",
     "check-preset-integrity.test.ts",
     "check-determinism.ts",
-    "check-determinism.test.ts"
+    "check-determinism.test.ts",
+    "generate-preset-parity-fixture.ts",
+    "generate-preset-parity-fixture.test.ts",
+    "generate-preset-parity-fixture-prod.ts"
   ],
   "exclude": ["node_modules"]
 }

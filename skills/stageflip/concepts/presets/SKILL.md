@@ -3,7 +3,7 @@ title: Preset schema primitive
 id: skills/stageflip/concepts/presets
 tier: concept
 status: substantive
-last_updated: 2026-04-29
+last_updated: 2026-05-03
 owner_task: T-304
 related:
   - skills/stageflip/presets/news/SKILL.md
@@ -200,10 +200,11 @@ Invariant 5 is the most common bug class — clusters A/B/D/F/G is the
 required-sign-off set; C/E/H are exempt. The `na` exemption for text-free
 presets is narrow (preferredFont.license atom = `'na'`).
 
-## Parity fixtures (T-313)
+## Parity fixtures (T-313 + T-359a)
 
 Per **ADR-004 §D5**, every preset requires a signed parity fixture before its
-cluster may merge. T-313 ships two CLIs and a workflow doc:
+cluster may merge. T-313 ships two CLIs and a workflow doc; T-359a extends
+the generator with multi-variant manifests and a real puppeteer-bound renderer:
 
 - `pnpm generate-parity-fixture --preset=<id> [--frame=<n>] [--mark-signed]`
   — auto-generates the canonical reference-frame fixture under
@@ -214,10 +215,22 @@ cluster may merge. T-313 ships two CLIs and a workflow doc:
 - `pnpm check-cluster-eligibility --cluster=<letter|name>` — walks the
   cluster, reports per-preset sign-off state, exits 0 when every preset is
   signed (or `na`).
+- **Multi-variant** (T-359a): pass `--variant=<name>` one or more times (or
+  `--variant=a,b,c`) for presets that render multiple visual states from one
+  preset id (the exemplar is `f1-sector-purple-green` with three states:
+  `sessionBest` / `personalBest` / `neutral`). One golden file per variant is
+  written; the manifest gains an object-keyed `variants` field. Sign-off
+  remains per-manifest atomic — all declared variants must render cleanly for
+  `--mark-signed` to mutate the frontmatter.
+- **Real renders** (T-359a): use the wrapper
+  `pnpm tsx scripts/generate-preset-parity-fixture-prod.ts ...` to bind the
+  puppeteer/CDP-backed renderer at process start. The standalone script
+  remains stub-only and exits 1 with `rendering pipeline unavailable: ...`.
 
 The four-step product-owner-per-cluster workflow (generate → inspect → sign →
-cluster batch merge) is documented at
-[`docs/ops/parity-fixture-signoff.md`](../../../ops/parity-fixture-signoff.md).
+cluster batch merge) and the multi-variant CLI usage are documented at
+[`docs/ops/parity-fixture-signoff.md`](../../../ops/parity-fixture-signoff.md)
+(see § "Multi-variant fixtures").
 
 T-313 reuses the existing parity infrastructure at `packages/testing/fixtures/`
 (T-067) — the fixture-manifest schema is shared. The new top-level
@@ -302,3 +315,4 @@ behavior. Output canonicality is pinned by AC #30 (100-invocation hash test).
 - T-308 (`check-preset-integrity` CI gate — first downstream consumer)
 - T-310 (`check-skill-drift` preset-tree gate — tree-level coverage + id coherence)
 - T-313 (parity-fixture pipeline + sign-off workflow — `pnpm generate-parity-fixture`, `pnpm check-cluster-eligibility`, [`docs/ops/parity-fixture-signoff.md`](../../../ops/parity-fixture-signoff.md))
+- T-359a (multi-variant manifests + bound `productionRenderer` — `--variant=<name>`, `bindProductionRenderer`, `DEFAULT_CLIP_KIND_RESOLVER`)
