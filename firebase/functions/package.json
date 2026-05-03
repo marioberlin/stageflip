@@ -1,6 +1,6 @@
 {
   "name": "@stageflip/firebase-functions",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "description": "StageFlip Firebase Cloud Functions — auth + tenancy callables (T-262).",

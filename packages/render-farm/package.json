@@ -1,6 +1,6 @@
 {
   "name": "@stageflip/render-farm",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "Render-farm adapter contract + in-memory + K8s stub (T-266).",
   "license": "BUSL-1.1",

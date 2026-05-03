@@ -1,6 +1,6 @@
 {
   "name": "@stageflip/mcp-server",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "description": "StageFlip MCP server — wraps the engine's semantic-tool registry + OAuth → JWT session flow for the Model Context Protocol.",
   "license": "BUSL-1.1",

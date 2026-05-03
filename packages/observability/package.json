@@ -1,6 +1,6 @@
 {
   "name": "@stageflip/observability",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "description": "StageFlip observability — OpenTelemetry tracing + Sentry error reporting + structured pino logs (T-264).",
   "license": "BUSL-1.1",
