@@ -789,21 +789,19 @@ describe('runGenerate — --mark-signed flow (AC #5/6)', () => {
 // ---------- productionRenderer / usage ----------
 
 describe('productionRenderer', () => {
-  it('throws RenderUnavailableError until wired into the parity-prime pipeline', async () => {
+  it('throws RenderUnavailableError until wired into the parity-prime pipeline', () => {
     __resetProductionRendererForTests();
     const root = writeSyntheticTree({ presets: [{ cluster: 'news', id: 'cnn-classic' }] });
     try {
       const preset = findPresetById({ presetId: 'cnn-classic', presetsRoot: root });
       if (!preset) throw new Error('test setup');
-      await expect(
-        Promise.resolve(
-          productionRenderer.render({
-            preset,
-            composition: DEFAULT_COMPOSITION,
-            frame: 0,
-          }),
-        ),
-      ).rejects.toBeInstanceOf(RenderUnavailableError);
+      expect(() =>
+        productionRenderer.render({
+          preset,
+          composition: DEFAULT_COMPOSITION,
+          frame: 0,
+        }),
+      ).toThrow(RenderUnavailableError);
     } finally {
       __resetProductionRendererForTests();
       rmSync(root, { recursive: true, force: true });
@@ -1060,8 +1058,10 @@ describe('runGenerate — multi-variant render loop (T-359a AC #3, #5)', () => {
       expect(r.exitCode).toBe(1);
       expect(r.stderr.join('\n')).toContain('personalBest');
       const updated = readFileSync(join(presetsRoot, 'data', 'f1-sector.md'), 'utf8');
-      expect(updated).toContain('parityFixture: pending-user-review');
-      expect(updated).not.toContain('parityFixture: signed:');
+      const parsed = matter(updated);
+      expect(
+        (parsed.data as { signOff: { parityFixture: string } }).signOff.parityFixture,
+      ).toBe('pending-user-review');
     } finally {
       rmSync(presetsRoot, { recursive: true, force: true });
       rmSync(fixturesRoot, { recursive: true, force: true });
@@ -1088,7 +1088,10 @@ describe('runGenerate — multi-variant render loop (T-359a AC #3, #5)', () => {
       );
       expect(r.exitCode).toBe(0);
       const updated = readFileSync(join(presetsRoot, 'data', 'f1-sector.md'), 'utf8');
-      expect(updated).toContain('parityFixture: signed:2026-05-03');
+      const parsed = matter(updated);
+      expect(
+        (parsed.data as { signOff: { parityFixture: string } }).signOff.parityFixture,
+      ).toBe('signed:2026-05-03');
     } finally {
       rmSync(presetsRoot, { recursive: true, force: true });
       rmSync(fixturesRoot, { recursive: true, force: true });
@@ -1160,21 +1163,19 @@ describe('runGenerate — multi-variant render loop (T-359a AC #3, #5)', () => {
 // ---------- T-359a — bindProductionRenderer ----------
 
 describe('bindProductionRenderer (T-359a AC #7, #8, #9)', () => {
-  it('production renderer throws RenderUnavailableError before binding (AC #9 baseline)', async () => {
+  it('production renderer throws RenderUnavailableError before binding (AC #9 baseline)', () => {
     __resetProductionRendererForTests();
     const root = writeSyntheticTree({ presets: [{ cluster: 'news', id: 'cnn-classic' }] });
     try {
       const preset = findPresetById({ presetId: 'cnn-classic', presetsRoot: root });
       if (!preset) throw new Error('test setup');
-      await expect(
-        Promise.resolve(
-          productionRenderer.render({
-            preset,
-            composition: DEFAULT_COMPOSITION,
-            frame: 0,
-          }),
-        ),
-      ).rejects.toBeInstanceOf(RenderUnavailableError);
+      expect(() =>
+        productionRenderer.render({
+          preset,
+          composition: DEFAULT_COMPOSITION,
+          frame: 0,
+        }),
+      ).toThrow(RenderUnavailableError);
     } finally {
       rmSync(root, { recursive: true, force: true });
       __resetProductionRendererForTests();
@@ -1199,18 +1200,16 @@ describe('bindProductionRenderer (T-359a AC #7, #8, #9)', () => {
     }
   });
 
-  it('after reset, production renderer reverts to RenderUnavailableError (AC #9)', async () => {
+  it('after reset, production renderer reverts to RenderUnavailableError (AC #9)', () => {
     const root = writeSyntheticTree({ presets: [{ cluster: 'news', id: 'cnn-classic' }] });
     try {
       const preset = findPresetById({ presetId: 'cnn-classic', presetsRoot: root });
       if (!preset) throw new Error('test setup');
       bindProductionRenderer({ render: () => new Uint8Array([9]) });
       __resetProductionRendererForTests();
-      await expect(
-        Promise.resolve(
-          productionRenderer.render({ preset, composition: DEFAULT_COMPOSITION, frame: 0 }),
-        ),
-      ).rejects.toBeInstanceOf(RenderUnavailableError);
+      expect(() =>
+        productionRenderer.render({ preset, composition: DEFAULT_COMPOSITION, frame: 0 }),
+      ).toThrow(RenderUnavailableError);
     } finally {
       __resetProductionRendererForTests();
       rmSync(root, { recursive: true, force: true });
