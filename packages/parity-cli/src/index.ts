@@ -67,3 +67,18 @@ export {
   runReport,
   type ReportCliOptions,
 } from './report-cli.js';
+
+// T-359a — production-renderer binding for the parity-fixture generator.
+export {
+  DEFAULT_CLIP_KIND_RESOLVER,
+  F1_SECTOR_STATE_COLORS,
+  GenerateFixtureUnavailableError,
+  buildPresetDocument,
+  createGenerateFixtureRenderer,
+  type ClipKindBinding,
+  type ClipKindResolver,
+  type FixtureComposition,
+  type FixtureRenderArgs,
+  type FixtureRendererLike,
+  type PresetForRender,
+} from './generate-fixture.js';

@@ -21,14 +21,12 @@
 
 import {
   closeSync,
-  existsSync,
   fsyncSync,
   mkdirSync,
   openSync,
   readFileSync,
   renameSync,
   unlinkSync,
-  writeFileSync,
   writeSync,
 } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -78,6 +76,14 @@ export const DEFAULT_THRESHOLDS = {
 
 // ---------- types ----------
 
+/** A composition shape — width / height / fps / durationInFrames in frames. */
+export interface FixtureComposition {
+  width: number;
+  height: number;
+  fps: number;
+  durationInFrames: number;
+}
+
 /** A renderer that produces a PNG buffer for a single (preset, frame, variant?) tuple. */
 export interface FixtureRenderer {
   /**
@@ -93,7 +99,7 @@ export interface FixtureRenderer {
    */
   render(args: {
     preset: Preset;
-    composition: typeof DEFAULT_COMPOSITION;
+    composition: FixtureComposition;
     frame: number;
     variant?: string;
   }): Promise<Uint8Array> | Uint8Array;
@@ -177,7 +183,7 @@ export function findPresetById(args: {
 export function buildManifest(args: {
   preset: Preset;
   frame: number;
-  composition?: typeof DEFAULT_COMPOSITION;
+  composition?: FixtureComposition;
   variants?: readonly string[];
 }): PresetFixtureManifest {
   const composition = args.composition ?? DEFAULT_COMPOSITION;

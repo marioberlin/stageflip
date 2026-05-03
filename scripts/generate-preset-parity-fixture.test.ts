@@ -918,7 +918,7 @@ describe('buildManifest — multi-variant shape (T-359a AC #4, #11)', () => {
       const preset = findPresetById({ presetId: 'cnn-classic', presetsRoot: root });
       if (!preset) throw new Error('test setup');
       const manifest = buildManifest({ preset, frame: 60 });
-      expect((manifest as Record<string, unknown>).variants).toBeUndefined();
+      expect(manifest.variants).toBeUndefined();
       expect(manifest.referenceFrames).toEqual([60]);
     } finally {
       rmSync(root, { recursive: true, force: true });
@@ -1059,9 +1059,9 @@ describe('runGenerate — multi-variant render loop (T-359a AC #3, #5)', () => {
       expect(r.stderr.join('\n')).toContain('personalBest');
       const updated = readFileSync(join(presetsRoot, 'data', 'f1-sector.md'), 'utf8');
       const parsed = matter(updated);
-      expect(
-        (parsed.data as { signOff: { parityFixture: string } }).signOff.parityFixture,
-      ).toBe('pending-user-review');
+      expect((parsed.data as { signOff: { parityFixture: string } }).signOff.parityFixture).toBe(
+        'pending-user-review',
+      );
     } finally {
       rmSync(presetsRoot, { recursive: true, force: true });
       rmSync(fixturesRoot, { recursive: true, force: true });
@@ -1089,9 +1089,9 @@ describe('runGenerate — multi-variant render loop (T-359a AC #3, #5)', () => {
       expect(r.exitCode).toBe(0);
       const updated = readFileSync(join(presetsRoot, 'data', 'f1-sector.md'), 'utf8');
       const parsed = matter(updated);
-      expect(
-        (parsed.data as { signOff: { parityFixture: string } }).signOff.parityFixture,
-      ).toBe('signed:2026-05-03');
+      expect((parsed.data as { signOff: { parityFixture: string } }).signOff.parityFixture).toBe(
+        'signed:2026-05-03',
+      );
     } finally {
       rmSync(presetsRoot, { recursive: true, force: true });
       rmSync(fixturesRoot, { recursive: true, force: true });
