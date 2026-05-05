@@ -1,0 +1,30 @@
+{
+  "name": "squid-game-geometric",
+  "cluster": "titles",
+  "kind": "titleSequence",
+  "description": "Parity fixture for preset 'squid-game-geometric' (cluster titles, kind titleSequence)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    120
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Squid Game custom geometric",
+      "license": "proprietary-byo"
+    },
+    "fallback": {
+      "family": "Anton + Bebas Neue",
+      "weight": 700,
+      "license": "ofl"
+    }
+  }
+}

@@ -759,6 +759,146 @@ const fullScreenBinding: ClipKindBinding = {
 };
 
 /**
+ * `squid-game-geometric` (T-350) — first and (so far) only `titleSequence`-
+ * clipKind preset to ship; bound to the `titleSequence` primitive shipped
+ * by T-321. Six-shot timeline (5000 ms @ 30 fps = 150 frames) drives the
+ * brutalist Squid-Game register: hot pink / teal / black hard-cut palette
+ * jump cuts with inline ○△□ Unicode glyphs (D-T350-4) cycled across shots
+ * 1–3, a teal-panel bridge at shot 4, and a `'SQUID GAME'` ALL-CAPS title
+ * plate at shot 5 (D-T350-3). The `'palette-jump-cut'` style bundle (T-321
+ * D-T321-3) hard-codes cut-only transitions regardless of declared
+ * `transitionOut`, bleeds the most-recent `colorPanel.content.color`
+ * through the container background, and dispatches `colorPanel.content.glyph`
+ * through the foreground render path at `font.size * 1.5` centered. Mid-
+ * hold at frame 120 (= 4000 ms; mid shot 5) lands the title plate fully
+ * assembled on the teal `#067162` panel bleed (D-T350-5). Wired as the
+ * `titleSequence` clipKind-default (Pattern C — first preset for a
+ * clipKind takes the clipKind-default slot, NOT a `PRESET_ID_BINDINGS`
+ * override; sister Cluster D presets T-348 / T-349 / T-351 / T-352 / T-353
+ * supply per-preset overrides via `PRESET_ID_BINDINGS`).
+ */
+export const SQUID_GAME_GEOMETRIC_SHOTS: ReadonlyArray<{
+  readonly id: string;
+  readonly startMs: number;
+  readonly endMs: number;
+  readonly kind: 'colorPanel' | 'titlePlate';
+  readonly content: { color?: string; glyph?: string; text?: string };
+  readonly transitionOut: 'cut';
+}> = [
+  {
+    id: 'panel-pink-prelude',
+    startMs: 0,
+    endMs: 600,
+    kind: 'colorPanel',
+    content: { color: '#E91E63' },
+    transitionOut: 'cut',
+  },
+  {
+    id: 'panel-teal-circle',
+    startMs: 600,
+    endMs: 1200,
+    kind: 'colorPanel',
+    content: { color: '#067162', glyph: '○' },
+    transitionOut: 'cut',
+  },
+  {
+    id: 'panel-black-triangle',
+    startMs: 1200,
+    endMs: 1800,
+    kind: 'colorPanel',
+    content: { color: '#000000', glyph: '△' },
+    transitionOut: 'cut',
+  },
+  {
+    id: 'panel-pink-square',
+    startMs: 1800,
+    endMs: 2400,
+    kind: 'colorPanel',
+    content: { color: '#E91E63', glyph: '□' },
+    transitionOut: 'cut',
+  },
+  {
+    id: 'panel-teal-title',
+    startMs: 2400,
+    endMs: 3600,
+    kind: 'colorPanel',
+    content: { color: '#067162' },
+    transitionOut: 'cut',
+  },
+  {
+    id: 'title-hold',
+    startMs: 3600,
+    endMs: 5000,
+    kind: 'titlePlate',
+    content: { text: 'SQUID GAME' },
+    transitionOut: 'cut',
+  },
+];
+
+const squidGameGeometricBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'titleSequence',
+  buildProps() {
+    return {
+      shots: SQUID_GAME_GEOMETRIC_SHOTS.map((s) => {
+        if (s.kind === 'colorPanel') {
+          const content: { color: string; glyph?: string } = {
+            color: s.content.color ?? '#000000',
+          };
+          if (s.content.glyph !== undefined) content.glyph = s.content.glyph;
+          return {
+            id: s.id,
+            startMs: s.startMs,
+            endMs: s.endMs,
+            kind: 'colorPanel' as const,
+            content,
+            transitionOut: s.transitionOut,
+          };
+        }
+        return {
+          id: s.id,
+          startMs: s.startMs,
+          endMs: s.endMs,
+          kind: 'titlePlate' as const,
+          content: { text: s.content.text ?? '' },
+          transitionOut: s.transitionOut,
+        };
+      }),
+      style: 'palette-jump-cut' as const,
+      // Center-screen per D-T350-7 — the title plate sits visually centered
+      // against the teal panel bleed in the 1280×720 default composition.
+      // The primitive renders the wrapper at `left: position.x - position.width / 2`
+      // (title-sequence.tsx:643), so x=640 + width=1024 lands the visual
+      // centerline at canvas x=640.
+      position: { x: 640, y: 360, width: 1024, alignment: 'center' as const },
+      // ALL-CAPS canonical posture per D-T350-7 (stub line 33 "ALL CAPS,
+      // scaled to fill"); applied at render time via the primitive's
+      // `applyCasing` helper (no CSS `text-transform`).
+      casing: 'uppercase' as const,
+      // Override bundle default font.size (96) → 64 per D-T350-3 sizing
+      // rationale (the spec floated 120 as a starting point but the spec
+      // also authorised the Implementer to adjust size after observing the
+      // rendered output: at size 120, `font.size * 2 = 240 px` causes
+      // `'SQUID GAME'` to wrap at the 1024 px wrapper width — only `SQUID`
+      // and a partial `GAME` are visible against the teal panel. At size
+      // 64 the rendered title plate runs `font.size * 2 = 128 px` and fits
+      // on one line; the brutalist mass + readability are both preserved
+      // at the 1280×720 canvas. The squid-game-specific family stack drops
+      // `Inter Display` (the bundle default prefix) to favour Anton's
+      // brutalist letterform mass first per stub line 32.
+      font: { family: 'Anton, Bebas Neue, system-ui, sans-serif', weight: 700, size: 64 },
+      // Title text wears white on the teal/pink/black panels per D-T350-1.
+      foreground: '#FFFFFF',
+      // `highlightColor`, `background`, and `glow` deliberately UNSET per
+      // D-T350-7: the brutalist register forbids strokes / shadows /
+      // gradients (stub line 45). The container background is overridden
+      // by the most-recent `colorPanel.content.color` under
+      // `'palette-jump-cut'` regardless (primitive lines 718–730).
+    };
+  },
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -777,10 +917,10 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
  * v1 default resolver — `bigNumber → animated-value`, `scoreBug → outcome-row`
  * (T-358), `newsTicker → news-ticker-bar` (T-356), `standings →
  * standings-table` (T-357), `caption → caption` (T-362), `fullScreen →
- * magic-wall-panel` (T-355), `lyrics → lyrics` (T-367), with per-preset
- * overrides for multi-preset-per-clipKind cases (T-360 D-T360-2). Per-preset
- * entries take precedence; absent an override, the resolver falls back to the
- * clipKind-only mapping.
+ * magic-wall-panel` (T-355), `lyrics → lyrics` (T-367), `titleSequence →
+ * titleSequence` (T-350), with per-preset overrides for multi-preset-per-
+ * clipKind cases (T-360 D-T360-2). Per-preset entries take precedence;
+ * absent an override, the resolver falls back to the clipKind-only mapping.
  */
 export const DEFAULT_CLIP_KIND_RESOLVER: ClipKindResolver = (clipKind, presetId) => {
   if (presetId !== undefined) {
@@ -794,6 +934,7 @@ export const DEFAULT_CLIP_KIND_RESOLVER: ClipKindResolver = (clipKind, presetId)
   if (clipKind === 'caption') return captionBinding;
   if (clipKind === 'fullScreen') return fullScreenBinding;
   if (clipKind === 'lyrics') return lyricsBinding;
+  if (clipKind === 'titleSequence') return squidGameGeometricBinding;
   return undefined;
 };
 
