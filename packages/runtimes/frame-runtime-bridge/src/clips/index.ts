@@ -431,6 +431,23 @@ export {
   magicWallPanelPropsSchema,
 } from './magic-wall-panel.js';
 
+// T-322 — lyrics primitive. Line-level music-synced lyric panel with
+// three style bundles (`'karaoke-wipe'` — left-to-right color front
+// sweeping across the active line driven by per-line ms-progress;
+// `'three-line-stack'` — past dimmed at top / active highlighted in
+// middle / next preview at bottom; `'highlight-current'` — active
+// line only). Frame-deterministic line visibility; stable line-index-
+// derived clipPath + filter IDs (no crypto.randomUUID); per-line
+// entrance (`'none'` / `'fade'` / `'rise'`); optional `glow?` halo
+// via SVG Gaussian-blur filter on the active line. Unblocks T-367
+// (karaoke-progressive-wipe, last Cluster F preset).
+export {
+  Lyrics,
+  type LyricsProps,
+  lyricsClip,
+  lyricsPropsSchema,
+} from './lyrics.js';
+
 import { animatedMapClip } from './animated-map.js';
 import { animatedValueClip } from './animated-value.js';
 import { audioVisualizerReactiveClip } from './audio-visualizer-reactive.js';
@@ -457,6 +474,7 @@ import { lightLeakClip } from './light-leak.js';
 import { lineChartDrawClip } from './line-chart-draw.js';
 import { logoIntroClip } from './logo-intro.js';
 import { lowerThirdClip } from './lower-third.js';
+import { lyricsClip } from './lyrics.js';
 import { magicWallPanelClip } from './magic-wall-panel.js';
 import { marketingDashboardClip } from './marketing-dashboard.js';
 import { newsTickerBarClip } from './news-ticker-bar.js';
@@ -602,4 +620,15 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // board, uefa-starball-refraction, twc-* weather radar, future
   // scientific heatmaps). 47 → 48 clips.
   magicWallPanelClip,
+  // T-322 — lyrics primitive (line-level music-synced lyric panel with
+  // three style bundles: `'karaoke-wipe'` left-to-right color front
+  // sweep across the active line driven by per-line ms-progress;
+  // `'three-line-stack'` past dimmed / active highlighted / next
+  // preview vertical register; `'highlight-current'` active-only
+  // mono-line). Stable line-index-derived clipPath + filter IDs (no
+  // `crypto.randomUUID()`); per-line entrance (`'none'` / `'fade'` /
+  // `'rise'`); optional `glow?` halo on the active line. Unblocks
+  // T-367 (karaoke-progressive-wipe, last Cluster F preset). 48 → 49
+  // clips.
+  lyricsClip,
 ];
