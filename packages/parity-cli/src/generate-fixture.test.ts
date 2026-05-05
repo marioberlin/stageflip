@@ -20,6 +20,7 @@ import {
   OLYMPIC_CANONICAL_STANDINGS,
   PRESET_ID_BINDINGS,
   type PresetForRender,
+  SQUID_GAME_GEOMETRIC_SHOTS,
   TIKTOK_CANONICAL_WORDS,
   buildPresetDocument,
   createGenerateFixtureRenderer,
@@ -1103,6 +1104,195 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
   it('still returns undefined for unknown clipKinds after T-367 lands (T-367 AC #24)', () => {
     expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind')).toBeUndefined();
     expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'karaoke-progressive-wipe')).toBeUndefined();
+  });
+
+  // T-350 — first `titleSequence`-clipKind preset (`squid-game-geometric`),
+  // wired as the `titleSequence` clipKind-default (Pattern C — first preset
+  // for a clipKind takes the clipKind-default slot, NOT a `PRESET_ID_BINDINGS`
+  // override). First Cluster D preset to ship; first preset to bind the
+  // `TitleSequenceClip` primitive (T-321, PR #346) end-to-end.
+
+  it('resolves titleSequence to titleSequence on the frame-runtime (T-350 D-T350-6)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('titleSequence');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('titleSequence');
+  });
+
+  it('falls through to squidGameGeometricBinding for squid-game-geometric (T-350 AC #15)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('titleSequence', 'squid-game-geometric');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('titleSequence');
+  });
+
+  it('falls through to squidGameGeometricBinding for unknown titleSequence presetIds (T-350 AC #15)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('titleSequence', 'unknown-titles-preset');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('titleSequence');
+  });
+
+  it('builds titleSequence props with the six-shot squid-game canonical snapshot (T-350 AC #13)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('titleSequence');
+    if (!binding) throw new Error('test setup');
+    const props = binding.buildProps(undefined);
+    const shots = props.shots as ReadonlyArray<{
+      id: string;
+      kind: string;
+      startMs: number;
+      endMs: number;
+      content: { color?: string; glyph?: string; text?: string };
+      transitionOut: string;
+    }>;
+    expect(Array.isArray(shots)).toBe(true);
+    expect(shots).toHaveLength(6);
+    expect(shots.map((s) => s.kind)).toEqual([
+      'colorPanel',
+      'colorPanel',
+      'colorPanel',
+      'colorPanel',
+      'colorPanel',
+      'titlePlate',
+    ]);
+    expect(shots.map((s) => s.id)).toEqual([
+      'panel-pink-prelude',
+      'panel-teal-circle',
+      'panel-black-triangle',
+      'panel-pink-square',
+      'panel-teal-title',
+      'title-hold',
+    ]);
+    // Inline ○△□ Unicode glyphs per D-T350-4.
+    expect(shots[1]?.content.glyph).toBe('○');
+    expect(shots[2]?.content.glyph).toBe('△');
+    expect(shots[3]?.content.glyph).toBe('□');
+    // Title plate text per D-T350-3.
+    expect(shots[5]?.content.text).toBe('SQUID GAME');
+    // Cut-only enforcement upstream of the bundle's `styleForcesCut`.
+    for (const s of shots) {
+      expect(s.transitionOut).toBe('cut');
+    }
+    expect(props.style).toBe('palette-jump-cut');
+    expect(props.casing).toBe('uppercase');
+    expect(props.foreground).toBe('#FFFFFF');
+    // No glow / highlightColor / background per D-T350-7.
+    expect(props.glow).toBeUndefined();
+    expect(props.highlightColor).toBeUndefined();
+    expect(props.background).toBeUndefined();
+    const position = props.position as {
+      x: number;
+      y: number;
+      width: number;
+      alignment: string;
+    };
+    expect(position.x).toBe(640);
+    expect(position.y).toBe(360);
+    expect(position.width).toBe(1024);
+    expect(position.alignment).toBe('center');
+    const font = props.font as { family: string; weight: number; size: number };
+    expect(font.weight).toBe(700);
+    // Size 64 (renders at font.size * 2 = 128 px); fits SQUID GAME on one
+    // line at the 1024 px wrapper width per D-T350-3 sizing rationale.
+    expect(font.size).toBe(64);
+    expect(font.family).toContain('Anton');
+    expect(font.family).toContain('Bebas Neue');
+  });
+
+  it('exports SQUID_GAME_GEOMETRIC_SHOTS with six entries totalling 5000 ms (T-350 AC #14)', () => {
+    expect(SQUID_GAME_GEOMETRIC_SHOTS).toHaveLength(6);
+    const last = SQUID_GAME_GEOMETRIC_SHOTS[SQUID_GAME_GEOMETRIC_SHOTS.length - 1];
+    expect(last?.endMs).toBe(5000);
+    // Every shot has a positive duration and chains tail-to-head.
+    for (let i = 0; i < SQUID_GAME_GEOMETRIC_SHOTS.length; i += 1) {
+      const s = SQUID_GAME_GEOMETRIC_SHOTS[i];
+      if (s === undefined) continue;
+      expect(s.endMs).toBeGreaterThan(s.startMs);
+      if (i > 0) {
+        const prev = SQUID_GAME_GEOMETRIC_SHOTS[i - 1];
+        expect(s.startMs).toBe(prev?.endMs);
+      }
+    }
+    // Mid-shot-5 lands at frame 120 (= 4000 ms) per D-T350-5; the active
+    // shot at ms 4000 is the title-hold (3600..5000), and the most-recent
+    // colorPanel up to ms 4000 is shot 4 (panel-teal-title @ #067162).
+    const titleHold = SQUID_GAME_GEOMETRIC_SHOTS[5];
+    expect(titleHold?.kind).toBe('titlePlate');
+    expect(titleHold?.startMs).toBe(3600);
+    expect(titleHold?.endMs).toBe(5000);
+    const tealBridge = SQUID_GAME_GEOMETRIC_SHOTS[4];
+    expect(tealBridge?.content.color).toBe('#067162');
+    // No PRESET_ID_BINDINGS entry — first preset for the titleSequence
+    // clipKind takes the clipKind-default slot (Pattern C).
+    expect(PRESET_ID_BINDINGS['squid-game-geometric']).toBeUndefined();
+  });
+
+  it('routes squid-game-geometric through the renderer-side clipKind-default (T-350 AC #13 round-trip)', async () => {
+    const renderSpy = vi
+      .fn<(doc: unknown, frame: number) => Promise<Uint8Array>>()
+      .mockResolvedValue(new Uint8Array([0]));
+    const renderer = createGenerateFixtureRenderer({
+      resolver: DEFAULT_CLIP_KIND_RESOLVER,
+      render: renderSpy as unknown as Parameters<typeof createGenerateFixtureRenderer>[0]['render'],
+    });
+    await renderer.render({
+      preset: presetWith('titleSequence', 'squid-game-geometric', 'titles'),
+      composition: COMPOSITION,
+      frame: 120,
+    });
+    const [doc] = renderSpy.mock.calls[0] ?? [];
+    const parsed = rirDocumentSchema.parse(doc);
+    const element = parsed.elements[0];
+    if (!element || element.content.type !== 'clip') throw new Error('expected clip element');
+    expect(element.content.clipName).toBe('titleSequence');
+    expect(element.content.params).toMatchObject({
+      style: 'palette-jump-cut',
+      casing: 'uppercase',
+      foreground: '#FFFFFF',
+    });
+    const params = element.content.params as { shots: ReadonlyArray<{ id: string }> };
+    expect(params.shots.map((s) => s.id)).toEqual([
+      'panel-pink-prelude',
+      'panel-teal-circle',
+      'panel-black-triangle',
+      'panel-pink-square',
+      'panel-teal-title',
+      'title-hold',
+    ]);
+  });
+
+  // T-350 backward compat — every prior cluster's clipKind-default + per-
+  // preset overrides must still resolve correctly after the titleSequence
+  // clipKind-default lands.
+
+  it('falls through to lyricsBinding for karaoke-progressive-wipe after T-350 lands (T-350 AC #18 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lyrics', 'karaoke-progressive-wipe');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('lyrics');
+  });
+
+  it('falls through to captionBinding for hormozi-montserrat-black after T-350 lands (T-350 AC #17 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'hormozi-montserrat-black');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('hormozi');
+  });
+
+  it('routes magic-wall-drilldown after T-350 lands (T-350 AC #19 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('fullScreen', 'magic-wall-drilldown');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('magic-wall-panel');
+  });
+
+  it('routes big-number-stat-impact via PRESET_ID_BINDINGS after T-350 lands (T-350 AC #20 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('bigNumber', 'big-number-stat-impact');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('animated-value');
+    expect(PRESET_ID_BINDINGS['big-number-stat-impact']).toBeDefined();
+  });
+
+  it('still returns undefined for unknown clipKinds after T-350 lands (T-350 AC #21)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind')).toBeUndefined();
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'squid-game-geometric')).toBeUndefined();
   });
 
   it('builds scoreBug props as a six-chip canonical over with cricket-canon colors (T-358)', () => {
