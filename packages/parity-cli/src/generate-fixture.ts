@@ -369,6 +369,59 @@ const captionBinding: ClipKindBinding = {
 };
 
 /**
+ * `mrbeast-komika-axis` (T-363) — second `caption`-clipKind preset, bound to
+ * the same `caption` primitive (T-316) as T-362's `hormozi-montserrat-black`
+ * but parameterized for the high-energy MrBeast register: the `'mrbeast'`
+ * style bundle on the primitive supplies the Komika Axis 108 caps + black
+ * stroke (5 px vs Hormozi's 6 px) + 3-color cycling highlight (`#FF3B30` red
+ * → `#FFD60A` yellow → `#34C759` green) + `bounce` entrance with 80 ms
+ * stagger defaults — `buildProps` only declares `words`, `style`, `position`,
+ * and the documentation backdrop, leaving the bundle to drive the visual
+ * register (D-T363-4 / D-T363-13 / D-T363-14). Mid-hold at frame 60 (=
+ * 2000 ms @ 30fps) lands word 6 (`"dollars"`) as the active highlight per
+ * the primitive's strict `currentTimeMs >= startMs && currentTimeMs < endMs`
+ * rule (D-T363-6). Words 2 / 4 / 6 carry `emphasis: 'highlight'`; the
+ * primitive's rolling `highlightedIndex % 3` routes them through the cycling
+ * palette so all three colors render in one frame.
+ */
+export const MRBEAST_CANONICAL_WORDS: ReadonlyArray<{
+  readonly text: string;
+  readonly startMs: number;
+  readonly endMs: number;
+  readonly emphasis?: 'normal' | 'highlight' | 'mute';
+}> = [
+  { text: 'I', startMs: 0, endMs: 350 },
+  { text: 'gave', startMs: 350, endMs: 700, emphasis: 'highlight' },
+  { text: 'away', startMs: 700, endMs: 1050 },
+  { text: 'one', startMs: 1050, endMs: 1400, emphasis: 'highlight' },
+  { text: 'million', startMs: 1400, endMs: 1750 },
+  { text: 'dollars', startMs: 1750, endMs: 2100, emphasis: 'highlight' },
+];
+
+const mrbeastBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'caption',
+  buildProps() {
+    return {
+      words: MRBEAST_CANONICAL_WORDS.map((w) => ({ ...w })),
+      style: 'mrbeast',
+      // Center-screen per D-T363-12, scaled to the 1280×720 default
+      // composition: 10% inset (x=128), upper-center (y=200) so the larger
+      // 108 px font + flex-wrap-to-3-lines block stays inside the 720 px
+      // canvas. Spec's D-T363-12 prose calls for vertical center; the
+      // implementer's note allows shifting `y` upward when size-108 wrapped
+      // lines clip the canvas. Differentiates from T-362's lower-third
+      // (y=432) anchor in the parity-golden corpus.
+      position: { x: 128, y: 200, width: 1024, alignment: 'center' as const },
+      // Documentation-only — same canvas-bleed quirk as T-362 (the bundle's
+      // `backdrop: 'none'` + the primitive's transparent container mean the
+      // host bundle's default canvas color reaches the parity golden).
+      background: '#0E0E12',
+    };
+  },
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -377,6 +430,7 @@ const captionBinding: ClipKindBinding = {
  */
 export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'big-number-stat-impact': bigNumberStatImpactBinding,
+  'mrbeast-komika-axis': mrbeastBinding,
 };
 
 /**

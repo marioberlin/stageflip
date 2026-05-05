@@ -3,7 +3,7 @@ id: mrbeast-komika-axis
 cluster: captions
 clipKind: caption
 source: docs/compass_artifact.md#mrbeast
-status: stub
+status: substantive
 preferredFont:
   family: Komika Axis
   license: commercial-byo
@@ -13,45 +13,77 @@ fallbackFont:
   license: ofl
 permissions: []
 signOff:
-  parityFixture: pending-user-review
+  parityFixture: 'signed:2026-05-05'
   typeDesign: pending-cluster-batch
 ---
 
 # MrBeast-style — Komika Axis caption
 
+MrBeast's high-energy YouTube + Shorts caption register: heavy comic-display caps, all-uppercase, bouncy per-word entrance with overshoot, and a three-color cycling highlight (red → yellow → green) on emphasis words. Common uses: contest / challenge videos, gaming streams, viral shorts, money-stakes reveals. The register survives muted autoplay and thumbnail crops by going LOUDER than its peers — heavier stroke than Netflix, more cycling color than Hormozi, more overshoot on entrance than every cluster F sibling.
+
+This preset is the **second Cluster F preset to land** AND the **first Cluster F preset to use the per-presetId resolver-override mechanism** (T-360 D-T360-2 → `PRESET_ID_BINDINGS[<presetId>]`). T-362's `hormozi-montserrat-black` took the clipKind-default `caption → caption` slot; T-363 adds an entry in `PRESET_ID_BINDINGS` because the `'mrbeast'` style + cycling-color `WordTiming[]` snapshot can't share the `'hormozi'` binding's `buildProps`. Sister Cluster F presets (T-364 tiktok / T-365 ali-abdaal / T-366 netflix / T-367 karaoke-progressive-wipe) follow the same per-presetId override pattern T-363 establishes.
+
 ## Visual tokens
-- Very large display, only 1–2 words at a time
-- Base: white `#FFFFFF` and black `#000000`
-- Highlights: bright green `#00FF00` with glow effect (10–15 px outer glow at 60% opacity)
-- Heavy stroke: 4–6 px white or black around glyphs
-- No background box
-- Position: centered, sometimes anchored to on-screen objects (face, product)
+
+The active word IS the message AND the active words cycle through three colors. Layout (1280×720 default; 1080×1920 vertical preserves the center-screen anchor):
+
+- **Caption block** sits upper-center — `position: { x: 128, y: 200, width: 1024, alignment: 'center' }` on the parity composition (10% inset, ~28% down, 80% width). The y-anchor was shifted up from the spec's nominal vertical-center per D-T363-12's implementer-note carve-out: at 108 px font size with `flex-wrap`, the six-word phrase wraps to three rows (~360 px tall) and would clip the canvas bottom from a vertical-center anchor; `y=200` keeps the wrapped block inside the 720 px canvas with the bounce-settled phrase visible end-to-end. On vertical compositions the same percentages would re-anchor higher to preserve the wrapped phrase. Differentiates from T-362's lower-third (y=432) anchor in the parity-golden corpus.
+- **Base (rest) text** renders in `#FFFFFF` with `strokeWidth: 5` `strokeColor: #000000` (5 px vs Hormozi's 6 px — both heavy, MrBeast slightly less so to preserve glyph readability at the bigger 108 px font size). Stroke is rendered via SVG `<text>` with `paint-order: stroke fill` (T-316 D-T316-7) — the stroke wraps every glyph cleanly without halo artifacts.
+- **Highlight cycle** is a 3-entry array `['#FF3B30', '#FFD60A', '#34C759']` (red → yellow → green per the `'mrbeast'` STYLE_BUNDLES bundle, T-316 line 153). The CaptionClip primitive computes a rolling `highlightedIndex` (count of `emphasis === 'highlight'` words at or before the current word; T-316 line 524–537) and routes `highlightedIndex % 3` through `pickHighlightColor` (line 241–249). Three highlight words → indices 0 / 1 / 2 → red / yellow / green, each color used exactly once per six-word phrase. The `resolveColor` helper (line 326–346) routes both `emphasis === 'highlight'` AND active non-highlight words through the cycling palette, so an active connector word also picks a cycling color; T-363's canonical snapshot lands the active word ON a highlight word (word 6) so cycling logic dominates with no double-routing ambiguity.
+- **No drop shadow / no glow.** The original stub mentioned a 10–15 px outer glow at 60% opacity on the green emphasis; `captionPropsSchema` does not model glow / outer-shadow in v1 (T-316). Achievable via a compose-layer SVG filter if a tenant demands it; absent from the parity contract. Document the absence in the PR body and treat as a future-knob follow-up.
+- **No backdrop fill** (`backdrop: 'none'`). Pill / rect backdrops are the TikTok (T-364) and Netflix (T-366) registers respectively; MrBeast reads against the raw stroke + cycling-color contrast.
+- **Background** is the canvas backdrop — captions overlay on video at compose time. The CaptionClip primitive's container is `transparent` and the `background` prop is honored only when `backdrop !== 'none'` (the MrBeast bundle's `backdrop` is `'none'`); the parity golden therefore renders against the host bundle's default canvas color (white in current v1). Same canvas-bleed quirk as T-362 (T-362 D-T362-11) — flagged on the primitive side; not T-363's scope to fix. The intended dark `#0E0E12` in `buildProps` is documentation-only; cycling colors + 5 px black stroke + bounce settled carry the read on either backdrop.
 
 ## Typography
-- Komika Axis fallback (Bangers): comic-style display
-- Very large — 100–140 pt @ 1080p
-- ALL UPPERCASE for emphasis; some captions Mixed Case for casual moments
+
+- **`preferredFont: Komika Axis`** (Blambot Comic Fonts, license: `commercial-byo`). Comic-display sans with a chunky single-weight cut; the canonical face for MrBeast's caption register since the channel's early YouTube years. License posture is **BYO** (Bring-Your-Own): free for non-commercial use, commercial use requires a paid Blambot license per the Blambot website. Tenants embedding this preset commercially must source the license themselves; the host pipeline does not bundle Komika Axis. The bundle's `font.family` stack is `Komika Axis, system-ui, -apple-system, BlinkMacSystemFont, sans-serif` — when Komika Axis is not loaded (e.g., in headless puppeteer for the parity golden), the system-stack fallback renders. The system-stack fallback is acceptable for v1 as long as cycling colors + 5 px black stroke + bounce + uppercase + 108 px size register is visually evident; FontManager preload of Komika Axis (or Bangers — see below) is the proper fix and is flagged as a primitive-side follow-up (T-362 D-T362 carryover).
+- **`fallbackFont: Bangers`** (SIL OFL 1.1 via Google Fonts), weight `400`. Bangers is the most license-clean comic-display sans on Google Fonts and the standard OFL substitute for Komika Axis. Single weight 400 (Google Fonts ships Bangers as a single-weight family). Alternatives if a Reviewer demands a heavier OFL fallback: `Bowlby One`, `Luckiest Guy`, `Bungee` (all Google Fonts OFL with similar comic-display register). The bundle's stack does NOT include Bangers — if a Reviewer judges the system-stack fallback breaks cluster F register, the Implementer may override `font.family: 'Bangers, Komika Axis, system-ui, ...'` in `buildProps` (Bangers first); current v1 leaves this unoverridden and accepts the system fallback for the parity golden.
+- **`fontSize: 108`** (the bundle's default). Bigger than Hormozi's 96 px — MrBeast's register is louder. At 1280 px composition width, six words at 108 px will likely flex-wrap to two lines through the inner `flex-wrap: wrap` container (`caption.tsx` line 570); the parity golden may render as two stacked lines (`I GAVE AWAY` / `ONE MILLION DOLLARS` or similar break) depending on exact glyph metrics. Two-line wrap preserves the cycling color read (each line shows ≥1 highlight word).
+- **`casing: 'uppercase'`** (the bundle's default; "ALL UPPERCASE for emphasis is the signature"). Applied at render time via `applyCasing` (`caption.tsx` line 226–231); the underlying `WordTiming.text` payload preserves authored case for transcript editing. The parity golden displays `I GAVE AWAY ONE MILLION DOLLARS` regardless of the snapshot's mixed-case authored text.
+- **Tabular numerals are not relevant** — the MrBeast register is text-heavy; numeric content (`"$1M"`, `"100,000"`) uses the bigNumber preset family (Cluster E) when isolation is needed.
 
 ## Animation
-- Quick pop-in / zoom-in synced to rapid speech, 150 ms (faster than Hormozi)
-- Keywords change to green with glow on emphasis, 200 ms
-- Immediate snap-cut replacement between words — no fades, no overlap
-- Ultra-fast pacing: 1–2 words at a time means many caption events per second of speech
-- Optional anchor-to-object: caption appears beside on-screen money / product / face
+
+- **Word entrance** uses the `'bounce'` mode with `staggerMs: 80`. The CaptionClip primitive's entrance window is 12 frames (`ENTRANCE_FRAMES`, `caption.tsx` line 105) ≈ 400 ms at 30 fps. Each word's entrance starts `i * staggerMs` ms BEFORE its `startMs` (`computeEntrance` line 268–270) so by the time the word is "active" the entrance has fully settled. Bounce is a two-phase ramp (T-316 line 297–311): phase 1 `t = 0..0.6` ramps `scale` from `0 → 1.15` (overshoot); phase 2 `t = 0.6..1` settles `scale` from `1.15 → 1.0`. Opacity ramps linearly `0 → 1` across the same 12-frame window.
+- **Bounce settle math at the parity frame**: last word `'dollars'` has `startMs: 1750`, index 5, stagger 80 → entrance start frame `(1750 - 5 × 80) / 1000 × 30 = 40.5`; settles by frame `40.5 + 12 = 52.5`. Frame 60 (parity reference) is 7.5 frames past the last-word settle — every word renders at `scale 1.0`, `opacity 1`. The bounce overshoot is invisible at the parity frame by design — the parity golden documents the **settled** state, not the mid-overshoot moment.
+- **Active-word highlight + cycling.** A word becomes "active" when `currentTimeMs >= word.startMs && currentTimeMs < word.endMs`. The strict-less-than upper bound ensures exactly one word is active at any frame on the boundary. At frame 60 (= 2000 ms) word 6 (`'dollars'`, `startMs: 1750`, `endMs: 2100`) is active. Words 2 / 4 / 6 carry `emphasis: 'highlight'` so their cycling color persists past their active window; word 6 lands its cycling color (green `#34C759`, `highlightedIndex 2 % 3`) AND is active simultaneously — single-source routing, no double-routing ambiguity. The swap is a snap (no fade) — the per-frame deterministic visibility rule is the contract.
+- **No active-word scale pulse beyond the entrance.** The original stub mentioned a "150 ms pop-in / zoom-in" sync to rapid speech; CaptionClip's v1 `'mrbeast'` bundle does not expose a per-active-word scale knob and the bounce entrance carries the visual accent. A future emphasis-pulse axis is a flagged follow-up.
+- **No word-exit animation.** Past words remain visible at rest state (`foreground` for connectors, cycling color for prior `emphasis: 'highlight'` words) until the entire CaptionClip mount unmounts. Future-word visibility is gated by the entrance opacity (`entrance !== 'none'` allows pre-`startMs` rendering at opacity 0); past-word visibility is unconditional.
+- **Snap-cut between caption events.** No fade-out; the host pipeline mounts a fresh CaptionClip per phrase, and the unmount is instantaneous. MrBeast's authored register is fast — 30–40 caption events per minute of speech — but each mount is a full bounce-settle cycle rather than a cross-fade.
+- **Synced precisely to audio word-level timestamps** in production. The host pipeline (or tool agent) emits the `WordTiming[]` from a transcript-with-timings source (Whisper word-level, ElevenLabs alignment, etc.); the primitive consumes the array as data per T-316 D-T316-4 — no audio decoding inside the primitive.
 
 ## Rules
-- 1–2 words at a time is the canonical word count. More breaks the register.
-- Snap-cut replacement is mandatory; cross-fades make it feel slow.
-- Komika Axis fallback (Bangers) must preserve the comic-display register — do not substitute a serious-tone display font.
-- Green + glow is for monetary amounts and "winning" moments — don't apply to neutral words.
-- Pacing is fast; expect 30–40 caption events per minute of speech.
+
+- **Bound primitive**: `caption` from `@stageflip/runtimes-frame-runtime-bridge` (`packages/runtimes/frame-runtime-bridge/src/clips/caption.tsx`, exported as `Caption` + `captionClip`). The `caption` `clipKind` is in `VALID_CLIP_KINDS` (per T-316 D-T316-13, `scripts/check-preset-integrity.ts`); the v1 resolver in `packages/parity-cli/src/generate-fixture.ts` routes `mrbeast-komika-axis` via `PRESET_ID_BINDINGS['mrbeast-komika-axis']` (T-363 D-T363-4) — the per-presetId override path established by T-360 D-T360-2. Composing tools should mount `Caption` with `style: 'mrbeast'`, a `WordTiming[]` payload, and a `position` — the bundle supplies font / casing / foreground / cycling highlight palette / stroke / entrance / stagger defaults.
+- **Word-level timing is mandatory.** The primitive consumes `WordTiming[]` (`{ text, startMs, endMs, emphasis? }`); sentence-level captions are wrong for this register because the cycling-color highlight depends on per-word `emphasis === 'highlight'` flags. Tenants without word-level timestamps must split sentences upstream (Whisper word-level alignment is the standard input).
+- **`style: 'mrbeast'` is the canonical enum value.** Per-prop overrides (custom `font`, `highlightColor`, `strokeWidth`) win over the bundle defaults but break the visual register; document any override in the composition's authoring metadata. The bundle's defaults are the contract.
+- **Three-color cycling highlight is the signature.** `highlightColor` is `['#FF3B30', '#FFD60A', '#34C759']` (red → yellow → green). The cycling cadence comes from a rolling `highlightedIndex` count of `emphasis === 'highlight'` words; tenants supplying `WordTiming[]` snapshots with zero highlight words get a single-color register (active words alone route through index 0 → red), which breaks the MrBeast read. Authored snapshots SHOULD distribute `emphasis: 'highlight'` across roughly every other word for the cycling logic to fire.
+- **Snap-cut replacement is mandatory.** Cross-fades between caption events make the register feel slow — MrBeast's pacing is 30–40 caption events per minute of speech. Authored snapshots SHOULD aggregate at most 4–6 words per CaptionClip mount; longer phrases break the snap-cut rhythm.
+- **Komika Axis fallback (Bangers) must preserve the comic-display register.** Do not substitute a serious-tone display font (e.g., Impact, Anton, Bebas Neue) — they read as news / sports broadcast, not creator captions. The OFL fallback list is `Bangers`, then `Bowlby One` / `Luckiest Guy` / `Bungee` as alternatives.
+- **No background prop on the CaptionClip.** The `background` field is documented for the parity golden's solid backdrop only; live compositions render the caption as a transparent overlay on a video stream. The bundle's `background: '#000000'` is a fallback used only if `backdrop !== 'none'` (which it isn't — `'none'`).
+- **Theme slot mapping**: `background`, `foreground`, `highlightColor`, `muteColor`, `strokeColor` map to palette roles (background / foreground / accent / foreground / background respectively per `captionClip.themeSlots`). Tenant theme overrides flow through these slots at composition time without touching the preset; cycling palette tenant overrides require an `accent`-array theme entry.
+- **Reference frame for parity is mid-hold (frame 60)** — `currentTimeMs = 2000 ms` at 30 fps. By the primitive's word-visibility rule all six words are visible; by the active rule word 6 (`"dollars"`, `startMs: 1750, endMs: 2100`) is active; by the cycling rule words 2 / 4 / 6 render in red / yellow / green. Frame 60 sits 7.5 frames past the last-word bounce settle — every word at scale 1.0, opacity 1.
+- **No live data.** The `permissions` array is empty; no network call, no telemetry source. Audio sync / live transcription is a host concern.
 
 ## Acceptance (parity)
-- Reference frames: 0 (pre-word), 4 (word entering at speed), 8 (settled), 12 (replaced by next word)
-- PSNR ≥ 42 dB, SSIM ≥ 0.98
+
+One reference-frame fixture at `frame: 60` (mid-hold steady-state per ADR-004 §D5; D-T363-6):
+
+- `golden-frame-60.png` — `I GAVE AWAY ONE MILLION DOLLARS` rendered at Komika Axis 108 px caps (the system Komika Axis fallback resolves through the `Komika Axis, system-ui, ...` stack baked into the `'mrbeast'` bundle; the host bundle does not preload Komika Axis or Bangers in v1, a primitive-side concern flagged for follow-up — T-362 carryover); `#000000` stroke at 5 px wrapping every glyph; word 2 (`GAVE`) in `#FF3B30` red, word 4 (`ONE`) in `#FFD60A` yellow, word 6 (`DOLLARS`) in `#34C759` green — three cycling colors, each used exactly once. Connector words 1 / 3 / 5 (`I` / `AWAY` / `MILLION`) render in `#FFFFFF` white. Bounce entrance has fully settled — all six words at scale 1.0, opacity 1, translateY 0. Background is the host bundle's default canvas color (the `background: '#0E0E12'` declared in the resolver's `buildProps` is unreachable per the primitive's `backdrop: 'none'` rule on this bundle — same canvas-bleed quirk as T-362); the cycling colors + 5 px black stroke carry the read regardless of the canvas backdrop.
+
+Thresholds: **PSNR ≥ 42 dB**, **SSIM ≥ 0.98** (stricter than the generator default `35 / 0.95`; mirrors the cluster-E / cluster-F sister presets per D-T363-9). The preset-driven-thresholds follow-up flagged during T-359b is the formal mechanism for per-preset deviation; for now the threshold values are hand-pinned in `parity-fixtures/captions/mrbeast-komika-axis/thresholds.json` post-generation. A heavy-stroke caption with three cycling-color highlights + bounce overshoot is more antialiasing-sensitive than T-362's single-highlight Hormozi BUT entrance is fully settled by frame 60 — every word renders as static SVG `<text>` with stable stroke geometry, comparable to T-362's settled state.
+
+**Sign-off (D-T363-8, in-PR):** the canonical mid-hold golden is committed at `parity-fixtures/captions/mrbeast-komika-axis/` with the single-variant manifest shape (no `variants` key, per T-359a backward compat). Frontmatter `signOff.parityFixture` flips to `signed:<today UTC>` via `pnpm tsx scripts/generate-preset-parity-fixture-prod.ts --preset=mrbeast-komika-axis --frame=60 --mark-signed`. Frontmatter `signOff.typeDesign` STAYS `pending-cluster-batch` — Cluster F is in `TYPE_DESIGN_REQUIRED_CLUSTERS` (`scripts/check-preset-integrity.ts` line 124); T-368 batch type-design review (paired with `reviews/type-design-consultant-cluster-f.md`) flips this to `signed:<date>` for every Cluster F preset in one batch, NOT in this PR. Re-render + re-sign with `--force` is the operator's path if the FontManager preload list updates the rendered Komika Axis or Bangers face or the canonical phrase changes.
 
 ## References
-- `docs/compass_artifact.md` § MrBeast
-- 386M+ subscribers read this caption style daily
-- Gap clip T-316 (`CaptionClip`)
-- ADR-004
+
+- `docs/compass_artifact.md` § MrBeast — canonical visual source (note: on-disk path mismatch flagged for resolution; integrity invariant 7 SKIPped globally per T-358 D-T358-9).
+- `packages/runtimes/frame-runtime-bridge/src/clips/caption.tsx` — the bound primitive (`Caption`, `captionClip`); the `'mrbeast'` STYLE_BUNDLES bundle (lines 149–163) is the source of truth for font / casing / foreground / cycling highlight palette / stroke / entrance / stagger defaults; cycling routing in `pickHighlightColor` (lines 241–249) + rolling `highlightedIndex` (lines 524–537); bounce ramp in `computeEntrance` (lines 297–311).
+- `packages/parity-cli/src/generate-fixture.ts` — v1 resolver routing `mrbeast-komika-axis` via `PRESET_ID_BINDINGS['mrbeast-komika-axis']` plus the exported `MRBEAST_CANONICAL_WORDS` six-word snapshot (T-363 D-T363-4 / D-T363-6).
+- `skills/stageflip/presets/captions/hormozi-montserrat-black.md` — sister Cluster F preset (T-362; first cluster F to land + first to bind T-316's `CaptionClip`); body template + clipKind-default `caption → caption` precedent.
+- `skills/stageflip/presets/captions/SKILL.md` — Cluster F conventions (owned by T-368).
+- `skills/stageflip/concepts/captions/SKILL.md` — caption concept (transcription, packing, word-level timing).
+- `docs/tasks/T-316.md` — CaptionClip primitive spec (the central dep); D-T316-2 (`mrbeast` STYLE_BUNDLE), D-T316-9 (highlightColor array form), D-T316-15 (cycling routing).
+- `docs/tasks/T-360.md` — per-presetId override mechanism (the central dep for T-363's resolver path); D-T360-2.
+- ADR-004 (preset system contract — frontmatter, loader, validator, parity sign-off, integrity invariants).
+- "386M+ subscribers read this caption style daily."
