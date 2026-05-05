@@ -478,6 +478,67 @@ const tiktokBinding: ClipKindBinding = {
 };
 
 /**
+ * `ali-abdaal-opacity-karaoke` (T-365) — fourth `caption`-clipKind preset, bound
+ * to the same `caption` primitive (T-316) as T-362 / T-363 / T-364 but
+ * parameterized for Ali Abdaal's clean-aesthetic education-creator register:
+ * the `'ali-abdaal'` style bundle on the primitive supplies the Inter 600
+ * sentence-case dark-gray (`#1F1F1F`) foreground + `highlightColor` ===
+ * `muteColor` === `foreground` (no color shift on the active word) +
+ * `muteOpacity: 0.6` (active = 1.0 / past = 0.6 opacity-only emphasis) +
+ * `strokeWidth: 0` (no stroke) + `backdrop: 'none'` (no panel/pill) +
+ * `entrance: 'none'` (no per-word animation) + `staggerMs: 0` defaults —
+ * `buildProps` only declares `words`, `style`, and `position`, leaving the
+ * bundle to drive the visual register (D-T365-4 / D-T365-13 / D-T365-14).
+ * Mid-hold at frame 60 (= 2000 ms @ 30fps) lands word 7 (`'by'`) as the
+ * active word; six prior words render at opacity 0.6 (visibly muted); word 8
+ * (`'teaching'`) is below its `startMs` (2100 ms) so not yet rendered. No
+ * `emphasis` field on any word — opacity comes from active-vs-rest routing
+ * (`muteColor === highlightColor === foreground`), not from per-word emphasis
+ * tags. White canvas bleed is on-brand: the bundle's intended visual register
+ * IS dark-gray-on-white (D-T365-11; canvas-bleed quirk inherited from T-362
+ * but impact REVERSED — siblings document it as undesirable, here it is the
+ * intended visual).
+ */
+export const ALI_ABDAAL_CANONICAL_WORDS: ReadonlyArray<{
+  readonly text: string;
+  readonly startMs: number;
+  readonly endMs: number;
+}> = [
+  { text: 'The', startMs: 0, endMs: 300 },
+  { text: 'best', startMs: 300, endMs: 600 },
+  { text: 'way', startMs: 600, endMs: 900 },
+  { text: 'to', startMs: 900, endMs: 1200 },
+  { text: 'learn', startMs: 1200, endMs: 1500 },
+  { text: 'is', startMs: 1500, endMs: 1800 },
+  { text: 'by', startMs: 1800, endMs: 2100 },
+  { text: 'teaching', startMs: 2100, endMs: 2400 },
+];
+
+const aliAbdaalBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'caption',
+  buildProps() {
+    return {
+      words: ALI_ABDAAL_CANONICAL_WORDS.map((w) => ({ ...w })),
+      style: 'ali-abdaal',
+      // Lower-third per D-T365-12, scaled to the 1280×720 default composition:
+      // 10% inset (x=128), lower-third (y=432, same anchor as T-362 Hormozi),
+      // 80% width (1024). Differentiates from T-363 (y=200) / T-364 (y=360) in
+      // the parity-golden corpus; matches T-362's lower-third anchor —
+      // appropriate for the education-aesthetic register, which canonically
+      // sits below the speaker's torso.
+      position: { x: 128, y: 432, width: 1024, alignment: 'center' as const },
+      // No `background` override — the bundle's `background: '#FFFFFF'` is
+      // declared but only honored when `backdrop !== 'none'` (the
+      // `'ali-abdaal'` bundle ships `backdrop: 'none'`). The host bundle's
+      // default canvas color reaches the parity golden; if it defaults to
+      // white the bleed gives the intended dark-gray-on-white register
+      // (D-T365-11 — quirk reversed for this preset).
+    };
+  },
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -488,6 +549,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'big-number-stat-impact': bigNumberStatImpactBinding,
   'mrbeast-komika-axis': mrbeastBinding,
   'tiktok-rounded-box': tiktokBinding,
+  'ali-abdaal-opacity-karaoke': aliAbdaalBinding,
 };
 
 /**
