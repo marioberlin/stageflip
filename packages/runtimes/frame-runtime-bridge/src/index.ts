@@ -127,7 +127,8 @@ export function createFrameRuntimeBridge(
 
 // Re-export demo clips. T-131b/d/e/f tranches (32 reference-clip ports)
 // plus the T-406 unified `chart` family (1 ClipDefinition dispatching to
-// 7 per-kind renderers). `ALL_BRIDGE_CLIPS` exposes all 43.
+// 7 per-kind renderers), plus T-358a `outcome-row` and T-356a
+// `news-ticker-bar` primitives. `ALL_BRIDGE_CLIPS` exposes all 45.
 // shader-bg / lottie-player / animated-map mapbox-gl path are deferred —
 // see plan-row T-131d. audio-visualizer's real-audio path is a follow-up.
 export {
@@ -190,6 +191,10 @@ export {
   type LogoIntroProps,
   logoIntroClip,
   logoIntroPropsSchema,
+  NewsTickerBar,
+  type NewsTickerBarProps,
+  newsTickerBarClip,
+  newsTickerBarPropsSchema,
   OutcomeRow,
   type OutcomeRowProps,
   outcomeRowClip,

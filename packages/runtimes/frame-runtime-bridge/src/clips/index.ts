@@ -373,6 +373,18 @@ export {
   outcomeRowPropsSchema,
 } from './outcome-row.js';
 
+// T-356a — news-ticker-bar primitive. Generic horizontal scrolling
+// chyron of N (1..24) symbol+price+delta+▲/▼/▬ chips translating left
+// at frame-derived offset; continuous loop via doubled-row marquee.
+// Unblocks T-356 (Bloomberg market chyron) and Cluster A/B/E ticker
+// presets (CNN/Fox breaking-news, ESPN BottomLine, crypto dashboards).
+export {
+  NewsTickerBar,
+  type NewsTickerBarProps,
+  newsTickerBarClip,
+  newsTickerBarPropsSchema,
+} from './news-ticker-bar.js';
+
 import { animatedMapClip } from './animated-map.js';
 import { animatedValueClip } from './animated-value.js';
 import { audioVisualizerReactiveClip } from './audio-visualizer-reactive.js';
@@ -399,6 +411,7 @@ import { lineChartDrawClip } from './line-chart-draw.js';
 import { logoIntroClip } from './logo-intro.js';
 import { lowerThirdClip } from './lower-third.js';
 import { marketingDashboardClip } from './marketing-dashboard.js';
+import { newsTickerBarClip } from './news-ticker-bar.js';
 import { okrDashboardClip } from './okr-dashboard.js';
 import { outcomeRowClip } from './outcome-row.js';
 import { particlesClip } from './particles.js';
@@ -505,4 +518,10 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // staggered fade-in). Unblocks the T-358 cricket ball-by-ball preset
   // and other Cluster B/E scorebug-family presets. 43 → 44 clips.
   outcomeRowClip,
+  // T-356a — news-ticker-bar primitive (horizontal scrolling chyron of
+  // N (1..24) symbol+price+delta+▲/▼/▬ chips, continuous-loop via
+  // doubled-row marquee). Unblocks T-356 (Bloomberg market chyron) and
+  // Cluster A/B/E ticker presets (CNN/Fox breaking-news, ESPN
+  // BottomLine, crypto dashboards). 44 → 45 clips.
+  newsTickerBarClip,
 ];

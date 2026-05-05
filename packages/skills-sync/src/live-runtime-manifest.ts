@@ -107,6 +107,10 @@ export const LIVE_RUNTIME_MANIFEST: ClipsCatalogPkg = {
         // T-358a — outcome-row primitive (row of N color-coded chips
         // with staggered fade-in)
         'outcome-row',
+        // T-356a — news-ticker-bar primitive (horizontal scrolling
+        // chyron of N (1..24) symbol+price+delta+▲/▼/▬ chips,
+        // continuous-loop via doubled-row marquee)
+        'news-ticker-bar',
       ],
     },
   ],
