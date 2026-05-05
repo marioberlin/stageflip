@@ -6,6 +6,7 @@ import { rirDocumentSchema } from '@stageflip/rir';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  ALI_ABDAAL_CANONICAL_WORDS,
   BLOOMBERG_CANONICAL_SNAPSHOT,
   CRICKET_OUTCOME_COLORS,
   DEFAULT_CLIP_KIND_RESOLVER,
@@ -547,6 +548,146 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     });
     const params = element.content.params as { words: ReadonlyArray<{ text: string }> };
     expect(params.words.map((w) => w.text)).toEqual(['Wait', 'until', 'you', 'see', 'this']);
+  });
+
+  // T-365 — fourth `caption` clipKind preset (`ali-abdaal-opacity-karaoke`),
+  // routed via the per-presetId override path (D-T365-4). The clipKind-default
+  // (T-362's `captionBinding` with style 'hormozi') stays unchanged; T-363's
+  // `mrbeast-komika-axis` and T-364's `tiktok-rounded-box` overrides stay
+  // unchanged; only `ali-abdaal-opacity-karaoke` resolves to `aliAbdaalBinding`.
+  // First Cluster F preset to render `entrance: 'none'` AND opacity-only
+  // active-word emphasis (`muteColor === highlightColor === foreground` with
+  // `muteOpacity: 0.6`).
+
+  it('routes ali-abdaal-opacity-karaoke through the per-preset override binding (T-365 AC #12)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'ali-abdaal-opacity-karaoke');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('caption');
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('ali-abdaal');
+    const words = props?.words as ReadonlyArray<{
+      text: string;
+      startMs: number;
+      endMs: number;
+      emphasis?: string;
+    }>;
+    expect(Array.isArray(words)).toBe(true);
+    expect(words).toHaveLength(8);
+    expect(words.map((w) => w.text)).toEqual([
+      'The',
+      'best',
+      'way',
+      'to',
+      'learn',
+      'is',
+      'by',
+      'teaching',
+    ]);
+    // No emphasis on any word — ali-abdaal bundle's `muteColor === highlightColor
+    // === foreground` so emphasis comes from active-vs-rest opacity routing,
+    // not from per-word emphasis tags (D-T365-13).
+    for (const w of words) {
+      expect(w.emphasis).toBeUndefined();
+    }
+    // No `background` override — bundle ships `backdrop: 'none'`; the canvas
+    // bleed (white) is the intended visual register (D-T365-11).
+    expect(props?.background).toBeUndefined();
+    const position = props?.position as {
+      x: number;
+      y: number;
+      width: number;
+      alignment: string;
+    };
+    expect(position.x).toBe(128);
+    expect(position.y).toBe(432);
+    expect(position.width).toBe(1024);
+    expect(position.alignment).toBe('center');
+  });
+
+  it('PRESET_ID_BINDINGS exposes the ali-abdaal-opacity-karaoke override (T-365)', () => {
+    expect(PRESET_ID_BINDINGS['ali-abdaal-opacity-karaoke']).toBeDefined();
+    expect(PRESET_ID_BINDINGS['ali-abdaal-opacity-karaoke']?.clipName).toBe('caption');
+  });
+
+  it('falls through to captionBinding for hormozi-montserrat-black after T-365 lands (T-365 AC #14 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'hormozi-montserrat-black');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('hormozi');
+  });
+
+  it('routes mrbeast-komika-axis after T-365 lands (T-365 AC #15 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'mrbeast-komika-axis');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('mrbeast');
+  });
+
+  it('routes tiktok-rounded-box after T-365 lands (T-365 AC #16 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'tiktok-rounded-box');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('tiktok');
+  });
+
+  it('exports ALI_ABDAAL_CANONICAL_WORDS with eight entries totalling 2400 ms (T-365 AC #13)', () => {
+    expect(ALI_ABDAAL_CANONICAL_WORDS).toHaveLength(8);
+    const total = ALI_ABDAAL_CANONICAL_WORDS.reduce((acc, w) => acc + (w.endMs - w.startMs), 0);
+    expect(total).toBe(2400);
+    // Each word is 300 ms (matches Hormozi pace; slower than TikTok's 400 ms).
+    for (const w of ALI_ABDAAL_CANONICAL_WORDS) {
+      expect(w.endMs - w.startMs).toBe(300);
+    }
+    // Word 7 ('by', 1800..2100) is the active word at frame 60 (= 2000 ms);
+    // word 8 ('teaching', 2100..2400) has not yet entered (`entrance: 'none'`
+    // means no anticipatory entrance — pops in at startMs).
+    const word7 = ALI_ABDAAL_CANONICAL_WORDS[6];
+    expect(word7?.text).toBe('by');
+    expect(word7?.startMs).toBe(1800);
+    expect(word7?.endMs).toBe(2100);
+    const word8 = ALI_ABDAAL_CANONICAL_WORDS[7];
+    expect(word8?.text).toBe('teaching');
+    expect(word8?.startMs).toBe(2100);
+    expect(word8?.endMs).toBe(2400);
+    // Sentence case ('as-is' bundle casing) — only 'The' is capitalized.
+    expect(ALI_ABDAAL_CANONICAL_WORDS[0]?.text).toBe('The');
+    for (const w of ALI_ABDAAL_CANONICAL_WORDS.slice(1)) {
+      expect(w.text[0]).toBe(w.text[0]?.toLowerCase());
+    }
+  });
+
+  it('routes ali-abdaal-opacity-karaoke through the renderer-side override (T-365 AC #12 round-trip)', async () => {
+    const renderSpy = vi
+      .fn<(doc: unknown, frame: number) => Promise<Uint8Array>>()
+      .mockResolvedValue(new Uint8Array([0]));
+    const renderer = createGenerateFixtureRenderer({
+      resolver: DEFAULT_CLIP_KIND_RESOLVER,
+      render: renderSpy as unknown as Parameters<typeof createGenerateFixtureRenderer>[0]['render'],
+    });
+    await renderer.render({
+      preset: presetWith('caption', 'ali-abdaal-opacity-karaoke', 'captions'),
+      composition: COMPOSITION,
+      frame: 60,
+    });
+    const [doc] = renderSpy.mock.calls[0] ?? [];
+    const parsed = rirDocumentSchema.parse(doc);
+    const element = parsed.elements[0];
+    if (!element || element.content.type !== 'clip') throw new Error('expected clip element');
+    expect(element.content.params).toMatchObject({
+      style: 'ali-abdaal',
+    });
+    const params = element.content.params as { words: ReadonlyArray<{ text: string }> };
+    expect(params.words.map((w) => w.text)).toEqual([
+      'The',
+      'best',
+      'way',
+      'to',
+      'learn',
+      'is',
+      'by',
+      'teaching',
+    ]);
   });
 
   it('builds scoreBug props as a six-chip canonical over with cricket-canon colors (T-358)', () => {

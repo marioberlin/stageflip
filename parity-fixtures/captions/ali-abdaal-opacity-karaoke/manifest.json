@@ -1,0 +1,30 @@
+{
+  "name": "ali-abdaal-opacity-karaoke",
+  "cluster": "captions",
+  "kind": "caption",
+  "description": "Parity fixture for preset 'ali-abdaal-opacity-karaoke' (cluster captions, kind caption)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "TT Fors",
+      "license": "commercial-byo"
+    },
+    "fallback": {
+      "family": "Inter",
+      "weight": 600,
+      "license": "ofl"
+    }
+  }
+}

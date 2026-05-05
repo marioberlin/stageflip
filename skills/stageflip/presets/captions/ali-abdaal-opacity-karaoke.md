@@ -3,56 +3,93 @@ id: ali-abdaal-opacity-karaoke
 cluster: captions
 clipKind: caption
 source: docs/compass_artifact.md#ali-abdaal
-status: stub
+status: substantive
 preferredFont:
   family: TT Fors
   license: commercial-byo
 fallbackFont:
-  family: Poppins
-  weight: 700
+  family: Inter
+  weight: 600
   license: ofl
 permissions: []
 signOff:
-  parityFixture: pending-user-review
+  parityFixture: 'signed:2026-05-05'
   typeDesign: pending-cluster-batch
 ---
 
 # Ali Abdaal-style — opacity karaoke caption
 
+Ali Abdaal's clean-aesthetic education-creator caption register: Inter 600 sentence-case dark gray on white, NO stroke, NO backdrop, NO per-word entrance, and **opacity-only active-word emphasis** (active word at full opacity 1.0; past / future visible words muted to opacity 0.6). Common uses: education / lecture-style YouTube long-form, productivity-creator vlogs, podcast-clip captions, talking-head explainers — any "professional reading aesthetic" register where the source video carries the information and captions sit quietly underneath without visual aggression.
+
+This preset is the **fourth Cluster F preset to land** AND the **first Cluster F preset to render with opacity-only emphasis** (no color shift between active and rest words) AND the **first Cluster F preset to use `entrance: 'none'`** (no per-word translate / scale / opacity interpolation). It is the **opposite-of-Hormozi** — Hormozi's heavy stroke + yellow highlight + bouncy rise + uppercase reads as broadcast-loud; Ali Abdaal's no-stroke + no-color-shift + no-entrance + sentence-case reads as classroom-quiet. T-362's `hormozi-montserrat-black` took the clipKind-default `caption → caption` slot; T-363's `mrbeast-komika-axis` and T-364's `tiktok-rounded-box` introduced the per-presetId override pattern; T-365 follows that pattern (`PRESET_ID_BINDINGS['ali-abdaal-opacity-karaoke']`) because the `'ali-abdaal'` style bundle differs from T-362's `'hormozi'` along every axis (font Inter vs Montserrat; casing as-is vs uppercase; foreground `#1F1F1F` on white vs `#FFFFFF` on dark; opacity-based mute vs no-mute; strokeWidth 0 vs 6; entrance none vs rise; staggerMs 0 vs 80) and cannot share T-362's `captionBinding`. Sister Cluster F presets (T-366 netflix / T-367 karaoke-progressive-wipe) follow the same per-presetId override pattern.
+
 ## Visual tokens
-- Lower-center background panel
-- Panel fill: light pinkish-gray `#EBE9EC`, rounded corners (radius 16 px @ 1080p)
-- Text: dark gray `#292629`
-- Inactive words: 50% opacity
-- Active word: 100% opacity
-- ~70% frame width
-- Optional 5° random rotation for subtle dynamism (gated per compose `microRotation: bool`)
+
+The opacity delta IS the message. Layout (1280×720 default; 1080×1920 vertical preserves the lower-third anchor below the speaker's torso):
+
+- **Caption block** sits in the lower third — `position: { x: 128, y: 432, width: 1024, alignment: 'center' }` on the parity composition (10% inset, 60% down, 80% width). At 64 px font size the eight-word phrase fits comfortably one-line; longer transcripts flex-wrap automatically via the primitive's inner `flex-wrap: wrap` container. Differentiates from T-363's upper-center (y=200) and T-364's center (y=360) anchors and matches T-362's lower-third (y=432) anchor in the parity-golden corpus — appropriate for the education-aesthetic register, which canonically sits below the speaker's torso so the lecturer / explainer reads as the foreground subject and captions read as supplementary transcript.
+- **Text** renders in `#1F1F1F` (dark gray, the bundle's `foreground`). Active words render at opacity `1.0`; past / future visible words render at opacity `0.6`. The `'ali-abdaal'` bundle ships `highlightColor: #1F1F1F` AND `muteColor: #1F1F1F` — both equal to `foreground` — so there is **no color shift** between active and rest words. The only visible delta is opacity (0.6 muted vs 1.0 active). This IS the karaoke-by-opacity contract the preset name promises; a color-swap implementation would be a different register entirely (closer to "softer gray for past words" than the implemented "dimmer same-color for past words").
+- **No stroke.** `strokeWidth: 0`. The bundle does not render an SVG stroke around glyphs; text is rendered via the primitive's plain `<span>` path (the `<svg><text paint-order="stroke fill">` path applies only when `strokeWidth > 0`). Distinguishes from Hormozi (6 px) and MrBeast (5 px) heavy-stroke broadcast registers.
+- **No backdrop.** `backdrop: 'none'`. No per-word pill (TikTok register, T-364), no full-line rect (Netflix register, T-366) — text renders directly on the canvas. The original stub described a "lower-center background panel" with "light pinkish-gray `#EBE9EC` rounded corners radius 16 px" — the bundle does NOT render that panel. Body prose has been reconciled to the implemented bundle (no panel; the dark-gray-on-white reading register stands on its own without a backdrop).
+- **No drop shadow / no glow.** The bundle ships none; `captionPropsSchema` does not expose shadow. Compose-time foreground filters are tenant authoring concerns, not preset contract.
+- **Background** is the canvas backdrop — captions overlay on video at compose time. The CaptionClip primitive's container is `transparent`; the bundle's `background: '#FFFFFF'` is declared but only honored when `backdrop !== 'none'` (the `'ali-abdaal'` bundle ships `'none'`). The parity golden therefore renders against the host bundle's default canvas color. **Impact REVERSED relative to T-362 / T-363 / T-364**: those siblings documented the canvas-bleed quirk as undesirable (their bundles intend dark backgrounds and the white canvas washed them out / required pill-local-contrast); for T-365, **white-on-the-canvas IS the intended visual** — Ali Abdaal's clean-aesthetic register reads dark-gray-on-white. The default white parity-fixture canvas matches the bundle's intent without an explicit `background` override.
+- **No 5° random rotation.** The original stub described an optional "5° random rotation gated per compose `microRotation: bool`"; the `captionPropsSchema` exposes no rotation field. Aspirational; out of v1 scope. Documented absence so a future Reviewer doesn't expect to find it.
 
 ## Typography
-- TT Fors fallback (Poppins): rounded geometric sans
-- Bold (700), 28–34 pt
-- Sentence case (Mixed Case)
-- Comfortable reading width: 60–70 chars per line max
+
+- **`preferredFont: TT Fors`** (TypeType foundry, `commercial-byo`). TT Fors is a commercial geometric display sans that defines the Ali Abdaal channel's distinct read. License is BYO — tenants embedding this preset commercially must obtain their own TT Fors license from TypeType; the StageFlip pipeline does not preload the face. The bundle's `font.family` ships `'Inter, ${SYSTEM_FONT_STACK}'` so hosts that don't preload TT Fors fall back to Inter, then to the system stack.
+- **`fallbackFont: Inter`** (SIL OFL 1.1 via Google Fonts, Rasmus Andersson), weight `600`. Reconciled from the original stub's `Poppins weight 700` per D-T365-7: the bundle's `font.family` ships `Inter` (NOT Poppins) at weight `600`. Inter is the OFL face the bundle actually renders when TT Fors is not preloaded; declaring it as the fallback aligns the frontmatter with the implementation. Both Inter and Poppins are geometric sans at similar metrics; Inter at weight 600 reads close enough to TT Fors at weight 600 that the parity register survives the substitution. If a Reviewer prefers leaving Poppins as the declared fallback (Poppins is a closer metric match to TT Fors than Inter is), the Implementer may keep `Poppins weight 700` and document the bundle's Inter rendering as a known T-316 follow-up. Default posture: switch to Inter 600 for tighter implementation alignment (T-364 D-T364-7 precedent).
+- **`fontSize: 64`** (the bundle's default). Smaller than T-362's 96 px Hormozi, T-363's 108 px MrBeast, and T-364's 72 px TikTok — the Ali Abdaal register is conversational and reads-with-the-video rather than dominating-the-frame. At 1280 px composition width, eight short words at 64 px Inter 600 fit comfortably one-line for the canonical phrase; longer transcripts flex-wrap automatically.
+- **`casing: 'as-is'`** (the bundle's default). Sentence case (mixed case). NOT uppercase — the Ali Abdaal aesthetic depends on lowercase reading; uppercase reads as Hormozi or MrBeast register. Applied at render time via the primitive's `applyCasing` helper (`caption.tsx` line 226–231); the underlying `WordTiming.text` payload preserves authored case for transcript editing.
+- **Comfortable reading width**: 60–70 chars per line for the canonical Ali Abdaal long-form video register. The eight-word T-365 snapshot is short for demonstration; production transcripts typically split at sentence boundaries (one CaptionClip mount per ~one-line segment).
+- **Tabular numerals are not relevant** — text-heavy register; numeric content uses the bigNumber preset family (Cluster E).
 
 ## Animation
-- Entire phrase appears at once on the panel (panel scales 0.97 → 1.0, 250 ms)
-- Karaoke-style opacity increase: each word transitions 50% → 100% over its spoken duration
-- No bounce, no scale on individual words — opacity only
-- Optional 5° random rotation applied once when panel enters; does not animate
+
+- **`entrance: 'none'`** (the bundle's default). Words appear at their settled position with NO per-word translate / scale / opacity interpolation. The entrance routing branch in the primitive short-circuits the `'rise'` / `'bounce'` / `'slide-from-bottom'` interpolation when the bundle's `entrance` is `'none'`: words pop in at their `startMs` boundary at full opacity (then immediately drop to 0.6 in the next frame if they are no longer the active word). `staggerMs: 0` — no entrance offset. The original stub described "Entire phrase appears at once on the panel (panel scales 0.97 → 1.0, 250 ms)"; the bundle does NOT animate the phrase or panel (no panel rendered per `backdrop: 'none'`). Reconciled per D-T365-14 — the bundle's actual behavior is a snap-on at each word's `startMs`, not a phrase-level scale entrance. The container-level fade of the host composition still applies if declared; the bundle ships none.
+- **Active-word state** is the only animation per word. A word becomes active when `currentTimeMs >= word.startMs && currentTimeMs < word.endMs`. At the parity reference frame 60 (= 2000 ms) word 7 (`'by'`, `startMs: 1800, endMs: 2100`) is active. The non-active visible words pick up `{ color: muteColor, opacity: muteOpacity }` and the active word picks `{ color: highlightColor, opacity: 1 }`. Because `muteColor === highlightColor === foreground === '#1F1F1F'` for the `'ali-abdaal'` bundle, the **only visible delta** between active and rest is opacity (0.6 vs 1.0). This is the karaoke-by-opacity register the preset name promises.
+- **No color cycle.** Hormozi swaps white → yellow on active; MrBeast cycles red / yellow / green on emphasis-tagged words; the Ali Abdaal bundle does neither. `highlightColor: '#1F1F1F'` makes the highlight render identically to the foreground; the active word's distinguishing feature is opacity 1.0 vs the muted siblings' opacity 0.6.
+- **No active-word scale pulse, no bounce, no slide.** No per-word geometric animation. Words are static once visible.
+- **No word-exit animation.** Past words remain visible at `opacity: 0.6` — they don't fade out, slide off, or unmount until the CaptionClip mount is replaced by the next phrase. The unmount is a snap-cut.
+- **Snap-cut between caption events.** A fresh CaptionClip mount per ~one-line segment with snap-cut replacement (no cross-fade). Synced precisely to audio word-level timestamps in production. The host pipeline (or tool agent) emits the `WordTiming[]` from a transcript-with-timings source (Whisper word-level, ElevenLabs alignment); the primitive consumes the array as data per T-316 D-T316-4 — no audio decoding inside the primitive.
 
 ## Rules
-- Opacity-based karaoke (not color-change) is the signature. Don't switch to color highlights.
-- Panel background pink-gray must be light enough that it doesn't dominate the source video; configurable per scene contrast.
-- Sentence case, not ALL CAPS — Ali Abdaal's "clean aesthetic" depends on lowercase reading.
-- Random 5° rotation is intentional micro-motion; preserve it as opt-in.
-- The opposite-of-Hormozi register: subtle, professional, education-aesthetic.
+
+- **Bound primitive**: `caption` from `@stageflip/runtimes-frame-runtime-bridge` (`packages/runtimes/frame-runtime-bridge/src/clips/caption.tsx`, exported as `Caption` + `captionClip`). The `caption` `clipKind` is in `VALID_CLIP_KINDS` (per T-316 D-T316-13, `scripts/check-preset-integrity.ts`); the v1 resolver in `packages/parity-cli/src/generate-fixture.ts` routes `ali-abdaal-opacity-karaoke` via `PRESET_ID_BINDINGS['ali-abdaal-opacity-karaoke']` (T-365 D-T365-4) — the per-presetId override path established by T-360 D-T360-2. Composing tools should mount `Caption` with `style: 'ali-abdaal'`, a `WordTiming[]` payload, and a `position` — the bundle supplies font / casing / foreground / muteColor / muteOpacity / strokeWidth / backdrop / entrance / stagger defaults.
+- **Word-level timing is mandatory.** The primitive consumes `WordTiming[]` (`{ text, startMs, endMs, emphasis? }`); sentence-level captions break the opacity-karaoke register because the active-vs-mute opacity routing depends on per-word `startMs`/`endMs` boundaries. Tenants without word-level timestamps must split sentences upstream.
+- **`style: 'ali-abdaal'` is the canonical enum value.** Per-prop overrides (custom `font`, `muteColor`, `muteOpacity`, `entrance`) win over the bundle defaults but break the visual register; document any override in the composition's authoring metadata. The bundle's defaults are the contract.
+- **Opacity-based karaoke (NOT color-change) is the signature.** Don't switch to color highlights. The whole point of this register is the absence of a color-shift on the active word — it's the quietest possible emphasis (opacity-only) which sits comfortably under a lecturer's voice without visually competing. A reviewer who sees a yellow / red / green highlight on the active word should flag the rendering as a regression.
+- **Sentence case (NOT uppercase) is the canon.** Ali Abdaal's "clean aesthetic" depends on lowercase reading. The bundle's `casing: 'as-is'` honors authored case; tenants must not normalize transcripts to title-case or uppercase.
+- **No stroke, no backdrop, no panel, no glow, no shadow.** The dark-gray-on-white reading register stands on its own. The original stub mentioned a "light pinkish-gray `#EBE9EC` rounded panel" — the bundle does NOT render a panel; the prose has been reconciled to the implemented bundle (no panel). The white canvas IS the intended register.
+- **Lower-third anchor.** The default `position.y` is the lower-third (y=432 on the 1280×720 parity composition); tenants on vertical compositions re-anchor to the lower band above the platform UI overlay. Education aesthetics canonically place captions below the speaker's torso — captions read as transcript-supplementary, the lecturer reads as the foreground subject.
+- **Theme slot mapping**: `background`, `foreground`, `highlightColor`, `muteColor`, `strokeColor` map to palette roles per `captionClip.themeSlots`. Tenant theme overrides flow through these slots at composition time without touching the preset; tenants overriding `highlightColor` to a non-`#1F1F1F` shade should reconsider whether the `'ali-abdaal'` register is the right preset (a colored highlight reads as Hormozi / MrBeast).
+- **Reference frame for parity is mid-hold (frame 60)** — `currentTimeMs = 2000 ms` at 30 fps. By the primitive's word-visibility rule seven words are visible (1–7); by the active rule word 7 (`'by'`, `startMs: 1800, endMs: 2100`) is active; word 8 (`'teaching'`, `startMs: 2100`) is below its `startMs` and not yet rendered (`entrance: 'none'` means no anticipatory entrance). The parity golden documents the steady-state opacity-karaoke pattern with six muted past words on one side and one active word on the other — the maximum-contrast demonstration of the opacity delta in a single frame.
+- **No live data.** The `permissions` array is empty; no network call, no telemetry source. Audio sync / live transcription is a host concern.
+- **Optional 5° random rotation is out-of-scope for v1.** The original stub described a `microRotation: bool` compose-time gate; the `captionPropsSchema` exposes no rotation field. Documented as aspirational; not part of the v1 contract.
 
 ## Acceptance (parity)
-- Reference frames: 0 (panel entering), 6 (panel settled), 24 (word 2 of 5 active), 60 (last word active)
-- PSNR ≥ 42 dB, SSIM ≥ 0.98
+
+One reference-frame fixture at `frame: 60` (mid-hold per ADR-004 §D5; D-T365-6):
+
+- `golden-frame-60.png` — eight-word phrase `The best way to learn is by teaching` rendered at the system-stack fallback (TT Fors not preloaded; Inter OFL also not in the bundle's preload manifest — primitive-side FontManager preload concern flagged for follow-up, T-362 carryover) at 64 px sentence-case 600 weight; seven words visible (`The` / `best` / `way` / `to` / `learn` / `is` / `by`); the eighth word (`teaching`, `startMs: 2100`) is not yet rendered (the `entrance: 'none'` bundle has no anticipatory entrance — words pop in at their `startMs`); ALL words rendered in the same `#1F1F1F` dark gray color (NO color shift between active and rest); six past words (1–6: `The` / `best` / `way` / `to` / `learn` / `is`) at opacity 0.6 (visibly muted); word 7 (`by`) at opacity 1.0 (visibly fully opaque); NO black stroke (strokeWidth 0); NO backdrop / panel / pill (backdrop 'none'); on a white canvas (the host bundle's default canvas color reaches the parity golden via the canvas-bleed quirk inherited from T-362; impact REVERSED here — white IS the intended register); lower-third position.
+
+If floating-point drift makes word 6 (`is`) just-past-active or word 7 boundary-edge, acceptable — the parity contract is "seven visible sentence-case dark-gray words on white, exactly one at full opacity, the rest at ~0.6 opacity." Document whichever word lands active.
+
+Thresholds: **PSNR ≥ 42 dB**, **SSIM ≥ 0.98** (stricter than the generator default `35 / 0.95`; mirrors the cluster-E / cluster-F sister presets per D-T365-9). The preset-driven-thresholds follow-up flagged during T-359b is the formal mechanism for per-preset deviation; for now the threshold values are hand-pinned in `parity-fixtures/captions/ali-abdaal-opacity-karaoke/thresholds.json` post-generation. A no-stroke / no-backdrop / no-entrance / opacity-only caption is the **least** antialiasing-sensitive of the cluster F register space (no stroke jitter, no per-frame transform interpolation, no entrance mid-flight); `42 / 0.98` should be comfortable.
+
+**Sign-off (D-T365-8, in-PR):** the canonical mid-hold golden is committed at `parity-fixtures/captions/ali-abdaal-opacity-karaoke/` with the single-variant manifest shape (no `variants` key, per T-359a backward compat). Frontmatter `signOff.parityFixture` flips to `signed:<today UTC>` via `pnpm tsx scripts/generate-preset-parity-fixture-prod.ts --preset=ali-abdaal-opacity-karaoke --frame=60 --mark-signed`. Frontmatter `signOff.typeDesign` STAYS `pending-cluster-batch` — Cluster F is in `TYPE_DESIGN_REQUIRED_CLUSTERS` (`scripts/check-preset-integrity.ts`); T-368 batch type-design review (paired with `reviews/type-design-consultant-cluster-f.md`) flips this to `signed:<date>` for every Cluster F preset in one batch, NOT in this PR. Re-render + re-sign with `--force` is the operator's path if the FontManager preload list updates the rendered TT Fors or Inter face or the canonical phrase changes.
 
 ## References
-- `docs/compass_artifact.md` § Ali Abdaal
-- "Widely adopted by educational and clean-aesthetic creators"
-- Gap clip T-316 (`CaptionClip`)
-- ADR-004
+
+- `docs/compass_artifact.md` § Ali Abdaal — canonical visual source (note: on-disk path mismatch flagged for resolution; integrity invariant 7 SKIPped globally per T-358 D-T358-9).
+- `packages/runtimes/frame-runtime-bridge/src/clips/caption.tsx` — the bound primitive (`Caption`, `captionClip`); the `'ali-abdaal'` STYLE_BUNDLES bundle (lines 179–193) is the source of truth for font / casing / foreground / muteColor / muteOpacity / strokeWidth / backdrop / entrance / stagger defaults; mute-resolution routing (lines 332–337, 509–510, 542–543) — the path that makes `muteColor === highlightColor === foreground` resolve to opacity-only emphasis; `entrance: 'none'` short-circuit (line 191 + entrance routing branch) — the path that makes words pop in at `startMs` with no transition.
+- `packages/parity-cli/src/generate-fixture.ts` — v1 resolver routing `ali-abdaal-opacity-karaoke` via `PRESET_ID_BINDINGS['ali-abdaal-opacity-karaoke']` plus the exported `ALI_ABDAAL_CANONICAL_WORDS` eight-word snapshot (T-365 D-T365-4 / D-T365-6).
+- `skills/stageflip/presets/captions/hormozi-montserrat-black.md` — first cluster F preset (T-362; clipKind-default `caption → caption` precedent + canvas-bleed quirk inherited; impact reversed for T-365).
+- `skills/stageflip/presets/captions/mrbeast-komika-axis.md` — second cluster F preset (T-363; first per-presetId override in cluster F).
+- `skills/stageflip/presets/captions/tiktok-rounded-box.md` — third cluster F preset (T-364; pattern T-365 mirrors).
+- `skills/stageflip/presets/captions/SKILL.md` — Cluster F conventions (owned by T-368).
+- `skills/stageflip/concepts/captions/SKILL.md` — caption concept (transcription, packing, word-level timing).
+- `docs/tasks/T-316.md` — CaptionClip primitive spec (the central dep); D-T316-2 (`ali-abdaal` STYLE_BUNDLE), D-T316-7 (paint-order stroke/fill — bypassed here per `strokeWidth: 0`).
+- `docs/tasks/T-360.md` — per-presetId override mechanism (the central dep for T-365's resolver path); D-T360-2.
+- ADR-004 (preset system contract — frontmatter, loader, validator, parity sign-off, integrity invariants).
+- "Widely adopted by educational and clean-aesthetic creators" — original compass artifact prose for the Ali Abdaal register.
