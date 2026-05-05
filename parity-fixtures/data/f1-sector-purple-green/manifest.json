@@ -1,0 +1,39 @@
+{
+  "name": "f1-sector-purple-green",
+  "cluster": "data",
+  "kind": "bigNumber",
+  "description": "Parity fixture for preset 'f1-sector-purple-green' (cluster data, kind bigNumber)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [60],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}-${variant}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Formula1 Display",
+      "license": "proprietary-byo"
+    },
+    "fallback": {
+      "family": "Barlow Condensed",
+      "weight": 600,
+      "license": "ofl"
+    }
+  },
+  "variants": {
+    "sessionBest": {
+      "frames": [60]
+    },
+    "personalBest": {
+      "frames": [60]
+    },
+    "neutral": {
+      "frames": [60]
+    }
+  }
+}
