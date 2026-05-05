@@ -333,6 +333,13 @@ function resolveColor(
     muteOpacity: number;
   },
 ): { color: string; opacity: number } {
+  // T-316a — two activation paths for `muteOpacity`:
+  //   (a) explicit per-word `emphasis: 'mute'` → full mute color + opacity
+  //       (color shift + dim).
+  //   (b) bundle-level `muteOpacity < 1` (e.g. ali-abdaal opacity-karaoke) →
+  //       past/future visible non-tagged words dimmed via opacity only,
+  //       foreground fill preserved. The active word always wins; the
+  //       active branch sits above this one and never picks up dim.
   if (word.emphasis === 'mute') {
     return { color: resolved.muteColor, opacity: resolved.muteOpacity };
   }
@@ -341,6 +348,9 @@ function resolveColor(
       color: pickHighlightColor(resolved.highlightColor, word.highlightedIndex),
       opacity: 1,
     };
+  }
+  if (resolved.muteOpacity < 1) {
+    return { color: resolved.foreground, opacity: resolved.muteOpacity };
   }
   return { color: resolved.foreground, opacity: 1 };
 }

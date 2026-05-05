@@ -346,6 +346,70 @@ describe('Caption component (T-316)', () => {
   });
 });
 
+describe('Caption muteOpacity routing (T-316a)', () => {
+  // Three words none tagged. With `entrance: 'rise'` + a large `staggerMs`,
+  // all three entrance windows fully settle at the test frame (entranceStart
+  // becomes ≤ 0 for every word), so `style.opacity` reflects only the
+  // emphasis-opacity coming out of `resolveColor`.
+  const TRIPLET_WORDS: CaptionProps['words'] = [
+    { text: 'past', startMs: 0, endMs: 200 },
+    { text: 'active', startMs: 200, endMs: 600 },
+    { text: 'future', startMs: 600, endMs: 1000 },
+  ];
+
+  it('ali-abdaal (muteOpacity 0.6) dims past + future non-tagged words; active stays full', () => {
+    // At frame 12 @ 30fps = 400ms: word 0 past, word 1 active, word 2 future.
+    // `entrance: 'rise'` + `staggerMs: 600` shifts every word's entranceStart
+    // ≤ 0, so entrance opacity is 1 for all three at frame 12.
+    renderAt(12, {
+      words: TRIPLET_WORDS,
+      style: 'ali-abdaal',
+      position: MIN_POSITION,
+      entrance: 'rise',
+      staggerMs: 600,
+    });
+    const w0 = screen.getByTestId('caption-word-0');
+    const w1 = screen.getByTestId('caption-word-1');
+    const w2 = screen.getByTestId('caption-word-2');
+    expect(Number.parseFloat(w0.style.opacity || '1')).toBeCloseTo(0.6, 2);
+    expect(Number.parseFloat(w1.style.opacity || '1')).toBeCloseTo(1.0, 2);
+    expect(Number.parseFloat(w2.style.opacity || '1')).toBeCloseTo(0.6, 2);
+  });
+
+  it('hormozi (muteOpacity 1) regression sentinel — all words at opacity 1.0', () => {
+    // Hormozi bundle ships `muteOpacity: 1`; new T-316a branch must be
+    // unreachable. Past/future non-tagged words stay at opacity 1.0.
+    renderAt(12, {
+      words: TRIPLET_WORDS,
+      style: 'hormozi',
+      strokeWidth: 0, // force DOM mode so style.opacity is readable.
+      position: MIN_POSITION,
+      entrance: 'rise',
+      staggerMs: 600,
+    });
+    for (let i = 0; i < 3; i += 1) {
+      const word = screen.getByTestId(`caption-word-${i}`);
+      expect(Number.parseFloat(word.style.opacity || '1')).toBeCloseTo(1.0, 2);
+    }
+  });
+
+  it('active word never picks up muteOpacity dim under ali-abdaal', () => {
+    // Guard the branch ordering: the new `muteOpacity < 1` branch sits
+    // *below* the highlight/active branch in `resolveColor`, so the active
+    // word must remain at opacity 1.0 even with `muteOpacity: 0.6`.
+    renderAt(12, {
+      words: TRIPLET_WORDS,
+      style: 'ali-abdaal',
+      position: MIN_POSITION,
+      entrance: 'rise',
+      staggerMs: 600,
+    });
+    const w1 = screen.getByTestId('caption-word-1');
+    expect(Number.parseFloat(w1.style.opacity || '1')).toBeCloseTo(1.0, 2);
+    expect(Number.parseFloat(w1.style.opacity || '1')).not.toBeCloseTo(0.6, 2);
+  });
+});
+
 describe('captionClip definition (T-316)', () => {
   it("registers under kind 'caption' with the expected theme slots", () => {
     expect(captionClip.kind).toBe('caption');
