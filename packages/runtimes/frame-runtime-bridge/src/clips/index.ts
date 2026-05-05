@@ -399,11 +399,26 @@ export {
   standingsTablePropsSchema,
 } from './standings-table.js';
 
+// T-316 — caption primitive. Word-level timed text with six built-in
+// visual styles (hormozi / mrbeast / tiktok / ali-abdaal / netflix /
+// karaoke-wipe). Frame-deterministic word visibility, per-word
+// entrance stagger, SVG-stroke text (paint-order: stroke fill),
+// per-word pill / single rect backdrops, karaoke-wipe per-word
+// <clipPath> fill, casing transforms. Unblocks Cluster F captions
+// (T-362..T-367) plus Cluster A/B/G word-emphasis use cases.
+export {
+  Caption,
+  type CaptionProps,
+  captionClip,
+  captionPropsSchema,
+} from './caption.js';
+
 import { animatedMapClip } from './animated-map.js';
 import { animatedValueClip } from './animated-value.js';
 import { audioVisualizerReactiveClip } from './audio-visualizer-reactive.js';
 import { audioVisualizerClip } from './audio-visualizer.js';
 import { beatSyncedTextClip } from './beat-synced-text.js';
+import { captionClip } from './caption.js';
 import { chartBuildClip } from './chart-build.js';
 import { chartClip } from './chart/index.js';
 import { clickOverlayClip } from './click-overlay.js';
@@ -548,4 +563,13 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // leaderboards, election results, crypto top-N dashboards). 45 → 46
   // clips.
   standingsTableClip,
+  // T-316 — caption primitive (word-level timed text with six built-in
+  // visual styles: hormozi / mrbeast / tiktok / ali-abdaal / netflix /
+  // karaoke-wipe). Frame-deterministic word visibility, per-word
+  // entrance stagger, SVG-stroke text (paint-order: stroke fill),
+  // per-word pill / single rect backdrops, karaoke-wipe per-word
+  // <clipPath> fill, casing transforms. Unblocks Cluster F captions
+  // (T-362..T-367) and Cluster A/B/G word-emphasis use cases. 46 → 47
+  // clips.
+  captionClip,
 ];
