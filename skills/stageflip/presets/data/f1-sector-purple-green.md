@@ -12,15 +12,8 @@ fallbackFont:
   weight: 600
   license: ofl
 permissions: []
-# parityFixture is `pending-user-review` (a non-blocking WARN per
-# `checkParityFixtureSignOff` in `scripts/check-preset-integrity.ts`). The
-# T-313 generator currently supports a single canonical mid-hold reference
-# frame per preset; this preset requires three (one per state:
-# sessionBest / personalBest / neutral) per D-T359-5. Sign-off is deferred
-# to T-359a (separate task spec) which extends the T-313 generator with
-# multi-variant manifest support and binds a working productionRenderer.
 signOff:
-  parityFixture: pending-user-review
+  parityFixture: 'signed:2026-05-05'
   typeDesign: na
 ---
 
@@ -79,7 +72,7 @@ Three reference-frame fixtures, one per state, all at `frame: 60` (mid-hold stea
 
 Thresholds: **PSNR ≥ 42 dB**, **SSIM ≥ 0.98** (stricter than the generator default `35 / 0.95`; mirrors the `f1-timing-tower` sister preset's pin in cluster B).
 
-**Sign-off carve-out (T-359):** the parity-fixture generator at `scripts/generate-preset-parity-fixture.ts` (T-313) currently supports a single canonical mid-hold reference frame per preset and does not bind a working `productionRenderer` for this preset's `clipKind`. T-359 ships markdown-only; `signOff.parityFixture` stays at `pending-user-review` (a non-blocking WARN per `checkParityFixtureSignOff`). The three goldens land in a follow-up task spec (T-359a) that extends the generator with multi-variant manifest support + the `clipKind: bigNumber` → renderer wiring. AC #7, #8, #9, #10 from the T-359 spec are deferred to that task.
+**Sign-off (T-359b):** all three reference-frame goldens are committed at `parity-fixtures/data/f1-sector-purple-green/` with the multi-variant manifest shape from T-359a (`variants: { sessionBest, personalBest, neutral }`, each at `frame: 60`). Frontmatter `signOff.parityFixture` is `signed:2026-05-05`. Goldens were rendered locally via `scripts/generate-preset-parity-fixture-prod.ts` (the puppeteer/CDP-bound prod renderer); the `bigNumber` clipKind binds to `animated-value` per the v1 resolver in `packages/parity-cli/src/generate-fixture.ts`. The OFL fallback face renders the central count-up (the F1 Display BYO face is not vendored per ADR-004 §D3); driver code, sector label, and dark background remain composition-layer concerns outside this preset's bound primitive. Re-render + re-sign with `--force` is the operator's path if the BYO face becomes available locally.
 
 ## References
 
