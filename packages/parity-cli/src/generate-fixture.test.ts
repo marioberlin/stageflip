@@ -12,6 +12,7 @@ import {
   F1_SECTOR_STATE_COLORS,
   GenerateFixtureUnavailableError,
   HORMOZI_CANONICAL_WORDS,
+  MRBEAST_CANONICAL_WORDS,
   OLYMPIC_CANONICAL_STANDINGS,
   PRESET_ID_BINDINGS,
   type PresetForRender,
@@ -326,6 +327,119 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(word6?.text).toBe('forever');
     expect(word6?.startMs).toBe(1500);
     expect(word6?.endMs).toBe(1800);
+  });
+
+  // T-363 — second `caption` clipKind preset (`mrbeast-komika-axis`), routed
+  // via the per-presetId override path (D-T363-4). The clipKind-default
+  // (T-362's `captionBinding` with style 'hormozi') stays unchanged; only
+  // the `mrbeast-komika-axis` presetId resolves to `mrbeastBinding`.
+
+  it('routes mrbeast-komika-axis through the per-preset override binding (T-363 AC #12)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'mrbeast-komika-axis');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('caption');
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('mrbeast');
+    const words = props?.words as ReadonlyArray<{
+      text: string;
+      startMs: number;
+      endMs: number;
+      emphasis?: string;
+    }>;
+    expect(Array.isArray(words)).toBe(true);
+    expect(words).toHaveLength(6);
+    expect(words.map((w) => w.text)).toEqual(['I', 'gave', 'away', 'one', 'million', 'dollars']);
+    // Three highlight words at indices 1 / 3 / 5 (D-T363-5) — cycling color
+    // routing fires red / yellow / green via the primitive's
+    // `highlightedIndex % 3` rule.
+    expect(words.filter((w) => w.emphasis === 'highlight')).toHaveLength(3);
+    expect(words[1]?.emphasis).toBe('highlight');
+    expect(words[3]?.emphasis).toBe('highlight');
+    expect(words[5]?.emphasis).toBe('highlight');
+    expect(props?.background).toBe('#0E0E12');
+    const position = props?.position as {
+      x: number;
+      y: number;
+      width: number;
+      alignment: string;
+    };
+    expect(position.x).toBe(128);
+    expect(position.y).toBe(200);
+    expect(position.width).toBe(1024);
+    expect(position.alignment).toBe('center');
+  });
+
+  it('PRESET_ID_BINDINGS exposes the mrbeast-komika-axis override (T-363)', () => {
+    expect(PRESET_ID_BINDINGS['mrbeast-komika-axis']).toBeDefined();
+    expect(PRESET_ID_BINDINGS['mrbeast-komika-axis']?.clipName).toBe('caption');
+  });
+
+  it('falls through to captionBinding for hormozi-montserrat-black after T-363 lands (T-363 AC #14 backward compat)', () => {
+    // T-363's PRESET_ID_BINDINGS entry must NOT shadow T-362's clipKind-
+    // default. Asserting style stays 'hormozi' (vs 'mrbeast') guards the
+    // fall-through.
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'hormozi-montserrat-black');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('hormozi');
+    const words = props?.words as ReadonlyArray<{ text: string }>;
+    expect(words.map((w) => w.text)).toEqual(['This', 'will', 'change', 'your', 'life', 'forever']);
+  });
+
+  it('falls through to captionBinding for unknown caption presetIds (T-363 AC #17)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'unknown-caption-preset');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('hormozi');
+  });
+
+  it('exports MRBEAST_CANONICAL_WORDS with six entries totalling 2100 ms (T-363 AC #13)', () => {
+    expect(MRBEAST_CANONICAL_WORDS).toHaveLength(6);
+    const total = MRBEAST_CANONICAL_WORDS.reduce((acc, w) => acc + (w.endMs - w.startMs), 0);
+    expect(total).toBe(2100);
+    // Each word is 350 ms (vs Hormozi's 300 ms — emphasis-heavy register
+    // stays slightly longer per word per D-T363-6).
+    for (const w of MRBEAST_CANONICAL_WORDS) {
+      expect(w.endMs - w.startMs).toBe(350);
+    }
+    // Word 6 ('dollars') is the active highlight at frame 60 (= 2000 ms).
+    const word6 = MRBEAST_CANONICAL_WORDS[5];
+    expect(word6?.text).toBe('dollars');
+    expect(word6?.startMs).toBe(1750);
+    expect(word6?.endMs).toBe(2100);
+    expect(word6?.emphasis).toBe('highlight');
+  });
+
+  it('routes mrbeast-komika-axis through the renderer-side override (T-363 AC #12 round-trip)', async () => {
+    const renderSpy = vi
+      .fn<(doc: unknown, frame: number) => Promise<Uint8Array>>()
+      .mockResolvedValue(new Uint8Array([0]));
+    const renderer = createGenerateFixtureRenderer({
+      resolver: DEFAULT_CLIP_KIND_RESOLVER,
+      render: renderSpy as unknown as Parameters<typeof createGenerateFixtureRenderer>[0]['render'],
+    });
+    await renderer.render({
+      preset: presetWith('caption', 'mrbeast-komika-axis', 'captions'),
+      composition: COMPOSITION,
+      frame: 60,
+    });
+    const [doc] = renderSpy.mock.calls[0] ?? [];
+    const parsed = rirDocumentSchema.parse(doc);
+    const element = parsed.elements[0];
+    if (!element || element.content.type !== 'clip') throw new Error('expected clip element');
+    expect(element.content.params).toMatchObject({
+      style: 'mrbeast',
+    });
+    const params = element.content.params as { words: ReadonlyArray<{ text: string }> };
+    expect(params.words.map((w) => w.text)).toEqual([
+      'I',
+      'gave',
+      'away',
+      'one',
+      'million',
+      'dollars',
+    ]);
   });
 
   it('builds scoreBug props as a six-chip canonical over with cricket-canon colors (T-358)', () => {

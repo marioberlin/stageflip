@@ -1,0 +1,30 @@
+{
+  "name": "mrbeast-komika-axis",
+  "cluster": "captions",
+  "kind": "caption",
+  "description": "Parity fixture for preset 'mrbeast-komika-axis' (cluster captions, kind caption)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Komika Axis",
+      "license": "commercial-byo"
+    },
+    "fallback": {
+      "family": "Bangers",
+      "weight": 400,
+      "license": "ofl"
+    }
+  }
+}
