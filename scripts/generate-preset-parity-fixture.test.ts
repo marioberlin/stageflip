@@ -1271,3 +1271,160 @@ describe('bindProductionRenderer (T-359a AC #7, #8, #9)', () => {
     }
   });
 });
+
+// ---------- F-4 — preset-driven parity thresholds via CLI flags ----------
+
+describe('parseArgs — F-4 threshold overrides', () => {
+  it('parses --psnr as a positive number (AC #1)', () => {
+    const { args, errors } = parseArgs(['--preset=p', '--psnr=42']);
+    expect(errors).toEqual([]);
+    expect(args.psnr).toBe(42);
+  });
+
+  it('parses --ssim as a 0..1 number (AC #2)', () => {
+    const { args, errors } = parseArgs(['--preset=p', '--ssim=0.98']);
+    expect(errors).toEqual([]);
+    expect(args.ssim).toBe(0.98);
+  });
+
+  it('parses --max-failing-frames as a nonnegative integer (AC #3)', () => {
+    const { args, errors } = parseArgs(['--preset=p', '--max-failing-frames=2']);
+    expect(errors).toEqual([]);
+    expect(args.maxFailingFrames).toBe(2);
+  });
+
+  it('rejects non-numeric --psnr (AC #4)', () => {
+    const { errors } = parseArgs(['--preset=p', '--psnr=abc']);
+    expect(errors[0]).toContain('--psnr must be a positive number');
+  });
+
+  it('rejects non-positive --psnr (AC #4)', () => {
+    expect(parseArgs(['--preset=p', '--psnr=0']).errors[0]).toContain(
+      '--psnr must be a positive number',
+    );
+    expect(parseArgs(['--preset=p', '--psnr=-1']).errors[0]).toContain(
+      '--psnr must be a positive number',
+    );
+  });
+
+  it('rejects --ssim outside (0, 1] (AC #5)', () => {
+    expect(parseArgs(['--preset=p', '--ssim=2']).errors[0]).toContain(
+      '--ssim must be a number in (0, 1]',
+    );
+    expect(parseArgs(['--preset=p', '--ssim=0']).errors[0]).toContain(
+      '--ssim must be a number in (0, 1]',
+    );
+    expect(parseArgs(['--preset=p', '--ssim=-0.5']).errors[0]).toContain(
+      '--ssim must be a number in (0, 1]',
+    );
+  });
+
+  it('rejects negative --max-failing-frames (AC #6)', () => {
+    const { errors } = parseArgs(['--preset=p', '--max-failing-frames=-1']);
+    expect(errors[0]).toContain('--max-failing-frames must be a nonnegative integer');
+  });
+
+  it('rejects non-integer --max-failing-frames (AC #6)', () => {
+    const { errors } = parseArgs(['--preset=p', '--max-failing-frames=2.5']);
+    expect(errors[0]).toContain('--max-failing-frames must be a nonnegative integer');
+  });
+
+  it('all three flags default to undefined when absent', () => {
+    const { args } = parseArgs(['--preset=p']);
+    expect(args.psnr).toBeUndefined();
+    expect(args.ssim).toBeUndefined();
+    expect(args.maxFailingFrames).toBeUndefined();
+  });
+});
+
+describe('runGenerate — F-4 threshold overrides write through to thresholds.json', () => {
+  it('writes DEFAULT_THRESHOLDS unchanged when no override flags present (AC #7)', async () => {
+    const presetsRoot = writeSyntheticTree({
+      presets: [{ cluster: 'news', id: 'cnn-classic' }],
+    });
+    const fixturesRoot = makeFixturesRoot();
+    try {
+      const r = await runGenerate(
+        [
+          '--preset=cnn-classic',
+          `--presets-root=${presetsRoot}`,
+          `--fixtures-root=${fixturesRoot}`,
+        ],
+        { renderer: stubRenderer },
+      );
+      expect(r.exitCode).toBe(0);
+      const thresholds = JSON.parse(
+        readFileSync(join(fixturesRoot, 'news', 'cnn-classic', 'thresholds.json'), 'utf8'),
+      );
+      expect(thresholds).toEqual({ minPsnr: 35, minSsim: 0.95, maxFailingFrames: 0 });
+      expect(thresholds).toEqual(DEFAULT_THRESHOLDS);
+    } finally {
+      rmSync(presetsRoot, { recursive: true, force: true });
+      rmSync(fixturesRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('--psnr=42 --ssim=0.98 overrides corresponding fields (AC #8)', async () => {
+    const presetsRoot = writeSyntheticTree({
+      presets: [{ cluster: 'news', id: 'cnn-classic' }],
+    });
+    const fixturesRoot = makeFixturesRoot();
+    try {
+      const r = await runGenerate(
+        [
+          '--preset=cnn-classic',
+          '--psnr=42',
+          '--ssim=0.98',
+          `--presets-root=${presetsRoot}`,
+          `--fixtures-root=${fixturesRoot}`,
+        ],
+        { renderer: stubRenderer },
+      );
+      expect(r.exitCode).toBe(0);
+      const thresholds = JSON.parse(
+        readFileSync(join(fixturesRoot, 'news', 'cnn-classic', 'thresholds.json'), 'utf8'),
+      );
+      expect(thresholds).toEqual({ minPsnr: 42, minSsim: 0.98, maxFailingFrames: 0 });
+    } finally {
+      rmSync(presetsRoot, { recursive: true, force: true });
+      rmSync(fixturesRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('--max-failing-frames=3 overrides only that field', async () => {
+    const presetsRoot = writeSyntheticTree({
+      presets: [{ cluster: 'news', id: 'cnn-classic' }],
+    });
+    const fixturesRoot = makeFixturesRoot();
+    try {
+      const r = await runGenerate(
+        [
+          '--preset=cnn-classic',
+          '--max-failing-frames=3',
+          `--presets-root=${presetsRoot}`,
+          `--fixtures-root=${fixturesRoot}`,
+        ],
+        { renderer: stubRenderer },
+      );
+      expect(r.exitCode).toBe(0);
+      const thresholds = JSON.parse(
+        readFileSync(join(fixturesRoot, 'news', 'cnn-classic', 'thresholds.json'), 'utf8'),
+      );
+      expect(thresholds).toEqual({ minPsnr: 35, minSsim: 0.95, maxFailingFrames: 3 });
+    } finally {
+      rmSync(presetsRoot, { recursive: true, force: true });
+      rmSync(fixturesRoot, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('usage — F-4 help text lists threshold flags (AC #9)', () => {
+  it('lists --psnr, --ssim, --max-failing-frames with defaults', () => {
+    const u = usage();
+    expect(u).toContain('--psnr');
+    expect(u).toContain('--ssim');
+    expect(u).toContain('--max-failing-frames');
+    expect(u).toContain('35');
+    expect(u).toContain('0.95');
+  });
+});

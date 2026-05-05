@@ -353,6 +353,21 @@ export interface CliArgs {
    * de-duplicated by `parseArgs`.
    */
   variants: string[];
+  /**
+   * Override `thresholds.json` `minPsnr` (F-4). When undefined, the written
+   * thresholds bundle keeps {@link DEFAULT_THRESHOLDS}.minPsnr (35).
+   */
+  psnr: number | undefined;
+  /**
+   * Override `thresholds.json` `minSsim` (F-4). When undefined, the written
+   * thresholds bundle keeps {@link DEFAULT_THRESHOLDS}.minSsim (0.95).
+   */
+  ssim: number | undefined;
+  /**
+   * Override `thresholds.json` `maxFailingFrames` (F-4). When undefined, the
+   * written thresholds bundle keeps {@link DEFAULT_THRESHOLDS}.maxFailingFrames (0).
+   */
+  maxFailingFrames: number | undefined;
 }
 
 const DEFAULT_CLI_ARGS: CliArgs = {
@@ -364,6 +379,9 @@ const DEFAULT_CLI_ARGS: CliArgs = {
   fixturesRoot: FIXTURES_ROOT_DEFAULT,
   help: false,
   variants: [],
+  psnr: undefined,
+  ssim: undefined,
+  maxFailingFrames: undefined,
 };
 
 /**
@@ -426,6 +444,33 @@ export function parseArgs(argv: readonly string[]): {
       case 'fixtures-root':
         args.fixturesRoot = value;
         break;
+      case 'psnr': {
+        const n = Number.parseFloat(value);
+        if (!Number.isFinite(n) || n <= 0) {
+          errors.push(`--psnr must be a positive number (got '${value}')`);
+        } else {
+          args.psnr = n;
+        }
+        break;
+      }
+      case 'ssim': {
+        const n = Number.parseFloat(value);
+        if (!Number.isFinite(n) || n <= 0 || n > 1) {
+          errors.push(`--ssim must be a number in (0, 1] (got '${value}')`);
+        } else {
+          args.ssim = n;
+        }
+        break;
+      }
+      case 'max-failing-frames': {
+        const n = Number(value);
+        if (!Number.isInteger(n) || n < 0) {
+          errors.push(`--max-failing-frames must be a nonnegative integer (got '${value}')`);
+        } else {
+          args.maxFailingFrames = n;
+        }
+        break;
+      }
       case 'variant': {
         // T-359a D-T359a-8: comma-separated form folded into the same set as
         // repeated `--variant=` flags. Empty entries are an error (e.g. `a,,b`).
@@ -457,6 +502,7 @@ export function usage(): string {
     'Usage: pnpm generate-parity-fixture --preset=<id>',
     '                                    [--frame=<n>]',
     '                                    [--variant=<name>]...',
+    '                                    [--psnr=<n>] [--ssim=<n>] [--max-failing-frames=<n>]',
     '                                    [--mark-signed] [--force]',
     '                                    [--presets-root=<path>]',
     '                                    [--fixtures-root=<path>]',
@@ -465,6 +511,13 @@ export function usage(): string {
     '  parity-fixtures/<cluster>/<preset>/manifest.json',
     '  parity-fixtures/<cluster>/<preset>/golden-frame-<n>.png',
     '  parity-fixtures/<cluster>/<preset>/thresholds.json',
+    '',
+    'Threshold overrides (F-4):',
+    '  --psnr=<n>                  override thresholds.json minPsnr (default 35; positive number)',
+    '  --ssim=<n>                  override thresholds.json minSsim (default 0.95; (0, 1])',
+    '  --max-failing-frames=<n>    override thresholds.json maxFailingFrames (default 0; nonnegative integer)',
+    '  When all three flags are absent, thresholds.json matches the historical default',
+    '  {minPsnr: 35, minSsim: 0.95, maxFailingFrames: 0} (backward-compat).',
     '',
     'Multi-variant (T-359a):',
     '  Pass --variant=<name> one or more times (or --variant=a,b,c) to render',
@@ -605,7 +658,16 @@ export async function runGenerate(argv: readonly string[], opts: RunOpts): Promi
     stdout.push(`wrote ${target.goldenPath}`);
   }
 
-  writeFileAtomic(thresholdsPath, `${JSON.stringify(DEFAULT_THRESHOLDS, null, 2)}\n`);
+  // F-4: build effective thresholds from defaults + CLI overrides. Defaults
+  // unchanged when flags absent (backward-compat with T-313). When set, each
+  // flag overrides the corresponding field — eliminates the manual hand-pin
+  // step that every preset PR carried.
+  const thresholds = {
+    minPsnr: args.psnr ?? DEFAULT_THRESHOLDS.minPsnr,
+    minSsim: args.ssim ?? DEFAULT_THRESHOLDS.minSsim,
+    maxFailingFrames: args.maxFailingFrames ?? DEFAULT_THRESHOLDS.maxFailingFrames,
+  };
+  writeFileAtomic(thresholdsPath, `${JSON.stringify(thresholds, null, 2)}\n`);
   written.push(thresholdsPath);
   stdout.push(`wrote ${thresholdsPath}`);
 
