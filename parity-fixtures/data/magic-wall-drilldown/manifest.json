@@ -1,0 +1,30 @@
+{
+  "name": "magic-wall-drilldown",
+  "cluster": "data",
+  "kind": "fullScreen",
+  "description": "Parity fixture for preset 'magic-wall-drilldown' (cluster data, kind fullScreen)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "CNN Sans",
+      "license": "proprietary-byo"
+    },
+    "fallback": {
+      "family": "Inter Tight",
+      "weight": 600,
+      "license": "ofl"
+    }
+  }
+}

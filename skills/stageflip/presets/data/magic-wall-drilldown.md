@@ -3,7 +3,7 @@ id: magic-wall-drilldown
 cluster: data
 clipKind: fullScreen
 source: docs/compass_artifact.md#cnn-magic-wall
-status: stub
+status: substantive
 preferredFont:
   family: CNN Sans
   license: proprietary-byo
@@ -11,45 +11,91 @@ fallbackFont:
   family: Inter Tight
   weight: 600
   license: ofl
-permissions: [network]
+permissions:
+  - network
 signOff:
-  parityFixture: pending-user-review
+  parityFixture: 'signed:2026-05-05'
   typeDesign: na
 ---
 
-# Magic Wall Drill-down — election / data fullScreen
+# Magic Wall Drilldown — election-night fullscreen panel
+
+The broadcast "magic wall" drilldown convention popularized by election-night coverage (CNN's John King, Fox / MSNBC's election boards): a fullscreen interactive panel where a presenter walks through layered hierarchical data — zoom into a state → zoom into a county → show vote shares per precinct — with party-color shading, percentage labels, and smooth pan/scale transitions. Common uses cover election broadcasts (state → county → precinct), sports playoff brackets (region → matchup), weather radar drilldowns, and scientific data exploration. The preset's stylistic point is the **fullscreen layered hierarchical-data panel + party-color shading + tabular numerics + theatrical pop-in stagger** — every viewer of any election broadcast parses this geometry without legend.
+
+This preset is the **sixth and final Cluster E preset to land** (after `f1-sector-purple-green`, `cricket-ball-by-ball-dots`, `big-number-stat-impact`, `bloomberg-ticker`, `olympic-medal-tracker`), the **third Cluster E preset to bind `LiveDataClip`** (after `bloomberg-ticker` and `olympic-medal-tracker`), and the **first preset to ship using `clipKind: fullScreen`**. Per ADR-003 §D2 the `live-data` family ships two render paths — `liveMount` (host fetches an election-results endpoint, renders live with periodic refresh) and `staticFallback` (deterministic snapshot for parity goldens, exports, screenshots). T-355 covers the **staticFallback path** end-to-end via the bound `magic-wall-panel` primitive (T-355a); the liveMount path AND the runtime drilldown zoom-transition state machine are documented in prose only — host responsibility per ADR-003.
 
 ## Visual tokens
-- Multi-touch interactive map register
-- County-level granularity for U.S. elections (extends to other geographies per region pack)
-- Dem Blue `#0044CC` and Rep Red `#CC0000` (canonical; tenants can opt for partisan-neutral palette)
-- WebGL + Web Sockets architecture (Code and Theory canon)
-- "Theatrical" pop / animation — designed for camera, not just dashboard
+
+The four-color party palette is the universal election-broadcast register: every American viewer parses Dem Blue / Rep Red / tied-purple / undecided-gray without legend. Per-tenant partisan-neutral palettes (BBC purples, Reuters teals) are a compose-time tenant theming layer, NOT a preset variant — the canonical party hexes stay fixed for the v1 parity contract.
+
+- **Background** `#0E0E12` solid (near-black; matches the broadcast graphics base used across cluster E). The panel is a self-contained register, not a window onto a venue feed.
+- **Foreground** white `#FFFFFF` for the panel title, subtitle, region labels, and value text.
+- **Party A — Democratic Blue** `#0044CC` for the tile fill of states leading for the Democratic candidate (canonical CNN / NBC / ABC convention). The fill IS the message; tile labels stay white for legibility.
+- **Party B — Republican Red** `#CC0000` for the tile fill of states leading for the Republican candidate. Same posture as Party A.
+- **Tied** purple `#7A3FB2` for the tile fill of states where the leading-party margin is below the broadcast's "called" threshold (often <0.5%). Purple as the visual midpoint between blue and red.
+- **Undecided** neutral gray `#666666` for the tile fill of states where polls remain open or the count has not crossed a "report" threshold. Distinct from any party-leaning color so the eye reads it as "no signal yet".
+- **Tile geometry**: each region is rendered as a placeholder rectangle in v1 per D-T355-6; the `bounds` field on each region carries `{ x, y, width, height }` in canvas-pixel space. The canonical 8-region snapshot is laid out in a 4×2 grid sized for the 1280×720 default composition (tiles ~280×220 px each at 12 px gap, originating at `(60, 140)` to leave space for the title + subtitle band above).
+- **Title + subtitle band** sits at the top of the panel: `"Election Results"` heading + `"State-by-state breakdown"` subtitle. The primitive renders both centered at the panel's foreground color, subtitle at 70% opacity.
+- **Theatrical pop-in stagger**: each region tile fades + rises into place (12 px → 0 px) over a 12-frame entrance window with 60 ms per-region delay. Stagger has fully resolved by frame ~25 (the eighth tile settles by `frame ≈ 12 + 7 × 1.8 = 25`); the parity-mid-hold frame 60 captures every tile fully opaque + settled.
+
+The party-color shading IS the message — applied uniformly to the tile fill. Region labels and value text stay white across all four states; the eye locks onto the colored tile body as the salient signal.
 
 ## Typography
-- Region labels: Bold, 22–28 pt, tabular
-- Vote totals: Bold, 28–36 pt, tabular
-- Percentages: Regular, 18–22 pt, tabular
+
+- **`preferredFont: CNN Sans`** (proprietary BYO per ADR-004 §D3). CNN's broadcast graphics package uses a proprietary in-house family; tenants with a CNN licensing agreement slot it in via the FontManager (T-072). Cluster E does not require type-design sign-off (`signOff.typeDesign: na`).
+- **`fallbackFont: Inter Tight`** (OFL), weight `600`. Substituted automatically by the FontManager on every rendering medium where the BYO CNN face is not cleared. Inter Tight's denser metric reads as a broadcast lower-third; the OFL face is license-cleared in `THIRD_PARTY.md`. Mirrors the cluster-E "good-enough not broadcast-exact" posture (the tighter the register, the less room for fallback drift).
+- **Region labels** (CA, TX, etc.) at `Inter Tight` weight `600` per the stub's `## Typography` "Region labels: Bold, 22–28 pt, tabular". The 3-letter ISO and 2-letter US-state codes are ASCII — any registered Latin-script font renders them correctly.
+- **Vote totals + percentages** at `Inter` weight `800` per D-T355-7 — heavier "impact" register matching `big-number-stat-impact`'s heavy-weight broadcast atom (same OFL family at the heavy-weight broadcast register; no cross-family inconsistency). The frontmatter schema accepts a single `fallbackFont` entry today (extending it to a font-pair is a preset-system change — out of envelope), so this dual-font posture is documented in prose: composing tools that mount `magic-wall-panel` for `magic-wall-drilldown` SHOULD route value glyphs through `Inter` w800 (OFL, license-cleared) when the FontManager preload list includes that face. The v1 parity fixture renders all glyph runs through the bridge primitive's `system-ui, sans-serif` fallback; the cluster-E "good-enough not broadcast-exact" posture (mirrors `bloomberg-ticker`'s dual-font posture per T-356 D-T356-7).
+- **Tabular numerals are mandatory** for the value column (electoral-vote count + percentage). The `magic-wall-panel` primitive applies `font-variant-numeric: tabular-nums` to numeric-formatted cells (`'percent'` / `'count'` / `'raw'` formats) automatically per D-T355a-4 — column-edge alignment when multiple regions emit numerics side-by-side. Cluster-E convention; documented in `skills/stageflip/presets/data/SKILL.md`.
+- **No italic, no underline, no strikethrough.** Election broadcast graphics never use them.
 
 ## Animation
-- Pinch-and-zoom drill-downs from state → county → precinct, 600 ms ease-in-out per step
-- Animated vote tally count-ups (use `big-number-stat-impact` count-up curve)
-- Color transitions as results arrive — smooth interpolation, 400 ms per update
-- "Pop in a theatrical way that would look great on camera" — every animation has anticipation + overshoot
-- 2024+ canon: works on mobile apps (CNN debut for mobile)
+
+- **Per-region entrance stagger** at `staggerMs: 60` (default) — region `i` fades from opacity 0 → 1 and rises from `translateY: 12 px → 0 px` over a 12-frame window starting at `delay = i * staggerMs / (1000 / fps)`. At 30 fps the eighth (last) region settles by `frame ≈ 12 + 7 × (60 × 30 / 1000) = 25`. Frame 60 (the parity reference frame, mid-hold) is well past entrance — every tile is fully opaque + settled.
+- **Drilldown zoom transitions** (state → county → precinct camera-pan + scale, 600 ms ease-in-out per step) are a **runtime composition concern** per ADR-003 §D2, NOT in v1 parity. The runtime drives state transitions across multiple `magic-wall-panel` renders (e.g., LiveDataClip's host-driven state machine swaps the `regions` prop between snapshots, with crossfade / scale composed at the layer-stack level). The primitive renders **one level** of the hierarchy at a time. Multi-frame zoom-transition goldens are out of v1 envelope per D-T355-5; the runtime drilldown state machine is liveMount-side per ADR-003 §D2.
+- **Tally count-up animation** (per-state count-up on update, drawing on `big-number-stat-impact`'s underdamped-spring count-up curve) is the **liveMount surface**, NOT in v1 parity. The static-fallback path renders one mid-hold frame; the count-up belongs to the host's live data feed where a results-tick changes the cell value mid-composition.
+- **Color-transition interpolation** (smooth color crossfade between party-color states as a state flips, 400 ms per update) is the **liveMount surface**. The parity golden renders the steady-state party-color shading without an active transition.
+- **Theatrical pop-in anticipation + overshoot** (the stub's "designed for camera, not just dashboard" register) is referenced for runtime composition; the v1 primitive uses a flat fade + rise without overshoot per D-T355a-7. The parity golden snapshots the steady-state at frame 60; the broadcast theatrics are a follow-up `T-XXX` if a Reviewer demands them.
+- **Mid-hold steady-state at frame 60** (per ADR-004 §D5). Parity fixtures snapshot at this frame.
+- **No state-transition animation in v1.** State transitions (color flip, count-up tick, drilldown pan/scale) belong to the live-mount surface where the data source streams updates AND to the runtime composition where the operator drives the hierarchy descent.
 
 ## Rules
-- This preset assumes a live data feed. Without `LiveDataClip` enabled, fall back to a frozen-result snapshot.
-- Theater is a feature: anticipation + overshoot are intentional. Don't lint them out for "smoothness."
-- Color palette default is Dem Blue / Rep Red; tenants for non-US politics or partisan-neutral coverage configure `partyPalette` per compose.
-- Pinch / touch UX is illustrative; preset's actual operator is the animation engine, not real touch.
+
+- **Bound primitive**: `magic-wall-panel` from `@stageflip/runtimes-frame-runtime-bridge` (`packages/runtimes/frame-runtime-bridge/src/clips/magic-wall-panel.tsx`, exported as `MagicWallPanel` + `magicWallPanelClip`). The `fullScreen` `clipKind` is an integrity-gate sentinel today (in `VALID_CLIP_KINDS` in `scripts/check-preset-integrity.ts`); the v1 resolver in `packages/parity-cli/src/generate-fixture.ts` maps `fullScreen → magic-wall-panel` (T-355 D-T355-3) — a clipKind-default entry, NOT a per-preset override (the kind is generic enough that future fullScreen presets across Clusters A `msnbc-big-board`, B `uefa-starball-refraction`, C `twc-retrocast-8bit` / `twc-immersive-mixed-reality` can share the binding when their visual register matches the magic-wall shape, OR layer per-preset overrides via `PRESET_ID_BINDINGS` when their register diverges). Composing tools should mount `MagicWallPanel` with the `regions` payload + `title` / `subtitle` + entrance parameters per `MAGIC_WALL_CANONICAL_REGIONS` and the resolver's `buildProps` defaults.
+- **`LiveDataClip` wrapper bypass for parity (D-T355-12)**: T-355's parity flow does NOT route through `packages/runtimes/interactive/src/clips/live-data/static-fallback.ts`'s `defaultLiveDataStaticFallback` (which emits a generic `TextElement[]` summary, not a styled magic-wall panel). The resolver returns a binding that mounts `magic-wall-panel` directly with `MAGIC_WALL_CANONICAL_REGIONS` inlined as props. Rationale (identical to T-356 D-T356-11 + T-357 D-T357-12): the parity golden's purpose is to verify the **rendered visual** matches the prose contract; routing through the wrapper would couple the parity golden to wrapper telemetry / endpoint-validation behavior that legitimately changes between releases (T-391 / T-392 evolution + future drilldown-zoom landings). The wrapper's job (host the live mount, emit telemetry, route to staticFallback on failure, run the drilldown zoom state machine) is exercised by T-391 / T-392's own tests; T-355 is not the right harness for that surface.
+- **Two render paths per ADR-003 §D2**:
+  - **liveMount** (host responsibility): host wires an election-results endpoint (AP election feed, Decision Desk HQ, in-house tabulator), declares a refresh policy of 10–60 s ticks, renders the per-tile color-transition flash on state-flip AND the tally count-up on per-state update. The drilldown zoom (state → county → precinct) is operator-driven (presenter taps a region; the hierarchy descends with a 600 ms ease-in-out pan/scale). The preset documents the endpoint shape contract (`{ id, label, value?, valueLabel?, color?, bounds }[]` + `title?` + `subtitle?`) but does NOT implement fetching, authentication, polling, rate-limiting, or the runtime drilldown state machine. `permissions: [network]` declares the live path's network requirement.
+  - **staticFallback** (parity-golden + non-interactive export path): the `MAGIC_WALL_CANONICAL_REGIONS` constant in `packages/parity-cli/src/generate-fixture.ts` substitutes for the endpoint payload. The deterministic frame-runtime path renders the constant via the bound `magic-wall-panel` primitive at the top level of the hierarchy. Parity golden snapshots this path at frame 60.
+- **Placeholder-rectangle geometry in v1 (D-T355-6)**: each region renders as a rectangular tile at its `bounds.{x, y, width, height}` rather than a real US state SVG path. Real outlines exist as license-clean SVG / TopoJSON data on Wikimedia Commons (US states are public-domain; county / precinct boundaries are census-derived and PD), but adopting them requires an SVG asset pipeline + a projection helper (Albers-USA for the canonical US map) + a topology-data dependency (`us-atlas` or equivalent — license check required; not currently in the workspace). v1 ships rectangles; a future task `T-XXXc` (TBD) adds the asset pipeline and real geometry. The placeholder is **visually distinct from a real map** (rectangular tiles arranged on a grid, not state-shaped polygons), but it carries every other element of the visual contract: party shading, label, value, entrance stagger, totals.
+- **Dem Blue / Rep Red are non-negotiable for the canonical US-election register**: `#0044CC` Party A / `#CC0000` Party B on `#0E0E12` background. Tenant brand-color overrides for the party hues are an escalation per CLAUDE.md §6 — the universal election-broadcast register parses these specific hues; brand-recoloring breaks the visual contract. Asian-market locales, partisan-neutral coverage, BBC-style purple/teal palettes, and per-Games "look of the games" accents are compose-time tenant theming, NOT preset variants — the canonical party hexes stay fixed.
+- **Eight regions in the canonical snapshot** (D-T355-4): CA / TX / FL / NY / PA / OH / GA / AZ. Three Dem (CA, NY, AZ), three Rep (TX, FL, OH), one tied (PA), one undecided (GA) — exercises all four color paths in a single golden. The values are illustrative — cluster owners rebrand at compose time. The shape (region with id + label + value + party-color → styled tile) IS the contract; literal entries are not. Eight is a meaningful subset of the full 50-state map (which would require real geometry per D-T355-6); the preset's parity contract is the **shape**, not the literal entries.
+- **Multi-touch interactive UX is illustrative** — the stub's "pinch-and-zoom drill-downs" register is operator-driven, not real touch. Parity render does NOT exercise touch; the runtime drilldown state machine is liveMount-side per ADR-003 §D2.
+- **WebGL / WebSocket runtime architecture** (Code and Theory canon mentioned in the stub) is **runtime-only**, NOT in v1 parity envelope. The bridge primitive ships SVG/DOM-based rendering for frame-determinism; WebGL-accelerated drilldowns are a future runtime concern.
+- **Reference frame for parity is mid-hold (frame 60)** per ADR-004 §D5 — single canonical variant per D-T355-5 (the preset's stylistic point is the layered fullscreen drilldown shape at one level of the hierarchy, not a per-state palette swap or a per-frame zoom-transition snapshot). The stub's previous four-frame hierarchy list (0 / 60 / 120 / 180 across the zoom hierarchy) was revised to a single mid-hold at frame 60 per D-T355-5; the lower-level (county / precinct) frames are documented in this prose contract for runtime use, not parity. The PSNR / SSIM thresholds are stricter than the script default (`35 / 0.95`) per cluster-E norm — see Acceptance below.
 
 ## Acceptance (parity)
-- Reference frames: 0 (state level), 60 (zoom mid), 120 (county level), 180 (post-tally update)
-- PSNR ≥ 38 dB, SSIM ≥ 0.95
+
+One reference-frame fixture at `frame: 60` (mid-hold steady-state per ADR-004 §D5):
+
+- `golden-frame-60.png` — the canonical eight-region snapshot rendered as a 4×2 grid of placeholder rectangular tiles (D-T355-6) with all rows fully settled (entrance stagger complete by frame ~25). Tiles in row order CA → TX → FL → NY → PA → OH → GA → AZ; party-color shading on tile fills (Dem `#0044CC` for CA/NY/AZ, Rep `#CC0000` for TX/FL/OH, tied `#7A3FB2` for PA, undecided `#666666` for GA); region labels (`CA`, `TX`, etc.) at heavy weight inside each tile; value labels (e.g., `62.1%`) beneath each label with `font-variant-numeric: tabular-nums` — the leading-party percentage is the broadcast-canonical salient signal (the electoral-vote count lives in the prose contract + canonical-snapshot constant `value` field); title `"Election Results"` centered at the top of the panel; subtitle `"State-by-state breakdown"` below the title at 70% opacity; background `#0E0E12` solid.
+
+Thresholds: **PSNR ≥ 42 dB**, **SSIM ≥ 0.98** (stricter than the generator default `35 / 0.95`; mirrors the `f1-sector-purple-green`, `cricket-ball-by-ball-dots`, `big-number-stat-impact`, `bloomberg-ticker`, `olympic-medal-tracker` sister presets in cluster E). Revised from the stub's previous `38 / 0.95` target per T-355 D-T355-9 to match the cluster-E norm; the preset-driven-thresholds follow-up flagged during T-359b is the formal mechanism for per-preset deviation. A fullscreen layered panel with eight color-shaded regions + tabular percentages + entrance stagger is more antialiasing-sensitive than a static bigNumber or chip row — region-tile edges, percentage-glyph subpixel positioning, and totals-strip layout all introduce parity drift; if `42 / 0.98` fails after hand-pinning, the follow-up must ship first OR `magic-wall-panel` needs sub-pixel-snap discipline.
+
+**Sign-off (T-355 D-T355-8, in-PR):** the canonical mid-hold golden is committed at `parity-fixtures/data/magic-wall-drilldown/` with the single-variant manifest shape (no `variants` key, per T-359a backward compat). Frontmatter `signOff.parityFixture` is `signed:<UTC date>` after running `scripts/generate-preset-parity-fixture-prod.ts --preset=magic-wall-drilldown --frame=60 --mark-signed`. The golden was rendered locally via the puppeteer/CDP-bound prod renderer; the `fullScreen` clipKind binds to `magic-wall-panel` per the v1 resolver in `packages/parity-cli/src/generate-fixture.ts`. The `LiveDataClip` wrapper is bypassed (D-T355-12); the renderer mounts `magic-wall-panel` directly with `MAGIC_WALL_CANONICAL_REGIONS` inlined as props. Re-render + re-sign with `--force` is the operator's path if the canonical snapshot changes or the FontManager's preload list updates the rendered Inter Tight / Inter weight.
 
 ## References
-- `docs/compass_artifact.md` § CNN Magic Wall
-- Code and Theory canon
-- Frontier: `LiveDataClip` for live election feed
-- ADR-004
+
+- `docs/compass_artifact.md` § CNN Magic Wall — canonical visual source (note: on-disk path mismatch flagged for resolution; integrity invariant 7 SKIPped globally per T-358 D-T358-9 / T-356 D-T356-9 / T-357 D-T357-10 / T-355 D-T355-10).
+- `skills/stageflip/presets/data/bloomberg-ticker.md` — sister cluster-E preset; first to bind `LiveDataClip`; closest precedent for the LiveDataClip-wrapper-bypass posture (D-T355-12 mirrors D-T356-11).
+- `skills/stageflip/presets/data/olympic-medal-tracker.md` — sister cluster-E preset; second to bind `LiveDataClip`; structural template for the bypass + clipKind-default-resolver pattern.
+- `skills/stageflip/presets/data/f1-sector-purple-green.md` — sister cluster-E preset; `bigNumber` clipKind, state-palette-swap register.
+- `skills/stageflip/presets/data/cricket-ball-by-ball-dots.md` — sister cluster-E preset; `scoreBug` clipKind, per-over chip-row register.
+- `skills/stageflip/presets/data/big-number-stat-impact.md` — sister cluster-E preset; `bigNumber` clipKind, count-up + settle register; closest precedent for the heavy-weight Inter w800 numeric register.
+- `skills/stageflip/presets/data/SKILL.md` — cluster E conventions (tabular numerals mandatory, count-ups slow the viewer down, party-color shading IS the message, etc.).
+- `packages/runtimes/frame-runtime-bridge/src/clips/magic-wall-panel.tsx` — the bound primitive (`MagicWallPanel`, `magicWallPanelClip`); shipped by T-355a as a generic fullscreen layered hierarchical-data panel primitive (1..56 regions at absolute-positioned bounds, three entrance modes, optional title + subtitle, `valueFormat` dispatch with `valueLabel` override, theme-slot color fallback).
+- `packages/parity-cli/src/generate-fixture.ts` — v1 resolver mapping `fullScreen → magic-wall-panel` (T-355 D-T355-3) + exported `MAGIC_WALL_CANONICAL_REGIONS` constant (D-T355-4).
+- `packages/runtimes/interactive/src/clips/live-data/static-fallback.ts` — `defaultLiveDataStaticFallback`; the generic `LiveDataClip` Element[] generator that T-355's parity flow explicitly bypasses per D-T355-12.
+- CNN's John King magic-wall broadcast pipeline; Fox News / MSNBC election-night boards; Code and Theory canon for WebGL + WebSocket architecture (runtime-only, out of v1 envelope).
+- ADR-003 (interactive runtime tier — staticFallback / liveMount duality).
+- ADR-004 (preset system contract — frontmatter, loader, validator, parity sign-off, integrity invariants).
+- ADR-005 (frontier clip catalogue — LiveData posture).

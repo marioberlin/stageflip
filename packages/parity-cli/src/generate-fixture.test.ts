@@ -13,6 +13,7 @@ import {
   F1_SECTOR_STATE_COLORS,
   GenerateFixtureUnavailableError,
   HORMOZI_CANONICAL_WORDS,
+  MAGIC_WALL_CANONICAL_REGIONS,
   MRBEAST_CANONICAL_WORDS,
   NETFLIX_CANONICAL_WORDS,
   OLYMPIC_CANONICAL_STANDINGS,
@@ -835,6 +836,109 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
       'for',
       'everyone',
     ]);
+  });
+
+  // T-355 — fullScreen → magic-wall-panel binding (D-T355-3) + cached
+  // MAGIC_WALL_CANONICAL_REGIONS (D-T355-4). First Cluster E entry to ship
+  // using `clipKind: fullScreen`; closes Cluster E to 6/6. The clipKind-
+  // default entry is generic across future fullScreen presets across
+  // Clusters A (msnbc-big-board), B (uefa-starball-refraction), C
+  // (twc-retrocast-8bit / twc-immersive-mixed-reality); the per-preset
+  // override path is reserved for tenant-specific colorways.
+
+  it('resolves fullScreen to magic-wall-panel on the frame-runtime (T-355 D-T355-3)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('fullScreen');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('magic-wall-panel');
+  });
+
+  it('falls through to fullScreenBinding for magic-wall-drilldown (T-355 AC #15)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('fullScreen', 'magic-wall-drilldown');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('magic-wall-panel');
+  });
+
+  it('builds fullScreen props with eight regions in a 4x2 grid + party-color shading (T-355 AC #13)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('fullScreen');
+    if (!binding) throw new Error('test setup');
+    const props = binding.buildProps(undefined);
+    const regions = props.regions as ReadonlyArray<{
+      id: string;
+      label: string;
+      value: number;
+      valueLabel: string;
+      color: string;
+      bounds: { x: number; y: number; width: number; height: number };
+    }>;
+    expect(Array.isArray(regions)).toBe(true);
+    expect(regions).toHaveLength(8);
+    expect(regions.map((r) => r.id)).toEqual(['CA', 'TX', 'FL', 'NY', 'PA', 'OH', 'GA', 'AZ']);
+
+    // Party-color shading: 3 Dem (CA, NY, AZ), 3 Rep (TX, FL, OH), 1 tied
+    // (PA), 1 undecided (GA) — exercises all four color paths.
+    const colorById = new Map(regions.map((r) => [r.id, r.color]));
+    expect(colorById.get('CA')).toBe('#0044CC'); // Dem Blue
+    expect(colorById.get('NY')).toBe('#0044CC');
+    expect(colorById.get('AZ')).toBe('#0044CC');
+    expect(colorById.get('TX')).toBe('#CC0000'); // Rep Red
+    expect(colorById.get('FL')).toBe('#CC0000');
+    expect(colorById.get('OH')).toBe('#CC0000');
+    expect(colorById.get('PA')).toBe('#7A3FB2'); // tied — purple
+    expect(colorById.get('GA')).toBe('#666666'); // undecided — gray
+
+    // Electoral-vote count threaded through `value`.
+    const evById = new Map(regions.map((r) => [r.id, r.value]));
+    expect(evById.get('CA')).toBe(54);
+    expect(evById.get('TX')).toBe(40);
+    expect(evById.get('AZ')).toBe(11);
+
+    // Bounds: 4×2 grid; first row at y=140, second row offset by tile height + gap.
+    expect(regions[0]?.bounds.x).toBe(60);
+    expect(regions[0]?.bounds.y).toBe(140);
+    expect(regions[3]?.bounds.x).toBeGreaterThan(regions[0]?.bounds.x ?? 0);
+    expect(regions[3]?.bounds.y).toBe(140);
+    expect(regions[4]?.bounds.x).toBe(60); // wraps to row 2, col 0
+    expect(regions[4]?.bounds.y).toBeGreaterThan(140);
+
+    // valueLabel is the leading-party percentage (broadcast-canonical
+    // salient signal); the electoral-vote count lives in the numeric
+    // `value` field for documentation + future dual-render layouts.
+    const labelById = new Map(regions.map((r) => [r.id, r.valueLabel]));
+    expect(labelById.get('CA')).toBe('62.1%');
+    expect(labelById.get('PA')).toBe('49.8%');
+    expect(labelById.get('GA')).toBe('50.1%');
+
+    expect(props.title).toBe('Election Results');
+    expect(props.subtitle).toBe('State-by-state breakdown');
+    expect(props.valueFormat).toBe('count');
+    expect(props.entrance).toBe('stagger-rise');
+    expect(props.staggerMs).toBe(60);
+    expect(props.background).toBe('#0E0E12');
+    expect(props.foreground).toBe('#FFFFFF');
+  });
+
+  it('exports MAGIC_WALL_CANONICAL_REGIONS with eight entries mixing all four party colors (T-355 AC #14)', () => {
+    expect(MAGIC_WALL_CANONICAL_REGIONS).toHaveLength(8);
+    expect(MAGIC_WALL_CANONICAL_REGIONS.map((r) => r.id)).toEqual([
+      'CA',
+      'TX',
+      'FL',
+      'NY',
+      'PA',
+      'OH',
+      'GA',
+      'AZ',
+    ]);
+    const parties = MAGIC_WALL_CANONICAL_REGIONS.map((r) => r.party);
+    expect(parties.filter((p) => p === 'A')).toHaveLength(3);
+    expect(parties.filter((p) => p === 'B')).toHaveLength(3);
+    expect(parties.filter((p) => p === 'tied')).toHaveLength(1);
+    expect(parties.filter((p) => p === 'undecided')).toHaveLength(1);
+    // Sum of electoral votes: 54 + 40 + 30 + 28 + 19 + 17 + 16 + 11 = 215.
+    const totalEv = MAGIC_WALL_CANONICAL_REGIONS.reduce((acc, r) => acc + r.electoralVotes, 0);
+    expect(totalEv).toBe(215);
   });
 
   it('builds scoreBug props as a six-chip canonical over with cricket-canon colors (T-358)', () => {
