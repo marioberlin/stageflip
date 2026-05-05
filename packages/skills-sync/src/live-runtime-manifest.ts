@@ -126,6 +126,12 @@ export const LIVE_RUNTIME_MANIFEST: ClipsCatalogPkg = {
         // dispatch + optional `valueLabel` override; three entrance
         // modes)
         'magic-wall-panel',
+        // T-322 — lyrics primitive (line-level music-synced lyric
+        // panel with three style bundles: `'karaoke-wipe'` /
+        // `'three-line-stack'` / `'highlight-current'`; per-line
+        // ms-progress karaoke wipe; per-line entrance; optional
+        // glow halo on the active line)
+        'lyrics',
       ],
     },
   ],
