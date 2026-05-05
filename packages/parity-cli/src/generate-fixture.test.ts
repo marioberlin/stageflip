@@ -11,6 +11,7 @@ import {
   DEFAULT_CLIP_KIND_RESOLVER,
   F1_SECTOR_STATE_COLORS,
   GenerateFixtureUnavailableError,
+  HORMOZI_CANONICAL_WORDS,
   OLYMPIC_CANONICAL_STANDINGS,
   PRESET_ID_BINDINGS,
   type PresetForRender,
@@ -264,6 +265,67 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(directions.filter((d) => d === 'up').length).toBeGreaterThanOrEqual(1);
     expect(directions.filter((d) => d === 'down').length).toBeGreaterThanOrEqual(1);
     expect(directions.filter((d) => d === 'flat').length).toBeGreaterThanOrEqual(1);
+  });
+
+  // T-362 — caption → caption binding (D-T362-4) + cached
+  // HORMOZI_CANONICAL_WORDS (D-T362-6). First Cluster F entry; first
+  // `caption` clipKind binding. The clipKind-default entry is the canonical
+  // Hormozi snapshot; sibling cluster F presets (T-363+) override per-preset
+  // via PRESET_ID_BINDINGS to swap the `style` enum + word snapshot.
+
+  it('resolves caption to caption on the frame-runtime (T-362 D-T362-4)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('caption');
+  });
+
+  it('falls through to captionBinding for hormozi-montserrat-black (T-362 AC #14)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'hormozi-montserrat-black');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('caption');
+  });
+
+  it('builds caption props with the six-word Hormozi canonical snapshot (T-362 AC #12)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption');
+    if (!binding) throw new Error('test setup');
+    const props = binding.buildProps(undefined);
+    const words = props.words as ReadonlyArray<{
+      text: string;
+      startMs: number;
+      endMs: number;
+    }>;
+    expect(Array.isArray(words)).toBe(true);
+    expect(words).toHaveLength(6);
+    expect(words.map((w) => w.text)).toEqual(['This', 'will', 'change', 'your', 'life', 'forever']);
+    expect(props.style).toBe('hormozi');
+    expect(props.background).toBe('#0E0E12');
+    const position = props.position as {
+      x: number;
+      y: number;
+      width: number;
+      alignment: string;
+    };
+    expect(position.x).toBe(128);
+    expect(position.y).toBe(432);
+    expect(position.width).toBe(1024);
+    expect(position.alignment).toBe('center');
+  });
+
+  it('exports HORMOZI_CANONICAL_WORDS with six entries totalling 1800 ms (T-362 AC #13)', () => {
+    expect(HORMOZI_CANONICAL_WORDS).toHaveLength(6);
+    const total = HORMOZI_CANONICAL_WORDS.reduce((acc, w) => acc + (w.endMs - w.startMs), 0);
+    expect(total).toBe(1800);
+    // Each word is 300 ms.
+    for (const w of HORMOZI_CANONICAL_WORDS) {
+      expect(w.endMs - w.startMs).toBe(300);
+    }
+    // Word 6 ('forever') is the active highlight at frame 45 (= 1500 ms).
+    const word6 = HORMOZI_CANONICAL_WORDS[5];
+    expect(word6?.text).toBe('forever');
+    expect(word6?.startMs).toBe(1500);
+    expect(word6?.endMs).toBe(1800);
   });
 
   it('builds scoreBug props as a six-chip canonical over with cricket-canon colors (T-358)', () => {

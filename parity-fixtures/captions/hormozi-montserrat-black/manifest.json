@@ -1,0 +1,30 @@
+{
+  "name": "hormozi-montserrat-black",
+  "cluster": "captions",
+  "kind": "caption",
+  "description": "Parity fixture for preset 'hormozi-montserrat-black' (cluster captions, kind caption)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    45
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Montserrat",
+      "license": "ofl"
+    },
+    "fallback": {
+      "family": "Montserrat",
+      "weight": 800,
+      "license": "ofl"
+    }
+  }
+}

@@ -324,6 +324,51 @@ const standingsBinding: ClipKindBinding = {
 };
 
 /**
+ * `hormozi-montserrat-black` (T-362) — first `caption`-clipKind preset, bound
+ * to the `caption` primitive shipped by T-316. The cached six-word snapshot
+ * substitutes for an audio-derived `WordTiming[]` source; the `'hormozi'`
+ * style bundle on the primitive supplies the Montserrat 800 caps + black
+ * stroke (6 px) + yellow `#FFD60A` highlight + `rise` entrance with 80 ms
+ * stagger defaults — `buildProps` only declares `words`, `style`, `position`,
+ * and the documentation backdrop, leaving the bundle to drive the visual
+ * register (D-T362-4). Mid-hold at frame 45 (= 1500 ms @ 30fps) lands word
+ * 6 (`"forever"`) as the active highlight per the primitive's strict
+ * `currentTimeMs >= startMs && currentTimeMs < endMs` rule (D-T362-6).
+ */
+export const HORMOZI_CANONICAL_WORDS: ReadonlyArray<{
+  readonly text: string;
+  readonly startMs: number;
+  readonly endMs: number;
+}> = [
+  { text: 'This', startMs: 0, endMs: 300 },
+  { text: 'will', startMs: 300, endMs: 600 },
+  { text: 'change', startMs: 600, endMs: 900 },
+  { text: 'your', startMs: 900, endMs: 1200 },
+  { text: 'life', startMs: 1200, endMs: 1500 },
+  { text: 'forever', startMs: 1500, endMs: 1800 },
+];
+
+const captionBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'caption',
+  buildProps() {
+    return {
+      words: HORMOZI_CANONICAL_WORDS.map((w) => ({ ...w })),
+      style: 'hormozi',
+      // Lower-third center per D-T362-12, scaled to the 1280×720 default
+      // composition: 10% inset (x=128), 60% down (y=432), 80% width (1024).
+      position: { x: 128, y: 432, width: 1024, alignment: 'center' as const },
+      // Documentation-only — the primitive only honors `background` when
+      // `backdrop !== 'none'` and the `'hormozi'` bundle ships `'none'`.
+      // Declared here to surface intent (cluster E precedent for dark
+      // broadcast registers per D-T362-11); the parity golden actually
+      // renders against the host bundle's default canvas color.
+      background: '#0E0E12',
+    };
+  },
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -337,10 +382,10 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
 /**
  * v1 default resolver — `bigNumber → animated-value`, `scoreBug → outcome-row`
  * (T-358), `newsTicker → news-ticker-bar` (T-356), `standings →
- * standings-table` (T-357), with per-preset overrides for
- * multi-preset-per-clipKind cases (T-360 D-T360-2). Per-preset entries take
- * precedence; absent an override, the resolver falls back to the
- * clipKind-only mapping.
+ * standings-table` (T-357), `caption → caption` (T-362), with per-preset
+ * overrides for multi-preset-per-clipKind cases (T-360 D-T360-2). Per-preset
+ * entries take precedence; absent an override, the resolver falls back to
+ * the clipKind-only mapping.
  */
 export const DEFAULT_CLIP_KIND_RESOLVER: ClipKindResolver = (clipKind, presetId) => {
   if (presetId !== undefined) {
@@ -351,6 +396,7 @@ export const DEFAULT_CLIP_KIND_RESOLVER: ClipKindResolver = (clipKind, presetId)
   if (clipKind === 'scoreBug') return scoreBugDotsBinding;
   if (clipKind === 'newsTicker') return newsTickerBinding;
   if (clipKind === 'standings') return standingsBinding;
+  if (clipKind === 'caption') return captionBinding;
   return undefined;
 };
 
