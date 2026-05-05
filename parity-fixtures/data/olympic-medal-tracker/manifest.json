@@ -1,0 +1,30 @@
+{
+  "name": "olympic-medal-tracker",
+  "cluster": "data",
+  "kind": "standings",
+  "description": "Parity fixture for preset 'olympic-medal-tracker' (cluster data, kind standings)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Games-specific (Paris 2024 etc.)",
+      "license": "proprietary-byo"
+    },
+    "fallback": {
+      "family": "IBM Plex Sans",
+      "weight": 600,
+      "license": "ofl"
+    }
+  }
+}

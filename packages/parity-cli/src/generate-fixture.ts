@@ -256,6 +256,74 @@ const newsTickerBinding: ClipKindBinding = {
 };
 
 /**
+ * `olympic-medal-tracker` (T-357) — first `standings`-clipKind preset, bound
+ * to the `standings-table` primitive shipped by T-357a. The cached snapshot
+ * substitutes for the live medal-table endpoint per ADR-003 §D2 (the
+ * `staticFallback` render path); `LiveDataClip`'s wrapper is bypassed and
+ * `standings-table` is mounted directly with the snapshot inlined as props
+ * (D-T357-12; same posture as T-356 D-T356-11). Five-row top-5 leaderboard
+ * (USA / CHN / JPN / AUS / GBR) with mixed up / down / flat deltas exercises
+ * all three rank-arrow color paths plus the medal-color column tints in the
+ * single mid-hold golden (D-T357-4).
+ */
+export const OLYMPIC_CANONICAL_STANDINGS: ReadonlyArray<{
+  readonly rank: number;
+  readonly code: string;
+  readonly gold: number;
+  readonly silver: number;
+  readonly bronze: number;
+  readonly total: number;
+  readonly delta: 'up' | 'down' | 'flat';
+}> = [
+  { rank: 1, code: 'USA', gold: 28, silver: 22, bronze: 19, total: 69, delta: 'flat' },
+  { rank: 2, code: 'CHN', gold: 24, silver: 19, bronze: 16, total: 59, delta: 'flat' },
+  { rank: 3, code: 'JPN', gold: 14, silver: 11, bronze: 13, total: 38, delta: 'up' },
+  { rank: 4, code: 'AUS', gold: 12, silver: 10, bronze: 14, total: 36, delta: 'down' },
+  { rank: 5, code: 'GBR', gold: 11, silver: 16, bronze: 15, total: 42, delta: 'up' },
+];
+
+const STANDINGS_DEFAULT_ROW_HEIGHT = 64;
+const STANDINGS_DEFAULT_HEADER_HEIGHT = 48;
+const STANDINGS_DEFAULT_STAGGER_MS = 80;
+
+const standingsBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'standings-table',
+  buildProps() {
+    return {
+      rows: OLYMPIC_CANONICAL_STANDINGS.map((r) => ({
+        rank: r.rank,
+        code: r.code,
+        values: [r.gold, r.silver, r.bronze],
+        total: r.total,
+        delta: r.delta,
+      })),
+      columns: [
+        { key: 'rank', label: '#', kind: 'rank', width: 56 },
+        { key: 'code', label: 'NOC', kind: 'label', flex: 2 },
+        { key: 'gold', label: 'G', kind: 'numeric', color: '#FFD700' },
+        { key: 'silver', label: 'S', kind: 'numeric', color: '#C0C0C0' },
+        { key: 'bronze', label: 'B', kind: 'numeric', color: '#CD7F32' },
+        { key: 'total', label: 'TOT', kind: 'total' },
+        { key: 'delta', label: 'Δ', kind: 'delta', width: 56 },
+      ],
+      rowHeight: STANDINGS_DEFAULT_ROW_HEIGHT,
+      headerHeight: STANDINGS_DEFAULT_HEADER_HEIGHT,
+      staggerMs: STANDINGS_DEFAULT_STAGGER_MS,
+      bandPosition: 'overlay',
+      background: '#0E0E12',
+      foreground: '#FFFFFF',
+      goldColor: '#FFD700',
+      silverColor: '#C0C0C0',
+      bronzeColor: '#CD7F32',
+      upColor: '#00B54A',
+      downColor: '#CC0000',
+      flatColor: '#999999',
+    };
+  },
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -268,9 +336,10 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
 
 /**
  * v1 default resolver — `bigNumber → animated-value`, `scoreBug → outcome-row`
- * (T-358), `newsTicker → news-ticker-bar` (T-356), with per-preset overrides
- * for multi-preset-per-clipKind cases (T-360 D-T360-2). Per-preset entries
- * take precedence; absent an override, the resolver falls back to the
+ * (T-358), `newsTicker → news-ticker-bar` (T-356), `standings →
+ * standings-table` (T-357), with per-preset overrides for
+ * multi-preset-per-clipKind cases (T-360 D-T360-2). Per-preset entries take
+ * precedence; absent an override, the resolver falls back to the
  * clipKind-only mapping.
  */
 export const DEFAULT_CLIP_KIND_RESOLVER: ClipKindResolver = (clipKind, presetId) => {
@@ -281,6 +350,7 @@ export const DEFAULT_CLIP_KIND_RESOLVER: ClipKindResolver = (clipKind, presetId)
   if (clipKind === 'bigNumber') return bigNumberBinding;
   if (clipKind === 'scoreBug') return scoreBugDotsBinding;
   if (clipKind === 'newsTicker') return newsTickerBinding;
+  if (clipKind === 'standings') return standingsBinding;
   return undefined;
 };
 
