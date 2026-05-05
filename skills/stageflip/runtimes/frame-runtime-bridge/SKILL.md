@@ -189,6 +189,12 @@ ports; dashboards (T-131f.2) and the financial-statement composite
 | `timeline-milestones` | `src/clips/timeline-milestones.tsx` | horizontal axis with sweeping progress dot + per-milestone spring pop; labels alternate above / below for readability |
 | `audio-visualizer` | `src/clips/audio-visualizer.tsx` | simulated bar/wave/circular visualization driven by deterministic sin/cos; **no-audio path only** — real-audio reactive variant deferred to T-131f.4 (reference imports Remotion's `<Audio>`) |
 
+**T-358a (outcome-row primitive)**
+
+| kind | file | notes |
+|---|---|---|
+| `outcome-row` | `src/clips/outcome-row.tsx` | row of N (1–12) color-coded shapes (`circle` default / `square` / `rounded`) with staggered fade-in (`delay = i * 4`, 12-frame ramp); per-chip hex `color` required, theme slots for `defaultFill` / `outlineColor` / `background`. Generic primitive; cluster-specific outcome→color mapping lives in `parity-cli` resolver shims (cricket ball-by-ball, tennis tiebreak, F1 sectors, soccer last-N-shots). |
+
 Every demo clip declares a Zod `propsSchema` (auto-inspected by the
 editor's `<ZodForm>`) and, where palette-driven, a `themeSlots` map
 binding default colour props to `palette.*` roles (T-131a).
@@ -197,11 +203,12 @@ binding default colour props to `palette.*` roles (T-131a).
 editor look respectively.
 
 The barrel `ALL_BRIDGE_CLIPS` is the canonical iterable that the
-cdp-host-bundle passes to `createFrameRuntimeBridge`. All 43 bridge
+cdp-host-bundle passes to `createFrameRuntimeBridge`. All 44 bridge
 clips are registered through it (32 reference-clip ports across ten
 tranches + 10 profile-tier clips for StageFlip.Video and
-StageFlip.Display + the 1 unified T-406 chart family) — see the
-tranche ledger below for the breakdown.
+StageFlip.Display + the 1 unified T-406 chart family + the T-358a
+`outcome-row` primitive) — see the tranche ledger below for the
+breakdown.
 
 ## Implementation map
 
@@ -211,7 +218,7 @@ tranche ledger below for the breakdown.
 | `src/index.test.tsx` | T-061, T-131b.1 | Runtime shape, render behaviour, window gating, props passthrough, schema/themeSlots passthrough |
 | `src/clips/*.tsx` | T-131b/d/e/f | Thirty-two reference-clip ports across ten tranches (light / medium / heavy / bridge-eligible lottie-three-shader / audit-driven standalones / bake-tier video+image / audio tranche / dashboard composites f.2a/b/c / financial statement f.3 / animated-map SVG fallback d.4) |
 | `src/clips/chart/*.tsx` | T-406 | Unified `chart` clip family — one ClipDefinition consuming `ChartElement`-shaped props, dispatching to seven per-kind renderers (bar / line / area / pie / donut / scatter / combo). See `runtimes/chart/SKILL.md`. |
-| `src/clips/index.ts` | T-131b/d/e/f, T-183, T-202, T-406 | Barrel + `ALL_BRIDGE_CLIPS` constant (43 clips: 32 reference-clip ports + 10 StageFlip.Video / StageFlip.Display profile clips + the unified `chart` family) |
+| `src/clips/index.ts` | T-131b/d/e/f, T-183, T-202, T-358a, T-406 | Barrel + `ALL_BRIDGE_CLIPS` constant (44 clips: 32 reference-clip ports + 10 StageFlip.Video / StageFlip.Display profile clips + the unified `chart` family + the `outcome-row` primitive) |
 | `src/clips/_dashboard-utils.ts` | T-131f.2a | Private shared helpers for the dashboard composites (trend schema, value formatter, colour constants) |
 
 ## Tranche ledger
@@ -229,6 +236,7 @@ tranche ledger below for the breakdown.
 | Dashboards · composites | T-131f.2c, .3 | sales-dashboard, financial-statement | Inlined private sub-components |
 | Animated map (SVG fallback) | T-131d.4 | animated-map | `mapbox-gl` real-tiles path deliberately not ported — network tile fetches + imperative `useEffect` DOM mutation violate determinism. Ships the SVG simulation only (the reference's own no-token default). Closes reference-clip coverage at 32/32. |
 | Unified chart family | T-406 | chart | One ClipDefinition (`kind: 'chart'`) consuming `ChartElement`-shaped props with `chartKind` discriminator. Dispatches to bar / line / area / pie / donut / scatter / combo renderers. NOT a reference-clip port — a new family that Cluster E presets bind to. Coexists with the standalone T-131b chart clips (chart-build / pie-chart-build / line-chart-draw); does not replace them (D-T406-9). See `runtimes/chart/SKILL.md`. |
+| Outcome-row primitive | T-358a | outcome-row | Generic row of N (1–12) color-coded chips (circle / square / rounded) with staggered fade-in (`delay = i * 4`, 12-frame ramp). Per-chip hex `color` required; theme slots for `defaultFill` / `outlineColor` / `background`. Unblocks the T-358 cricket ball-by-ball preset and other Cluster B/E scorebug-family presets (tennis tiebreak, F1 sectors, soccer last-N-shots). Cluster-specific outcome→color mapping lives in `parity-cli` resolver shims, not in this primitive. |
 
 ## Related
 
