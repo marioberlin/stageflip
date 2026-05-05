@@ -14,6 +14,7 @@ import {
   GenerateFixtureUnavailableError,
   HORMOZI_CANONICAL_WORDS,
   MRBEAST_CANONICAL_WORDS,
+  NETFLIX_CANONICAL_WORDS,
   OLYMPIC_CANONICAL_STANDINGS,
   PRESET_ID_BINDINGS,
   type PresetForRender,
@@ -687,6 +688,152 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
       'is',
       'by',
       'teaching',
+    ]);
+  });
+
+  // T-366 — fifth `caption` clipKind preset (`netflix-invisible`), routed via
+  // the per-presetId override path (D-T366-4). The clipKind-default (T-362's
+  // `captionBinding` with style 'hormozi') stays unchanged; T-363's
+  // `mrbeast-komika-axis`, T-364's `tiktok-rounded-box`, and T-365's
+  // `ali-abdaal-opacity-karaoke` overrides stay unchanged; only
+  // `netflix-invisible` resolves to `netflixBinding`. First Cluster F preset
+  // to render `muteOpacity: 0` strict-accessibility active-only visibility
+  // (past / future words completely invisible per T-316a's routing fix) AND
+  // the first Cluster F preset to use `backdrop: 'rect'` (translucent black
+  // rectangle behind the active word).
+
+  it('routes netflix-invisible through the per-preset override binding (T-366 AC #12)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'netflix-invisible');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('caption');
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('netflix');
+    const words = props?.words as ReadonlyArray<{
+      text: string;
+      startMs: number;
+      endMs: number;
+      emphasis?: string;
+    }>;
+    expect(Array.isArray(words)).toBe(true);
+    expect(words).toHaveLength(5);
+    expect(words.map((w) => w.text)).toEqual([
+      'Captions',
+      'enable',
+      'accessibility',
+      'for',
+      'everyone',
+    ]);
+    // No emphasis on any word — netflix bundle's `muteColor === highlightColor
+    // === foreground === '#FFFFFF'` so visibility comes from active-vs-rest
+    // routing with `muteOpacity: 0`, not from per-word emphasis tags
+    // (D-T366-13).
+    for (const w of words) {
+      expect(w.emphasis).toBeUndefined();
+    }
+    // No `background` override — bundle ships `backdrop: 'rect'` which only
+    // renders a translucent rect behind the active word, not a full-canvas
+    // backdrop (D-T366-11).
+    expect(props?.background).toBeUndefined();
+    const position = props?.position as {
+      x: number;
+      y: number;
+      width: number;
+      alignment: string;
+    };
+    expect(position.x).toBe(128);
+    expect(position.y).toBe(540);
+    expect(position.width).toBe(1024);
+    expect(position.alignment).toBe('center');
+  });
+
+  it('PRESET_ID_BINDINGS exposes the netflix-invisible override (T-366)', () => {
+    expect(PRESET_ID_BINDINGS['netflix-invisible']).toBeDefined();
+    expect(PRESET_ID_BINDINGS['netflix-invisible']?.clipName).toBe('caption');
+  });
+
+  it('falls through to captionBinding for hormozi-montserrat-black after T-366 lands (T-366 AC #14 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'hormozi-montserrat-black');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('hormozi');
+  });
+
+  it('routes mrbeast-komika-axis after T-366 lands (T-366 AC #15 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'mrbeast-komika-axis');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('mrbeast');
+  });
+
+  it('routes tiktok-rounded-box after T-366 lands (T-366 AC #16 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'tiktok-rounded-box');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('tiktok');
+  });
+
+  it('routes ali-abdaal-opacity-karaoke after T-366 lands (T-366 AC #17 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'ali-abdaal-opacity-karaoke');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('ali-abdaal');
+  });
+
+  it('exports NETFLIX_CANONICAL_WORDS with five entries totalling 2000 ms (T-366 AC #13)', () => {
+    expect(NETFLIX_CANONICAL_WORDS).toHaveLength(5);
+    const total = NETFLIX_CANONICAL_WORDS.reduce((acc, w) => acc + (w.endMs - w.startMs), 0);
+    expect(total).toBe(2000);
+    // Each word is 400 ms — Netflix register is slow / readable (subtitles are
+    // infrastructure, readable for hard-of-hearing audiences) per D-T366-6.
+    for (const w of NETFLIX_CANONICAL_WORDS) {
+      expect(w.endMs - w.startMs).toBe(400);
+    }
+    // Word 4 ('for', 1200..1600) is the active word at frame 45 (= 1500 ms);
+    // word 5 ('everyone', 1600..2000) has not yet entered (`entrance: 'none'`
+    // means no anticipatory entrance — pops in at startMs).
+    const word4 = NETFLIX_CANONICAL_WORDS[3];
+    expect(word4?.text).toBe('for');
+    expect(word4?.startMs).toBe(1200);
+    expect(word4?.endMs).toBe(1600);
+    const word5 = NETFLIX_CANONICAL_WORDS[4];
+    expect(word5?.text).toBe('everyone');
+    expect(word5?.startMs).toBe(1600);
+    expect(word5?.endMs).toBe(2000);
+    // Sentence case ('as-is' bundle casing) — only 'Captions' is capitalized.
+    expect(NETFLIX_CANONICAL_WORDS[0]?.text).toBe('Captions');
+    for (const w of NETFLIX_CANONICAL_WORDS.slice(1)) {
+      expect(w.text[0]).toBe(w.text[0]?.toLowerCase());
+    }
+  });
+
+  it('routes netflix-invisible through the renderer-side override (T-366 AC #12 round-trip)', async () => {
+    const renderSpy = vi
+      .fn<(doc: unknown, frame: number) => Promise<Uint8Array>>()
+      .mockResolvedValue(new Uint8Array([0]));
+    const renderer = createGenerateFixtureRenderer({
+      resolver: DEFAULT_CLIP_KIND_RESOLVER,
+      render: renderSpy as unknown as Parameters<typeof createGenerateFixtureRenderer>[0]['render'],
+    });
+    await renderer.render({
+      preset: presetWith('caption', 'netflix-invisible', 'captions'),
+      composition: COMPOSITION,
+      frame: 45,
+    });
+    const [doc] = renderSpy.mock.calls[0] ?? [];
+    const parsed = rirDocumentSchema.parse(doc);
+    const element = parsed.elements[0];
+    if (!element || element.content.type !== 'clip') throw new Error('expected clip element');
+    expect(element.content.params).toMatchObject({
+      style: 'netflix',
+    });
+    const params = element.content.params as { words: ReadonlyArray<{ text: string }> };
+    expect(params.words.map((w) => w.text)).toEqual([
+      'Captions',
+      'enable',
+      'accessibility',
+      'for',
+      'everyone',
     ]);
   });
 
