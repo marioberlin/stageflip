@@ -157,8 +157,16 @@ unavailable: ...` because no renderer is bound.
 
 ## Pending follow-up tasks
 
+- **T-359c — DONE.** Fixed the tsx ↔ gsap ESM/CJS interop crash that
+  blocked T-359b: `packages/runtimes/gsap/src/host.tsx` switched from
+  `import { gsap } from 'gsap'` (rejected by tsx 4.21.0's esbuild
+  loader) to `import gsap from 'gsap'` (gsap's `default` export is the
+  gsap namespace itself; portable across Node, tsx, vite, webpack). A
+  CI smoke step in `.github/workflows/ci.yml` now asserts
+  `pnpm tsx scripts/generate-preset-parity-fixture-prod.ts --help`
+  exits 0 on every gates run.
 - **T-359b — re-promote T-359 (`f1-sector-purple-green`) to `signed:<date>`.**
-  T-359a (this task) lands all the unblock infrastructure
+  Now unblocked by T-359c. T-359a lands all the unblock infrastructure
   (`bindProductionRenderer` hook + `bigNumber → animated-value` resolver
   entry + `--variant=sessionBest|personalBest|neutral` flag + per-manifest
   atomic sign-off). T-359a D-T359a-6 explicitly descopes the actual run

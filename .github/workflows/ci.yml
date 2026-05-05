@@ -80,6 +80,14 @@ jobs:
       - name: Gate - bundle-size budget (size-limit)
         run: pnpm size-limit
 
+      # T-359c regression: the prod-bound parity generator must load cleanly
+      # under tsx. Catches tsx<->ESM/CJS interop breakage in the runtime
+      # import chain (e.g. the `import { gsap } from 'gsap'` form that
+      # plain Node accepts but tsx's esbuild loader rejects). --help is a
+      # five-second exit-0 check that exercises the full module-load path.
+      - name: Gate - prod parity generator loads under tsx (T-359c)
+        run: pnpm tsx scripts/generate-preset-parity-fixture-prod.ts --help
+
   parity:
     name: parity (fixture scoring)
     runs-on: ubuntu-latest

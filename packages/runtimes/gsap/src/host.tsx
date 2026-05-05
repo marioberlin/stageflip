@@ -7,7 +7,14 @@
 // GSAP's internal ticker never advances our animations. This is the
 // determinism contract for the gsap runtime.
 
-import { gsap } from 'gsap';
+// Default-import alias: portable across Node, tsx (esbuild loader),
+// vite, and webpack. The named-import form (`import { gsap } from 'gsap'`)
+// loads under plain Node but crashes under tsx 4.21.0's esbuild loader
+// because it strips gsap's named re-exports and only `default` survives.
+// gsap's `default` export IS the gsap namespace itself (see its types:
+// `export { gsap as default } from "gsap/gsap-core"`), so a simple
+// alias matches the runtime value and the published types.
+import gsap from 'gsap';
 import { type ReactElement, type ReactNode, useEffect, useRef } from 'react';
 
 export type GsapTimelineBuild<P> = (
