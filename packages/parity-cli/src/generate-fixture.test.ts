@@ -11,6 +11,7 @@ import {
   DEFAULT_CLIP_KIND_RESOLVER,
   F1_SECTOR_STATE_COLORS,
   GenerateFixtureUnavailableError,
+  OLYMPIC_CANONICAL_STANDINGS,
   PRESET_ID_BINDINGS,
   type PresetForRender,
   buildPresetDocument,
@@ -181,6 +182,88 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     const directions = BLOOMBERG_CANONICAL_SNAPSHOT.map((e) => e.direction);
     expect(directions.filter((d) => d === 'up').length).toBeGreaterThanOrEqual(1);
     expect(directions.filter((d) => d === 'down').length).toBeGreaterThanOrEqual(1);
+  });
+
+  // T-357 — standings → standings-table binding (D-T357-3) + cached
+  // OLYMPIC_CANONICAL_STANDINGS (D-T357-4). The clipKind-default entry is
+  // generic across future Cluster A/B/E ranked-list presets (election
+  // results, F1 / NBA / NCAA leaderboards, crypto top-N dashboards); the
+  // per-preset override path is reserved for tenant-specific colorways.
+
+  it('resolves standings to standings-table on the frame-runtime (T-357 D-T357-3)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('standings');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('standings-table');
+  });
+
+  it('falls through to standingsBinding for olympic-medal-tracker (T-357 AC #15)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('standings', 'olympic-medal-tracker');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('standings-table');
+  });
+
+  it('builds standings props with five rows + seven columns + medal-color tints (T-357 AC #13)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('standings');
+    if (!binding) throw new Error('test setup');
+    const props = binding.buildProps(undefined);
+    const rows = props.rows as ReadonlyArray<{
+      rank: number;
+      code: string;
+      values: number[];
+      total: number;
+      delta: 'up' | 'down' | 'flat';
+    }>;
+    expect(Array.isArray(rows)).toBe(true);
+    expect(rows).toHaveLength(5);
+    expect(rows.map((r) => r.code)).toEqual(['USA', 'CHN', 'JPN', 'AUS', 'GBR']);
+    expect(rows.map((r) => r.rank)).toEqual([1, 2, 3, 4, 5]);
+    // Numeric values per row are [gold, silver, bronze].
+    expect(rows[0]?.values).toEqual([28, 22, 19]);
+    expect(rows[0]?.total).toBe(69);
+
+    const columns = props.columns as ReadonlyArray<{
+      key: string;
+      label: string;
+      kind: string;
+      color?: string;
+    }>;
+    expect(columns).toHaveLength(7);
+    expect(columns.map((c) => c.key)).toEqual([
+      'rank',
+      'code',
+      'gold',
+      'silver',
+      'bronze',
+      'total',
+      'delta',
+    ]);
+    expect(columns.find((c) => c.key === 'gold')?.color).toBe('#FFD700');
+    expect(columns.find((c) => c.key === 'silver')?.color).toBe('#C0C0C0');
+    expect(columns.find((c) => c.key === 'bronze')?.color).toBe('#CD7F32');
+
+    expect(props.background).toBe('#0E0E12');
+    expect(props.foreground).toBe('#FFFFFF');
+    expect(props.upColor).toBe('#00B54A');
+    expect(props.downColor).toBe('#CC0000');
+    expect(props.flatColor).toBe('#999999');
+    expect(props.bandPosition).toBe('overlay');
+  });
+
+  it('exports OLYMPIC_CANONICAL_STANDINGS with five entries mixing up + down + flat deltas (T-357 AC #14)', () => {
+    expect(OLYMPIC_CANONICAL_STANDINGS).toHaveLength(5);
+    expect(OLYMPIC_CANONICAL_STANDINGS.map((r) => r.code)).toEqual([
+      'USA',
+      'CHN',
+      'JPN',
+      'AUS',
+      'GBR',
+    ]);
+    const directions = OLYMPIC_CANONICAL_STANDINGS.map((r) => r.delta);
+    expect(directions.filter((d) => d === 'up').length).toBeGreaterThanOrEqual(1);
+    expect(directions.filter((d) => d === 'down').length).toBeGreaterThanOrEqual(1);
+    expect(directions.filter((d) => d === 'flat').length).toBeGreaterThanOrEqual(1);
   });
 
   it('builds scoreBug props as a six-chip canonical over with cricket-canon colors (T-358)', () => {
