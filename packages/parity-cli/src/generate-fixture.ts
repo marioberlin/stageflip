@@ -876,6 +876,51 @@ const cnnClassicBinding: ClipKindBinding = {
   },
 };
 
+/**
+ * BBC Reith-dark snapshot props per D-T325-1 / D-T325-4 / D-T325-12. Cluster A
+ * preset T-325 wires the `LowerThird` primitive (T-183) as the second
+ * `lowerThird` clipKind consumer (Pattern C — `PRESET_ID_BINDINGS` override,
+ * NOT the clipKind-default which T-323 holds). Mirrors T-363 / T-364 / T-365 /
+ * T-366's pattern in the caption family for the lowerThird clipKind.
+ *
+ * Snapshot captures the canonical BBC Reith-dark steady-state lower-third
+ * register: dark `#1A1A1A` bar + BBC Red `#BB1919` left-edge accent strip +
+ * Mixed-Case `'Sarah Smith'` headline (white) + Mixed-Case
+ * `'Chief Political Correspondent'` subtitle (rendered in `accent` red per
+ * the primitive's hard-coded `title` color binding — D-T325-12-a).
+ * Multi-stage entrance choreography (red strip → bar wipe L→R → text slide),
+ * ticker companion, and fade-down exit are deferred to T-325a/b/c carve-outs
+ * IF Reviewer scrutiny demands them (per D-T325-3). Background opacity (stub
+ * spec: 85 %) renders at 100 % in v1 — the primitive's `background` prop is a
+ * single hex string with no opacity channel; the 85 % spec is a production
+ * tunable for arbitrary-footage overlays, not a parity-canvas concern.
+ */
+export const BBC_REITH_DARK_PROPS: {
+  readonly name: string;
+  readonly title: string;
+  readonly accent: string;
+  readonly background: string;
+  readonly textColor: string;
+  readonly insetLeftPx: number;
+  readonly insetBottomPx: number;
+} = {
+  name: 'Sarah Smith',
+  title: 'Chief Political Correspondent',
+  accent: '#BB1919', // BBC Red — the left-edge accent strip (D-T325-1)
+  background: '#1A1A1A', // dark bar (D-T325-1; 85 % opacity is production tunable, not v1 parity)
+  textColor: '#FFFFFF', // headline white (D-T325-1)
+  insetLeftPx: 64, // far-left anchor; matches T-323's 64 for cluster-internal consistency (D-T325-4)
+  insetBottomPx: 48, // 40–60 px stub range; closer to bottom than T-323 (BBC bars sit lower)
+};
+
+const bbcReithDarkBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'lower-third', // kebab-case primitive `kind` (mirrors T-323 D-T323-12)
+  buildProps() {
+    return { ...BBC_REITH_DARK_PROPS };
+  },
+};
+
 const squidGameGeometricBinding: ClipKindBinding = {
   runtimeId: 'frame-runtime',
   clipName: 'titleSequence',
@@ -952,6 +997,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'tiktok-rounded-box': tiktokBinding,
   'ali-abdaal-opacity-karaoke': aliAbdaalBinding,
   'netflix-invisible': netflixBinding,
+  'bbc-reith-dark': bbcReithDarkBinding,
 };
 
 /**
