@@ -1,0 +1,30 @@
+{
+  "name": "al-jazeera-orange",
+  "cluster": "news",
+  "kind": "lowerThird",
+  "description": "Parity fixture for preset 'al-jazeera-orange' (cluster news, kind lowerThird)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Al Jazeera bilingual custom (Tarek Atrissi)",
+      "license": "proprietary-byo"
+    },
+    "fallback": {
+      "family": "DIN 2014 (Latin) + Amiri (Arabic)",
+      "weight": 600,
+      "license": "ofl"
+    }
+  }
+}

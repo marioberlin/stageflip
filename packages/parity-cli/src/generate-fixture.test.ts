@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   ALI_ABDAAL_CANONICAL_WORDS,
+  AL_JAZEERA_ORANGE_PROPS,
   BBC_REITH_DARK_PROPS,
   BLOOMBERG_CANONICAL_SNAPSHOT,
   CNN_CLASSIC_PROPS,
@@ -1504,6 +1505,108 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
   it('still returns undefined for unknown clipKinds after T-325 lands (T-325 AC #20)', () => {
     expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind')).toBeUndefined();
     expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'unknown-preset-id')).toBeUndefined();
+  });
+
+  // T-326 — third `lowerThird`-clipKind preset (`al-jazeera-orange`), wired
+  // via the `PRESET_ID_BINDINGS` override path (Pattern C — second
+  // `lowerThird`-keyed override after T-325; T-323's `cnnClassicBinding`
+  // keeps the clipKind-default slot). Third Cluster A preset to ship.
+
+  it('routes al-jazeera-orange through the per-preset override binding (T-326 AC #13)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'al-jazeera-orange');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('lower-third');
+    const props = binding?.buildProps(undefined);
+    expect(props?.name).toBe('Marwan Bishara');
+    expect(props?.title).toBe('Senior Political Analyst');
+    expect(props?.accent).toBe('#F7941D');
+    expect(props?.background).toBe('#F7F7F5');
+    expect(props?.textColor).toBe('#222222');
+    expect(props?.insetLeftPx).toBe(64);
+    expect(props?.insetBottomPx).toBe(48);
+  });
+
+  it('exports AL_JAZEERA_ORANGE_PROPS with seven canonical fields (T-326 AC #14)', () => {
+    expect(AL_JAZEERA_ORANGE_PROPS).toEqual({
+      name: 'Marwan Bishara',
+      title: 'Senior Political Analyst',
+      accent: '#F7941D',
+      background: '#F7F7F5',
+      textColor: '#222222',
+      insetLeftPx: 64,
+      insetBottomPx: 48,
+    });
+  });
+
+  it('PRESET_ID_BINDINGS exposes the al-jazeera-orange override (T-326 AC #15)', () => {
+    expect(PRESET_ID_BINDINGS['al-jazeera-orange']).toBeDefined();
+    expect(PRESET_ID_BINDINGS['al-jazeera-orange']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['al-jazeera-orange']?.runtimeId).toBe('frame-runtime');
+  });
+
+  it('still routes bbc-reith-dark after T-326 lands (T-326 AC #17 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'bbc-reith-dark');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#1A1A1A');
+    expect(props?.accent).toBe('#BB1919');
+  });
+
+  it('falls through to cnnClassicBinding for cnn-classic after T-326 lands (T-326 AC #16 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'cnn-classic');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('lower-third');
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#FFFFFF');
+  });
+
+  it('falls through to cnnClassicBinding for unknown lowerThird presetIds after T-326 lands (T-326 AC #16)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'unknown-news-preset-2');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#FFFFFF'); // cnn-classic clipKind-default
+  });
+
+  it('falls through to cnnClassicBinding for bare lowerThird after T-326 lands (T-326 AC #16)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#FFFFFF'); // cnn-classic clipKind-default
+  });
+
+  it('routes al-jazeera-orange through the renderer-side override (T-326 AC #13 round-trip)', async () => {
+    const renderSpy = vi
+      .fn<(doc: unknown, frame: number) => Promise<Uint8Array>>()
+      .mockResolvedValue(new Uint8Array([0]));
+    const renderer = createGenerateFixtureRenderer({
+      resolver: DEFAULT_CLIP_KIND_RESOLVER,
+      render: renderSpy as unknown as Parameters<typeof createGenerateFixtureRenderer>[0]['render'],
+    });
+    await renderer.render({
+      preset: presetWith('lowerThird', 'al-jazeera-orange', 'news'),
+      composition: COMPOSITION,
+      frame: 60,
+    });
+    const [doc] = renderSpy.mock.calls[0] ?? [];
+    const parsed = rirDocumentSchema.parse(doc);
+    const element = parsed.elements[0];
+    if (!element || element.content.type !== 'clip') throw new Error('expected clip element');
+    expect(element.content.clipName).toBe('lower-third');
+    expect(element.content.params).toMatchObject({
+      name: 'Marwan Bishara',
+      title: 'Senior Political Analyst',
+      accent: '#F7941D',
+      background: '#F7F7F5',
+      textColor: '#222222',
+      insetLeftPx: 64,
+      insetBottomPx: 48,
+    });
+  });
+
+  it('still returns undefined for unknown clipKinds after T-326 lands (T-326 AC #20)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind')).toBeUndefined();
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'unknown-preset-id-2')).toBeUndefined();
   });
 
   it('routes bbc-reith-dark through the renderer-side override (T-325 AC #13 round-trip)', async () => {

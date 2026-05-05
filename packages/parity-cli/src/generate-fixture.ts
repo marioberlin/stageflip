@@ -921,6 +921,57 @@ const bbcReithDarkBinding: ClipKindBinding = {
   },
 };
 
+/**
+ * Al Jazeera orange snapshot props per D-T326-1 / D-T326-4 / D-T326-12.
+ * Cluster A preset T-326 wires the `LowerThird` primitive (T-183) as the
+ * third `lowerThird` clipKind consumer (Pattern C — `PRESET_ID_BINDINGS`
+ * override, NOT the clipKind-default which T-323 holds; second
+ * `lowerThird`-keyed override after T-325). Mirrors T-325's
+ * `bbcReithDarkBinding` shape, swapping the snapshot constants for the
+ * orange-on-light register.
+ *
+ * Snapshot captures the canonical Al Jazeera English steady-state
+ * lower-third register: light `#F7F7F5` bar + orange `#F7941D` left-edge
+ * accent strip + Mixed-Case `'Marwan Bishara'` headline (dark `#222222`)
+ * + Mixed-Case `'Senior Political Analyst'` subtitle (rendered in
+ * `accent` orange per the primitive's hard-coded `title` color binding —
+ * D-T326-12-a).
+ *
+ * v1 is Latin-only; the Arabic companion (`الجزيرة` second-language slot)
+ * is deferred to T-326a IF Reviewer demands — the primitive does NOT
+ * support a second-language / RTL / bidi prop axis (D-T326-3). Mirrors
+ * T-350's D-T350-12 Hangul-deferred posture.
+ *
+ * Multi-stage entrance choreography, gradient accent (`#F7941D` →
+ * `#E87722` deferred per D-T326-4), kraft-paper texture, extended-width
+ * bilingual bar are all primitive-level follow-ups (`T-183z`-family).
+ */
+export const AL_JAZEERA_ORANGE_PROPS: {
+  readonly name: string;
+  readonly title: string;
+  readonly accent: string;
+  readonly background: string;
+  readonly textColor: string;
+  readonly insetLeftPx: number;
+  readonly insetBottomPx: number;
+} = {
+  name: 'Marwan Bishara',
+  title: 'Senior Political Analyst',
+  accent: '#F7941D', // Al Jazeera orange (dominant; gradient → amber #E87722 deferred — D-T326-4)
+  background: '#F7F7F5', // light bar (D-T326-1; departure from T-323 white / T-325 dark)
+  textColor: '#222222', // headline dark on light (D-T326-1)
+  insetLeftPx: 64, // far-left anchor; matches T-323 + T-325 cluster-internal consistency
+  insetBottomPx: 48, // 40–60 px stub range; matches T-325 (al-jazeera bars sit lower like BBC)
+};
+
+const alJazeeraOrangeBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'lower-third', // kebab-case primitive `kind` (mirrors T-323 / T-325)
+  buildProps() {
+    return { ...AL_JAZEERA_ORANGE_PROPS };
+  },
+};
+
 const squidGameGeometricBinding: ClipKindBinding = {
   runtimeId: 'frame-runtime',
   clipName: 'titleSequence',
@@ -998,6 +1049,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'ali-abdaal-opacity-karaoke': aliAbdaalBinding,
   'netflix-invisible': netflixBinding,
   'bbc-reith-dark': bbcReithDarkBinding,
+  'al-jazeera-orange': alJazeeraOrangeBinding,
 };
 
 /**
