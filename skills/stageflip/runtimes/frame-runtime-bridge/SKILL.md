@@ -201,6 +201,12 @@ ports; dashboards (T-131f.2) and the financial-statement composite
 |---|---|---|
 | `news-ticker-bar` | `src/clips/news-ticker-bar.tsx` | horizontal scrolling chyron of N (1–24) symbol+price+delta+▲/▼/▬ chips translating left at `scrollSpeed` px/sec; continuous-loop modulo `rowWidth = entries.length * (chipWidth + chipGap)` via doubled-row marquee; direction-driven up/down/flat colors with theme-slot fallback (`palette.accent` for `upColor` + `downColor` until `ThemePalette` widens to `positive` / `negative`; `palette.foreground` for `flatColor`); configurable `bandHeight` + `bandPosition` (`'top'` / `'bottom'`). Generic primitive; cluster-specific palettes + entry payloads live in `parity-cli` resolver shims (Bloomberg market data, ESPN sports score crawl, CNN breaking-news, crypto dashboards). |
 
+**T-357a (standings-table primitive)**
+
+| kind | file | notes |
+|---|---|---|
+| `standings-table` | `src/clips/standings-table.tsx` | vertical N-row (1–16) ranked table with K columns (2–8) of mixed kind (`rank` / `label` / `numeric` / `delta` / `total`); per-column hex `color` tinting (medal-style gold / silver / bronze); delta-arrow glyphs (↑ / ↓ / ▬) driven by string enum (`'up'` / `'down'` / `'flat'`) or numeric sign (positive → up, negative → down, zero → flat); frame-derived per-row entrance stagger (fade + slide, `delay = i * staggerMs / (1000 / fps)`, 12-frame ramp, `translateY` `-8 → 0` px); `tabular-nums` on numeric cells (`rank` / `numeric` / `total`); proportional column flex (default 1; override via `column.flex` or fixed `column.width`); theme-slot fallback (`background`/`foreground`/`goldColor`/`silverColor`/`bronzeColor`/`upColor`/`downColor`/`flatColor` — both `upColor` and `downColor` and `goldColor` map to `palette.accent`; `silverColor`/`bronzeColor`/`flatColor` map to `palette.foreground`). Generic primitive; cluster-specific palettes + row payloads live in `parity-cli` resolver shims (Cluster E olympic-medal-tracker, Cluster B F1 / NBA / NCAA / golf leaderboards, Cluster A election results, crypto top-N market-cap dashboards). |
+
 Every demo clip declares a Zod `propsSchema` (auto-inspected by the
 editor's `<ZodForm>`) and, where palette-driven, a `themeSlots` map
 binding default colour props to `palette.*` roles (T-131a).
@@ -209,12 +215,13 @@ binding default colour props to `palette.*` roles (T-131a).
 editor look respectively.
 
 The barrel `ALL_BRIDGE_CLIPS` is the canonical iterable that the
-cdp-host-bundle passes to `createFrameRuntimeBridge`. All 45 bridge
+cdp-host-bundle passes to `createFrameRuntimeBridge`. All 46 bridge
 clips are registered through it (32 reference-clip ports across ten
 tranches + 10 profile-tier clips for StageFlip.Video and
 StageFlip.Display + the 1 unified T-406 chart family + the T-358a
-`outcome-row` primitive + the T-356a `news-ticker-bar` primitive) —
-see the tranche ledger below for the breakdown.
+`outcome-row` primitive + the T-356a `news-ticker-bar` primitive + the
+T-357a `standings-table` primitive) — see the tranche ledger below for
+the breakdown.
 
 ## Implementation map
 
@@ -224,7 +231,7 @@ see the tranche ledger below for the breakdown.
 | `src/index.test.tsx` | T-061, T-131b.1 | Runtime shape, render behaviour, window gating, props passthrough, schema/themeSlots passthrough |
 | `src/clips/*.tsx` | T-131b/d/e/f | Thirty-two reference-clip ports across ten tranches (light / medium / heavy / bridge-eligible lottie-three-shader / audit-driven standalones / bake-tier video+image / audio tranche / dashboard composites f.2a/b/c / financial statement f.3 / animated-map SVG fallback d.4) |
 | `src/clips/chart/*.tsx` | T-406 | Unified `chart` clip family — one ClipDefinition consuming `ChartElement`-shaped props, dispatching to seven per-kind renderers (bar / line / area / pie / donut / scatter / combo). See `runtimes/chart/SKILL.md`. |
-| `src/clips/index.ts` | T-131b/d/e/f, T-183, T-202, T-356a, T-358a, T-406 | Barrel + `ALL_BRIDGE_CLIPS` constant (45 clips: 32 reference-clip ports + 10 StageFlip.Video / StageFlip.Display profile clips + the unified `chart` family + the `outcome-row` primitive + the `news-ticker-bar` primitive) |
+| `src/clips/index.ts` | T-131b/d/e/f, T-183, T-202, T-356a, T-357a, T-358a, T-406 | Barrel + `ALL_BRIDGE_CLIPS` constant (46 clips: 32 reference-clip ports + 10 StageFlip.Video / StageFlip.Display profile clips + the unified `chart` family + the `outcome-row` primitive + the `news-ticker-bar` primitive + the `standings-table` primitive) |
 | `src/clips/_dashboard-utils.ts` | T-131f.2a | Private shared helpers for the dashboard composites (trend schema, value formatter, colour constants) |
 
 ## Tranche ledger
@@ -244,6 +251,7 @@ see the tranche ledger below for the breakdown.
 | Unified chart family | T-406 | chart | One ClipDefinition (`kind: 'chart'`) consuming `ChartElement`-shaped props with `chartKind` discriminator. Dispatches to bar / line / area / pie / donut / scatter / combo renderers. NOT a reference-clip port — a new family that Cluster E presets bind to. Coexists with the standalone T-131b chart clips (chart-build / pie-chart-build / line-chart-draw); does not replace them (D-T406-9). See `runtimes/chart/SKILL.md`. |
 | Outcome-row primitive | T-358a | outcome-row | Generic row of N (1–12) color-coded chips (circle / square / rounded) with staggered fade-in (`delay = i * 4`, 12-frame ramp). Per-chip hex `color` required; theme slots for `defaultFill` / `outlineColor` / `background`. Unblocks the T-358 cricket ball-by-ball preset and other Cluster B/E scorebug-family presets (tennis tiebreak, F1 sectors, soccer last-N-shots). Cluster-specific outcome→color mapping lives in `parity-cli` resolver shims, not in this primitive. |
 | News-ticker-bar primitive | T-356a | news-ticker-bar | Generic horizontal scrolling chyron of N (1–24) symbol+price+delta+▲/▼/▬ chips translating left at `scrollSpeed` px/sec; continuous-loop modulo `rowWidth = entries.length * (chipWidth + chipGap)` via doubled-row marquee. Direction-driven up/down/flat colors with theme-slot fallback (both `upColor` and `downColor` map to `palette.accent` per D-T356a-6 — current `ThemePalette` exposes no `positive` / `negative` roles; widen later if needed; `flatColor` maps to `palette.foreground`); configurable `bandHeight` + `bandPosition` (top / bottom). Unblocks T-356 (Bloomberg market chyron) and Cluster A/B/E ticker presets (CNN/Fox breaking-news, ESPN BottomLine, crypto dashboards). Cluster-specific palettes + entry payloads live in `parity-cli` resolver shims, not in this primitive. |
+| Standings-table primitive | T-357a | standings-table | Generic vertical ranked table of N (1–16) rows × K (2–8) columns of mixed kind (`rank` / `label` / `numeric` / `delta` / `total`). Per-column hex `color` (medal-style gold / silver / bronze tinting); delta-arrow glyphs (↑ / ↓ / ▬) driven by string enum (`'up'` / `'down'` / `'flat'`) or numeric sign; frame-derived per-row entrance stagger (fade + slide, `delay = i * staggerMs / (1000 / fps)`, 12-frame ramp, `translateY` `-8 → 0` px). `tabular-nums` on numeric cells (`rank` / `numeric` / `total`) keeps digit columns aligned across the fallback font's proportional digits. Proportional column flex (default 1; per-column `flex` / fixed `width` overrides). Theme-slot fallback per D-T357a-6 (both `upColor` and `downColor` and `goldColor` map to `palette.accent`; `silverColor`/`bronzeColor`/`flatColor` map to `palette.foreground`; `background`/`foreground` to their namesakes). Unblocks T-357 (olympic-medal-tracker) and Cluster A/B/E ranked-list presets (F1 / NBA / NCAA / golf leaderboards, election results, crypto top-N market-cap dashboards). Cluster-specific palettes + row payloads live in `parity-cli` resolver shims, not in this primitive. |
 
 ## Related
 

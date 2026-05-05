@@ -385,6 +385,20 @@ export {
   newsTickerBarPropsSchema,
 } from './news-ticker-bar.js';
 
+// T-357a — standings-table primitive. Generic vertical ranked table of
+// N (1..16) rows × K (2..8) columns of mixed kind (rank/label/numeric/
+// delta/total) with per-column color tinting + delta-arrow glyphs (↑ /
+// ↓ / ▬) + frame-derived per-row entrance stagger. Unblocks T-357
+// (olympic-medal-tracker) and broader Cluster A/B/E ranked-list presets
+// (F1 / NBA / NCAA / golf leaderboards, election results, crypto
+// top-N dashboards).
+export {
+  StandingsTable,
+  type StandingsTableProps,
+  standingsTableClip,
+  standingsTablePropsSchema,
+} from './standings-table.js';
+
 import { animatedMapClip } from './animated-map.js';
 import { animatedValueClip } from './animated-value.js';
 import { audioVisualizerReactiveClip } from './audio-visualizer-reactive.js';
@@ -423,6 +437,7 @@ import { productRevealClip } from './product-reveal.js';
 import { pullQuoteClip } from './pull-quote.js';
 import { salesDashboardClip } from './sales-dashboard.js';
 import { scene3dClip } from './scene-3d.js';
+import { standingsTableClip } from './standings-table.js';
 import { stockTickerClip } from './stock-ticker.js';
 import { subtitleOverlayClip } from './subtitle-overlay.js';
 import { testimonialCardClip } from './testimonial-card.js';
@@ -524,4 +539,13 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // Cluster A/B/E ticker presets (CNN/Fox breaking-news, ESPN
   // BottomLine, crypto dashboards). 44 → 45 clips.
   newsTickerBarClip,
+  // T-357a — standings-table primitive (vertical ranked table of N
+  // (1..16) rows × K (2..8) columns of mixed kind: rank / label /
+  // numeric / delta / total; per-column color tinting; delta-arrow
+  // glyphs ↑ / ↓ / ▬ from string enum or numeric sign; frame-derived
+  // per-row entrance stagger). Unblocks T-357 (olympic-medal-tracker)
+  // and Cluster A/B/E ranked-list presets (F1 / NBA / NCAA / golf
+  // leaderboards, election results, crypto top-N dashboards). 45 → 46
+  // clips.
+  standingsTableClip,
 ];
