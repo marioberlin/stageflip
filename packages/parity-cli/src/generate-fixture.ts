@@ -603,6 +603,68 @@ const netflixBinding: ClipKindBinding = {
 };
 
 /**
+ * `karaoke-progressive-wipe` (T-367) — first and only `lyrics`-clipKind preset
+ * to date, bound to the `lyrics` primitive shipped by T-322. Three-line stack
+ * of anthemic phrasing with per-line left-to-right karaoke wipe driven by
+ * `(currentTimeMs - line.startMs) / (line.endMs - line.startMs)`; mid-hold at
+ * frame 105 (= 3500 ms @ 30fps) lands line 2 (`'We were stronger together'`)
+ * active at 40% wipe progress, line 1 dimmed above and line 3 preview below
+ * (D-T367-7). The bundle's defaults supply Bebas Neue / Anton fallback chain
+ * at weight 700 size 96, `#CCCCCC` foreground, `#F3CE32` highlight, 0.5 mute
+ * opacity, 80 px line gap, `'fade'` entrance — `buildProps` declares only
+ * `lines`, `style`, `position`, `maxLinesVisible`, `glow`, `casing`, and the
+ * dark-canvas documentation backdrop, leaving the bundle to drive the rest of
+ * the visual register (D-T367-4 / D-T367-15). Wired as the `lyrics` clipKind-
+ * default (mirrors T-362 hormozi's first-preset-for-clipKind precedent — first
+ * `lyrics` preset takes the clipKind-default slot, NOT a `PRESET_ID_BINDINGS`
+ * override).
+ */
+export const KARAOKE_PROGRESSIVE_WIPE_CANONICAL_LINES: ReadonlyArray<{
+  readonly text: string;
+  readonly startMs: number;
+  readonly endMs: number;
+}> = [
+  { text: 'Once upon a time', startMs: 0, endMs: 2500 },
+  { text: 'We were stronger together', startMs: 2500, endMs: 5000 },
+  { text: 'Now we sing alone', startMs: 5000, endMs: 7500 },
+];
+
+const lyricsBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'lyrics',
+  buildProps() {
+    return {
+      lines: KARAOKE_PROGRESSIVE_WIPE_CANONICAL_LINES.map((l) => ({ ...l })),
+      style: 'karaoke-wipe' as const,
+      // Center-screen vertical stack per D-T367-13 — 1280×720 default
+      // composition: 10% inset (x=128), vertical center (y=360), 80% width
+      // (1024). Active line sits at y=360; past line at y=280 (y - 80 default
+      // line gap); next preview at y=440 — all three within the 720 px canvas.
+      position: { x: 128, y: 360, width: 1024, alignment: 'center' as const },
+      // Three-line register (current ± 1) per D-T367-14; the canonical music-
+      // video lyric stack with active in the middle and one neighbour above /
+      // below.
+      maxLinesVisible: 3 as const,
+      // Light white outer glow halo on the active line per D-T367-15 — `blur:
+      // 6` SVG `stdDeviation` produces a perceived halo around the active
+      // wipe line; T-322 D-T322-6 ships static glow (no animated build-up).
+      glow: { color: '#FFFFFF', blur: 6 },
+      // ALL-CAPS canonical posture per D-T367-6 — high-impact lyric-video
+      // register; applied at render time via the primitive's `applyCasing`
+      // helper.
+      casing: 'uppercase' as const,
+      // Documentation-only — the primitive's container is `transparent` and
+      // the `background` prop only resolves to the karaoke-wipe rendering
+      // path's per-glyph fill / canvas-bleed reference (T-322 D-T322-8).
+      // Declared here for the dark-canvas music-video register intent
+      // (D-T367-12); the parity golden actually renders against the host
+      // bundle's default canvas color.
+      background: '#0E0E12',
+    };
+  },
+};
+
+/**
  * `magic-wall-drilldown` (T-355) — first `fullScreen`-clipKind preset, bound
  * to the `magic-wall-panel` primitive shipped by T-355a. The cached snapshot
  * substitutes for the live election-results endpoint per ADR-003 §D2 (the
@@ -715,9 +777,10 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
  * v1 default resolver — `bigNumber → animated-value`, `scoreBug → outcome-row`
  * (T-358), `newsTicker → news-ticker-bar` (T-356), `standings →
  * standings-table` (T-357), `caption → caption` (T-362), `fullScreen →
- * magic-wall-panel` (T-355), with per-preset overrides for multi-preset-per-
- * clipKind cases (T-360 D-T360-2). Per-preset entries take precedence;
- * absent an override, the resolver falls back to the clipKind-only mapping.
+ * magic-wall-panel` (T-355), `lyrics → lyrics` (T-367), with per-preset
+ * overrides for multi-preset-per-clipKind cases (T-360 D-T360-2). Per-preset
+ * entries take precedence; absent an override, the resolver falls back to the
+ * clipKind-only mapping.
  */
 export const DEFAULT_CLIP_KIND_RESOLVER: ClipKindResolver = (clipKind, presetId) => {
   if (presetId !== undefined) {
@@ -730,6 +793,7 @@ export const DEFAULT_CLIP_KIND_RESOLVER: ClipKindResolver = (clipKind, presetId)
   if (clipKind === 'standings') return standingsBinding;
   if (clipKind === 'caption') return captionBinding;
   if (clipKind === 'fullScreen') return fullScreenBinding;
+  if (clipKind === 'lyrics') return lyricsBinding;
   return undefined;
 };
 
