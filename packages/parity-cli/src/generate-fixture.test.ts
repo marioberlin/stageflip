@@ -13,6 +13,7 @@ import {
   F1_SECTOR_STATE_COLORS,
   GenerateFixtureUnavailableError,
   HORMOZI_CANONICAL_WORDS,
+  KARAOKE_PROGRESSIVE_WIPE_CANONICAL_LINES,
   MAGIC_WALL_CANONICAL_REGIONS,
   MRBEAST_CANONICAL_WORDS,
   NETFLIX_CANONICAL_WORDS,
@@ -939,6 +940,169 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     // Sum of electoral votes: 54 + 40 + 30 + 28 + 19 + 17 + 16 + 11 = 215.
     const totalEv = MAGIC_WALL_CANONICAL_REGIONS.reduce((acc, r) => acc + r.electoralVotes, 0);
     expect(totalEv).toBe(215);
+  });
+
+  // T-367 — first `lyrics`-clipKind preset (`karaoke-progressive-wipe`),
+  // wired as the `lyrics` clipKind-default (NOT a per-preset override —
+  // mirrors T-362 hormozi's first-preset-for-clipKind precedent). The
+  // clipKind-default returns `lyricsBinding` for any `lyrics` resolution,
+  // including unknown / omitted presetIds. Closes Cluster F to 6/6.
+
+  it('resolves lyrics to lyrics on the frame-runtime (T-367 D-T367-4)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lyrics');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('lyrics');
+  });
+
+  it('falls through to lyricsBinding for karaoke-progressive-wipe (T-367 AC #14)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lyrics', 'karaoke-progressive-wipe');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('lyrics');
+  });
+
+  it('falls through to lyricsBinding for unknown lyrics presetIds (T-367 AC #24)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lyrics', 'unknown-lyrics-preset');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('lyrics');
+  });
+
+  it('builds lyrics props with the three-line karaoke canonical snapshot (T-367 AC #14)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lyrics');
+    if (!binding) throw new Error('test setup');
+    const props = binding.buildProps(undefined);
+    const lines = props.lines as ReadonlyArray<{
+      text: string;
+      startMs: number;
+      endMs: number;
+    }>;
+    expect(Array.isArray(lines)).toBe(true);
+    expect(lines).toHaveLength(3);
+    expect(lines.map((l) => l.text)).toEqual([
+      'Once upon a time',
+      'We were stronger together',
+      'Now we sing alone',
+    ]);
+    expect(props.style).toBe('karaoke-wipe');
+    expect(props.maxLinesVisible).toBe(3);
+    expect(props.casing).toBe('uppercase');
+    const glow = props.glow as { color: string; blur: number };
+    expect(glow.color).toBe('#FFFFFF');
+    expect(glow.blur).toBe(6);
+    expect(props.background).toBe('#0E0E12');
+    const position = props.position as {
+      x: number;
+      y: number;
+      width: number;
+      alignment: string;
+    };
+    expect(position.x).toBe(128);
+    expect(position.y).toBe(360);
+    expect(position.width).toBe(1024);
+    expect(position.alignment).toBe('center');
+  });
+
+  it('exports KARAOKE_PROGRESSIVE_WIPE_CANONICAL_LINES with three entries totalling 7500 ms (T-367 AC #16)', () => {
+    expect(KARAOKE_PROGRESSIVE_WIPE_CANONICAL_LINES).toHaveLength(3);
+    const total = KARAOKE_PROGRESSIVE_WIPE_CANONICAL_LINES.reduce(
+      (acc, l) => acc + (l.endMs - l.startMs),
+      0,
+    );
+    expect(total).toBe(7500);
+    // Each line is 2500 ms (anthemic / mid-tempo register per D-T367-7).
+    for (const l of KARAOKE_PROGRESSIVE_WIPE_CANONICAL_LINES) {
+      expect(l.endMs - l.startMs).toBe(2500);
+    }
+    // Line 2 ('We were stronger together', 2500..5000) is the active line at
+    // frame 105 (= 3500 ms); wipe progress = (3500 - 2500) / 2500 = 0.40.
+    const line2 = KARAOKE_PROGRESSIVE_WIPE_CANONICAL_LINES[1];
+    expect(line2?.text).toBe('We were stronger together');
+    expect(line2?.startMs).toBe(2500);
+    expect(line2?.endMs).toBe(5000);
+    // No PRESET_ID_BINDINGS entry — first preset for the lyrics clipKind takes
+    // the clipKind-default slot (D-T367-4).
+    expect(PRESET_ID_BINDINGS['karaoke-progressive-wipe']).toBeUndefined();
+  });
+
+  it('routes karaoke-progressive-wipe through the renderer-side clipKind-default (T-367 AC #14 round-trip)', async () => {
+    const renderSpy = vi
+      .fn<(doc: unknown, frame: number) => Promise<Uint8Array>>()
+      .mockResolvedValue(new Uint8Array([0]));
+    const renderer = createGenerateFixtureRenderer({
+      resolver: DEFAULT_CLIP_KIND_RESOLVER,
+      render: renderSpy as unknown as Parameters<typeof createGenerateFixtureRenderer>[0]['render'],
+    });
+    await renderer.render({
+      preset: presetWith('lyrics', 'karaoke-progressive-wipe', 'captions'),
+      composition: COMPOSITION,
+      frame: 105,
+    });
+    const [doc] = renderSpy.mock.calls[0] ?? [];
+    const parsed = rirDocumentSchema.parse(doc);
+    const element = parsed.elements[0];
+    if (!element || element.content.type !== 'clip') throw new Error('expected clip element');
+    expect(element.content.clipName).toBe('lyrics');
+    expect(element.content.params).toMatchObject({
+      style: 'karaoke-wipe',
+      maxLinesVisible: 3,
+      casing: 'uppercase',
+    });
+    const params = element.content.params as { lines: ReadonlyArray<{ text: string }> };
+    expect(params.lines.map((l) => l.text)).toEqual([
+      'Once upon a time',
+      'We were stronger together',
+      'Now we sing alone',
+    ]);
+  });
+
+  // T-367 backward compat — preceding cluster F + cluster E presets must still
+  // resolve correctly after the lyrics clipKind-default lands.
+
+  it('falls through to captionBinding for hormozi-montserrat-black after T-367 lands (T-367 AC #17 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'hormozi-montserrat-black');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('hormozi');
+  });
+
+  it('routes mrbeast-komika-axis after T-367 lands (T-367 AC #18 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'mrbeast-komika-axis');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('mrbeast');
+  });
+
+  it('routes tiktok-rounded-box after T-367 lands (T-367 AC #19 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'tiktok-rounded-box');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('tiktok');
+  });
+
+  it('routes ali-abdaal-opacity-karaoke after T-367 lands (T-367 AC #20 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'ali-abdaal-opacity-karaoke');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('ali-abdaal');
+  });
+
+  it('routes netflix-invisible after T-367 lands (T-367 AC #21 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'netflix-invisible');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('netflix');
+  });
+
+  it('routes magic-wall-drilldown after T-367 lands (T-367 AC #23 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('fullScreen', 'magic-wall-drilldown');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('magic-wall-panel');
+  });
+
+  it('still returns undefined for unknown clipKinds after T-367 lands (T-367 AC #24)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind')).toBeUndefined();
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'karaoke-progressive-wipe')).toBeUndefined();
   });
 
   it('builds scoreBug props as a six-chip canonical over with cricket-canon colors (T-358)', () => {
