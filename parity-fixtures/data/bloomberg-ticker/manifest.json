@@ -1,0 +1,30 @@
+{
+  "name": "bloomberg-ticker",
+  "cluster": "data",
+  "kind": "newsTicker",
+  "description": "Parity fixture for preset 'bloomberg-ticker' (cluster data, kind newsTicker)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Bloomberg in-house",
+      "license": "proprietary-byo"
+    },
+    "fallback": {
+      "family": "IBM Plex Mono",
+      "weight": 500,
+      "license": "ofl"
+    }
+  }
+}

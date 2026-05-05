@@ -210,6 +210,52 @@ const bigNumberStatImpactBinding: ClipKindBinding = {
 };
 
 /**
+ * `bloomberg-ticker` (T-356) — first `newsTicker`-clipKind preset, bound to
+ * the `news-ticker-bar` primitive shipped by T-356a. The cached snapshot
+ * substitutes for the live market-data endpoint per ADR-003 §D2 (the
+ * `staticFallback` render path); `LiveDataClip`'s wrapper is bypassed and
+ * `news-ticker-bar` is mounted directly with the snapshot inlined as props
+ * (D-T356-11). Bloomberg-canonical six-token mix of equities + crypto + ▲/▼
+ * deltas exercises both color paths in the single mid-hold golden.
+ */
+export const BLOOMBERG_CANONICAL_SNAPSHOT: ReadonlyArray<{
+  readonly symbol: string;
+  readonly price: string;
+  readonly delta: string;
+  readonly direction: 'up' | 'down' | 'flat';
+}> = [
+  { symbol: 'AAPL', price: '230.45', delta: '+1.2%', direction: 'up' },
+  { symbol: 'MSFT', price: '412.10', delta: '-0.4%', direction: 'down' },
+  { symbol: 'GOOGL', price: '178.92', delta: '+0.8%', direction: 'up' },
+  { symbol: 'NVDA', price: '925.34', delta: '+2.7%', direction: 'up' },
+  { symbol: 'TSLA', price: '252.18', delta: '-1.1%', direction: 'down' },
+  { symbol: 'BTC-USD', price: '67,234', delta: '+2.1%', direction: 'up' },
+];
+
+const NEWS_TICKER_DEFAULT_SCROLL_SPEED = 60; // px/sec — middle of the stub's 50–80 range
+const NEWS_TICKER_DEFAULT_CHIP_GAP = 60;
+const NEWS_TICKER_DEFAULT_BAND_HEIGHT = 60;
+
+const newsTickerBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'news-ticker-bar',
+  buildProps() {
+    return {
+      entries: BLOOMBERG_CANONICAL_SNAPSHOT.map((e) => ({ ...e })),
+      scrollSpeed: NEWS_TICKER_DEFAULT_SCROLL_SPEED,
+      chipGap: NEWS_TICKER_DEFAULT_CHIP_GAP,
+      bandHeight: NEWS_TICKER_DEFAULT_BAND_HEIGHT,
+      bandPosition: 'bottom',
+      background: '#0A0A0A',
+      foreground: '#FFFFFF',
+      upColor: '#00D26A',
+      downColor: '#FF3C3C',
+      flatColor: '#999999',
+    };
+  },
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -222,9 +268,10 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
 
 /**
  * v1 default resolver — `bigNumber → animated-value`, `scoreBug → outcome-row`
- * (T-358), with per-preset overrides for multi-preset-per-clipKind cases
- * (T-360 D-T360-2). Per-preset entries take precedence; absent an override,
- * the resolver falls back to the clipKind-only mapping.
+ * (T-358), `newsTicker → news-ticker-bar` (T-356), with per-preset overrides
+ * for multi-preset-per-clipKind cases (T-360 D-T360-2). Per-preset entries
+ * take precedence; absent an override, the resolver falls back to the
+ * clipKind-only mapping.
  */
 export const DEFAULT_CLIP_KIND_RESOLVER: ClipKindResolver = (clipKind, presetId) => {
   if (presetId !== undefined) {
@@ -233,6 +280,7 @@ export const DEFAULT_CLIP_KIND_RESOLVER: ClipKindResolver = (clipKind, presetId)
   }
   if (clipKind === 'bigNumber') return bigNumberBinding;
   if (clipKind === 'scoreBug') return scoreBugDotsBinding;
+  if (clipKind === 'newsTicker') return newsTickerBinding;
   return undefined;
 };
 
