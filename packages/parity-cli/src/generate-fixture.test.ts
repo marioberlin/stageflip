@@ -20,6 +20,7 @@ import {
   OLYMPIC_CANONICAL_STANDINGS,
   PRESET_ID_BINDINGS,
   type PresetForRender,
+  CNN_CLASSIC_PROPS,
   SQUID_GAME_GEOMETRIC_SHOTS,
   TIKTOK_CANONICAL_WORDS,
   buildPresetDocument,
@@ -1293,6 +1294,126 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
   it('still returns undefined for unknown clipKinds after T-350 lands (T-350 AC #21)', () => {
     expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind')).toBeUndefined();
     expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'squid-game-geometric')).toBeUndefined();
+  });
+
+  // T-323 — first `lowerThird`-clipKind preset (`cnn-classic`), wired as the
+  // `lowerThird` clipKind-default (Pattern C — first preset for a clipKind
+  // takes the clipKind-default slot, NOT a `PRESET_ID_BINDINGS` override).
+  // First Cluster A preset to ship; first preset to bind the `LowerThird`
+  // primitive (T-183) end-to-end. Note the case mapping per D-T323-12:
+  // preset frontmatter `clipKind: 'lowerThird'` (camelCase) → primitive
+  // `kind: 'lower-third'` (kebab-case).
+
+  it('resolves lowerThird to lower-third on the frame-runtime (T-323 AC #13 / D-T323-2)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('lower-third');
+  });
+
+  it('falls through to cnnClassicBinding for cnn-classic (T-323 AC #15)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'cnn-classic');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('lower-third');
+  });
+
+  it('falls through to cnnClassicBinding for unknown lowerThird presetIds (T-323 AC #15)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'unknown-news-preset');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('lower-third');
+  });
+
+  it('builds lowerThird props with the cnn-classic canonical snapshot (T-323 AC #13)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird');
+    if (!binding) throw new Error('test setup');
+    const props = binding.buildProps(undefined);
+    expect(props.name).toBe('BREAKING: SUPREME COURT RULES');
+    expect(props.title).toBe('Anderson Cooper · Chief Anchor');
+    expect(props.accent).toBe('#CC0000');
+    expect(props.background).toBe('#FFFFFF');
+    expect(props.textColor).toBe('#000000');
+    expect(props.insetLeftPx).toBe(64);
+    expect(props.insetBottomPx).toBe(64);
+  });
+
+  it('exports CNN_CLASSIC_PROPS with seven canonical fields (T-323 AC #14)', () => {
+    expect(CNN_CLASSIC_PROPS).toEqual({
+      name: 'BREAKING: SUPREME COURT RULES',
+      title: 'Anderson Cooper · Chief Anchor',
+      accent: '#CC0000',
+      background: '#FFFFFF',
+      textColor: '#000000',
+      insetLeftPx: 64,
+      insetBottomPx: 64,
+    });
+    // No PRESET_ID_BINDINGS entry — first preset for the lowerThird clipKind
+    // takes the clipKind-default slot (Pattern C).
+    expect(PRESET_ID_BINDINGS['cnn-classic']).toBeUndefined();
+  });
+
+  it('routes cnn-classic through the renderer-side clipKind-default (T-323 AC #13 round-trip)', async () => {
+    const renderSpy = vi
+      .fn<(doc: unknown, frame: number) => Promise<Uint8Array>>()
+      .mockResolvedValue(new Uint8Array([0]));
+    const renderer = createGenerateFixtureRenderer({
+      resolver: DEFAULT_CLIP_KIND_RESOLVER,
+      render: renderSpy as unknown as Parameters<typeof createGenerateFixtureRenderer>[0]['render'],
+    });
+    await renderer.render({
+      preset: presetWith('lowerThird', 'cnn-classic', 'news'),
+      composition: COMPOSITION,
+      frame: 60,
+    });
+    const [doc] = renderSpy.mock.calls[0] ?? [];
+    const parsed = rirDocumentSchema.parse(doc);
+    const element = parsed.elements[0];
+    if (!element || element.content.type !== 'clip') throw new Error('expected clip element');
+    expect(element.content.clipName).toBe('lower-third');
+    expect(element.content.params).toMatchObject({
+      name: 'BREAKING: SUPREME COURT RULES',
+      title: 'Anderson Cooper · Chief Anchor',
+      accent: '#CC0000',
+      background: '#FFFFFF',
+      textColor: '#000000',
+      insetLeftPx: 64,
+      insetBottomPx: 64,
+    });
+  });
+
+  // T-323 backward compat — every prior cluster's clipKind-default + per-
+  // preset overrides must still resolve correctly after the lowerThird
+  // clipKind-default lands.
+
+  it('falls through to squidGameGeometricBinding for squid-game-geometric after T-323 lands (T-323 AC #20 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('titleSequence', 'squid-game-geometric');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('titleSequence');
+  });
+
+  it('falls through to lyricsBinding for karaoke-progressive-wipe after T-323 lands (T-323 AC #18 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lyrics', 'karaoke-progressive-wipe');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('lyrics');
+  });
+
+  it('falls through to captionBinding for hormozi-montserrat-black after T-323 lands (T-323 AC #17 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'hormozi-montserrat-black');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('hormozi');
+  });
+
+  it('routes big-number-stat-impact via PRESET_ID_BINDINGS after T-323 lands (T-323 AC #21 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('bigNumber', 'big-number-stat-impact');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('animated-value');
+    expect(PRESET_ID_BINDINGS['big-number-stat-impact']).toBeDefined();
+  });
+
+  it('still returns undefined for unknown clipKinds after T-323 lands (T-323 AC #22)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind')).toBeUndefined();
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'cnn-classic')).toBeUndefined();
   });
 
   it('builds scoreBug props as a six-chip canonical over with cricket-canon colors (T-358)', () => {

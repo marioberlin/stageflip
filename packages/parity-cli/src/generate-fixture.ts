@@ -835,6 +835,47 @@ export const SQUID_GAME_GEOMETRIC_SHOTS: ReadonlyArray<{
   },
 ];
 
+/**
+ * CNN-Classic snapshot props per D-T323-1 / D-T323-4 / D-T323-5. Cluster A
+ * preset T-323 wires the `LowerThird` primitive (T-183) end-to-end as the
+ * first `lowerThird` clipKind binding (Pattern C — clipKind-default, NOT
+ * `PRESET_ID_BINDINGS` override). Sister Cluster A `lowerThird` presets
+ * (T-325 `bbc-reith-dark`, T-326 `al-jazeera-orange`, T-329 `netflix-doc-lt`,
+ * T-330 `apple-tv-lt`) will supply per-preset snapshots via
+ * `PRESET_ID_BINDINGS` (T-360 D-T360-2 / Pattern C mechanism).
+ *
+ * Snapshot captures the canonical CNN-Classic steady-state lower-third
+ * register: white banner + red flag end-cap + UPPERCASE bold headline +
+ * Mixed-Case talent ID. LIVE bug, CNN bug, ticker strip, and red-block-wipe
+ * are deferred to T-323a/b/c/d carve-outs IF Reviewer scrutiny demands
+ * them (per D-T323-3).
+ */
+export const CNN_CLASSIC_PROPS: {
+  readonly name: string;
+  readonly title: string;
+  readonly accent: string;
+  readonly background: string;
+  readonly textColor: string;
+  readonly insetLeftPx: number;
+  readonly insetBottomPx: number;
+} = {
+  name: 'BREAKING: SUPREME COURT RULES',
+  title: 'Anderson Cooper · Chief Anchor',
+  accent: '#CC0000', // CNN red — the flag end-cap (D-T323-1; Boston University Red / PMS 2347 C)
+  background: '#FFFFFF', // white banner (D-T323-1)
+  textColor: '#000000', // headline black (D-T323-1)
+  insetLeftPx: 64, // closer to stub's 60–80 px range than the primitive's default 96 (D-T323-4)
+  insetBottomPx: 64,
+};
+
+const cnnClassicBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'lower-third', // kebab-case primitive `kind` (D-T323-12)
+  buildProps() {
+    return { ...CNN_CLASSIC_PROPS };
+  },
+};
+
 const squidGameGeometricBinding: ClipKindBinding = {
   runtimeId: 'frame-runtime',
   clipName: 'titleSequence',
@@ -918,7 +959,8 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
  * (T-358), `newsTicker → news-ticker-bar` (T-356), `standings →
  * standings-table` (T-357), `caption → caption` (T-362), `fullScreen →
  * magic-wall-panel` (T-355), `lyrics → lyrics` (T-367), `titleSequence →
- * titleSequence` (T-350), with per-preset overrides for multi-preset-per-
+ * titleSequence` (T-350), `lowerThird → lower-third` (T-323), with
+ * per-preset overrides for multi-preset-per-
  * clipKind cases (T-360 D-T360-2). Per-preset entries take precedence;
  * absent an override, the resolver falls back to the clipKind-only mapping.
  */
@@ -935,6 +977,7 @@ export const DEFAULT_CLIP_KIND_RESOLVER: ClipKindResolver = (clipKind, presetId)
   if (clipKind === 'fullScreen') return fullScreenBinding;
   if (clipKind === 'lyrics') return lyricsBinding;
   if (clipKind === 'titleSequence') return squidGameGeometricBinding;
+  if (clipKind === 'lowerThird') return cnnClassicBinding;
   return undefined;
 };
 
