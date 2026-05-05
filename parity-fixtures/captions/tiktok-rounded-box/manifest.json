@@ -1,0 +1,30 @@
+{
+  "name": "tiktok-rounded-box",
+  "cluster": "captions",
+  "kind": "caption",
+  "description": "Parity fixture for preset 'tiktok-rounded-box' (cluster captions, kind caption)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    45
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "TikTok Sans",
+      "license": "platform-byo"
+    },
+    "fallback": {
+      "family": "Source Sans 3",
+      "weight": 700,
+      "license": "ofl"
+    }
+  }
+}
