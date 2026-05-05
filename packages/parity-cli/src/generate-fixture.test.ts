@@ -6,6 +6,7 @@ import { rirDocumentSchema } from '@stageflip/rir';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  BLOOMBERG_CANONICAL_SNAPSHOT,
   CRICKET_OUTCOME_COLORS,
   DEFAULT_CLIP_KIND_RESOLVER,
   F1_SECTOR_STATE_COLORS,
@@ -126,6 +127,60 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
   it('still returns undefined for unknown clipKinds with an unknown presetId (T-360 AC #15)', () => {
     expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind')).toBeUndefined();
     expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'unknown-preset')).toBeUndefined();
+  });
+
+  // T-356 — newsTicker → news-ticker-bar binding (D-T356-3) + cached
+  // BLOOMBERG_CANONICAL_SNAPSHOT (D-T356-4). The clipKind-default entry is
+  // generic across future financial / sports / news-feed presets; the
+  // per-preset override path is reserved for tenant-specific colorways.
+
+  it('resolves newsTicker to news-ticker-bar on the frame-runtime (T-356 D-T356-3)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('newsTicker');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('news-ticker-bar');
+  });
+
+  it('falls through to newsTickerBinding for bloomberg-ticker (T-356 AC #14)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('newsTicker', 'bloomberg-ticker');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('news-ticker-bar');
+  });
+
+  it('builds newsTicker props with the six-entry Bloomberg canonical snapshot (T-356 AC #12)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('newsTicker');
+    if (!binding) throw new Error('test setup');
+    const props = binding.buildProps(undefined);
+    const entries = props.entries as ReadonlyArray<{
+      symbol: string;
+      price: string;
+      delta: string;
+      direction: string;
+    }>;
+    expect(Array.isArray(entries)).toBe(true);
+    expect(entries).toHaveLength(6);
+    expect(entries.map((e) => e.symbol)).toEqual([
+      'AAPL',
+      'MSFT',
+      'GOOGL',
+      'NVDA',
+      'TSLA',
+      'BTC-USD',
+    ]);
+    expect(props.scrollSpeed).toBe(60);
+    expect(props.background).toBe('#0A0A0A');
+    expect(props.upColor).toBe('#00D26A');
+    expect(props.downColor).toBe('#FF3C3C');
+    expect(props.foreground).toBe('#FFFFFF');
+    expect(props.bandPosition).toBe('bottom');
+  });
+
+  it('exports BLOOMBERG_CANONICAL_SNAPSHOT with six entries mixing up + down deltas (T-356 AC #13)', () => {
+    expect(BLOOMBERG_CANONICAL_SNAPSHOT).toHaveLength(6);
+    const directions = BLOOMBERG_CANONICAL_SNAPSHOT.map((e) => e.direction);
+    expect(directions.filter((d) => d === 'up').length).toBeGreaterThanOrEqual(1);
+    expect(directions.filter((d) => d === 'down').length).toBeGreaterThanOrEqual(1);
   });
 
   it('builds scoreBug props as a six-chip canonical over with cricket-canon colors (T-358)', () => {
