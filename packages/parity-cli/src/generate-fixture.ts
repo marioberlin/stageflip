@@ -603,6 +603,100 @@ const netflixBinding: ClipKindBinding = {
 };
 
 /**
+ * `magic-wall-drilldown` (T-355) — first `fullScreen`-clipKind preset, bound
+ * to the `magic-wall-panel` primitive shipped by T-355a. The cached snapshot
+ * substitutes for the live election-results endpoint per ADR-003 §D2 (the
+ * `staticFallback` render path); `LiveDataClip`'s wrapper is bypassed and
+ * `magic-wall-panel` is mounted directly with the snapshot inlined as props
+ * (D-T355-12; same posture as T-356 D-T356-11 + T-357 D-T357-12). Canonical
+ * top-level snapshot: 8-region simplified electoral grid (illustrative subset
+ * of US states), party-shaded with mixed Dem Blue / Rep Red / tied / undecided
+ * to exercise all four color paths in the single mid-hold golden (D-T355-4).
+ *
+ * Per-region geometry is placeholder rectangles in v1 (D-T355-6); real US
+ * state SVG paths are deferred to a future asset-pipeline follow-up. Each
+ * region carries `value` (electoral-vote count) rendered via `valueFormat:
+ * 'count'`, plus a `valueLabel` override that pre-formats the percentage so
+ * a single mid-hold frame surfaces both numerics. The party-shading color
+ * lives directly in `region.color` per the primitive's prop schema (no
+ * `partyAColor` / `partyBColor` / etc. on `MagicWallPanel`).
+ */
+export const MAGIC_WALL_CANONICAL_REGIONS: ReadonlyArray<{
+  readonly id: string;
+  readonly label: string;
+  readonly electoralVotes: number;
+  readonly percent: number;
+  readonly party: 'A' | 'B' | 'tied' | 'undecided';
+}> = [
+  { id: 'CA', label: 'CA', electoralVotes: 54, percent: 62.1, party: 'A' },
+  { id: 'TX', label: 'TX', electoralVotes: 40, percent: 56.4, party: 'B' },
+  { id: 'FL', label: 'FL', electoralVotes: 30, percent: 51.2, party: 'B' },
+  { id: 'NY', label: 'NY', electoralVotes: 28, percent: 58.7, party: 'A' },
+  { id: 'PA', label: 'PA', electoralVotes: 19, percent: 49.8, party: 'tied' },
+  { id: 'OH', label: 'OH', electoralVotes: 17, percent: 50.3, party: 'B' },
+  { id: 'GA', label: 'GA', electoralVotes: 16, percent: 50.1, party: 'undecided' },
+  { id: 'AZ', label: 'AZ', electoralVotes: 11, percent: 50.7, party: 'A' },
+];
+
+const MAGIC_WALL_PARTY_COLORS: Readonly<Record<'A' | 'B' | 'tied' | 'undecided', string>> = {
+  A: '#0044CC', // Dem Blue
+  B: '#CC0000', // Rep Red
+  tied: '#7A3FB2', // purple — contested
+  undecided: '#666666', // neutral gray — too-close-to-call
+};
+
+const MAGIC_WALL_DEFAULT_STAGGER_MS = 60;
+// Tile layout: 4×2 grid sized for a 1280×720 composition (matches the
+// generator's DEFAULT_COMPOSITION). Tiles sit below the 64 px title +
+// 32 px subtitle band the primitive renders into the top of the panel.
+const MAGIC_WALL_TILE_ORIGIN_X = 60;
+const MAGIC_WALL_TILE_ORIGIN_Y = 140;
+const MAGIC_WALL_TILE_WIDTH = 280;
+const MAGIC_WALL_TILE_HEIGHT = 220;
+const MAGIC_WALL_TILE_GAP = 12;
+
+const fullScreenBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'magic-wall-panel',
+  buildProps() {
+    return {
+      regions: MAGIC_WALL_CANONICAL_REGIONS.map((r, i) => ({
+        id: r.id,
+        label: r.label,
+        value: r.electoralVotes,
+        // The primitive's auto-sized tile typography (~48 px at the 280×220
+        // canonical tile geometry) cannot fit `"<EV> EV · <%>"` without
+        // truncation; the broadcast canon is the leading-party percentage as
+        // the salient signal (the electoral-vote count is identification, not
+        // message). v1 surfaces the percentage via `valueLabel` (overrides the
+        // `'count'`-format dispatch on `value`) and documents the electoral
+        // count in the prose contract + canonical-snapshot constant. The
+        // numeric `value` field stays populated so future tile-geometry
+        // revisions (or a tile-internal stack-layout follow-up) can switch
+        // back to dual-render without changing the snapshot shape.
+        valueLabel: `${r.percent.toFixed(1)}%`,
+        color: MAGIC_WALL_PARTY_COLORS[r.party],
+        bounds: {
+          x: MAGIC_WALL_TILE_ORIGIN_X + (i % 4) * (MAGIC_WALL_TILE_WIDTH + MAGIC_WALL_TILE_GAP),
+          y:
+            MAGIC_WALL_TILE_ORIGIN_Y +
+            Math.floor(i / 4) * (MAGIC_WALL_TILE_HEIGHT + MAGIC_WALL_TILE_GAP),
+          width: MAGIC_WALL_TILE_WIDTH,
+          height: MAGIC_WALL_TILE_HEIGHT,
+        },
+      })),
+      title: 'Election Results',
+      subtitle: 'State-by-state breakdown',
+      valueFormat: 'count' as const,
+      entrance: 'stagger-rise' as const,
+      staggerMs: MAGIC_WALL_DEFAULT_STAGGER_MS,
+      background: '#0E0E12',
+      foreground: '#FFFFFF',
+    };
+  },
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -620,10 +714,10 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
 /**
  * v1 default resolver — `bigNumber → animated-value`, `scoreBug → outcome-row`
  * (T-358), `newsTicker → news-ticker-bar` (T-356), `standings →
- * standings-table` (T-357), `caption → caption` (T-362), with per-preset
- * overrides for multi-preset-per-clipKind cases (T-360 D-T360-2). Per-preset
- * entries take precedence; absent an override, the resolver falls back to
- * the clipKind-only mapping.
+ * standings-table` (T-357), `caption → caption` (T-362), `fullScreen →
+ * magic-wall-panel` (T-355), with per-preset overrides for multi-preset-per-
+ * clipKind cases (T-360 D-T360-2). Per-preset entries take precedence;
+ * absent an override, the resolver falls back to the clipKind-only mapping.
  */
 export const DEFAULT_CLIP_KIND_RESOLVER: ClipKindResolver = (clipKind, presetId) => {
   if (presetId !== undefined) {
@@ -635,6 +729,7 @@ export const DEFAULT_CLIP_KIND_RESOLVER: ClipKindResolver = (clipKind, presetId)
   if (clipKind === 'newsTicker') return newsTickerBinding;
   if (clipKind === 'standings') return standingsBinding;
   if (clipKind === 'caption') return captionBinding;
+  if (clipKind === 'fullScreen') return fullScreenBinding;
   return undefined;
 };
 
