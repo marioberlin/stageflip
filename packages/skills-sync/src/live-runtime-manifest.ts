@@ -132,6 +132,14 @@ export const LIVE_RUNTIME_MANIFEST: ClipsCatalogPkg = {
         // ms-progress karaoke wipe; per-line entrance; optional
         // glow halo on the active line)
         'lyrics',
+        // T-321 — title-sequence primitive (multi-shot prestige-TV
+        // title compositor with four sealed style bundles:
+        // `'letterform-assemble'` / `'plate-and-credits'` /
+        // `'palette-jump-cut'` / `'photographic-overlay'`; five shot
+        // kinds; three transition kinds with single-active + 1-shot
+        // overlap on fade / dissolve; per-letter staggered entry;
+        // viewport-fill ALL-CAPS letterforms; optional glow halo)
+        'titleSequence',
       ],
     },
   ],

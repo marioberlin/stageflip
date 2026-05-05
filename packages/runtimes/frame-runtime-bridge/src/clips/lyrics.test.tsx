@@ -482,8 +482,8 @@ describe('lyricsClip definition (T-322)', () => {
     });
   });
 
-  it('ALL_BRIDGE_CLIPS includes lyricsClip and is length 49', () => {
-    expect(ALL_BRIDGE_CLIPS.length).toBe(49);
+  it('ALL_BRIDGE_CLIPS includes lyricsClip and is length 50', () => {
+    expect(ALL_BRIDGE_CLIPS.length).toBe(50);
     expect(ALL_BRIDGE_CLIPS.some((c) => c.kind === 'lyrics')).toBe(true);
   });
 });
