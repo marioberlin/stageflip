@@ -140,9 +140,54 @@ const bigNumberBinding: ClipKindBinding = {
   },
 };
 
-/** v1 default resolver — `bigNumber → animated-value`. */
+/**
+ * Cricket ball-by-ball outcome → chip color mapping (T-358). Universal cricket
+ * broadcast canon documented in `skills/stageflip/presets/data/cricket-ball-by-ball-dots.md`
+ * § Visual tokens. Keys are outcome glyphs as they appear on a scorecard:
+ * `'.'` (or `0`) for a dot ball, `'1'`/`'2'`/`'3'` for runs, `'4'`/`'6'` for
+ * boundaries, `'W'` for a wicket. The mapping is preset-defining; do NOT
+ * re-theme even for tenant brand contrast.
+ */
+export const CRICKET_OUTCOME_COLORS: Readonly<Record<string, string>> = {
+  '.': '#666666',
+  '0': '#666666',
+  '1': '#FFFFFF',
+  '2': '#00B4D8',
+  '3': '#00B4D8',
+  '4': '#00B54A',
+  '5': '#00B4D8',
+  '6': '#FFCD00',
+  W: '#CC0000',
+};
+
+// Canonical six-ball over per T-358 D-T358-3 — one mid-hold variant exposing
+// all six outcome colors in a single frame: single (white), dot (gray), four
+// (green), six (gold), wicket (red), two (cyan). All six chip colors from
+// the cricket canon palette appear in this single frame.
+const CRICKET_CANONICAL_OVER: ReadonlyArray<string> = ['1', '.', '4', '6', 'W', '2'];
+
+const scoreBugDotsBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'outcome-row',
+  buildProps() {
+    // Single-variant per D-T358-3: variant axis is unused.
+    return {
+      chips: CRICKET_CANONICAL_OVER.map((outcome) => ({
+        color: CRICKET_OUTCOME_COLORS[outcome] ?? '#666666',
+        label: outcome,
+      })),
+      shape: 'circle',
+      chipSize: 'large',
+      outlineColor: '#0E0E12',
+      background: '#0E0E12',
+    };
+  },
+};
+
+/** v1 default resolver — `bigNumber → animated-value`, `scoreBug → outcome-row` (T-358). */
 export const DEFAULT_CLIP_KIND_RESOLVER: ClipKindResolver = (clipKind) => {
   if (clipKind === 'bigNumber') return bigNumberBinding;
+  if (clipKind === 'scoreBug') return scoreBugDotsBinding;
   return undefined;
 };
 

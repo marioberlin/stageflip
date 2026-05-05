@@ -6,6 +6,7 @@ import { rirDocumentSchema } from '@stageflip/rir';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  CRICKET_OUTCOME_COLORS,
   DEFAULT_CLIP_KIND_RESOLVER,
   F1_SECTOR_STATE_COLORS,
   GenerateFixtureUnavailableError,
@@ -64,6 +65,31 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     if (!binding) throw new Error('test setup');
     const props = binding.buildProps('unknownVariant');
     expect(props.color).toBeUndefined();
+  });
+
+  it('resolves scoreBug to outcome-row on the frame-runtime (T-358 D-T358-4)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('scoreBug');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('outcome-row');
+  });
+
+  it('builds scoreBug props as a six-chip canonical over with cricket-canon colors (T-358)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('scoreBug');
+    if (!binding) throw new Error('test setup');
+    const props = binding.buildProps(undefined);
+    expect(props.shape).toBe('circle');
+    expect(Array.isArray(props.chips)).toBe(true);
+    const chips = props.chips as ReadonlyArray<{ color: string; label: string }>;
+    expect(chips).toHaveLength(6);
+    // Canonical over: 1, ., 4, 6, W, 2 — exposes all six outcome palette colors in one frame.
+    expect(chips.map((c) => c.label)).toEqual(['1', '.', '4', '6', 'W', '2']);
+    expect(chips[0]?.color).toBe(CRICKET_OUTCOME_COLORS['1']);
+    expect(chips[1]?.color).toBe(CRICKET_OUTCOME_COLORS['.']);
+    expect(chips[2]?.color).toBe(CRICKET_OUTCOME_COLORS['4']);
+    expect(chips[3]?.color).toBe(CRICKET_OUTCOME_COLORS['6']);
+    expect(chips[4]?.color).toBe(CRICKET_OUTCOME_COLORS.W);
+    expect(chips[5]?.color).toBe(CRICKET_OUTCOME_COLORS['2']);
   });
 });
 
