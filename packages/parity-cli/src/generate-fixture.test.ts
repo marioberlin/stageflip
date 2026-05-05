@@ -16,6 +16,7 @@ import {
   OLYMPIC_CANONICAL_STANDINGS,
   PRESET_ID_BINDINGS,
   type PresetForRender,
+  TIKTOK_CANONICAL_WORDS,
   buildPresetDocument,
   createGenerateFixtureRenderer,
 } from './generate-fixture.js';
@@ -440,6 +441,112 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
       'million',
       'dollars',
     ]);
+  });
+
+  // T-364 — third `caption` clipKind preset (`tiktok-rounded-box`), routed
+  // via the per-presetId override path (D-T364-4). The clipKind-default
+  // (T-362's `captionBinding` with style 'hormozi') stays unchanged; T-363's
+  // `mrbeast-komika-axis` override stays unchanged; only `tiktok-rounded-box`
+  // resolves to `tiktokBinding`. First Cluster F preset to render
+  // `backdrop: 'pill'` and the `'slide-from-bottom'` entrance.
+
+  it('routes tiktok-rounded-box through the per-preset override binding (T-364 AC #12)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'tiktok-rounded-box');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('caption');
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('tiktok');
+    const words = props?.words as ReadonlyArray<{
+      text: string;
+      startMs: number;
+      endMs: number;
+      emphasis?: string;
+    }>;
+    expect(Array.isArray(words)).toBe(true);
+    expect(words).toHaveLength(5);
+    expect(words.map((w) => w.text)).toEqual(['Wait', 'until', 'you', 'see', 'this']);
+    // No emphasis on any word — TikTok bundle's highlightColor === foreground,
+    // so the pill backdrop IS the emphasis, not a per-word color shift
+    // (D-T364-13).
+    for (const w of words) {
+      expect(w.emphasis).toBeUndefined();
+    }
+    expect(props?.background).toBe('#5A5A5A');
+    const position = props?.position as {
+      x: number;
+      y: number;
+      width: number;
+      alignment: string;
+    };
+    expect(position.x).toBe(128);
+    expect(position.y).toBe(360);
+    expect(position.width).toBe(1024);
+    expect(position.alignment).toBe('center');
+  });
+
+  it('PRESET_ID_BINDINGS exposes the tiktok-rounded-box override (T-364)', () => {
+    expect(PRESET_ID_BINDINGS['tiktok-rounded-box']).toBeDefined();
+    expect(PRESET_ID_BINDINGS['tiktok-rounded-box']?.clipName).toBe('caption');
+  });
+
+  it('falls through to captionBinding for hormozi-montserrat-black after T-364 lands (T-364 AC #14 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'hormozi-montserrat-black');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('hormozi');
+  });
+
+  it('routes mrbeast-komika-axis after T-364 lands (T-364 AC #15 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'mrbeast-komika-axis');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('mrbeast');
+  });
+
+  it('exports TIKTOK_CANONICAL_WORDS with five entries totalling 2000 ms (T-364 AC #13)', () => {
+    expect(TIKTOK_CANONICAL_WORDS).toHaveLength(5);
+    const total = TIKTOK_CANONICAL_WORDS.reduce((acc, w) => acc + (w.endMs - w.startMs), 0);
+    expect(total).toBe(2000);
+    // Each word is 400 ms (slower than Hormozi's 300 ms; faster than MrBeast's
+    // 350 ms emphasis-heavy register per D-T364-6).
+    for (const w of TIKTOK_CANONICAL_WORDS) {
+      expect(w.endMs - w.startMs).toBe(400);
+    }
+    // Word 4 ('see', 1200..1600) is the active word at frame 45 (= 1500 ms);
+    // word 5 ('this', 1600..2000) is mid-slide-from-bottom entrance at frame 45.
+    const word4 = TIKTOK_CANONICAL_WORDS[3];
+    expect(word4?.text).toBe('see');
+    expect(word4?.startMs).toBe(1200);
+    expect(word4?.endMs).toBe(1600);
+    const word5 = TIKTOK_CANONICAL_WORDS[4];
+    expect(word5?.text).toBe('this');
+    expect(word5?.startMs).toBe(1600);
+    expect(word5?.endMs).toBe(2000);
+  });
+
+  it('routes tiktok-rounded-box through the renderer-side override (T-364 AC #12 round-trip)', async () => {
+    const renderSpy = vi
+      .fn<(doc: unknown, frame: number) => Promise<Uint8Array>>()
+      .mockResolvedValue(new Uint8Array([0]));
+    const renderer = createGenerateFixtureRenderer({
+      resolver: DEFAULT_CLIP_KIND_RESOLVER,
+      render: renderSpy as unknown as Parameters<typeof createGenerateFixtureRenderer>[0]['render'],
+    });
+    await renderer.render({
+      preset: presetWith('caption', 'tiktok-rounded-box', 'captions'),
+      composition: COMPOSITION,
+      frame: 45,
+    });
+    const [doc] = renderSpy.mock.calls[0] ?? [];
+    const parsed = rirDocumentSchema.parse(doc);
+    const element = parsed.elements[0];
+    if (!element || element.content.type !== 'clip') throw new Error('expected clip element');
+    expect(element.content.params).toMatchObject({
+      style: 'tiktok',
+    });
+    const params = element.content.params as { words: ReadonlyArray<{ text: string }> };
+    expect(params.words.map((w) => w.text)).toEqual(['Wait', 'until', 'you', 'see', 'this']);
   });
 
   it('builds scoreBug props as a six-chip canonical over with cricket-canon colors (T-358)', () => {

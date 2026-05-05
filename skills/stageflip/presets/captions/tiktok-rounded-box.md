@@ -3,54 +3,91 @@ id: tiktok-rounded-box
 cluster: captions
 clipKind: caption
 source: docs/compass_artifact.md#tiktok-auto-captions
-status: stub
+status: substantive
 preferredFont:
   family: TikTok Sans
   license: platform-byo
 fallbackFont:
   family: Source Sans 3
-  weight: 600
+  weight: 700
   license: ofl
 permissions: []
 signOff:
-  parityFixture: pending-user-review
+  parityFixture: 'signed:2026-05-04'
   typeDesign: pending-cluster-batch
 ---
 
 # TikTok-style — rounded-box caption
 
+TikTok's signature auto-caption register: per-word rounded-pill backdrops, modest sentence-case sans (NOT heavy stroke like Hormozi or MrBeast), high-contrast white foreground on near-opaque black pills, slide-from-bottom per-word entrance, mobile-vertical-friendly. Common uses: short-form vertical voiceover (TikTok / Reels / Shorts cross-posts), viral content, voiceover-driven storytelling, talking-head clips where the pill provides local contrast over arbitrary footage. The register is so platform-recognizable that content reposted to Reels or Shorts still reads as "TikTok-style"; the pill backdrop carries the read regardless of the underlying video.
+
+This preset is the **third Cluster F preset to land** AND the **first Cluster F preset to render with `backdrop: 'pill'`** AND the **first Cluster F preset to use the `'slide-from-bottom'` entrance branch**. T-362's `hormozi-montserrat-black` took the clipKind-default `caption → caption` slot; T-363's `mrbeast-komika-axis` added the first per-presetId override in cluster F (`PRESET_ID_BINDINGS['mrbeast-komika-axis']`); T-364 follows T-363's mechanism — `PRESET_ID_BINDINGS['tiktok-rounded-box']` — because the `'tiktok'` style bundle differs from T-362's `'hormozi'` along multiple axes (`backdrop: 'pill'` vs `'none'`; `casing: 'as-is'` vs `'uppercase'`; `strokeWidth: 0` vs `6`; `entrance: 'slide-from-bottom'` vs `'rise'`). Sister Cluster F presets (T-365 ali-abdaal / T-366 netflix / T-367 karaoke-progressive-wipe) follow the same per-presetId override pattern.
+
 ## Visual tokens
-- Rounded-corner background box (radius 12 px @ 1080p)
-- Box fill: black `#000000` @ 60–80% opacity (configurable per scene contrast)
-- Text: white `#FFFFFF`
-- 3–5 words per line at most, often 2–3
-- Position: center or upper-center (avoiding the bottom 20–25% where TikTok UI overlays)
-- Padding inside box: 12 px horizontal, 8 px vertical
+
+The per-word pill IS the message AND the contrast layer. Layout (1280×720 default; 1080×1920 vertical re-anchors higher to keep captions out of the bottom 20–25% reserved for TikTok platform UI):
+
+- **Caption block** sits center-screen — `position: { x: 128, y: 360, width: 1024, alignment: 'center' }` on the parity composition (10% inset, vertical center, 80% width). At 72 px font size the five-word phrase fits comfortably one-line. Differentiates from T-362's lower-third (y=432) and T-363's upper-center (y=200; size-108 wrapped) anchors in the parity-golden corpus. On vertical compositions the same percentages re-anchor higher — bottom 20–25% is reserved for platform UI (like / comment / share / sound buttons) and authoring tools should auto-shift to upper-center if the source video has prominent foreground in that band.
+- **Per-word rounded pill backdrop**. Each word gets its own SVG `<rect>` overlay inside its `<span>` wrapper at `position: absolute; zIndex: -1`. `pillRadius = backdropRadius ?? wordHeight / 2 + backdropPadding.y` (default ≈ full-height rounding → fully-rounded pill on short words). Pills are NOT a single full-line rect (which is the `backdrop === 'rect'` Netflix path, T-366) — the per-word pill is the TikTok signature.
+- **Pill fill** is `background: '#000000'` from the `'tiktok'` STYLE_BUNDLE at `fillOpacity: 0.9` (`backdropOpacity` 0.9). Near-opaque black gives the white text guaranteed AAA contrast; the 0.1 transparency softens the pill against arbitrary video without losing legibility.
+- **Text** renders white `#FFFFFF` (`foreground`). `highlightColor` and `muteColor` ALSO equal `#FFFFFF` — no per-word color shift. The pill backdrop IS the visual emphasis (not a color cycling like MrBeast or a single highlight like Hormozi). Active words and rest words render identically; the pill is the signal.
+- **No stroke.** `strokeWidth: 0`. The pill provides local contrast; a stroke would compete and feel heavy. This distinguishes the TikTok register from Hormozi (6 px stroke) and MrBeast (5 px stroke).
+- **No drop shadow / no glow.** The pill IS the effect. Compose-time foreground filters (e.g., to add a subtle motion-blur on the slide entrance) are tenant authoring concerns, not preset contract.
+- **Background** is the canvas backdrop — captions overlay on video at compose time. The CaptionClip primitive's container is `transparent` and the `background` prop is consumed by the per-word pill SVG (NOT the canvas) because `backdrop !== 'none'`. The parity golden's documented intent is a mid-tone neutral `#5A5A5A` (35% lightness) so the pills (black @ 0.9 opacity) read as dark rounded rects against the gray; if the host bundle's canvas defaults to white, the pills still read (black-on-white) — the per-word pill contrast is the signature, not the canvas color (D-T364-11). Same canvas-bleed quirk as T-362 / T-363 — flagged on the primitive side; less impactful here because the pills supply local contrast.
 
 ## Typography
-- TikTok Sans fallback (Source Sans 3): platform-native register
-- Semibold (600), 32–42 pt @ 1080p
-- Sentence case (mixed case)
+
+- **`preferredFont: TikTok Sans`** (TikTok-platform license, `platform-byo`). TikTok Sans launched May 2023 as TikTok's native typeface; the license is platform-internal and not redistributable, so tenants embedding this preset commercially cannot bundle TikTok Sans. The host pipeline does not preload TikTok Sans. The bundle's `font.family` ships `SYSTEM_FONT_STACK` (`-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif`) — when authoring contexts can't load TikTok Sans, the system stack renders. In headless puppeteer for the parity golden, the system fallback is typically Helvetica (macOS) or Liberation Sans (Linux); the visual register (sentence-case + per-word pill + slide entrance + white-on-pill) reads independently of the precise glyph set.
+- **`fallbackFont: Source Sans 3`** (SIL OFL 1.1 via Google Fonts), weight `700`. Source Sans 3 is the cleanest license-friendly OFL substitute for TikTok Sans's neutral platform-sans register. Weight `700` matches the bundle's `font.weight: 700` (the original stub said 600 — reconciled to 700 per D-T364-7). Source Sans 3 ships weights 200–900; weight 700 reads natively at the bundle's 72 px size. Not in the bundle's font stack — if a Reviewer judges the system fallback breaks register, the Implementer may override `font.family: 'Source Sans 3, ${SYSTEM_FONT_STACK}'` in `buildProps`; v1 leaves this unoverridden and accepts the system fallback (FontManager preload is the primitive-side fix, flagged for follow-up — T-362 carryover).
+- **`fontSize: 72`** (the bundle's default). Smaller than Hormozi's 96 px and MrBeast's 108 px — TikTok's register is more conversational and sits at the canvas-center rather than dominating the lower-third. At 1280 px composition width, five short words at 72 px (system stack 700) fit comfortably one-line.
+- **`casing: 'as-is'`** (the bundle's default). NOT uppercase — TikTok's algorithmic canon is sentence case (mixed case). Uppercase reads as Hormozi or MrBeast register; sentence case is the platform-native distinguishing posture. Applied at render time via the primitive's `applyCasing` helper; the underlying `WordTiming.text` payload preserves authored case for transcript editing.
+- **Tabular numerals are not relevant** — this register is text-heavy; numeric content (dollar amounts, percentages) uses the bigNumber preset family (Cluster E) when isolation is needed.
 
 ## Animation
-- Auto-generated captions appear line-by-line, synced to speech
-- Box scales in: 0.95 → 1.0 with brief fade, 200 ms
-- Internal text appears with the box — no word-level animation
-- Snap-cut replacement between lines
+
+- **Word entrance** uses the `'slide-from-bottom'` mode with `staggerMs: 80`. The entrance branch shares the `'rise'` math (`caption.tsx` lines 281–288): `translateY` interpolates `[SLIDE_DISTANCE_PX, 0]` over `ENTRANCE_FRAMES = 12` frames (linear); opacity `[0, 1]` linear over the same window. Each word's entrance starts `i * staggerMs` ms BEFORE its `startMs` so by the time the word is active the entrance has fully settled. The `'rise'` and `'slide-from-bottom'` enums share the same render branch in v1; the spec-level distinction is nominal — `'rise'` for Hormozi-feel, `'slide-from-bottom'` for TikTok-feel — preserved so style bundles can declare intent.
+- **Slide-mid-flight at the parity frame**: word 5 (`'this'`) has `startMs: 1600`, index 4, stagger 80 → entrance start frame `(1600 - 4 × 80) / 1000 × 30 = 38.4`; settles by frame `38.4 + 12 = 50.4`. Frame 45 (parity reference) lies inside the entrance window `[38.4, 50.4]` — word 5 renders at intermediate opacity ≈ 55% and translateY ≈ 18 px below its final position. The parity golden therefore captures the slide entrance IN MOTION (the preset's named feature) rather than a fully-settled state. Words 1–4 have all settled by frame 45 (last-of-the-four — word 4 — entrance settles at frame `(1200 - 3 × 80) / 1000 × 30 + 12 = 40.8`).
+- **Active-word state at the parity frame.** A word becomes active when `currentTimeMs >= word.startMs && currentTimeMs < word.endMs`. At frame 45 (= 1500 ms) word 4 (`'see'`, `startMs: 1200, endMs: 1600`) is active. Because `highlightColor === foreground === '#FFFFFF'` in the TikTok bundle, the active word renders identically to rest words — no per-word color shift. The pill is the emphasis. This differs sharply from Hormozi (yellow active highlight) and MrBeast (red/yellow/green cycling).
+- **No active-word scale pulse.** TikTok captions don't bounce, scale, or pulse the active word — the slide-from-bottom entrance carries the visual accent, and once a word settles it stays static until the CaptionClip mount unmounts.
+- **No word-exit animation.** Past words remain visible at rest state (white on pill) until the CaptionClip mount is replaced by the next phrase. The unmount is a snap-cut.
+- **Snap-cut between caption events.** TikTok's auto-caption pacing is mid-fast — a fresh CaptionClip mount per 3–5-word line, with snap-cut replacement (no cross-fade). This preset's pacing budget is ~400 ms per word (slower than Hormozi at 300 ms; faster than MrBeast at 350 ms emphasis-heavy).
+- **Synced precisely to audio word-level timestamps** in production. The host pipeline (or tool agent) emits the `WordTiming[]` from a transcript-with-timings source (Whisper word-level, ElevenLabs alignment, TikTok platform's auto-caption stream); the primitive consumes the array as data per T-316 D-T316-4 — no audio decoding inside the primitive.
 
 ## Rules
-- Bottom 20–25% of vertical-video frame is reserved for TikTok UI (like / comment / share / sound). Default position is center; auto-shift to upper-center if the source video has prominent foreground.
-- Rounded-corner box IS the effect — do not add stroke or shadow.
-- Sentence case, not ALL CAPS — TikTok's algorithmic canon is mixed case.
-- Cross-platform reposting: this style is so platform-recognizable that content reposted to Reels or Shorts still reads as TikTok. Own that.
-- Word-level animation is NOT this register — that's Hormozi or MrBeast. TikTok auto-captions are line-based.
+
+- **Bound primitive**: `caption` from `@stageflip/runtimes-frame-runtime-bridge` (`packages/runtimes/frame-runtime-bridge/src/clips/caption.tsx`, exported as `Caption` + `captionClip`). The `caption` `clipKind` is in `VALID_CLIP_KINDS` (per T-316 D-T316-13, `scripts/check-preset-integrity.ts`); the v1 resolver in `packages/parity-cli/src/generate-fixture.ts` routes `tiktok-rounded-box` via `PRESET_ID_BINDINGS['tiktok-rounded-box']` (T-364 D-T364-4) — the per-presetId override path established by T-360 D-T360-2. Composing tools should mount `Caption` with `style: 'tiktok'`, a `WordTiming[]` payload, and a `position` — the bundle supplies font / casing / foreground / pill backdrop / opacity / entrance / stagger defaults.
+- **Word-level timing is mandatory.** The primitive consumes `WordTiming[]` (`{ text, startMs, endMs, emphasis? }`); sentence-level captions are wrong for this register because the per-word pill backdrop depends on per-word bounding boxes and the slide-from-bottom entrance is per-word with stagger. Tenants without word-level timestamps must split sentences upstream (Whisper word-level alignment, TikTok platform's auto-caption stream).
+- **`style: 'tiktok'` is the canonical enum value.** Per-prop overrides (custom `font`, `backdrop`, `entrance`) win over the bundle defaults but break the visual register; document any override in the composition's authoring metadata. The bundle's defaults are the contract.
+- **Per-word pill backdrop is the signature.** `backdrop: 'pill'` renders one rounded rect per word, NOT a single full-line rect. Authored snapshots SHOULD aggregate at most 3–5 short words per CaptionClip mount; longer phrases break the platform-recognizable line-wrap rhythm.
+- **Sentence case (NOT uppercase) is the platform canon.** TikTok's algorithmic auto-captions emit mixed case; uppercase reads as Hormozi / MrBeast register. The bundle's `casing: 'as-is'` honors authored case.
+- **No stroke.** The pill provides local contrast; tenants must not add stroke / shadow / glow over the bundle's `strokeWidth: 0`. The pill IS the effect.
+- **Bottom 20–25% of vertical-video frame is reserved for TikTok UI** (like / comment / share / sound). Default vertical position is center / upper-center; auto-shift to upper-center if the source video has prominent foreground. The parity composition is landscape (1280×720) so this rule is only documented; the parity contract is the visual register, not the canvas aspect.
+- **Cross-platform reposting.** This style is so platform-recognizable that content reposted to Reels or Shorts still reads as TikTok. Own that — do not "neutralize" the pill or shift to a generic register on cross-post.
+- **Word-level animation IS this register** (slide-from-bottom). The original stub said "Internal text appears with the box — no word-level animation"; the bundle DOES animate per-word with a slide-from-bottom + 80 ms stagger. Reconciled per D-T364-14.
+- **Theme slot mapping**: `background`, `foreground`, `highlightColor`, `muteColor`, `strokeColor` map to palette roles per `captionClip.themeSlots`. Tenant theme overrides flow through these slots at composition time without touching the preset; tenants overriding `highlightColor` to a non-white shade should also reconsider whether the `'tiktok'` register is the right preset (mid-shade highlight reads as Hormozi).
+- **Reference frame for parity is mid-flight (frame 45)** — `currentTimeMs = 1500 ms` at 30 fps. By the primitive's word-visibility rule four words are visible (1–4); by the active rule word 4 (`'see'`, `startMs: 1200, endMs: 1600`) is active; word 5 (`'this'`, `startMs: 1600`) is mid-slide-from-bottom (entrance window 38.4..50.4; frame 45 ≈ 55% opacity, ~18 px below final). The parity golden documents the entrance IN MOTION — the preset's named feature.
+- **No live data.** The `permissions` array is empty; no network call, no telemetry source. Audio sync / live transcription is a host concern.
 
 ## Acceptance (parity)
-- Reference frames: 0 (pre-line), 6 (box mid-scale), 12 (settled), 60 (replaced by next line)
-- PSNR ≥ 42 dB, SSIM ≥ 0.98
+
+One reference-frame fixture at `frame: 45` (mid-flight slide entrance per ADR-004 §D5; D-T364-6):
+
+- `golden-frame-45.png` — five-word phrase `Wait until you see this` rendered at the system-stack fallback (TikTok Sans not preloaded; Source Sans 3 OFL fallback also not in the bundle's stack — primitive-side FontManager preload concern flagged for follow-up, T-362 carryover) at 72 px sentence-case 700 weight; each of the four settled words (`Wait` / `until` / `you` / `see`) wrapped in a per-word fully-rounded `#000000`-fill pill at 0.9 opacity; word 5 (`this`) mid-slide-from-bottom at ~55% opacity ~18 px below its settled position; NO black stroke (strokeWidth 0); NO per-word color shift on the active word (`highlightColor === foreground === '#FFFFFF'`); the per-word pill IS the visual emphasis. Background is the host bundle's default canvas color (the `background: '#5A5A5A'` declared in the resolver's `buildProps` is unreachable per the primitive's `backdrop: 'pill'` rule routing the bundle's `background: '#000000'` into the per-word pill rects; the canvas-bleed quirk inherited from T-362 / T-363 means the canvas color comes from the host composition default — same posture as siblings); the pills carry the read regardless.
+
+Thresholds: **PSNR ≥ 42 dB**, **SSIM ≥ 0.98** (stricter than the generator default `35 / 0.95`; mirrors the cluster-E / cluster-F sister presets per D-T364-9). The preset-driven-thresholds follow-up flagged during T-359b is the formal mechanism for per-preset deviation; for now the threshold values are hand-pinned in `parity-fixtures/captions/tiktok-rounded-box/thresholds.json` post-generation. A pill-backdrop caption with no stroke and one mid-slide word is more antialiasing-sensitive on the slide-mid-flight word than fully-settled cluster F captions BUT the four settled words + their pill rects are crisp at frame 45 — comparable to the settled state of T-362 / T-363.
+
+**Sign-off (D-T364-8, in-PR):** the canonical mid-flight golden is committed at `parity-fixtures/captions/tiktok-rounded-box/` with the single-variant manifest shape (no `variants` key, per T-359a backward compat). Frontmatter `signOff.parityFixture` flips to `signed:<today UTC>` via `pnpm tsx scripts/generate-preset-parity-fixture-prod.ts --preset=tiktok-rounded-box --frame=45 --mark-signed`. Frontmatter `signOff.typeDesign` STAYS `pending-cluster-batch` — Cluster F is in `TYPE_DESIGN_REQUIRED_CLUSTERS` (`scripts/check-preset-integrity.ts`); T-368 batch type-design review (paired with `reviews/type-design-consultant-cluster-f.md`) flips this to `signed:<date>` for every Cluster F preset in one batch, NOT in this PR. Re-render + re-sign with `--force` is the operator's path if the FontManager preload list updates the rendered TikTok Sans or Source Sans 3 face or the canonical phrase changes.
 
 ## References
-- `docs/compass_artifact.md` § TikTok auto-captions
-- Originally Proxima Nova Semibold; replaced by TikTok Sans (May 2023)
-- Gap clip T-316 (`CaptionClip`)
-- ADR-004
+
+- `docs/compass_artifact.md` § TikTok auto-captions — canonical visual source (note: on-disk path mismatch flagged for resolution; integrity invariant 7 SKIPped globally per T-358 D-T358-9).
+- `packages/runtimes/frame-runtime-bridge/src/clips/caption.tsx` — the bound primitive (`Caption`, `captionClip`); the `'tiktok'` STYLE_BUNDLES bundle (lines 164–178) is the source of truth for font / casing / foreground / pill backdrop / opacity / entrance / stagger defaults; per-word pill rendering in the `backdrop === 'pill'` branch (lines 642–668); slide-from-bottom math shared with `'rise'` (lines 281–288).
+- `packages/parity-cli/src/generate-fixture.ts` — v1 resolver routing `tiktok-rounded-box` via `PRESET_ID_BINDINGS['tiktok-rounded-box']` plus the exported `TIKTOK_CANONICAL_WORDS` five-word snapshot (T-364 D-T364-4 / D-T364-6).
+- `skills/stageflip/presets/captions/hormozi-montserrat-black.md` — first cluster F preset (T-362; clipKind-default `caption → caption` precedent + canvas-bleed quirk inherited).
+- `skills/stageflip/presets/captions/mrbeast-komika-axis.md` — second cluster F preset (T-363; first per-presetId override in cluster F; pattern T-364 mirrors).
+- `skills/stageflip/presets/captions/SKILL.md` — Cluster F conventions (owned by T-368).
+- `skills/stageflip/concepts/captions/SKILL.md` — caption concept (transcription, packing, word-level timing).
+- `docs/tasks/T-316.md` — CaptionClip primitive spec (the central dep); D-T316-2 (`tiktok` STYLE_BUNDLE), D-T316-8 (per-word pill rendering).
+- `docs/tasks/T-360.md` — per-presetId override mechanism (the central dep for T-364's resolver path); D-T360-2.
+- ADR-004 (preset system contract — frontmatter, loader, validator, parity sign-off, integrity invariants).
+- TikTok Sans launched May 2023 as TikTok's native typeface (replacing Proxima Nova Semibold).

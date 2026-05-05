@@ -422,6 +422,62 @@ const mrbeastBinding: ClipKindBinding = {
 };
 
 /**
+ * `tiktok-rounded-box` (T-364) — third `caption`-clipKind preset, bound to the
+ * same `caption` primitive (T-316) as T-362's `hormozi-montserrat-black` and
+ * T-363's `mrbeast-komika-axis` but parameterized for TikTok's auto-caption
+ * register: the `'tiktok'` style bundle on the primitive supplies the system
+ * sans 700 + sentence-case + white-on-white-pill foreground/highlight + zero
+ * stroke + per-word `backdrop: 'pill'` at 0.9 opacity + `slide-from-bottom`
+ * entrance with 80 ms stagger defaults — `buildProps` only declares `words`,
+ * `style`, `position`, and the documentation backdrop, leaving the bundle to
+ * drive the visual register (D-T364-4 / D-T364-13 / D-T364-14). Mid-hold at
+ * frame 45 (= 1500 ms @ 30fps) lands word 4 (`'see'`) as the active word and
+ * word 5 (`'this'`) mid-slide-from-bottom — capturing the entrance in motion
+ * (D-T364-6). No `emphasis` field on any word — TikTok bundle's
+ * `highlightColor` equals `foreground` so the pill backdrop IS the visual
+ * emphasis, not a per-word color shift.
+ */
+export const TIKTOK_CANONICAL_WORDS: ReadonlyArray<{
+  readonly text: string;
+  readonly startMs: number;
+  readonly endMs: number;
+}> = [
+  { text: 'Wait', startMs: 0, endMs: 400 },
+  { text: 'until', startMs: 400, endMs: 800 },
+  { text: 'you', startMs: 800, endMs: 1200 },
+  { text: 'see', startMs: 1200, endMs: 1600 },
+  { text: 'this', startMs: 1600, endMs: 2000 },
+];
+
+const tiktokBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'caption',
+  buildProps() {
+    return {
+      words: TIKTOK_CANONICAL_WORDS.map((w) => ({ ...w })),
+      style: 'tiktok',
+      // Center-screen per D-T364-12, scaled to the 1280×720 default
+      // composition: 10% inset (x=128), vertical center (y=360), 80% width
+      // (1024). Differentiates from T-362's lower-third (y=432) anchor and
+      // T-363's upper-center (y=200, shifted up to fit 108px caps wrap) in
+      // the parity-golden corpus. TikTok's vertical-mobile register is
+      // typically center / upper-center to avoid the bottom 20–25% reserved
+      // for platform UI; the parity composition is landscape so true
+      // center-screen reads as the canvas center.
+      position: { x: 128, y: 360, width: 1024, alignment: 'center' as const },
+      // Documentation-only — same canvas-bleed quirk as T-362 / T-363 (the
+      // bundle's `background: '#000000'` is rendered into the per-word pill
+      // rects via `backdrop: 'pill'`, NOT the canvas). The pills supply
+      // local contrast against the host canvas regardless of the canvas
+      // backdrop color (D-T364-11). Mid-tone gray here is the spec's
+      // documented intent for legibility against pills; if the canvas
+      // bleeds white, the black-on-white pills still read.
+      background: '#5A5A5A',
+    };
+  },
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -431,6 +487,7 @@ const mrbeastBinding: ClipKindBinding = {
 export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'big-number-stat-impact': bigNumberStatImpactBinding,
   'mrbeast-komika-axis': mrbeastBinding,
+  'tiktok-rounded-box': tiktokBinding,
 };
 
 /**
