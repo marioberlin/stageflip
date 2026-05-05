@@ -539,6 +539,70 @@ const aliAbdaalBinding: ClipKindBinding = {
 };
 
 /**
+ * `netflix-invisible` (T-366) — fifth `caption`-clipKind preset, bound to the
+ * same `caption` primitive (T-316) as T-362 / T-363 / T-364 / T-365 but
+ * parameterized for Netflix's strict-accessibility long-form-video subtitle
+ * register: the `'netflix'` style bundle on the primitive supplies Netflix
+ * Sans / Inter weight 500 + sentence-case + `#FFFFFF` foreground +
+ * `highlightColor` === `muteColor` === `foreground` (no color shift on the
+ * active word) + **`muteOpacity: 0`** (the strictest possible — past / future
+ * visible words render at zero opacity, completely invisible) +
+ * `strokeWidth: 1` (subtle black stroke for canvas-bleed contrast) +
+ * `backdrop: 'rect'` at `0.7` opacity (translucent black rectangle behind the
+ * active word) + `entrance: 'none'` (no per-word animation) + `staggerMs: 0`
+ * defaults — `buildProps` only declares `words`, `style`, and `position`,
+ * leaving the bundle to drive the visual register (D-T366-4 / D-T366-13).
+ * Mid-hold at frame 45 (= 1500 ms @ 30fps) lands word 4 (`'for'`,
+ * `startMs: 1200, endMs: 1600`) as the **only visible word**: words 1–3
+ * render at opacity 0 (past — `muteOpacity: 0` makes them effectively
+ * invisible per T-316a's routing fix); word 5 (`'everyone'`, `startMs: 1600`)
+ * is below its `startMs` so not yet rendered. No `emphasis` field on any
+ * word — visibility comes from active-vs-rest routing with `muteOpacity: 0`,
+ * not from per-word emphasis tags. The strictest active-word emphasis in the
+ * cluster F register space; distinguishes from T-365's `muteOpacity: 0.6`
+ * faint-ghost karaoke and from T-362 / T-363 / T-364's `muteOpacity: 1`
+ * no-mute registers (D-T366-13). Black-bundle-on-canvas posture is the same
+ * as T-362 / T-363 (D-T366-11): the bundle's `background: '#000000'` is
+ * declared but only honored when `backdrop !== 'none'` — `backdrop: 'rect'`
+ * renders a translucent black rectangle ONLY behind the active word's region,
+ * NOT a full-canvas backdrop.
+ */
+export const NETFLIX_CANONICAL_WORDS: ReadonlyArray<{
+  readonly text: string;
+  readonly startMs: number;
+  readonly endMs: number;
+}> = [
+  { text: 'Captions', startMs: 0, endMs: 400 },
+  { text: 'enable', startMs: 400, endMs: 800 },
+  { text: 'accessibility', startMs: 800, endMs: 1200 },
+  { text: 'for', startMs: 1200, endMs: 1600 },
+  { text: 'everyone', startMs: 1600, endMs: 2000 },
+];
+
+const netflixBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'caption',
+  buildProps() {
+    return {
+      words: NETFLIX_CANONICAL_WORDS.map((w) => ({ ...w })),
+      style: 'netflix',
+      // Bottom-of-frame anchor per D-T366-12 — Netflix's accessibility-caption
+      // convention sits below T-362 / T-365's lower-third (y=432); 1280×720
+      // composition: 10% inset (x=128), 75% down (y=540), 80% width (1024).
+      // Differentiates from T-363 (y=200 upper-center) / T-364 (y=360 center)
+      // / T-362 + T-365 (y=432 lower-third) in the parity-golden corpus.
+      position: { x: 128, y: 540, width: 1024, alignment: 'center' as const },
+      // No `background` override — the bundle's `background: '#000000'` is
+      // declared but only honored when `backdrop !== 'none'` is full-line;
+      // the `'netflix'` bundle ships `backdrop: 'rect'` which renders a
+      // translucent black rectangle ONLY behind the active word's region,
+      // NOT a full-canvas backdrop. Black-bundle-on-canvas posture inherited
+      // from T-362 / T-363 (D-T366-11).
+    };
+  },
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -550,6 +614,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'mrbeast-komika-axis': mrbeastBinding,
   'tiktok-rounded-box': tiktokBinding,
   'ali-abdaal-opacity-karaoke': aliAbdaalBinding,
+  'netflix-invisible': netflixBinding,
 };
 
 /**
