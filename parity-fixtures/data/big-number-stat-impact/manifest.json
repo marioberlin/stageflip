@@ -1,0 +1,30 @@
+{
+  "name": "big-number-stat-impact",
+  "cluster": "data",
+  "kind": "bigNumber",
+  "description": "Parity fixture for preset 'big-number-stat-impact' (cluster data, kind bigNumber)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Inter Display",
+      "license": "ofl"
+    },
+    "fallback": {
+      "family": "Inter Display",
+      "weight": 800,
+      "license": "ofl"
+    }
+  }
+}

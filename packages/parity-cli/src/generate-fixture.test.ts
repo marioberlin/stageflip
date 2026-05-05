@@ -10,6 +10,7 @@ import {
   DEFAULT_CLIP_KIND_RESOLVER,
   F1_SECTOR_STATE_COLORS,
   GenerateFixtureUnavailableError,
+  PRESET_ID_BINDINGS,
   type PresetForRender,
   buildPresetDocument,
   createGenerateFixtureRenderer,
@@ -72,6 +73,59 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(binding).toBeDefined();
     expect(binding?.runtimeId).toBe('frame-runtime');
     expect(binding?.clipName).toBe('outcome-row');
+  });
+
+  // T-360 — per-preset binding overrides (D-T360-2). The bigNumber clipKind
+  // is now shared between f1-sector-purple-green (T-359) and big-number-stat-impact
+  // (T-360); the resolver disambiguates via the optional `presetId` arg.
+
+  it('resolves bigNumber + big-number-stat-impact to the impact binding (T-360 AC #11)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('bigNumber', 'big-number-stat-impact');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('animated-value');
+    const props = binding?.buildProps(undefined);
+    expect(props?.value).toBe(87.4);
+    expect(props?.decimals).toBe(1);
+    expect(props?.suffix).toBe('%');
+    expect(props?.fontSize).toBe(360);
+    expect(props?.fontWeight).toBe(800);
+  });
+
+  it('PRESET_ID_BINDINGS exposes the big-number-stat-impact override (T-360)', () => {
+    expect(PRESET_ID_BINDINGS['big-number-stat-impact']).toBeDefined();
+    expect(PRESET_ID_BINDINGS['big-number-stat-impact']?.clipName).toBe('animated-value');
+  });
+
+  it('falls through to bigNumberBinding for f1-sector-purple-green (T-360 AC #12 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('bigNumber', 'f1-sector-purple-green');
+    expect(binding).toBeDefined();
+    // T-359's binding sets fontWeight: 700; T-360's sets 800. The fall-through
+    // selection MUST land on T-359's binding for any presetId not in PRESET_ID_BINDINGS.
+    const props = binding?.buildProps(undefined);
+    expect(props?.value).toBe(21.412);
+    expect(props?.decimals).toBe(3);
+    expect(props?.fontWeight).toBe(700);
+  });
+
+  it('falls through to bigNumberBinding when presetId is omitted (T-360 AC #13 / T-359a)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('bigNumber');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.value).toBe(21.412);
+    expect(props?.decimals).toBe(3);
+    expect(props?.fontWeight).toBe(700);
+  });
+
+  it('falls through to scoreBugDotsBinding for cricket-ball-by-ball-dots (T-360 AC #14)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'cricket-ball-by-ball-dots');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('outcome-row');
+  });
+
+  it('still returns undefined for unknown clipKinds with an unknown presetId (T-360 AC #15)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind')).toBeUndefined();
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'unknown-preset')).toBeUndefined();
   });
 
   it('builds scoreBug props as a six-chip canonical over with cricket-canon colors (T-358)', () => {
@@ -211,6 +265,31 @@ describe('createGenerateFixtureRenderer', () => {
     const [doc, frame] = renderSpy.mock.calls[0] ?? [];
     expect(frame).toBe(60);
     expect(() => rirDocumentSchema.parse(doc)).not.toThrow();
+  });
+
+  it('routes big-number-stat-impact through the per-preset override binding (T-360)', async () => {
+    const renderSpy = vi
+      .fn<(doc: unknown, frame: number) => Promise<Uint8Array>>()
+      .mockResolvedValue(new Uint8Array([0]));
+    const renderer = createGenerateFixtureRenderer({
+      resolver: DEFAULT_CLIP_KIND_RESOLVER,
+      render: renderSpy as unknown as Parameters<typeof createGenerateFixtureRenderer>[0]['render'],
+    });
+    await renderer.render({
+      preset: presetWith('bigNumber', 'big-number-stat-impact'),
+      composition: COMPOSITION,
+      frame: 60,
+    });
+    const [doc] = renderSpy.mock.calls[0] ?? [];
+    const parsed = rirDocumentSchema.parse(doc);
+    const element = parsed.elements[0];
+    if (!element || element.content.type !== 'clip') throw new Error('expected clip element');
+    expect(element.content.params).toMatchObject({
+      value: 87.4,
+      decimals: 1,
+      suffix: '%',
+      fontWeight: 800,
+    });
   });
 
   it('passes variant-derived props into the RIRDocument', async () => {

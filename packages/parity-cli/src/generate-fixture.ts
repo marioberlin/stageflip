@@ -81,11 +81,15 @@ export interface ClipKindBinding {
  * `clipKind`. Returns `undefined` for unknown clipKinds; the renderer
  * surfaces this as a clean `RenderUnavailableError` (D-T359a-4 / AC #10).
  *
- * v1 ships a tiny built-in resolver covering `bigNumber` only; cluster
- * owners add entries as their first preset reaches sign-off. The dispatcher
- * (which would auto-derive the map from the registry) is a future task.
+ * The optional second `presetId` argument (T-360 D-T360-2) lets the resolver
+ * choose a per-preset binding when multiple presets share a `clipKind` —
+ * e.g., `f1-sector-purple-green` and `big-number-stat-impact` both bind to
+ * `bigNumber` but parameterize `animated-value` differently. Resolvers that
+ * don't need per-preset specialization simply ignore the argument; T-359
+ * callers that pass no `presetId` continue to fall through to the
+ * clipKind-only path.
  */
-export type ClipKindResolver = (clipKind: string) => ClipKindBinding | undefined;
+export type ClipKindResolver = (clipKind: string, presetId?: string) => ClipKindBinding | undefined;
 
 /** Marker error mirroring the script's `RenderUnavailableError`. Re-thrown by the binding. */
 export class GenerateFixtureUnavailableError extends Error {
@@ -184,8 +188,49 @@ const scoreBugDotsBinding: ClipKindBinding = {
   },
 };
 
-/** v1 default resolver — `bigNumber → animated-value`, `scoreBug → outcome-row` (T-358). */
-export const DEFAULT_CLIP_KIND_RESOLVER: ClipKindResolver = (clipKind) => {
+/**
+ * `big-number-stat-impact` (T-360) — second `bigNumber`-clipKind preset, bound
+ * to the same `animated-value` primitive as T-359 but parameterized for the
+ * universal "stat impact" beat (`87.4%` mid-hold per D-T360-3 + heavy-weight
+ * font register per D-T360-5). The underdamped spring's natural settle IS
+ * the impact beat (D-T360-4 — no scale-pulse).
+ */
+const bigNumberStatImpactBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'animated-value',
+  buildProps() {
+    return {
+      value: 87.4,
+      decimals: 1,
+      suffix: '%',
+      fontSize: 360,
+      fontWeight: 800,
+    };
+  },
+};
+
+/**
+ * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
+ * multiple presets can share a `clipKind` while parameterizing the same
+ * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
+ * check this map first; unknown ids fall through to the clipKind-only path,
+ * preserving T-358 / T-359 / T-359a behavior.
+ */
+export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
+  'big-number-stat-impact': bigNumberStatImpactBinding,
+};
+
+/**
+ * v1 default resolver — `bigNumber → animated-value`, `scoreBug → outcome-row`
+ * (T-358), with per-preset overrides for multi-preset-per-clipKind cases
+ * (T-360 D-T360-2). Per-preset entries take precedence; absent an override,
+ * the resolver falls back to the clipKind-only mapping.
+ */
+export const DEFAULT_CLIP_KIND_RESOLVER: ClipKindResolver = (clipKind, presetId) => {
+  if (presetId !== undefined) {
+    const override = PRESET_ID_BINDINGS[presetId];
+    if (override !== undefined) return override;
+  }
   if (clipKind === 'bigNumber') return bigNumberBinding;
   if (clipKind === 'scoreBug') return scoreBugDotsBinding;
   return undefined;
@@ -289,7 +334,12 @@ export function createGenerateFixtureRenderer(args: {
 }): FixtureRendererLike {
   return {
     async render(renderArgs) {
-      const binding = args.resolver(renderArgs.preset.frontmatter.clipKind);
+      // Pass `presetId` so the resolver can disambiguate multi-preset-per-clipKind
+      // bindings (T-360 D-T360-2). Resolvers ignoring the arg keep T-359 behavior.
+      const binding = args.resolver(
+        renderArgs.preset.frontmatter.clipKind,
+        renderArgs.preset.frontmatter.id,
+      );
       if (binding === undefined) {
         throw new GenerateFixtureUnavailableError(
           `no component bound for clipKind '${renderArgs.preset.frontmatter.clipKind}'`,
