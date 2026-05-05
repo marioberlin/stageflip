@@ -413,6 +413,24 @@ export {
   captionPropsSchema,
 } from './caption.js';
 
+// T-355a — magic-wall-panel primitive. Generic fullscreen layered
+// hierarchical-data panel of N (1..56) labeled, color-shaded region
+// tiles at absolute-positioned bounds (x / y / width / height per
+// region) with per-region color override; optional title + subtitle;
+// `valueFormat` dispatch (`'percent'` / `'count'` / `'raw'`) with
+// optional `valueLabel` override; three entrance modes
+// (`'stagger-rise'` / `'fade'` / `'none'`); `tabular-nums` on numeric
+// cells. Unblocks T-355 (magic-wall-drilldown, Cluster E) and the
+// broader Cluster A/B/C/E fullscreen-panel preset shape (msnbc-big-
+// board, uefa-starball-refraction, twc-* weather radar, future
+// scientific heatmaps).
+export {
+  MagicWallPanel,
+  type MagicWallPanelProps,
+  magicWallPanelClip,
+  magicWallPanelPropsSchema,
+} from './magic-wall-panel.js';
+
 import { animatedMapClip } from './animated-map.js';
 import { animatedValueClip } from './animated-value.js';
 import { audioVisualizerReactiveClip } from './audio-visualizer-reactive.js';
@@ -439,6 +457,7 @@ import { lightLeakClip } from './light-leak.js';
 import { lineChartDrawClip } from './line-chart-draw.js';
 import { logoIntroClip } from './logo-intro.js';
 import { lowerThirdClip } from './lower-third.js';
+import { magicWallPanelClip } from './magic-wall-panel.js';
 import { marketingDashboardClip } from './marketing-dashboard.js';
 import { newsTickerBarClip } from './news-ticker-bar.js';
 import { okrDashboardClip } from './okr-dashboard.js';
@@ -572,4 +591,15 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // (T-362..T-367) and Cluster A/B/G word-emphasis use cases. 46 → 47
   // clips.
   captionClip,
+  // T-355a — magic-wall-panel primitive (fullscreen layered hierarchical-
+  // data panel of N (1..56) labeled, color-shaded region tiles at
+  // absolute-positioned bounds with per-region color override; optional
+  // title + subtitle; `valueFormat` dispatch (`'percent'` / `'count'` /
+  // `'raw'`) with optional `valueLabel` override; three entrance modes
+  // (`'stagger-rise'` / `'fade'` / `'none'`); `tabular-nums` on numeric
+  // cells). Unblocks T-355 (magic-wall-drilldown, Cluster E) and the
+  // broader Cluster A/B/C/E fullscreen-panel preset shape (msnbc-big-
+  // board, uefa-starball-refraction, twc-* weather radar, future
+  // scientific heatmaps). 47 → 48 clips.
+  magicWallPanelClip,
 ];

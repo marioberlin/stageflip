@@ -119,6 +119,13 @@ export const LIVE_RUNTIME_MANIFEST: ClipsCatalogPkg = {
         // built-in visual styles: hormozi / mrbeast / tiktok /
         // ali-abdaal / netflix / karaoke-wipe)
         'caption',
+        // T-355a — magic-wall-panel primitive (fullscreen layered
+        // hierarchical-data panel of N (1..56) labeled, color-shaded
+        // region tiles at absolute-positioned bounds; per-region
+        // color override; optional title + subtitle; `valueFormat`
+        // dispatch + optional `valueLabel` override; three entrance
+        // modes)
+        'magic-wall-panel',
       ],
     },
   ],
