@@ -7,7 +7,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   ALI_ABDAAL_CANONICAL_WORDS,
+  BBC_REITH_DARK_PROPS,
   BLOOMBERG_CANONICAL_SNAPSHOT,
+  CNN_CLASSIC_PROPS,
   CRICKET_OUTCOME_COLORS,
   DEFAULT_CLIP_KIND_RESOLVER,
   F1_SECTOR_STATE_COLORS,
@@ -20,7 +22,6 @@ import {
   OLYMPIC_CANONICAL_STANDINGS,
   PRESET_ID_BINDINGS,
   type PresetForRender,
-  CNN_CLASSIC_PROPS,
   SQUID_GAME_GEOMETRIC_SHOTS,
   TIKTOK_CANONICAL_WORDS,
   buildPresetDocument,
@@ -1414,6 +1415,124 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
   it('still returns undefined for unknown clipKinds after T-323 lands (T-323 AC #22)', () => {
     expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind')).toBeUndefined();
     expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'cnn-classic')).toBeUndefined();
+  });
+
+  // T-325 — second `lowerThird`-clipKind preset (`bbc-reith-dark`), wired via
+  // the `PRESET_ID_BINDINGS` override path (Pattern C — second preset for a
+  // clipKind shares the clipKind via per-presetId override; T-323's
+  // `cnnClassicBinding` keeps the clipKind-default slot). Mirrors T-363 /
+  // T-364 / T-365 / T-366 pattern in the caption family. Second Cluster A
+  // preset to ship.
+
+  it('routes bbc-reith-dark through the per-preset override binding (T-325 AC #13)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'bbc-reith-dark');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('lower-third');
+    const props = binding?.buildProps(undefined);
+    expect(props?.name).toBe('Sarah Smith');
+    expect(props?.title).toBe('Chief Political Correspondent');
+    expect(props?.accent).toBe('#BB1919');
+    expect(props?.background).toBe('#1A1A1A');
+    expect(props?.textColor).toBe('#FFFFFF');
+    expect(props?.insetLeftPx).toBe(64);
+    expect(props?.insetBottomPx).toBe(48);
+  });
+
+  it('exports BBC_REITH_DARK_PROPS with seven canonical fields (T-325 AC #14)', () => {
+    expect(BBC_REITH_DARK_PROPS).toEqual({
+      name: 'Sarah Smith',
+      title: 'Chief Political Correspondent',
+      accent: '#BB1919',
+      background: '#1A1A1A',
+      textColor: '#FFFFFF',
+      insetLeftPx: 64,
+      insetBottomPx: 48,
+    });
+  });
+
+  it('PRESET_ID_BINDINGS exposes the bbc-reith-dark override (T-325 AC #15)', () => {
+    expect(PRESET_ID_BINDINGS['bbc-reith-dark']).toBeDefined();
+    expect(PRESET_ID_BINDINGS['bbc-reith-dark']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['bbc-reith-dark']?.runtimeId).toBe('frame-runtime');
+  });
+
+  it('falls through to cnnClassicBinding for cnn-classic after T-325 lands (T-325 AC #16 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'cnn-classic');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('lower-third');
+    const props = binding?.buildProps(undefined);
+    expect(props?.name).toBe('BREAKING: SUPREME COURT RULES');
+    expect(props?.background).toBe('#FFFFFF');
+  });
+
+  it('falls through to cnnClassicBinding for unknown lowerThird presetIds after T-325 lands (T-325 AC #16 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'unknown-news-preset');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('lower-third');
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#FFFFFF'); // cnn-classic white banner
+  });
+
+  it('falls through to cnnClassicBinding for bare lowerThird (no presetId) after T-325 lands (T-325 AC #16)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#FFFFFF'); // cnn-classic clipKind-default
+  });
+
+  it('routes mrbeast-komika-axis after T-325 lands (T-325 AC #18 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'mrbeast-komika-axis');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('mrbeast');
+  });
+
+  it('routes netflix-invisible after T-325 lands (T-325 AC #18 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('caption', 'netflix-invisible');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('netflix');
+  });
+
+  it('routes big-number-stat-impact after T-325 lands (T-325 AC #17 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('bigNumber', 'big-number-stat-impact');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('animated-value');
+  });
+
+  it('still returns undefined for unknown clipKinds after T-325 lands (T-325 AC #20)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind')).toBeUndefined();
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'unknown-preset-id')).toBeUndefined();
+  });
+
+  it('routes bbc-reith-dark through the renderer-side override (T-325 AC #13 round-trip)', async () => {
+    const renderSpy = vi
+      .fn<(doc: unknown, frame: number) => Promise<Uint8Array>>()
+      .mockResolvedValue(new Uint8Array([0]));
+    const renderer = createGenerateFixtureRenderer({
+      resolver: DEFAULT_CLIP_KIND_RESOLVER,
+      render: renderSpy as unknown as Parameters<typeof createGenerateFixtureRenderer>[0]['render'],
+    });
+    await renderer.render({
+      preset: presetWith('lowerThird', 'bbc-reith-dark', 'news'),
+      composition: COMPOSITION,
+      frame: 60,
+    });
+    const [doc] = renderSpy.mock.calls[0] ?? [];
+    const parsed = rirDocumentSchema.parse(doc);
+    const element = parsed.elements[0];
+    if (!element || element.content.type !== 'clip') throw new Error('expected clip element');
+    expect(element.content.clipName).toBe('lower-third');
+    expect(element.content.params).toMatchObject({
+      name: 'Sarah Smith',
+      title: 'Chief Political Correspondent',
+      accent: '#BB1919',
+      background: '#1A1A1A',
+      textColor: '#FFFFFF',
+      insetLeftPx: 64,
+      insetBottomPx: 48,
+    });
   });
 
   it('builds scoreBug props as a six-chip canonical over with cricket-canon colors (T-358)', () => {
