@@ -1,5 +1,10 @@
 // packages/runtimes/frame-runtime-bridge/src/clips/lyrics.tsx
 // T-322 — `lyrics` runtime-clip primitive: line-level music-synced
+// T-322a — render-fix patch (karaoke-wipe rect width as `'NN%'` strings,
+// `DEFAULT_FONT.size` 96 → 64 to fit 25-char lines in a 1024-px region,
+// `computeLineEntrance` bypassed for non-active roles so future-startMs
+// preview lines don't clamp to opacity 0, glow `<filter>` composes blur
+// + flood via `<feComposite>` + `<feMerge>`).
 // lyric panel with three style bundles (`'karaoke-wipe'` —
 // left-to-right color front sweeping across the active line driven by
 // per-line ms-progress; `'three-line-stack'` — past dimmed at top /
@@ -82,7 +87,10 @@ const SYSTEM_FONT_STACK = 'system-ui, -apple-system, BlinkMacSystemFont, sans-se
 const DEFAULT_FONT = {
   family: `Bebas Neue, Anton, ${SYSTEM_FONT_STACK}`,
   weight: 700,
-  size: 96,
+  // T-322a D-T322a-2: reduced from 96 → 64 so a 25-char default-font line
+  // (~800 px at weight 700) fits a 1024-px position width without horizontal
+  // overflow under `whiteSpace: 'nowrap'`.
+  size: 64,
 } as const;
 const DEFAULT_FOREGROUND = '#CCCCCC';
 const DEFAULT_HIGHLIGHT = '#F3CE32';
@@ -256,8 +264,20 @@ function LineNode(input: LineRenderInput): ReactElement {
             <title>{`lyrics glow ${index}`}</title>
             <defs>
               <filter id={glowFilterId} x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation={glow.blur} />
-                <feFlood floodColor={glow.color} />
+                {/*
+                 * T-322a D-T322a-4: standard SVG glow recipe. Blur the
+                 * source alpha, flood it with the glow color, composite
+                 * the flood onto the blur (operator="in"), then merge the
+                 * colored blur under the source graphic so the original
+                 * text rides on top of the halo.
+                 */}
+                <feGaussianBlur in="SourceAlpha" stdDeviation={glow.blur} result="blur" />
+                <feFlood floodColor={glow.color} result="flood" />
+                <feComposite in="flood" in2="blur" operator="in" result="coloredBlur" />
+                <feMerge>
+                  <feMergeNode in="coloredBlur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
               </filter>
             </defs>
           </svg>
@@ -274,8 +294,12 @@ function LineNode(input: LineRenderInput): ReactElement {
                   data-testid={`lyrics-line-clip-fill-${index}`}
                   x="0"
                   y="0"
-                  width={karaokeProgress * 100}
-                  height="100"
+                  // T-322a D-T322a-1: percentage strings (NOT unitless
+                  // numbers, which SVG reads as user-space px) — width
+                  // computes against the enclosing `<svg>` viewport
+                  // spanning the full line region.
+                  width={`${karaokeProgress * 100}%`}
+                  height="100%"
                 />
               </clipPath>
             </defs>
@@ -444,7 +468,17 @@ export function Lyrics(props: LyricsProps): ReactElement {
         {visibleEntries.map((entry) => {
           const line = resolvedLines[entry.index];
           if (line === undefined) return null;
-          const entranceState = computeLineEntrance(entrance, frame, line.startMs, fps);
+          // T-322a D-T322a-3: entrance animation is the active line's
+          // "I am now active" beat. Past / next preview lines render at
+          // full opacity (subject to role-gated `muteOpacity`, applied
+          // independently downstream). Without this bypass, a future
+          // preview line whose `startMs` is past the current frame
+          // gets `interpolate` clamped left → opacity 0 → "missing
+          // line" in the visible-window stack.
+          const entranceState: EntranceState =
+            entry.role === 'active'
+              ? computeLineEntrance(entrance, frame, line.startMs, fps)
+              : { opacity: 1, translateY: 0 };
           const karaokeProgress =
             isKaraoke && entry.role === 'active'
               ? clamp01((currentTimeMs - line.startMs) / (line.endMs - line.startMs))
