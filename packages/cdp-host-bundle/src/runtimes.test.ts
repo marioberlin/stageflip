@@ -70,10 +70,10 @@ describe('registerAllLiveRuntimes', () => {
     expect(resolved?.runtime.id).toBe('three');
   });
 
-  it('registers all T-131b/d/f.1 + T-131e.1/.2 + T-131f.2/.3 + T-131d.4 + T-183a + T-183b + T-202a + T-202b + T-406 + T-358a + T-356a + T-357a tranches on the frame-runtime bridge (46 clips)', () => {
+  it('registers all T-131b/d/f.1 + T-131e.1/.2 + T-131f.2/.3 + T-131d.4 + T-183a + T-183b + T-202a + T-202b + T-406 + T-358a + T-356a + T-357a + T-316 tranches on the frame-runtime bridge (47 clips)', () => {
     registerAllLiveRuntimes();
     const bridge = listRuntimes().find((r) => r.id === 'frame-runtime');
-    expect(bridge?.clips.size).toBe(46);
+    expect(bridge?.clips.size).toBe(47);
     const expectedKinds = [
       // b.1 (light)
       'counter',
@@ -139,6 +139,8 @@ describe('registerAllLiveRuntimes', () => {
       'news-ticker-bar',
       // T-357a — standings-table primitive
       'standings-table',
+      // T-316 — caption primitive
+      'caption',
     ];
     for (const kind of expectedKinds) {
       const resolved = findClip(kind);

@@ -115,6 +115,10 @@ export const LIVE_RUNTIME_MANIFEST: ClipsCatalogPkg = {
         // N (1..16) rows × K (2..8) columns of mixed kind: rank /
         // label / numeric / delta / total)
         'standings-table',
+        // T-316 — caption primitive (word-level timed text with six
+        // built-in visual styles: hormozi / mrbeast / tiktok /
+        // ali-abdaal / netflix / karaoke-wipe)
+        'caption',
       ],
     },
   ],

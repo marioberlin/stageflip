@@ -128,10 +128,10 @@ export function createFrameRuntimeBridge(
 // Re-export demo clips. T-131b/d/e/f tranches (32 reference-clip ports)
 // plus the T-406 unified `chart` family (1 ClipDefinition dispatching to
 // 7 per-kind renderers), plus T-358a `outcome-row`, T-356a
-// `news-ticker-bar`, and T-357a `standings-table` primitives.
-// `ALL_BRIDGE_CLIPS` exposes all 46. shader-bg / lottie-player /
-// animated-map mapbox-gl path are deferred — see plan-row T-131d.
-// audio-visualizer's real-audio path is a follow-up.
+// `news-ticker-bar`, T-357a `standings-table`, and T-316 `caption`
+// primitives. `ALL_BRIDGE_CLIPS` exposes all 47. shader-bg /
+// lottie-player / animated-map mapbox-gl path are deferred — see
+// plan-row T-131d. audio-visualizer's real-audio path is a follow-up.
 export {
   ALL_BRIDGE_CLIPS,
   AnimatedProgressBar,
@@ -146,6 +146,10 @@ export {
   type AudioVisualizerProps,
   audioVisualizerClip,
   audioVisualizerPropsSchema,
+  Caption,
+  type CaptionProps,
+  captionClip,
+  captionPropsSchema,
   ChartBuild,
   type ChartBuildProps,
   chartBuildClip,
