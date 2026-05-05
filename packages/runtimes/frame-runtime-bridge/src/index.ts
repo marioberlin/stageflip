@@ -129,10 +129,10 @@ export function createFrameRuntimeBridge(
 // plus the T-406 unified `chart` family (1 ClipDefinition dispatching to
 // 7 per-kind renderers), plus T-358a `outcome-row`, T-356a
 // `news-ticker-bar`, T-357a `standings-table`, T-316 `caption`, T-355a
-// `magic-wall-panel`, and T-322 `lyrics` primitives. `ALL_BRIDGE_CLIPS`
-// exposes all 49. shader-bg / lottie-player / animated-map mapbox-gl
-// path are deferred — see plan-row T-131d. audio-visualizer's
-// real-audio path is a follow-up.
+// `magic-wall-panel`, T-322 `lyrics`, and T-321 `title-sequence`
+// primitives. `ALL_BRIDGE_CLIPS` exposes all 50. shader-bg /
+// lottie-player / animated-map mapbox-gl path are deferred — see
+// plan-row T-131d. audio-visualizer's real-audio path is a follow-up.
 export {
   ALL_BRIDGE_CLIPS,
   AnimatedProgressBar,
@@ -246,6 +246,10 @@ export {
   type TimelineMilestonesProps,
   timelineMilestonesClip,
   timelineMilestonesPropsSchema,
+  TitleSequence,
+  type TitleSequenceProps,
+  titleSequenceClip,
+  titleSequencePropsSchema,
   tokenizeLine,
   TypewriterClip,
   type TypewriterClipProps,

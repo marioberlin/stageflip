@@ -448,6 +448,31 @@ export {
   lyricsPropsSchema,
 } from './lyrics.js';
 
+// T-321 — title-sequence primitive. Multi-shot prestige-TV title
+// compositor with four sealed style bundles (`'letterform-assemble'`
+// — ALL-CAPS letterforms scaled-to-viewport with per-letter staggered
+// entry; `'plate-and-credits'` — title plate + credits block two-card
+// register; `'palette-jump-cut'` — hard-cut color panels with optional
+// glyph foreground (cut-only enforced regardless of shot transition);
+// `'photographic-overlay'` — typography-only pass over a sister
+// photographic clip). Five shot kinds (`titlePlate` /
+// `letterAnimation` / `creditsBlock` / `colorPanel` / `holdFrame`),
+// three transition kinds (`'cut'` / `'fade'` / `'dissolve'`) with
+// single-active + 1-shot overlap during fade / dissolve. Stable
+// shot-id-derived clipPath / filter / per-letter IDs (no
+// `crypto.randomUUID()`); per-shot entrance (`'none'` / `'fade'` /
+// `'rise'`); optional `glow?` halo on the active shot; casing
+// transforms. Unblocks Cluster D presets T-348..T-353 (stranger-
+// things-benguiat / got-trajan-clockwork / squid-game-geometric /
+// true-detective-double-exposure / succession-home-video / severance-
+// surreal-3d).
+export {
+  TitleSequence,
+  type TitleSequenceProps,
+  titleSequenceClip,
+  titleSequencePropsSchema,
+} from './title-sequence.js';
+
 import { animatedMapClip } from './animated-map.js';
 import { animatedValueClip } from './animated-value.js';
 import { audioVisualizerReactiveClip } from './audio-visualizer-reactive.js';
@@ -494,6 +519,7 @@ import { stockTickerClip } from './stock-ticker.js';
 import { subtitleOverlayClip } from './subtitle-overlay.js';
 import { testimonialCardClip } from './testimonial-card.js';
 import { timelineMilestonesClip } from './timeline-milestones.js';
+import { titleSequenceClip } from './title-sequence.js';
 import { typewriterClip } from './typewriter-clip.js';
 import { videoBackgroundClip } from './video-background.js';
 import { voiceoverNarrationClip } from './voiceover-narration.js';
@@ -631,4 +657,18 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // T-367 (karaoke-progressive-wipe, last Cluster F preset). 48 → 49
   // clips.
   lyricsClip,
+  // T-321 — title-sequence primitive (multi-shot prestige-TV title
+  // compositor with four sealed style bundles: `'letterform-assemble'`
+  // — ALL-CAPS letterforms scaled-to-viewport with per-letter staggered
+  // entry; `'plate-and-credits'` — title plate + credits block two-card
+  // register; `'palette-jump-cut'` — hard-cut color panels with optional
+  // glyph foreground (cut-only enforced regardless of shot transition);
+  // `'photographic-overlay'` — typography-only pass over a sister
+  // photographic clip). Five shot kinds (`titlePlate` /
+  // `letterAnimation` / `creditsBlock` / `colorPanel` / `holdFrame`);
+  // three transition kinds (`'cut'` / `'fade'` / `'dissolve'`) with
+  // single-active + 1-shot overlap during fade / dissolve. Stable
+  // shot-id-derived clipPath / filter / per-letter IDs. Unblocks
+  // Cluster D presets T-348..T-353. 49 → 50 clips.
+  titleSequenceClip,
 ];
