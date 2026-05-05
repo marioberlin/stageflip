@@ -104,6 +104,9 @@ export const LIVE_RUNTIME_MANIFEST: ClipsCatalogPkg = {
         // T-406 — unified chart family (consumes ChartElement; dispatches
         // on chartKind to bar/line/area/pie/donut/scatter/combo)
         'chart',
+        // T-358a — outcome-row primitive (row of N color-coded chips
+        // with staggered fade-in)
+        'outcome-row',
       ],
     },
   ],

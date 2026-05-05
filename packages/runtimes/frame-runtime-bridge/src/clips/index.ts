@@ -362,6 +362,17 @@ export {
   chartPropsSchema,
 } from './chart/index.js';
 
+// T-358a — outcome-row primitive. Generic row of N (1..12) color-coded
+// chips with staggered fade-in; unblocks Cluster B/E scorebug-family
+// presets (T-358 cricket ball-by-ball, tennis tiebreak, F1 sectors,
+// soccer last-N-shots).
+export {
+  OutcomeRow,
+  type OutcomeRowProps,
+  outcomeRowClip,
+  outcomeRowPropsSchema,
+} from './outcome-row.js';
+
 import { animatedMapClip } from './animated-map.js';
 import { animatedValueClip } from './animated-value.js';
 import { audioVisualizerReactiveClip } from './audio-visualizer-reactive.js';
@@ -389,6 +400,7 @@ import { logoIntroClip } from './logo-intro.js';
 import { lowerThirdClip } from './lower-third.js';
 import { marketingDashboardClip } from './marketing-dashboard.js';
 import { okrDashboardClip } from './okr-dashboard.js';
+import { outcomeRowClip } from './outcome-row.js';
 import { particlesClip } from './particles.js';
 import { pieChartBuildClip } from './pie-chart-build.js';
 import { priceRevealClip } from './price-reveal.js';
@@ -489,4 +501,8 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // build / line-chart-draw clips above; Cluster E presets bind to
   // this `chart` clipKind. 42 → 43 clips.
   chartClip,
+  // T-358a — outcome-row primitive (row of N color-coded chips with
+  // staggered fade-in). Unblocks the T-358 cricket ball-by-ball preset
+  // and other Cluster B/E scorebug-family presets. 43 → 44 clips.
+  outcomeRowClip,
 ];
