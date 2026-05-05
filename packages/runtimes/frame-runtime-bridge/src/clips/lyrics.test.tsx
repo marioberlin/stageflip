@@ -1,5 +1,8 @@
 // packages/runtimes/frame-runtime-bridge/src/clips/lyrics.test.tsx
 // T-322 — lyricsClip behaviour + propsSchema + themeSlots.
+// T-322a — render-fix regression suite (karaoke-wipe width as %, default
+// font fits position width, all 3-stack lines visible, glow filter
+// composes via feComposite + feMerge).
 
 import { FrameProvider } from '@stageflip/frame-runtime';
 import { cleanup, render, screen } from '@testing-library/react';
@@ -344,6 +347,128 @@ describe('Lyrics component (T-322)', () => {
     expect(screen.queryByTestId('lyrics-line-prev-of-0')).toBeNull();
     expect(screen.getByTestId('lyrics-line-0')).toBeDefined();
     expect(screen.getByTestId('lyrics-line-1')).toBeDefined();
+  });
+});
+
+describe('Lyrics render-fix regressions (T-322a)', () => {
+  // T-367 canonical inputs — three-line stack of anthemic phrasing with
+  // per-line karaoke wipe. Frame 105 @ 30 fps = 3500 ms → mid-line2
+  // (line index 1, startMs 2500, endMs 5000) at progress 0.40.
+  const T367_LINES: LyricsProps['lines'] = [
+    { text: 'Once upon a time', startMs: 0, endMs: 2500 },
+    { text: 'We were stronger together', startMs: 2500, endMs: 5000 },
+    { text: 'Now we sing alone', startMs: 5000, endMs: 7500 },
+  ];
+  const T367_POSITION: LyricsProps['position'] = {
+    x: 128,
+    y: 360,
+    width: 1024,
+    alignment: 'center',
+  };
+
+  it('AC #1 (D-T322a-1): karaoke-wipe rect width is "40%" string at progress 0.4', () => {
+    // Single line [0, 1000ms]; frame 12 @ 30fps = 400 ms → progress 0.40.
+    renderAt(12, {
+      lines: [{ text: 'wake me up', startMs: 0, endMs: 1000 }],
+      style: 'karaoke-wipe',
+      position: MIN_POSITION,
+      entrance: 'none',
+    });
+    const fillRect = screen.getByTestId('lyrics-line-clip-fill-0');
+    expect(fillRect.getAttribute('width')).toBe('40%');
+    expect(fillRect.getAttribute('height')).toBe('100%');
+  });
+
+  it('AC #2 (D-T322a-2): DEFAULT_FONT.size is 64 so 25-char default-font line fits 1024 px', () => {
+    // Render T-367's longest line at default font, 1024 px position width.
+    // Default size (post D-T322a-2) is 64; assert the rendered line uses 64.
+    renderAt(15, {
+      // 500 ms ∈ [0, 2000) so the line is active at this frame.
+      lines: [{ text: 'WE WERE STRONGER TOGETHER', startMs: 0, endMs: 2000 }],
+      style: 'karaoke-wipe',
+      position: T367_POSITION,
+      entrance: 'none',
+    });
+    const line = screen.getByTestId('lyrics-line-0');
+    // fontSize is read off the inline style; JSDOM normalizes to "64px".
+    expect(line.style.fontSize).toBe('64px');
+  });
+
+  it('AC #3 (D-T322a-3): all 3 lines render with non-zero opacity at mid-line2 frame 105', () => {
+    renderAt(
+      105,
+      {
+        lines: T367_LINES,
+        style: 'karaoke-wipe',
+        position: T367_POSITION,
+        maxLinesVisible: 3,
+        entrance: 'fade',
+        glow: { color: '#FFFFFF', blur: 6 },
+      },
+      225,
+    );
+    // activeIndex = 1 (currentTimeMs 3500 ∈ [2500, 5000)). Window {0, 1, 2}.
+    const l0 = screen.getByTestId('lyrics-line-0');
+    const l1 = screen.getByTestId('lyrics-line-1');
+    const l2 = screen.getByTestId('lyrics-line-2');
+    // All 3 lines present in the DOM.
+    expect(l0).toBeDefined();
+    expect(l1).toBeDefined();
+    expect(l2).toBeDefined();
+    // Each line has non-zero opacity (line 2 was the regression — its
+    // future startMs (5000 ms > 3500 ms) clamped entrance opacity to 0).
+    expect(Number.parseFloat(l0.style.opacity || '1')).toBeGreaterThan(0);
+    expect(Number.parseFloat(l1.style.opacity || '1')).toBeGreaterThan(0);
+    expect(Number.parseFloat(l2.style.opacity || '1')).toBeGreaterThan(0);
+  });
+
+  it('AC #4 (D-T322a-4): glow filter composes blur + flood via feComposite + feMerge', () => {
+    const { container } = renderAt(105, {
+      lines: T367_LINES,
+      style: 'karaoke-wipe',
+      position: T367_POSITION,
+      maxLinesVisible: 3,
+      entrance: 'none',
+      glow: { color: '#FFFFFF', blur: 6 },
+    });
+    // Active line is index 1. Filter ID derived from line index per
+    // T-322 D-T322-4 stable-ID contract.
+    const filter = container.querySelector('filter#lyrics-glow-1');
+    expect(filter).not.toBeNull();
+    // Standard SVG glow recipe — all four primitives present.
+    expect(filter?.querySelector('feGaussianBlur')?.getAttribute('in')).toBe('SourceAlpha');
+    expect(filter?.querySelector('feFlood')?.getAttribute('flood-color')?.toLowerCase()).toBe(
+      '#ffffff',
+    );
+    expect(filter?.querySelector('feComposite')?.getAttribute('operator')).toBe('in');
+    const merge = filter?.querySelector('feMerge');
+    expect(merge).not.toBeNull();
+    // Two merge nodes: coloredBlur underneath, SourceGraphic on top.
+    const mergeNodes = merge?.querySelectorAll('feMergeNode') ?? [];
+    expect(mergeNodes.length).toBe(2);
+    expect(mergeNodes[0]?.getAttribute('in')).toBe('coloredBlur');
+    expect(mergeNodes[1]?.getAttribute('in')).toBe('SourceGraphic');
+    // Active line (index 1) inner element carries filter="url(#lyrics-glow-1)".
+    // Substring match — JSDOM serializes inline style filter as a string.
+    expect(container.innerHTML).toContain('url(#lyrics-glow-1)');
+  });
+
+  it('Backward-compat sentinel — same props twice → byte-identical HTML (post-fix determinism)', () => {
+    const props: LyricsProps = {
+      lines: T367_LINES,
+      style: 'karaoke-wipe',
+      position: T367_POSITION,
+      maxLinesVisible: 3,
+      entrance: 'fade',
+      glow: { color: '#FFFFFF', blur: 6 },
+      casing: 'uppercase',
+    };
+    const a = renderAt(105, props, 225).container.innerHTML;
+    cleanup();
+    const b = renderAt(105, props, 225).container.innerHTML;
+    expect(a).toBe(b);
+    // Casing still applies after fixes — substring sanity.
+    expect(a).toContain('WE WERE STRONGER TOGETHER');
   });
 });
 
