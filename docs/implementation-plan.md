@@ -715,9 +715,9 @@ phase. Renumbered / carried as T-137 / T-138 in Phase 6.
 
 | ID | Task | Size | Status |
 |---|---|---|---|
-| T-380 | Parity fixtures generated + signed off — Clusters A / B / C / D (user sign-off per cluster) | L | **partial — Cluster A ratified 2026-05-06; Clusters B / C / D pending (D 1/6 signed; B + C 0/N)**. Ratification log: `docs/handover-phase13-late.md` §7. |
-| T-381 | Parity fixtures generated + signed off — Clusters E / F / G / H (user sign-off per cluster) | L | **partial — Cluster E ratified 2026-05-06; Cluster F 5/6 ratified (netflix-invisible held back pending T-316b primitive fix); Clusters G + H 0/N pending**. Ratification log: `docs/handover-phase13-late.md` §7. |
-| T-382 | Type-design-consultant batch reviews merged for Clusters A / B / D / F / G | M | Cluster A unblocked (8/8 signed) → batch-review eligible. Clusters B / D / F / G still partial. |
+| T-380 | Parity fixtures generated + signed off — Clusters A / B / C / D (user sign-off per cluster) | L | **partial — Cluster A ratified 2026-05-06; Cluster B 9/9 signed 2026-05-06 (PO inspection pending); Clusters C / D pending (D 1/6 signed; C 0/4)**. Ratification log: `docs/handover-phase13-cluster-b.md` §7. |
+| T-381 | Parity fixtures generated + signed off — Clusters E / F / G / H (user sign-off per cluster) | L | **partial — Cluster E ratified 2026-05-06; Cluster F 6/6 ratified 2026-05-06 (netflix-invisible re-signed via T-316b primitive fix); Clusters G + H 0/N pending**. Ratification log: `docs/handover-phase13-cluster-b.md` §7. |
+| T-382 | Type-design-consultant batch reviews merged for Clusters A / B / D / F / G | M | Clusters A + B + F unblocked (all signed) → batch-review eligible. Clusters D / G still partial. |
 
 ### Phase γ — Frontier Runtime (Track A, parallel with β after α)
 
