@@ -1,12 +1,14 @@
 // packages/runtimes/frame-runtime-bridge/src/clips/news-ticker-bar.tsx
 // T-356a — `news-ticker-bar` runtime-clip primitive: a horizontal band
-// of N (1..24) ticker entries (symbol + price + delta + ▲/▼/▬ arrow)
-// translating left at a frame-derived offset, looping continuously via
-// the doubled-row marquee pattern. Generic primitive; cluster-specific
-// palettes + entry payloads (Bloomberg market chyrons, ESPN BottomLine
-// sports score crawls, CNN/Fox breaking-news, crypto dashboards) live
-// in `parity-cli` resolver shims, not in this primitive. Frame-derived,
-// fully deterministic.
+// of N (1..24) ticker entries (symbol + price + delta + ▲/▼/▬ arrow).
+// T-356b — extends with `mode: 'scroll' | 'flip'`. `'scroll'` (default)
+// is the original continuous-marquee behaviour. `'flip'` is the post-2018
+// ESPN BottomLine register: two rows stacked vertically, each row showing
+// one ticker entry; pair advances every `flipDurationMs` window.
+// Generic primitive; cluster-specific palettes + entry payloads (Bloomberg
+// market chyrons, ESPN BottomLine sports score crawls, CNN/Fox breaking-
+// news, crypto dashboards) live in `parity-cli` resolver shims, not in
+// this primitive. Frame-derived, fully deterministic.
 
 import { useCurrentFrame, useVideoConfig } from '@stageflip/frame-runtime';
 import type { ClipDefinition } from '@stageflip/runtimes-contract';
@@ -49,6 +51,19 @@ export const newsTickerBarPropsSchema = z
     downColor: z.string().regex(HEX_COLOR_RE).optional(),
     /** Color for `direction: 'flat'` deltas + arrows. Theme slot `palette.foreground`. */
     flatColor: z.string().regex(HEX_COLOR_RE).optional(),
+    /**
+     * Render mode. `'scroll'` (default) is the continuous-marquee register
+     * (Bloomberg / CNN bottom-line). `'flip'` is the two-row stacked register
+     * (post-2018 ESPN BottomLine canon — pair of entries, top row + bottom row,
+     * pair advances every `flipDurationMs` ms).
+     */
+    mode: z.enum(['scroll', 'flip']).optional(),
+    /**
+     * Flip-mode pair-rotation duration in ms. Default 4500 (matches the
+     * canonical ESPN BottomLine "4–5 s per segment" cadence). Ignored when
+     * `mode: 'scroll'`.
+     */
+    flipDurationMs: z.number().positive().optional(),
   })
   .strict();
 
@@ -63,6 +78,7 @@ const DEFAULT_FOREGROUND = '#f5f7fa';
 const DEFAULT_UP_COLOR = '#22c55e';
 const DEFAULT_DOWN_COLOR = '#ef4444';
 const DEFAULT_FLAT_COLOR = '#9ca3af';
+const DEFAULT_FLIP_DURATION_MS = 4500;
 
 const ARROW_GLYPH: Record<NewsTickerBarProps['entries'][number]['direction'], string> = {
   up: '▲',
@@ -95,17 +111,17 @@ export function NewsTickerBar({
   upColor = DEFAULT_UP_COLOR,
   downColor = DEFAULT_DOWN_COLOR,
   flatColor = DEFAULT_FLAT_COLOR,
+  mode = 'scroll',
+  flipDurationMs = DEFAULT_FLIP_DURATION_MS,
 }: NewsTickerBarProps): ReactElement {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const slot = chipWidth + chipGap;
-  const rowWidth = entries.length * slot;
-  const offsetRaw = (frame * scrollSpeed) / fps;
-  // Modulo into [0, rowWidth); negative => leftward. The doubled-row
-  // marquee below keeps the seam continuous as offsetPx wraps.
-  const offsetPx = ((offsetRaw % rowWidth) + rowWidth) % rowWidth;
-  const translateX = -offsetPx;
+  const colorFor = (direction: NewsTickerBarProps['entries'][number]['direction']): string => {
+    if (direction === 'up') return upColor;
+    if (direction === 'down') return downColor;
+    return flatColor;
+  };
 
   const bandStyle: CSSProperties = {
     position: 'absolute',
@@ -118,6 +134,78 @@ export function NewsTickerBar({
     ...(bandPosition === 'top' ? { top: 0 } : { bottom: 0 }),
   };
 
+  const renderChip = (entry: NewsTickerBarProps['entries'][number]): ReactElement => {
+    const directionColor = colorFor(entry.direction);
+    return (
+      <>
+        <span
+          data-testid="news-ticker-bar-chip-symbol"
+          style={{ color: foreground, fontWeight: 700 }}
+        >
+          {entry.symbol}
+        </span>
+        <span data-testid="news-ticker-bar-chip-price" style={{ color: foreground }}>
+          {entry.price}
+        </span>
+        <span
+          data-testid="news-ticker-bar-chip-delta"
+          style={{ color: directionColor, fontWeight: 600 }}
+        >
+          {ARROW_GLYPH[entry.direction]} {entry.delta}
+        </span>
+      </>
+    );
+  };
+
+  if (mode === 'flip') {
+    // T-356b — Two-row stacked flip register. Pair advances every
+    // `flipDurationMs`. Steady-state per pair: top row = entries[pairIdx*2],
+    // bottom row = entries[pairIdx*2+1]. v1 ships the steady-state pair with
+    // no within-window flip animation (parity goldens always land mid-segment;
+    // animated flip transition is a v2 follow-up `T-356c`).
+    const currentTimeMs = (frame / fps) * 1000;
+    const pairIdx = Math.floor(currentTimeMs / flipDurationMs);
+    const topEntry = entries[(pairIdx * 2) % entries.length];
+    const bottomEntry = entries[(pairIdx * 2 + 1) % entries.length];
+    const rowHeight = bandHeight / 2;
+    const rowFontSize = Math.round(rowHeight * 0.42);
+    const rowStyle: CSSProperties = {
+      width: '100%',
+      height: rowHeight,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      paddingLeft: 16,
+      paddingRight: 16,
+      boxSizing: 'border-box',
+      fontSize: rowFontSize,
+      fontWeight: 600,
+      letterSpacing: '0.02em',
+      whiteSpace: 'nowrap',
+    };
+    return (
+      <div data-testid="news-ticker-bar-clip" style={{ width: '100%', height: '100%' }}>
+        <div data-testid="news-ticker-bar-band" style={bandStyle}>
+          <div data-testid="news-ticker-bar-flip-top" style={rowStyle}>
+            {topEntry ? renderChip(topEntry) : null}
+          </div>
+          <div data-testid="news-ticker-bar-flip-bottom" style={rowStyle}>
+            {bottomEntry ? renderChip(bottomEntry) : null}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // mode === 'scroll' (default): original continuous-marquee behaviour.
+  const slot = chipWidth + chipGap;
+  const rowWidth = entries.length * slot;
+  const offsetRaw = (frame * scrollSpeed) / fps;
+  // Modulo into [0, rowWidth); negative => leftward. The doubled-row
+  // marquee below keeps the seam continuous as offsetPx wraps.
+  const offsetPx = ((offsetRaw % rowWidth) + rowWidth) % rowWidth;
+  const translateX = -offsetPx;
+
   const marqueeStyle: CSSProperties = {
     position: 'absolute',
     top: 0,
@@ -126,12 +214,6 @@ export function NewsTickerBar({
     width: rowWidth * 2,
     transform: `translateX(${translateX}px)`,
     willChange: 'transform',
-  };
-
-  const colorFor = (direction: NewsTickerBarProps['entries'][number]['direction']): string => {
-    if (direction === 'up') return upColor;
-    if (direction === 'down') return downColor;
-    return flatColor;
   };
 
   // Doubled-row marquee — render entries twice for seamless wrap.

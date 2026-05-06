@@ -166,6 +166,65 @@ describe('NewsTickerBar component (T-356a)', () => {
   });
 });
 
+// T-356b — flip-mode register (post-2018 ESPN BottomLine canon).
+describe('NewsTickerBar flip-mode rendering (T-356b)', () => {
+  const SPORTS_ENTRIES: NewsTickerBarProps['entries'] = [
+    { symbol: 'NYK', price: '102', delta: '+5', direction: 'up' },
+    { symbol: 'BOS', price: '97', delta: 'F', direction: 'flat' },
+    { symbol: 'LAL', price: '88', delta: '-3', direction: 'down' },
+    { symbol: 'PHX', price: '91', delta: 'F', direction: 'flat' },
+  ];
+
+  it("mode: 'flip' renders two stacked rows (top + bottom), no marquee", () => {
+    renderAt(30, { entries: SPORTS_ENTRIES, mode: 'flip', bandHeight: 100 });
+    expect(screen.getByTestId('news-ticker-bar-flip-top')).toBeTruthy();
+    expect(screen.getByTestId('news-ticker-bar-flip-bottom')).toBeTruthy();
+    expect(screen.queryByTestId('news-ticker-bar-marquee')).toBeNull();
+  });
+
+  it("mode: 'flip' first pair shows entries[0] on top + entries[1] on bottom at frame=0", () => {
+    renderAt(0, { entries: SPORTS_ENTRIES, mode: 'flip', bandHeight: 100 });
+    expect(screen.getByTestId('news-ticker-bar-flip-top').textContent).toContain('NYK');
+    expect(screen.getByTestId('news-ticker-bar-flip-bottom').textContent).toContain('BOS');
+  });
+
+  it("mode: 'flip' advances pair every flipDurationMs", () => {
+    // flipDurationMs=1000 → frame=30 (1000ms) → pairIdx=1 → entries[2]+entries[3].
+    renderAt(31, {
+      entries: SPORTS_ENTRIES,
+      mode: 'flip',
+      flipDurationMs: 1000,
+      bandHeight: 100,
+    });
+    expect(screen.getByTestId('news-ticker-bar-flip-top').textContent).toContain('LAL');
+    expect(screen.getByTestId('news-ticker-bar-flip-bottom').textContent).toContain('PHX');
+  });
+
+  it("mode: 'scroll' (default; omitted) renders marquee, no flip rows", () => {
+    renderAt(30, { entries: SPORTS_ENTRIES });
+    expect(screen.getByTestId('news-ticker-bar-marquee')).toBeTruthy();
+    expect(screen.queryByTestId('news-ticker-bar-flip-top')).toBeNull();
+    expect(screen.queryByTestId('news-ticker-bar-flip-bottom')).toBeNull();
+  });
+
+  it('schema accepts mode + flipDurationMs', () => {
+    const result = newsTickerBarPropsSchema.safeParse({
+      entries: SPORTS_ENTRIES,
+      mode: 'flip',
+      flipDurationMs: 4500,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('schema rejects invalid mode', () => {
+    const result = newsTickerBarPropsSchema.safeParse({
+      entries: SPORTS_ENTRIES,
+      mode: 'invalid' as never,
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
 describe('newsTickerBarClip definition (T-356a)', () => {
   it("registers under kind 'news-ticker-bar' with the expected theme slots", () => {
     expect(newsTickerBarClip.kind).toBe('news-ticker-bar');
