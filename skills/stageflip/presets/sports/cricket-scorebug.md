@@ -3,7 +3,7 @@ id: cricket-scorebug
 cluster: sports
 clipKind: scoreBug
 source: docs/compass_artifact.md#cricket-scorebug
-status: stub
+status: substantive
 preferredFont:
   family: Custom Star Sports / ICC
   license: proprietary-byo
@@ -13,50 +13,97 @@ fallbackFont:
   license: ofl
 permissions: []
 signOff:
-  parityFixture: pending-user-review
+  parityFixture: 'signed:2026-05-06'
   typeDesign: pending-cluster-batch
 ---
 
 # Cricket Scorebug — top-of-screen complex register
 
+The canonical cricket broadcast scoreboard register: a top-of-screen multi-row complex panel anchored at top-center on a dark broadcast `#0E0E12` base, with team-color dominant accents (India blue `#0066B3` for the batting team chip and Australia gold `#FFCD00` for the bowling team chip), batting-team score (`runs/wickets`) + overs, current run rate + required run rate, both batsmen with on-strike marker, current bowler with figures, and partnership runs — all simultaneously visible. Common uses: live cricket broadcast where the dense multi-line panel + team-color chip set + batsmen-with-on-strike-marker + bowler figures + run-rate canon is the brand signal — sister-but-distinct from T-333 / T-334 / T-335's football-style horizontal bug AND T-337's tennis-style bottom-left two-player stack AND T-332's racing-style 20-row vertical tower.
+
+This preset is the **eighth Cluster B preset to land** AND the **eighth `scoreBug` clipKind consumer** (after T-358's clipKind-default `cricket-ball-by-ball-dots` + T-333 / T-334 / T-335 / T-337 / T-332 prior overrides) AND the **first production consumer of T-332a's `'cricket'` style branch** on the `score-bug` primitive. Wired via `PRESET_ID_BINDINGS['cricket-scorebug']` per Pattern C — the `'scoreBug'` arm in `DEFAULT_CLIP_KIND_RESOLVER` stays UNCHANGED at `scoreBugDotsBinding` (T-358); T-333's `premierLeagueFopBinding` + T-334's `foxNflNoChromeBinding` + T-335's `nbcSnfBinding` + T-337's `wimbledonGreenPurpleBinding` + T-339a's `espnBottomlineBinding` + T-338's `mastersRedUnderParBinding` + T-332's `f1TimingTowerBinding` stay UNCHANGED. Closes the T-332a primitive's production-consumer matrix on `'cricket'` — after T-336 merges, all four style branches (`'football'` / `'racing'` / `'cricket'` / `'tennis'`) have at least one production preset binding.
+
 ## Visual tokens
-- Top of screen, ≈ 40–50% of frame width
-- Team colors dominant (India blue `#0066B3`, Australia gold `#FFCD00`, etc., extend per fixture)
-- Simultaneous information:
-  - Batting team score (runs / wickets)
-  - Overs + run rates (current + required)
-  - Both batsmen with individual scores + balls faced
-  - Current bowler with figures
-  - Partnership runs
-- Ball-by-ball dot row: last 6 deliveries
-  - Dot `⋅` = 0 runs (neutral gray)
-  - Green `#00B54A` = 4 (boundary)
-  - Purple / gold `#FFCD00` = 6 (six)
-  - Red `#CC0000` = wicket
+
+The cricket-scorebug register is canonical and locked: top-of-screen multi-row complex panel, dark broadcast base, white text + India-blue / Australia-gold team chips + on-strike batsman marker + run-rate / required-run-rate canon + bowler figures + partnership.
+
+- **Background / dark broadcast base** `#0E0E12` — the deep neutral broadcast base per stub line 22. Passed to the primitive's `background` prop (root `backgroundColor` style on the cricket branch render).
+- **Foreground / text** `#FFFFFF` — all text white: team codes, scores, overs, run rates, batsman names, bowler name + figures, partnership.
+- **Top-center anchor** `anchor: 'top-center'` + `position: { x: 200, y: 60 }` — the panel anchors top-of-screen at the horizontal mid-region. `x = 200` is ~16% from the left edge (≈ 880 px wide canvas residual to the right edge for the panel, well within stub's 40–50% frame-width target on a 1280×720 canvas); `y = 60` puts the panel flush with the top safe-area.
+- **Batting-team chip + score** `battingTeam: { code: 'IND', color: '#0066B3', runs: 247, wickets: 4, overs: '42.3' }` — primitive renders the team code in a color-filled chip (`backgroundColor: battingTeam.color`) followed by `${runs}/${wickets}` + `(${overs} ov)`. Verbatim. India blue `#0066B3` per stub line 24.
+- **Bowling-team chip** `bowlingTeam: { code: 'AUS', color: '#FFCD00' }` — primitive renders the bowling-team code in a separate color-filled chip on the right (`backgroundColor: bowlingTeam.color`) prefixed with `v `. Australia gold `#FFCD00` per stub line 24.
+- **Run-rate row** `runRate: '5.85'` + `requiredRunRate: '6.42'` — primitive renders `RR 5.85 · RRR 6.42` in a single horizontal row beneath the team line. Both labels are verbatim from the primitive (lines 562–563); the values come from the snapshot.
+- **Batsmen rows with on-strike marker** `batsmen: [{ name: 'Kohli', runs: 87, balls: 92, onStrike: true }, { name: 'Rahul', runs: 34, balls: 41 }]` — primitive renders one row per batsman as `* {name} {runs} ({balls})` (with `* ` prefix only when `onStrike: true`). Kohli row carries the on-strike marker; Rahul row does not. Snapshot exercises BOTH paths in the primitive's batsmen-rendering loop (line 569–582).
+- **Bowler row** `bowler: { name: 'Cummins', figures: '2-58' }` — primitive renders `{name} {figures}` in a single row beneath the batsmen.
+- **Partnership row** `partnership: '64 (78)'` — primitive renders `P/S 64 (78)` (verbatim `P/S` label + the snapshot string) in the bottommost row of the panel.
+
+The multi-row complex panel IS the message — at frame 60 the eye locks onto the top team line (`IND 247/4 (42.3 ov) v AUS`), then scans down through the run-rate row (`RR 5.85 · RRR 6.42`), the on-strike-marked Kohli row (`* Kohli 87 (92)`), the not-on-strike Rahul row (`Rahul 34 (41)`), the Cummins bowler row (`Cummins 2-58`), and the partnership row (`P/S 64 (78)`). Restraint is the signature; the dark base + white text + team-color chip pair + universal cricket-canon labels (`RR` / `RRR` / `*` on-strike / `P/S`) is the cricket broadcast register.
 
 ## Typography
-- Team abbreviations / player surnames: Bold, 16–18 pt, tabular
-- Scores / figures: Bold, 18–22 pt, tabular
-- Overs / rates: Regular, 14–16 pt, tabular
+
+- **`preferredFont: Custom Star Sports / ICC`** (`proprietary-byo` per ADR-004 §D3). The bespoke broadcast display family used across Star Sports / ICC cricket graphics; the bespoke geometric construction is the brand-DNA letter geometry. Tenants licensing the Star Sports / ICC custom face locally slot it in via the FontManager (T-072). Cluster B IS in `TYPE_DESIGN_REQUIRED_CLUSTERS`, so `signOff.typeDesign` MUST be `'pending-cluster-batch'` or `'signed:YYYY-MM-DD'`, NOT `'na'`. T-336 holds at `pending-cluster-batch`; the cluster-B type-design batch review (cluster-composer task) flips this field across all nine Cluster B presets in one downstream PR.
+- **`fallbackFont: IBM Plex Sans`** weight `600` (SIL Open Font License 1.1; originally Mike Abbink + Bold Monday for IBM). IBM Plex Sans 600 (SemiBold) provides clean broadcast-suitable proportions for the dense multi-row panel — required for tabular numeral rendering across runs / wickets / overs / run-rates / batsman scores / bowler figures / partnership figures simultaneously visible. Substituted automatically by the FontManager on every rendering medium where the BYO Star Sports / ICC face is not cleared.
+- **Per-row text** the primitive applies `fontFamily` from the bound `font.family` prop on the panel root + per-row containers. Team codes + scores + on-strike markers + bowler figures all render at the primitive's cricket-branch defaults (bold, tabular).
+- **Casing** `casing: 'as-is'` — team codes are already uppercase in the snapshot (`'IND'` / `'AUS'`); batsman + bowler names render in their authored casing (`'Kohli'` / `'Rahul'` / `'Cummins'`); no transform.
+- **Distinct numeral design** IBM Plex Sans 600 numerals are the v1 render typeface for runs / wickets / overs / run rates / batsman scores / bowler figures / partnership figures; Star Sports / ICC custom numeral geometry is NOT preserved. Cosmetic divergence — same posture as T-333 / T-334 / T-335 / T-337 / T-332 BYO/OFL fallback divergences.
+- **No italic, no underline, no strikethrough.** Cricket broadcast graphics never use them.
 
 ## Animation
-- Ball-by-ball pulse / flash on score change, 200 ms
-- Wickets: dramatic red flash + dismissal-type label (bowled / caught / LBW / stumped / run-out), 500 ms
-- Boundaries: green flash (4) or gold flash (6), 400 ms
-- Milestone (50, 100 runs): golden flash + callout, 800 ms
-- Between-overs: expand to show bowling change info, 600 ms ease-in-out
+
+- **Steady-state register only in v1.** The `'cricket'` branch of T-332a renders a **static layout** — there is no entrance animation, no within-window transition, no per-cell pulse on score change, no wicket flash, no boundary flash, no milestone flash, no between-overs expand. The reference frame for the parity golden is steady-state mid-over at frame 60.
+- **Ball-by-ball pulse / flash on score change deferred (T-336a carve-out)** — stub line 43 calls for "Ball-by-ball pulse / flash on score change, 200 ms." Per-cell pulse math requires frame-windowed animation; deferred. Candidate `T-336a` carve-out IF Reviewer scrutiny demands.
+- **Wicket dramatic red flash + dismissal-type label deferred (T-336b carve-out)** — stub line 44 calls for "Wickets: dramatic red flash + dismissal-type label (bowled / caught / LBW / stumped / run-out), 500 ms." Frame-derived flash + transient text overlay; not in primitive v1. Candidate `T-336b` carve-out.
+- **Boundary green / gold flash on 4 / 6 deferred (T-336c carve-out)** — stub line 45 calls for "Boundaries: green flash (4) or gold flash (6), 400 ms." Frame-derived per-row flash; not in primitive v1. Candidate `T-336c` carve-out.
+- **Milestone golden flash + callout at 50 / 100 / 150 deferred (T-336d carve-out)** — stub line 46 calls for "Milestone (50, 100 runs): golden flash + callout, 800 ms." Score-threshold-derived overlay; not in primitive v1. Candidate `T-336d` carve-out.
+- **Between-overs expand-to-show-bowling-change deferred (T-336e carve-out)** — stub line 47 calls for "Between-overs: expand to show bowling change info, 600 ms ease-in-out." Layout transition between over-states; not in primitive v1. Candidate `T-336e` carve-out.
+- **Steady-state mid-over at frame 60.** The cricket branch is a static layout so any post-mount frame produces an identical render. Cluster-norm consistency (T-333 / T-334 / T-335 / T-337 / T-332 all use frame 60) AND the operator-default `--frame=60` are the deciding factors.
+- **No state-transition animation in v1.** State transitions (entrance, score-change pulse, wicket flash, boundary flash, milestone flash, between-overs expand) belong to the live-mount surface where the data source streams updates AND to the runtime composition where the host orchestrates broadcast pacing.
 
 ## Rules
-- Ball-by-ball dot row is the signature — do not collapse or hide.
-- Color semantics for the dot row are universal cricket canon; do not re-theme.
-- Milestone animations are mandatory at 50 / 100 / 150 runs; milestone-flash is a cultural expectation.
-- This is the densest scorebug in any sport — resist "simplifying" by removing columns.
+
+- **Bound primitive**: `score-bug` from `@stageflip/runtimes-frame-runtime-bridge` (`packages/runtimes/frame-runtime-bridge/src/clips/score-bug.tsx`, exported as `ScoreBug`; primitive `kind: 'score-bug'` kebab-case). T-336 wires the binding via `PRESET_ID_BINDINGS['cricket-scorebug']` (Pattern C — eighth-preset-for-clipKind via the override path, NOT clipKind-default). The `'scoreBug'` arm in `DEFAULT_CLIP_KIND_RESOLVER` stays UNCHANGED at `scoreBugDotsBinding` (T-358); T-333 / T-334 / T-335 / T-337 / T-339a / T-338 / T-332 prior overrides stay UNCHANGED. Composing tools should mount `ScoreBug` with the snapshot per `CRICKET_SCOREBUG_PROPS` and the resolver's `buildProps` defaults.
+- **`style: 'cricket'` is the load-bearing UX render** for this preset. T-332a's `score-bug` primitive ships four style branches (`'football'` / `'racing'` / `'cricket'` / `'tennis'`) via Zod discriminated union (line 175); T-336 binds the `'cricket'` branch. **First production consumer.** T-333 / T-334 / T-335 bind the `'football'` branch; T-337 binds the `'tennis'` branch; T-332 binds the `'racing'` branch; T-336 closes the production-consumer matrix on `'cricket'`.
+- **NOT cricket-ball-by-ball-dots — different primitive.** T-358 cricket-ball-by-ball-dots holds the clipKind-default `'scoreBug'` slot (`scoreBugDotsBinding` → `outcome-row` primitive) for the ball-by-ball dot row. T-336 cricket-scorebug binds the `score-bug` primitive's `'cricket'` style branch for the multi-row complex panel ABOVE the dot row. The two presets compose externally at the host level (one above, one below) — DO NOT collapse them.
+- **Team-color chip pair is NON-NEGOTIABLE — instant-ID system.** The batting-team color-filled chip + bowling-team color-filled chip (India blue + Australia gold in this snapshot, mappable per fixture) IS the rendered slot; collapsing to monochrome defeats the brand signal. Do NOT override `battingTeam.color` and `bowlingTeam.color` to the same value.
+- **On-strike marker is mandatory canon** (stub semantics). The primitive renders `* ` only when `onStrike: true`; the snapshot exercises both paths (Kohli on-strike, Rahul not). Removing the marker defeats cricket-broadcast-canon — the on-strike batsman is the primary attention target.
+- **Run-rate + required-run-rate labels are universal cricket canon** — `RR` / `RRR` are rendered verbatim by the primitive (lines 562–563); do NOT re-label.
+- **Partnership label is universal cricket canon** — `P/S` is rendered verbatim by the primitive (line 598); do NOT re-label.
+- **Tabular numerals required for column alignment** — IBM Plex Sans 600 ships tabular figures by default; the primitive's cricket branch renders runs / wickets / overs / run-rates / batsman scores / bowler figures / partnership in the bound font family. Escalate if a future fallback choice does not include tabular figures.
+- **Snapshot exercises every optional cricket-schema field** (D-T336-4) — `bowlingTeam` (both fields) + `runRate` + `requiredRunRate` + `batsmen` array length 2 (max) with one on-strike + one not + `bowler` (both fields) + `partnership` + `anchor: 'top-center'`. Closes the cricket-schema optional-field matrix at the canonical mid-innings register.
+- **§ball-pulse — ball-by-ball pulse / flash on score change deferred (D-T336-12; T-336a carve-out)**. Stub line 43 calls for "Ball-by-ball pulse / flash on score change, 200 ms." The `'cricket'` branch is a static layout; no per-cell pulse. Carving out is `T-336a`. NOT a T-336 fix.
+- **§wicket-flash — wicket dramatic red flash + dismissal-type label deferred (D-T336-12; T-336b carve-out)**. Stub line 44 calls for "Wickets: dramatic red flash + dismissal-type label, 500 ms." Frame-derived flash + transient overlay; not in primitive v1. Carving out is `T-336b`. NOT a T-336 fix.
+- **§boundary-flash — boundary green / gold flash on 4 / 6 deferred (D-T336-12; T-336c carve-out)**. Stub line 45 calls for "Boundaries: green flash (4) or gold flash (6), 400 ms." Frame-derived per-row flash; not in primitive v1. Carving out is `T-336c`. NOT a T-336 fix.
+- **§milestone — milestone golden flash + callout deferred (D-T336-12; T-336d carve-out)**. Stub line 46 calls for "Milestone (50, 100 runs): golden flash + callout, 800 ms." Score-threshold-derived overlay; not in primitive v1. Carving out is `T-336d`. NOT a T-336 fix.
+- **§between-overs — expand-to-show-bowling-change deferred (D-T336-12; T-336e carve-out)**. Stub line 47 calls for "Between-overs: expand to show bowling change info, 600 ms ease-in-out." Layout transition between over-states; not in primitive v1. Carving out is `T-336e`. NOT a T-336 fix.
+- **§dot-row — ball-by-ball dot row composes externally via T-358** (NOT a T-336 axis). Stub lines 31–35 + 50–51 describe the universal-canon dot-row color mapping (`⋅` / green / gold / red), but that row is shipped as a separate preset (T-358 cricket-ball-by-ball-dots) using the `outcome-row` primitive — NOT `score-bug`. T-336 ships the multi-line complex panel ABOVE the dot row only. The two presets compose externally at the host level.
+- **§live-data — `permissions: []` declared; v1 ships static snapshot only**. Frontmatter declares `permissions: []` per ADR-003 §D2 — no network in v1. v1 ships a static IND vs AUS mid-innings snapshot; live-data orchestration would require a future `permissions: [network]` declaration AND `LiveDataClip` host orchestration.
+- **§star-sports-icc — Star Sports / ICC custom face preserved by the proprietary path only**. The OFL fallback IBM Plex Sans 600 does NOT preserve the bespoke Star Sports / ICC letter shapes. Cosmetic divergence; the `proprietary-byo` path is the user's escape hatch when they license the Star Sports / ICC face locally. Same posture as T-333 / T-334 / T-335 / T-337 / T-332 BYO fallback divergences.
+- **Reference frame for parity is steady-state at frame 60** per ADR-004 §D5 — single canonical variant. The cricket branch is a static layout so any post-mount frame produces an identical render.
 
 ## Acceptance (parity)
-- Reference frames: 0 (pre-entry), 20 (settled), 40 (post-ball-change), 60 (post-wicket)
-- PSNR ≥ 38 dB (relaxed for dense-text rendering variance), SSIM ≥ 0.96
+
+One reference-frame fixture at `frame: 60` (steady-state mid-over per ADR-004 §D5):
+
+- `golden-frame-60.png` — the canonical cricket scorebug rendered as a top-of-screen multi-row complex panel on a `#0E0E12` dark broadcast base; panel anchored at `(200, 60)` on a 1280×720 canvas with `anchor: 'top-center'`; team-color-filled chip pair (`#0066B3` IND batting + `#FFCD00` AUS bowling) + score (`247/4 (42.3 ov)`) + run-rate row (`RR 5.85 · RRR 6.42`) + on-strike-marked Kohli row (`* Kohli 87 (92)`) + Rahul row (`Rahul 34 (41)`) + Cummins bowler row (`Cummins 2-58`) + partnership row (`P/S 64 (78)`); white `#FFFFFF` text; IBM Plex Sans 600 numerals + names. Static layout (no animation; the cricket branch renders steady-state — no ball-pulse / wicket-flash / boundary-flash / milestone / between-overs expand). All five animation paths deferred (Rules §ball-pulse / §wicket-flash / §boundary-flash / §milestone / §between-overs).
+
+Thresholds: **PSNR ≥ 42 dB**, **SSIM ≥ 0.98** (matches the cross-cluster norm used by T-333 / T-334 / T-335 / T-337 / T-338 / T-339a / T-332 / T-323 / T-325 / T-326 / T-327 / T-328 / T-329 / T-330 / T-355 / T-358 / T-359 / T-360 / T-356 / T-357 / T-362 / T-363 / T-364 / T-365 / T-366 / T-367 / T-350). Hand-pinned via the F-4 generator-flag route `--psnr=42 --ssim=0.98 --mark-signed` (NO manual `thresholds.json` edit per D-T336-7). The multi-row text panel with dark base + chip-pair backgrounds is aliasing-comparable to T-335's center-circle register; no curved-vector seams in this layout (rectangular chips only) so threshold parity matches the cluster norm.
+
+**Sign-off (T-336 D-T336-8, in-PR — Pattern D):** the canonical steady-state golden is committed at `parity-fixtures/sports/cricket-scorebug/` with the single-variant manifest shape. Frontmatter `signOff.parityFixture` is `signed:<UTC date>` after running `scripts/generate-preset-parity-fixture-prod.ts --preset=cricket-scorebug --frame=60 --psnr=42 --ssim=0.98 --mark-signed`. The golden was rendered locally via the puppeteer/CDP-bound prod renderer; the `scoreBug` clipKind binds to `score-bug` for the `cricket-scorebug` preset id via `PRESET_ID_BINDINGS['cricket-scorebug']` per the v1 resolver. Re-render + re-sign with `--force` is the operator's path if the canonical snapshot changes or the FontManager's preload list updates the rendered IBM Plex Sans 600 weights. **`signOff.typeDesign` STAYS `pending-cluster-batch`** — the cluster-B type-design batch review (cluster-composer task) flips this field across all nine Cluster B presets in one downstream PR; T-336's merge brings Cluster B to **8/9 substantive + signed** (NOT YET ELIGIBLE for batch merge per D-T336-9; T-339 uefa-starball-refraction remains).
 
 ## References
-- `docs/compass_artifact.md` § Cricket scorebug
-- Pairs with cluster E `cricket-ball-by-ball-dots` for standalone dot display
-- ADR-004
+
+- `docs/compass_artifact.md` § Cricket scorebug — canonical visual source.
+- `skills/stageflip/presets/sports/f1-timing-tower.md` — sister Cluster B preset (T-332; seventh Cluster B preset; bound via `PRESET_ID_BINDINGS` override on `scoreBug` clipKind; first `'racing'` consumer); T-336 mirrors its resolver-binding shape verbatim, swapping the preset id + binding name + snapshot constant + style discriminant (`'racing'` → `'cricket'`).
+- `skills/stageflip/presets/sports/wimbledon-green-purple.md` — sister Cluster B preset (T-337; fifth Cluster B preset; first `'tennis'` consumer); T-336 / T-337 / T-332 / T-333 / T-334 / T-335 together establish the Cluster B `score-bug` template across all 4 style branches.
+- `skills/stageflip/presets/sports/{premier-league-field-of-play,fox-nfl-no-chrome,nbc-snf-possession-illuminated}.md` — sister Cluster B `'football'` consumers (T-333 / T-334 / T-335).
+- `skills/stageflip/presets/sports/masters-red-under-par.md` — sister Cluster B preset (T-338; sixth Cluster B preset; binds the `standings-table` primitive via `PRESET_ID_BINDINGS` override on `standings` clipKind — NOT `score-bug`). Sister-clipKind reference for the cluster's overall register.
+- `skills/stageflip/presets/sports/espn-bottomline-flipper.md` — sister Cluster B preset (T-339a; binds `news-ticker-bar` via `PRESET_ID_BINDINGS` override on `newsTicker` clipKind — NOT `score-bug`). Sister-clipKind reference for the cluster's overall register.
+- `skills/stageflip/presets/cluster-e/cricket-ball-by-ball-dots.md` (or wherever T-358 lives) — paired-but-distinct cricket preset (T-358; clipKind-default for `scoreBug`; binds `outcome-row` primitive — NOT `score-bug`). Composes externally with T-336 above the dot row at the host level.
+- `skills/stageflip/presets/sports/SKILL.md` — Cluster B SKILL (locked per D-T336; owned by the cluster-B composer task).
+- `skills/stageflip/presets/sports/uefa-starball-refraction.md` — remaining Cluster B stub. T-336's merge brings Cluster B to 8/9 substantive + signed; the final preset lands in T-339 (uefa-starball-refraction).
+- `packages/runtimes/frame-runtime-bridge/src/clips/score-bug.tsx` — the bound primitive (`ScoreBug`); shipped by T-332a as a four-discriminant Zod union (`'football'` / `'racing'` / `'cricket'` / `'tennis'`). **First production consumer of the `'cricket'` style branch**: T-336 cricket-scorebug. Closes the production-consumer matrix to all 4 styles exercised.
+- `packages/parity-cli/src/generate-fixture.ts` — v1 resolver mapping `scoreBug` → `outcome-row` clipKind-default (T-358 scoreBugDotsBinding) + per-preset `PRESET_ID_BINDINGS` overrides (T-333 / T-334 / T-335 / T-337 prior `score-bug` consumers + T-332 f1-timing-tower + T-336 cricket-scorebug → `cricketScorebugBinding`, cricket-style consumer) + exported `CRICKET_SCOREBUG_PROPS` constant (D-T336-4).
+- "Restraint is the signature." — the cricket broadcast bug's multi-row complex panel + dark base + team-color chip pair + universal cricket-canon labels (`RR` / `RRR` / `*` / `P/S`) IS the canonical register; preserve faithfully.
+- ADR-003 §D2 — live-data family + `LiveDataClip` two-path contract (relevant to `permissions: []` declaration).
+- ADR-004 (preset system contract — frontmatter, loader, validator, parity sign-off, integrity invariants).
+- ADR-005 (frontier clip catalogue — scoreBug / score-bug posture).

@@ -1,0 +1,30 @@
+{
+  "name": "cricket-scorebug",
+  "cluster": "sports",
+  "kind": "scoreBug",
+  "description": "Parity fixture for preset 'cricket-scorebug' (cluster sports, kind scoreBug)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Custom Star Sports / ICC",
+      "license": "proprietary-byo"
+    },
+    "fallback": {
+      "family": "IBM Plex Sans",
+      "weight": 600,
+      "license": "ofl"
+    }
+  }
+}

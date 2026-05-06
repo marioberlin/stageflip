@@ -1973,6 +1973,104 @@ const f1TimingTowerBinding: ClipKindBinding = {
 };
 
 /**
+ * Cricket scorebug snapshot props per D-T336-1 / D-T336-4.
+ * Cluster B preset T-336 wires the `score-bug` primitive (T-332a) as the
+ * eighth `scoreBug` clipKind consumer (Pattern C — `PRESET_ID_BINDINGS`
+ * override; sixth override after T-333 PL + T-334 Fox NFL + T-335 NBC SNF +
+ * T-337 Wimbledon + T-332 F1 Timing Tower). FIRST production consumer of
+ * T-332a's `'cricket'` style branch — completes the primitive's full
+ * production-consumer matrix across all 4 styles (`'football'` / `'racing'` /
+ * `'cricket'` / `'tennis'`) exercised.
+ *
+ * Snapshot captures the canonical mid-innings IND vs AUS register: top-of-
+ * screen multi-row complex panel anchored at top-center; India batting team
+ * blue `#0066B3` score 247/4 in 42.3 overs; Australia bowling team gold
+ * `#FFCD00`; current run rate 5.85 + required run rate 6.42; both batsmen
+ * (Kohli on-strike 87/92 + Rahul 34/41); current bowler (Cummins 2-58);
+ * partnership 64 (78). Dark broadcast base `#0E0E12` + white text + IBM Plex
+ * Sans 600 OFL fallback for the proprietary Star Sports / ICC custom face.
+ * Ball-by-ball pulse, wicket flash, boundary flash, milestone flash, and
+ * between-overs expand all deferred (D-T336-3 / D-T336-12). Ball-by-ball dot
+ * row composes externally via T-358 cricket-ball-by-ball-dots preset
+ * (`outcome-row` primitive); not a T-336 axis.
+ */
+export const CRICKET_SCOREBUG_PROPS: {
+  readonly style: 'cricket';
+  readonly position: { readonly x: number; readonly y: number };
+  readonly background: string;
+  readonly foreground: string;
+  readonly font: { readonly family: string; readonly weight: number };
+  readonly casing: 'as-is';
+  readonly battingTeam: {
+    readonly code: string;
+    readonly color: string;
+    readonly runs: number;
+    readonly wickets: number;
+    readonly overs: string;
+  };
+  readonly bowlingTeam: {
+    readonly code: string;
+    readonly color: string;
+  };
+  readonly runRate: string;
+  readonly requiredRunRate: string;
+  readonly batsmen: ReadonlyArray<{
+    readonly name: string;
+    readonly runs: number;
+    readonly balls?: number;
+    readonly onStrike?: boolean;
+  }>;
+  readonly bowler: { readonly name: string; readonly figures: string };
+  readonly partnership: string;
+  readonly anchor: 'top-center';
+} = {
+  style: 'cricket',
+  position: { x: 200, y: 60 }, // top-anchored mid-frame (D-T336-4; 1280x720 canvas)
+  background: '#0E0E12', // dark broadcast bg per stub line 22
+  foreground: '#FFFFFF', // white text
+  font: { family: 'IBM Plex Sans', weight: 600 }, // OFL fallback for Star Sports / ICC custom
+  casing: 'as-is',
+  battingTeam: {
+    code: 'IND',
+    color: '#0066B3', // India blue per stub line 24
+    runs: 247,
+    wickets: 4,
+    overs: '42.3',
+  },
+  bowlingTeam: {
+    code: 'AUS',
+    color: '#FFCD00', // Australia gold per stub line 24
+  },
+  runRate: '5.85',
+  requiredRunRate: '6.42',
+  batsmen: [
+    { name: 'Kohli', runs: 87, balls: 92, onStrike: true },
+    { name: 'Rahul', runs: 34, balls: 41 },
+  ],
+  bowler: { name: 'Cummins', figures: '2-58' },
+  partnership: '64 (78)',
+  anchor: 'top-center',
+};
+
+const cricketScorebugBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'score-bug', // kebab-case primitive `kind` (T-332a line 686)
+  buildProps() {
+    // Deep-clone nested object literals + the batsmen array (with per-batsman
+    // objects) so callers can mutate without aliasing the exported constant.
+    return {
+      ...CRICKET_SCOREBUG_PROPS,
+      position: { ...CRICKET_SCOREBUG_PROPS.position },
+      font: { ...CRICKET_SCOREBUG_PROPS.font },
+      battingTeam: { ...CRICKET_SCOREBUG_PROPS.battingTeam },
+      bowlingTeam: { ...CRICKET_SCOREBUG_PROPS.bowlingTeam },
+      batsmen: CRICKET_SCOREBUG_PROPS.batsmen.map((b) => ({ ...b })),
+      bowler: { ...CRICKET_SCOREBUG_PROPS.bowler },
+    };
+  },
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -1998,6 +2096,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'wimbledon-green-purple': wimbledonGreenPurpleBinding, // T-337
   'masters-red-under-par': mastersRedUnderParBinding, // T-338
   'f1-timing-tower': f1TimingTowerBinding, // T-332
+  'cricket-scorebug': cricketScorebugBinding, // T-336
 };
 
 /**
