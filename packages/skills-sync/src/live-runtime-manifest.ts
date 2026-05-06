@@ -111,6 +111,9 @@ export const LIVE_RUNTIME_MANIFEST: ClipsCatalogPkg = {
         // chyron of N (1..24) symbol+price+delta+▲/▼/▬ chips,
         // continuous-loop via doubled-row marquee)
         'news-ticker-bar',
+        // T-324a — breaking-banner primitive (BREAKING NEWS register;
+        // banner / sliver modes; horizontal / vertical slide entrance)
+        'breaking-banner',
         // T-357a — standings-table primitive (vertical ranked table of
         // N (1..16) rows × K (2..8) columns of mixed kind: rank /
         // label / numeric / delta / total)

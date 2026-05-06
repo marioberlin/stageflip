@@ -385,6 +385,19 @@ export {
   newsTickerBarPropsSchema,
 } from './news-ticker-bar.js';
 
+// T-324a — breaking-banner primitive. Single "BREAKING NEWS" register
+// serving CNN-style horizontal slide-in banners (`mode: 'banner'`,
+// default) and Fox-style persistent narrow slivers (`mode: 'sliver'`).
+// `slideAxis: 'horizontal' | 'vertical'` swaps the entrance translate
+// axis; sliver mode skips entrance per D-T324a-6. Unblocks T-324
+// (cnn-breaking) and T-327 (fox-news-alert).
+export {
+  BreakingBanner,
+  type BreakingBannerProps,
+  breakingBannerClip,
+  breakingBannerPropsSchema,
+} from './breaking-banner.js';
+
 // T-357a — standings-table primitive. Generic vertical ranked table of
 // N (1..16) rows × K (2..8) columns of mixed kind (rank/label/numeric/
 // delta/total) with per-column color tinting + delta-arrow glyphs (↑ /
@@ -478,6 +491,7 @@ import { animatedValueClip } from './animated-value.js';
 import { audioVisualizerReactiveClip } from './audio-visualizer-reactive.js';
 import { audioVisualizerClip } from './audio-visualizer.js';
 import { beatSyncedTextClip } from './beat-synced-text.js';
+import { breakingBannerClip } from './breaking-banner.js';
 import { captionClip } from './caption.js';
 import { chartBuildClip } from './chart-build.js';
 import { chartClip } from './chart/index.js';
@@ -617,6 +631,13 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // Cluster A/B/E ticker presets (CNN/Fox breaking-news, ESPN
   // BottomLine, crypto dashboards). 44 → 45 clips.
   newsTickerBarClip,
+  // T-324a — breaking-banner primitive. Single "BREAKING NEWS" register
+  // serving CNN horizontal slide-in banners (mode: 'banner', default)
+  // and Fox persistent narrow slivers (mode: 'sliver'). slideAxis swaps
+  // entrance translate axis (X for CNN, Y for Fox). Sliver mode skips
+  // entrance per D-T324a-6. Unblocks T-324 (cnn-breaking) and T-327
+  // (fox-news-alert). 50 → 51 clips.
+  breakingBannerClip,
   // T-357a — standings-table primitive (vertical ranked table of N
   // (1..16) rows × K (2..8) columns of mixed kind: rank / label /
   // numeric / delta / total; per-column color tinting; delta-arrow

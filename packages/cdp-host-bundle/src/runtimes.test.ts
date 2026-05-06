@@ -70,10 +70,10 @@ describe('registerAllLiveRuntimes', () => {
     expect(resolved?.runtime.id).toBe('three');
   });
 
-  it('registers all T-131b/d/f.1 + T-131e.1/.2 + T-131f.2/.3 + T-131d.4 + T-183a + T-183b + T-202a + T-202b + T-406 + T-358a + T-356a + T-357a + T-316 + T-355a + T-322 + T-321 tranches on the frame-runtime bridge (50 clips)', () => {
+  it('registers all T-131b/d/f.1 + T-131e.1/.2 + T-131f.2/.3 + T-131d.4 + T-183a + T-183b + T-202a + T-202b + T-406 + T-358a + T-356a + T-357a + T-316 + T-355a + T-322 + T-321 + T-324a tranches on the frame-runtime bridge (51 clips)', () => {
     registerAllLiveRuntimes();
     const bridge = listRuntimes().find((r) => r.id === 'frame-runtime');
-    expect(bridge?.clips.size).toBe(50);
+    expect(bridge?.clips.size).toBe(51);
     const expectedKinds = [
       // b.1 (light)
       'counter',
@@ -147,6 +147,8 @@ describe('registerAllLiveRuntimes', () => {
       'lyrics',
       // T-321 — title-sequence primitive
       'titleSequence',
+      // T-324a — breaking-banner primitive
+      'breaking-banner',
     ];
     for (const kind of expectedKinds) {
       const resolved = findClip(kind);
