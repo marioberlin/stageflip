@@ -1026,6 +1026,67 @@ const appleTvLtBinding: ClipKindBinding = {
   },
 };
 
+/**
+ * Netflix documentary minimalist snapshot props per D-T329-1 / D-T329-6 /
+ * D-T329-11. Cluster A preset T-329 wires the `LowerThird` primitive
+ * (T-183 + T-183z) as the fifth `lowerThird` clipKind consumer (Pattern C
+ * — `PRESET_ID_BINDINGS` override; fourth `lowerThird`-keyed override
+ * after T-325 + T-326 + T-330). Mirrors T-330's `appleTvLtBinding` shape,
+ * swapping the snapshot constants for the Netflix doc minimalist register.
+ *
+ * T-329 is the **second production consumer of T-183z's `noFlag` /
+ * `subtitleColor` / `font` props** (T-330 was first). All three are
+ * exercised: `noFlag: true` suppresses the 6 px accent strip (Netflix
+ * doc register has no chrome); `subtitleColor: '#FFFFFF'` decouples the
+ * talent-line from the (irrelevant) `accent`; `font: { family: 'DM Sans',
+ * weight: 500 }` substitutes the OFL fallback for Netflix Sans at
+ * Medium weight.
+ *
+ * The `title` text is passed as the literal upper-case string
+ * `'DIRECTOR'` to honor the stub's "ALL CAPS title is the signature"
+ * rule (line 43) without a primitive `casing` prop — D-T329-6
+ * establishes the canonical "headline Mixed Case + title ALL CAPS"
+ * snapshot-string casing pattern for any future preset whose stub
+ * demands per-line casing.
+ *
+ * Snapshot captures the canonical Netflix doc steady-state lower-third:
+ * NO flag (T-183z) + black `#000000` card (canvas-matching; visually
+ * disappears) + Mixed-Case `'Ava DuVernay'` headline (white `#FFFFFF`
+ * DM Sans Medium) + ALL-CAPS `'DIRECTOR'` subtitle (white `#FFFFFF`
+ * DM Sans Medium via T-183z `subtitleColor`).
+ */
+export const NETFLIX_DOC_LT_PROPS: {
+  readonly name: string;
+  readonly title: string;
+  readonly accent: string;
+  readonly background: string;
+  readonly textColor: string;
+  readonly insetLeftPx: number;
+  readonly insetBottomPx: number;
+  readonly noFlag: true;
+  readonly subtitleColor: string;
+  readonly font: { readonly family: string; readonly weight: number };
+} = {
+  name: 'Ava DuVernay',
+  title: 'DIRECTOR',
+  accent: '#FFFFFF', // irrelevant — noFlag: true suppresses the strip (D-T329-3)
+  background: '#000000', // canvas-matching black; card visually disappears (D-T329-1)
+  textColor: '#FFFFFF', // headline white-on-black (D-T329-1)
+  insetLeftPx: 120, // stub line 26 exact (D-T329-1)
+  insetBottomPx: 80, // stub line 26 exact (D-T329-1)
+  noFlag: true, // T-183z — text-only register; no chrome (D-T329-3)
+  subtitleColor: '#FFFFFF', // T-183z — talent-line decoupled from accent (D-T329-4)
+  font: { family: 'DM Sans', weight: 500 }, // T-183z — DM Sans Medium = Netflix Sans fallback (D-T329-5)
+};
+
+const netflixDocLtBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'lower-third', // kebab-case primitive `kind` (mirrors T-323 / T-325 / T-326 / T-330)
+  buildProps() {
+    return { ...NETFLIX_DOC_LT_PROPS };
+  },
+};
+
 const squidGameGeometricBinding: ClipKindBinding = {
   runtimeId: 'frame-runtime',
   clipName: 'titleSequence',
@@ -1105,6 +1166,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'bbc-reith-dark': bbcReithDarkBinding,
   'al-jazeera-orange': alJazeeraOrangeBinding,
   'apple-tv-lt': appleTvLtBinding,
+  'netflix-doc-lt': netflixDocLtBinding,
 };
 
 /**

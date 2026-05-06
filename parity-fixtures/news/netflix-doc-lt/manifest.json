@@ -1,0 +1,30 @@
+{
+  "name": "netflix-doc-lt",
+  "cluster": "news",
+  "kind": "lowerThird",
+  "description": "Parity fixture for preset 'netflix-doc-lt' (cluster news, kind lowerThird)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Netflix Sans",
+      "license": "proprietary-byo"
+    },
+    "fallback": {
+      "family": "DM Sans",
+      "weight": 500,
+      "license": "ofl"
+    }
+  }
+}
