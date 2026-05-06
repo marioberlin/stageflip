@@ -231,6 +231,12 @@ ports; dashboards (T-131f.2) and the financial-statement composite
 |---|---|---|
 | `lyrics` | `src/clips/lyrics.tsx` | line-level music-synced lyric panel with three style bundles (`'karaoke-wipe'` — left-to-right color front sweeping across the active line driven by per-line ms-progress; `'three-line-stack'` — past dimmed at top / active highlighted in middle / next preview at bottom; `'highlight-current'` — active line only, full-screen). Frame-derived line visibility (`(currentTimeMs ∈ [line.startMs, line.endMs))`); per-line entrance (`'none'` / `'fade'` default / `'rise'`, 12-frame settle anchored on each line's `startMs` frame; rise translates 12 → 0 px); `'karaoke-wipe'` SVG `<clipPath>` fill driven by within-line ms-progress (`pct = clamp((currentTimeMs - startMs) / (endMs - startMs), 0, 1) * 100`) with stable line-index-derived clipPath IDs (`lyrics-line-clip-${i}`); casing transforms (`as-is` / `uppercase` / `lowercase` / `title-case`); optional `glow?: { color, blur }` halo on the active line via SVG `<filter>` with stable filter ID (`lyrics-glow-${i}`); `maxLinesVisible: 1 | 3 | 5` (default `3`; forced to `1` under `'highlight-current'`); `lineGap` controls vertical spacing in the stack; theme-slot fallback (`background` → `palette.background`, `foreground` → `palette.foreground`). `lines: { text, startMs, endMs }[]` is a strict required input (1–40 entries; pre-computed beat-aligned line timings — beat detection / audio-track parsing is a host concern, not this primitive). Unblocks T-367 (`karaoke-progressive-wipe`, last Cluster F preset) and reusable for Cluster A music-show graphics + Cluster G social-music presets. Cluster-specific palettes + canned `lines[]` live in `parity-cli` resolver shims, not in this primitive. |
 
+**T-324a (breaking-banner primitive)**
+
+| kind | file | notes |
+|---|---|---|
+| `breaking-banner` | `src/clips/breaking-banner.tsx` | Single "BREAKING NEWS" register serving CNN-style horizontal slide-in banners (`mode: 'banner'`, default; full-width strip at `insetBottomPx` default `80`) and Fox-style persistent narrow slivers (`mode: 'sliver'`; partial-width via `sliverWidthPct` default `0.30`; `sliverAnchor` default `'top-left'`; sliver mode skips entrance per D-T324a-6 — Fox's canonical posture is a persistent register, not an entrance). `slideAxis: 'horizontal'` (default) mirrors `lower-third`'s X-axis enter/exit translate; `slideAxis: 'vertical'` swaps the same math to translateY (Fox vertical slide). `EASE_OUT_QUART` enter / `EASE_IN_QUART` exit over `ceil(fps * 0.45)` / `ceil(fps * 0.35)` windows. Required: `headline` string + `label: { text, fill, color }` badge (independent of banner background). Optional: `endCap?: { fill, position: 'left' | 'right' }` flag, `background?` (theme `palette.background` fallback), `headlineColor?` (theme `palette.foreground` fallback), `font?: { family, weight }` (default `'Plus Jakarta Sans, sans-serif'` weight 800 — T-183z pattern), `casing?: 'as-is' | 'uppercase' | 'lowercase' | 'title-case'` (applies to headline). Out of v1: LIVE pulse bug (T-324b), red-block-wipe text-change between consecutive headlines (T-324c), Fox searchlight morph (T-327a), return-from-commercial multi-stage sequence (T-327b); ticker strip composes externally via existing `news-ticker-bar` primitive. Unblocks T-324 (cnn-breaking) and T-327 (fox-news-alert). Cluster-specific palettes, labels, headlines live in `parity-cli` resolver shims. |
+
 **T-321 (title-sequence primitive)**
 
 | kind | file | notes |
@@ -245,7 +251,7 @@ binding default colour props to `palette.*` roles (T-131a).
 editor look respectively.
 
 The barrel `ALL_BRIDGE_CLIPS` is the canonical iterable that the
-cdp-host-bundle passes to `createFrameRuntimeBridge`. All 50 bridge
+cdp-host-bundle passes to `createFrameRuntimeBridge`. All 51 bridge
 clips are registered through it (32 reference-clip ports across ten
 tranches + 10 profile-tier clips for StageFlip.Video and
 StageFlip.Display + the 1 unified T-406 chart family + the T-358a
@@ -263,7 +269,7 @@ below for the breakdown.
 | `src/index.test.tsx` | T-061, T-131b.1 | Runtime shape, render behaviour, window gating, props passthrough, schema/themeSlots passthrough |
 | `src/clips/*.tsx` | T-131b/d/e/f | Thirty-two reference-clip ports across ten tranches (light / medium / heavy / bridge-eligible lottie-three-shader / audit-driven standalones / bake-tier video+image / audio tranche / dashboard composites f.2a/b/c / financial statement f.3 / animated-map SVG fallback d.4) |
 | `src/clips/chart/*.tsx` | T-406 | Unified `chart` clip family — one ClipDefinition consuming `ChartElement`-shaped props, dispatching to seven per-kind renderers (bar / line / area / pie / donut / scatter / combo). See `runtimes/chart/SKILL.md`. |
-| `src/clips/index.ts` | T-131b/d/e/f, T-183, T-202, T-316, T-321, T-322, T-355a, T-356a, T-357a, T-358a, T-406 | Barrel + `ALL_BRIDGE_CLIPS` constant (50 clips: 32 reference-clip ports + 10 StageFlip.Video / StageFlip.Display profile clips + the unified `chart` family + the `outcome-row` primitive + the `news-ticker-bar` primitive + the `standings-table` primitive + the `caption` primitive + the `magic-wall-panel` primitive + the `lyrics` primitive + the `title-sequence` primitive) |
+| `src/clips/index.ts` | T-131b/d/e/f, T-183, T-202, T-316, T-321, T-322, T-324a, T-355a, T-356a, T-357a, T-358a, T-406 | Barrel + `ALL_BRIDGE_CLIPS` constant (51 clips: 32 reference-clip ports + 10 StageFlip.Video / StageFlip.Display profile clips + the unified `chart` family + the `outcome-row` primitive + the `news-ticker-bar` primitive + the `standings-table` primitive + the `caption` primitive + the `magic-wall-panel` primitive + the `lyrics` primitive + the `title-sequence` primitive + the `breaking-banner` primitive) |
 | `src/clips/_dashboard-utils.ts` | T-131f.2a | Private shared helpers for the dashboard composites (trend schema, value formatter, colour constants) |
 
 ## Tranche ledger
