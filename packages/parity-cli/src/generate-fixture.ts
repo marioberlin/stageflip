@@ -1503,6 +1503,76 @@ const foxNflNoChromeBinding: ClipKindBinding = {
 };
 
 /**
+ * NBC SNF "Possession-Illuminated" snapshot props per D-T335-1 / D-T335-4.
+ * Cluster B preset T-335 wires the `score-bug` primitive (T-332a) as the
+ * fourth `scoreBug` clipKind consumer (Pattern C — `PRESET_ID_BINDINGS`
+ * override; third override after T-333 PL + T-334 Fox NFL). THIRD
+ * production consumer of T-332a's `'football'` style branch; FIRST
+ * production consumer of the `centerCircle`, `direction`, AND
+ * `networkLogo` optional props; SECOND consumer of `down` + `possession`
+ * (after T-334).
+ *
+ * Snapshot captures the canonical Sunday Night Football register: KC red
+ * `#E31837` home box + BUF navy `#00338D` away box (canonical AFC
+ * matchup); dark `#0A0A0A` base; center black-circle treatment hosting
+ * the NBC mark above the clock; Q2 mid-quarter clock + period; first
+ * down with directional chevrons (`'<< 1st & 10'`); possession boost on
+ * KC home box; Public Sans 600 OFL fallback for proprietary Sweet Sans
+ * Pro + NBC Tinker pairing. Penalty-flag indicator, possession-change
+ * animation, entrance slide-in, and score-change pulse all deferred
+ * (D-T335-3 / D-T335-11).
+ */
+export const NBC_SNF_PROPS: {
+  readonly style: 'football';
+  readonly position: { readonly x: number; readonly y: number };
+  readonly background: string;
+  readonly foreground: string;
+  readonly home: { readonly code: string; readonly color: string; readonly score: string };
+  readonly away: { readonly code: string; readonly color: string; readonly score: string };
+  readonly clock: string;
+  readonly period: string;
+  readonly down: string;
+  readonly direction: 'left-to-right';
+  readonly possession: 'home';
+  readonly centerCircle: true;
+  readonly networkLogo: string;
+  readonly font: { readonly family: string; readonly weight: number };
+  readonly casing: 'as-is';
+} = {
+  style: 'football',
+  position: { x: 280, y: 600 }, // bottom-center anchor (D-T335-1; 1280x720 canvas)
+  background: '#0A0A0A', // NBC SNF dark bar (D-T335-1 / stub line 26; opacity divergence D-T335-11-a)
+  foreground: '#FFFFFF', // white clock / period / down text
+  home: { code: 'KC', color: '#E31837', score: '21' }, // KC home (Sunday Night canonical AFC matchup)
+  away: { code: 'BUF', color: '#00338D', score: '14' }, // BUF away (Sunday Night canonical AFC matchup)
+  clock: '08:14', // Q2 mid-quarter (D-T335-1)
+  period: 'Q2', // second-quarter token (D-T335-1)
+  down: '<< 1st & 10', // chevrons baked-in for v1 visible render (D-T335-1 / D-T335-11-e)
+  direction: 'left-to-right', // schema-supplied; primitive does NOT auto-render (D-T335-11-e)
+  possession: 'home', // KC has ball; brightness(1.12) on home box (D-T335-1)
+  centerCircle: true, // NBC center-circle treatment (D-T335-1)
+  networkLogo: 'NBC', // glyph rendered inside the circle (D-T335-1)
+  font: { family: 'Public Sans', weight: 600 }, // OFL fallback for Sweet Sans Pro + NBC Tinker (D-T335-1)
+  casing: 'as-is', // strings already in target casing (D-T335-1 / D-T335-4)
+};
+
+const nbcSnfBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'score-bug', // kebab-case primitive `kind` (T-332a line 686)
+  buildProps() {
+    // Deep-clone nested object literals so callers can mutate without
+    // aliasing the exported constant.
+    return {
+      ...NBC_SNF_PROPS,
+      position: { ...NBC_SNF_PROPS.position },
+      home: { ...NBC_SNF_PROPS.home },
+      away: { ...NBC_SNF_PROPS.away },
+      font: { ...NBC_SNF_PROPS.font },
+    };
+  },
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -1523,6 +1593,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'msnbc-big-board': msnbcBigBoardBinding, // T-328
   'premier-league-field-of-play': premierLeagueFopBinding, // T-333
   'fox-nfl-no-chrome': foxNflNoChromeBinding, // T-334
+  'nbc-snf-possession-illuminated': nbcSnfBinding, // T-335
 };
 
 /**
