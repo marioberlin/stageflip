@@ -1304,6 +1304,122 @@ const msnbcBigBoardBinding: ClipKindBinding = {
   },
 };
 
+/**
+ * `uefa-starball-refraction` (T-339) — ninth and final Cluster B preset;
+ * second `fullScreen`-clipKind preset wired via `PRESET_ID_BINDINGS`
+ * (Pattern C; first `PRESET_ID_BINDINGS` `fullScreen` override was T-328
+ * `msnbc-big-board`); third production consumer of T-355a's
+ * `magic-wall-panel` primitive (after T-355 `magic-wall-drilldown` Cluster E
+ * + T-328 `msnbc-big-board` Cluster A). Closes Cluster B to 9/9 substantive
+ * + signed → fourth batch-eligible cluster after E + F + A; unlocks T-340
+ * (Cluster B composer) + T-382 (Cluster B type-design batch review).
+ *
+ * The `'fullScreen'` arm in `DEFAULT_CLIP_KIND_RESOLVER` stays UNCHANGED at
+ * `fullScreenBinding` (T-355 `magic-wall-drilldown` CNN-default); T-339
+ * lands a per-preset override keyed on the preset id. All 19 prior
+ * `PRESET_ID_BINDINGS` entries UNCHANGED — T-339 is the twentieth.
+ *
+ * V1 scope is the **placeholder tile-grid composition** at the UEFA
+ * Champions League palette layer (D-T339-3). Eight canonical-register
+ * elements documented as out-of-v1 (D-T339-10): canonical Starball 3D
+ * composition (T-339a carve-out; requires `ThreeSceneClip`), per-character
+ * refracted-typography gradient (T-339b carve-out; requires typography-
+ * layer extension), light-wave continuous drift (T-339c carve-out),
+ * "Ultimate Stage" CGI stadium backdrop (external compose; host
+ * responsibility per ADR-005), Starball-shape promo wipes (orchestration),
+ * Italic / Ritalic font variants (font-registry concern), camera-tracked
+ * Starball composition (frontier per ADR-005), per-character staggered
+ * 40 ms reveal (bound to T-339b).
+ *
+ * Mirrors T-328's snapshot shape (same primitive, region grid placeholder
+ * rectangles, same entrance posture, `valueFormat: 'count'`) with three
+ * divergences vs T-355 / T-328: (a) tenant identity (UEFA vs CNN vs MSNBC)
+ * → distinct title `'CHAMPIONS LEAGUE'` + subtitle
+ * `'MATCHDAY 6 — STANDINGS'`; (b) palette divergence (UEFA refraction vs
+ * CNN partisan vs NBC peacock) → distinct `UEFA_STARBALL_PALETTE` constant;
+ * (c) `background` override `#041E42` UEFA dark navy (vs primitive default
+ * `#0E0E12` used by both T-355 and T-328). Six regions in 3×2 grid
+ * representing major UCL knockout-stage clubs at standings register.
+ */
+export const UEFA_STARBALL_REGIONS: ReadonlyArray<{
+  readonly id: string;
+  readonly label: string;
+  readonly points: number;
+  readonly accent: 'navy' | 'blue' | 'cyan' | 'magenta' | 'white';
+}> = [
+  { id: 'RMA', label: 'RMA', points: 16, accent: 'blue' }, // Real Madrid
+  { id: 'LIV', label: 'LIV', points: 15, accent: 'cyan' }, // Liverpool
+  { id: 'BAY', label: 'BAY', points: 13, accent: 'magenta' }, // Bayern
+  { id: 'MCI', label: 'MCI', points: 12, accent: 'blue' }, // Manchester City
+  { id: 'PSG', label: 'PSG', points: 11, accent: 'cyan' }, // PSG
+  { id: 'INT', label: 'INT', points: 10, accent: 'magenta' }, // Inter
+];
+
+/**
+ * UEFA Champions League refraction palette per stub lines 22–23. Distinct
+ * from `MAGIC_WALL_PARTY_COLORS` (CNN Dem-Blue / Rep-Red — T-355) and
+ * `MSNBC_BIG_BOARD_PARTY_COLORS` (NBC peacock — T-328); the refraction
+ * palette evokes light-physics prism dispersion rather than a partisan
+ * map. Five swatches drawn from the canonical UEFA broadcast register:
+ * dark navy primary (night-match canon) + refraction blue / cyan /
+ * magenta accents (stub line 23) + white foreground.
+ */
+export const UEFA_STARBALL_PALETTE: Readonly<
+  Record<'navy' | 'blue' | 'cyan' | 'magenta' | 'white', string>
+> = {
+  navy: '#041E42', // dark navy primary (night-match canon, stub line 22)
+  blue: '#2DA8D8', // refraction bright blue (stub line 23)
+  cyan: '#6EE0E8', // refraction cyan (stub line 23)
+  magenta: '#C2185B', // refraction magenta (stub line 23)
+  white: '#FFFFFF', // foreground (stub line 23)
+};
+
+const UEFA_STARBALL_DEFAULT_STAGGER_MS = 60;
+// Tile layout: 3×2 grid sized for a 1280×720 composition. Different from
+// T-355 / T-328 4×2 grid (eight US states) — UEFA register has six clubs.
+const UEFA_STARBALL_TILE_ORIGIN_X = 200;
+const UEFA_STARBALL_TILE_ORIGIN_Y = 200;
+const UEFA_STARBALL_TILE_WIDTH = 280;
+const UEFA_STARBALL_TILE_HEIGHT = 200;
+const UEFA_STARBALL_TILE_GAP = 12;
+
+const uefaStarballRefractionBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'magic-wall-panel',
+  buildProps() {
+    return {
+      regions: UEFA_STARBALL_REGIONS.map((r, i) => ({
+        id: r.id,
+        label: r.label,
+        value: r.points,
+        valueLabel: `${r.points} PTS`,
+        color: UEFA_STARBALL_PALETTE[r.accent],
+        bounds: {
+          x:
+            UEFA_STARBALL_TILE_ORIGIN_X +
+            (i % 3) * (UEFA_STARBALL_TILE_WIDTH + UEFA_STARBALL_TILE_GAP),
+          y:
+            UEFA_STARBALL_TILE_ORIGIN_Y +
+            Math.floor(i / 3) * (UEFA_STARBALL_TILE_HEIGHT + UEFA_STARBALL_TILE_GAP),
+          width: UEFA_STARBALL_TILE_WIDTH,
+          height: UEFA_STARBALL_TILE_HEIGHT,
+        },
+      })),
+      title: 'CHAMPIONS LEAGUE',
+      subtitle: 'MATCHDAY 6 — STANDINGS',
+      valueFormat: 'count' as const,
+      entrance: 'stagger-rise' as const,
+      staggerMs: UEFA_STARBALL_DEFAULT_STAGGER_MS,
+      // UEFA dark navy override — stub line 22 ("dark navy primary, night-
+      // match canon"); central palette divergence vs T-355 (`#0E0E12` CNN
+      // dark) + T-328 (`#0E0E12` MSNBC dark); both prior `magic-wall-panel`
+      // consumers used the primitive default `DEFAULT_BACKGROUND`.
+      background: '#041E42',
+      foreground: '#FFFFFF',
+    };
+  },
+};
+
 const squidGameGeometricBinding: ClipKindBinding = {
   runtimeId: 'frame-runtime',
   clipName: 'titleSequence',
@@ -2097,6 +2213,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'masters-red-under-par': mastersRedUnderParBinding, // T-338
   'f1-timing-tower': f1TimingTowerBinding, // T-332
   'cricket-scorebug': cricketScorebugBinding, // T-336
+  'uefa-starball-refraction': uefaStarballRefractionBinding, // T-339
 };
 
 /**

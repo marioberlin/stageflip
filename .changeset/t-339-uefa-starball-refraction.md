@@ -1,0 +1,7 @@
+---
+'@stageflip/parity-cli': patch
+---
+
+T-339 — Add `uefa-starball-refraction` preset binding (Cluster B 9th + closer; second `fullScreen` `PRESET_ID_BINDINGS` consumer; third `magic-wall-panel` production binding).
+
+`PRESET_ID_BINDINGS['uefa-starball-refraction']` → `uefaStarballRefractionBinding` → `magic-wall-panel` primitive on `frame-runtime`. New `UEFA_STARBALL_REGIONS` + `UEFA_STARBALL_PALETTE` exports ship the canonical UCL Matchday 6 standings snapshot (six clubs RMA/LIV/BAY/MCI/PSG/INT in 3×2 grid; UEFA refraction palette dark navy `#041E42` + blue `#2DA8D8` + cyan `#6EE0E8` + magenta `#C2185B` + white `#FFFFFF`; title `'CHAMPIONS LEAGUE'`; subtitle `'MATCHDAY 6 — STANDINGS'`; `valueFormat: 'count'` + per-region `valueLabel: '<n> PTS'`; `entrance: 'stagger-rise'` + `staggerMs: 60`; background override `#041E42` UEFA dark navy vs primitive default `#0E0E12`; Fraunces 700 OFL fallback). `DEFAULT_CLIP_KIND_RESOLVER 'fullScreen'` arm UNCHANGED (T-355 `fullScreenBinding` → magic-wall-drilldown CNN-default). All 19 prior `PRESET_ID_BINDINGS` entries UNCHANGED. Closes Cluster B to 9/9 substantive + signed → fourth batch-eligible cluster after E + F + A; unlocks T-340 (Cluster B composer) + T-382 (Cluster B type-design batch review). Eight cosmetic divergences from the canonical UEFA register documented (Starball 3D / refracted typography / light-wave drift / Ultimate Stage CGI stadium / promo wipes / Italic-Ritalic / camera-track / per-character stagger) — all deferred to T-339a/b/c carve-outs or external-composition paths.

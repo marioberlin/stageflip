@@ -1,0 +1,30 @@
+{
+  "name": "uefa-starball-refraction",
+  "cluster": "sports",
+  "kind": "fullScreen",
+  "description": "Parity fixture for preset 'uefa-starball-refraction' (cluster sports, kind fullScreen)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Champions (Fontsmith)",
+      "license": "proprietary-byo"
+    },
+    "fallback": {
+      "family": "Fraunces",
+      "weight": 700,
+      "license": "ofl"
+    }
+  }
+}
