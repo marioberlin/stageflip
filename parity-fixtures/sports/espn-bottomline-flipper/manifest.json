@@ -1,0 +1,30 @@
+{
+  "name": "espn-bottomline-flipper",
+  "cluster": "sports",
+  "kind": "newsTicker",
+  "description": "Parity fixture for preset 'espn-bottomline-flipper' (cluster sports, kind newsTicker)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "ESPN A2 Beckett + Klavika",
+      "license": "proprietary-byo"
+    },
+    "fallback": {
+      "family": "Roboto Condensed + Inter",
+      "weight": 700,
+      "license": "apache-2.0 + ofl"
+    }
+  }
+}

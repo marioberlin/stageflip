@@ -1573,6 +1573,69 @@ const nbcSnfBinding: ClipKindBinding = {
 };
 
 /**
+ * `espn-bottomline-flipper` (T-339a) — second `newsTicker`-clipKind preset,
+ * bound to the same `news-ticker-bar` primitive (T-356a) as T-356's
+ * `bloomberg-ticker` but parameterized for the post-2018 ESPN BottomLine
+ * register: `mode: 'flip'` + `flipDurationMs: 4500` (T-356b extension; FIRST
+ * production consumer of `mode: 'flip'`) + sports payload (NBA team-vs-team
+ * scores) + ESPN palette (Yellow up / ESPN Red down / white flat). Cached
+ * snapshot substitutes for the live scores endpoint per ADR-003 §D2 (same
+ * posture as T-356's bloomberg cached snapshot). At frame 60 (= 2000 ms @
+ * 30fps; pair window 4500 ms) `pairIdx = 0` → top row NYK +5, bottom row
+ * BOS F (D-T339a-1). Topic-bar companion + score-flash + scale-pulse +
+ * entrance + within-window flip transition + logo box all deferred
+ * (D-T339a-3 / D-T339a-11).
+ */
+export const ESPN_BOTTOMLINE_PROPS: {
+  readonly entries: ReadonlyArray<{
+    readonly symbol: string;
+    readonly price: string;
+    readonly delta: string;
+    readonly direction: 'up' | 'down' | 'flat';
+  }>;
+  readonly mode: 'flip';
+  readonly flipDurationMs: number;
+  readonly bandHeight: number;
+  readonly bandPosition: 'bottom';
+  readonly background: string;
+  readonly foreground: string;
+  readonly upColor: string;
+  readonly downColor: string;
+  readonly flatColor: string;
+} = {
+  entries: [
+    { symbol: 'NYK', price: '102', delta: '+5', direction: 'up' }, // Knicks lead by 5
+    { symbol: 'BOS', price: '97', delta: 'F', direction: 'flat' }, // Celtics final
+    { symbol: 'LAL', price: '88', delta: '-3', direction: 'down' }, // Lakers down 3
+    { symbol: 'PHX', price: '91', delta: 'F', direction: 'flat' }, // Suns final
+    { symbol: 'PHI', price: '24', delta: '+2', direction: 'up' }, // 76ers up 2 (1H)
+    { symbol: 'DAL', price: '22', delta: 'F', direction: 'flat' }, // Mavericks (1H)
+  ],
+  mode: 'flip', // FIRST production consumer of T-356b mode (D-T339a-10)
+  flipDurationMs: 4500, // mid-canon "4–5 s per segment" (D-T339a-1)
+  bandHeight: 100, // 50 px per row in flip-mode (D-T339a-1)
+  bandPosition: 'bottom', // bottom-of-frame full-width (D-T339a-1)
+  background: '#1A1A1A', // gradient end (D-T339a-11-c)
+  foreground: '#FFFFFF', // white text (D-T339a-1)
+  upColor: '#FFD700', // Yellow score highlights (D-T339a-1 / stub line 28)
+  downColor: '#CC0000', // ESPN Red accent (D-T339a-1 / stub line 26)
+  flatColor: '#FFFFFF', // white FINAL / halftime token (D-T339a-1)
+};
+
+const espnBottomlineBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'news-ticker-bar', // kebab-case primitive `kind` (T-356a)
+  buildProps() {
+    // Deep-clone the entries array so callers can mutate without
+    // aliasing the exported constant.
+    return {
+      ...ESPN_BOTTOMLINE_PROPS,
+      entries: ESPN_BOTTOMLINE_PROPS.entries.map((e) => ({ ...e })),
+    };
+  },
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -1594,6 +1657,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'premier-league-field-of-play': premierLeagueFopBinding, // T-333
   'fox-nfl-no-chrome': foxNflNoChromeBinding, // T-334
   'nbc-snf-possession-illuminated': nbcSnfBinding, // T-335
+  'espn-bottomline-flipper': espnBottomlineBinding, // T-339a
 };
 
 /**
