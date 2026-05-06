@@ -8,6 +8,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   ALI_ABDAAL_CANONICAL_WORDS,
   AL_JAZEERA_ORANGE_PROPS,
+  APPLE_TV_LT_PROPS,
   BBC_REITH_DARK_PROPS,
   BLOOMBERG_CANONICAL_SNAPSHOT,
   CNN_CLASSIC_PROPS,
@@ -1636,6 +1637,126 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
       insetLeftPx: 64,
       insetBottomPx: 48,
     });
+  });
+
+  // T-330 — fourth `lowerThird`-clipKind preset (`apple-tv-lt`), wired via
+  // the `PRESET_ID_BINDINGS` override path (Pattern C — third
+  // `lowerThird`-keyed override after T-325 + T-326). Fourth Cluster A
+  // preset to ship; first production consumer of T-183z's `noFlag` /
+  // `subtitleColor` / `font` props.
+
+  it('routes apple-tv-lt through the per-preset override binding (T-330 AC #14)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'apple-tv-lt');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('lower-third');
+    const props = binding?.buildProps(undefined);
+    expect(props?.name).toBe('Sofia Coppola');
+    expect(props?.title).toBe('Director');
+    expect(props?.accent).toBe('#FFFFFF');
+    expect(props?.background).toBe('#000000');
+    expect(props?.textColor).toBe('#FFFFFF');
+    expect(props?.insetLeftPx).toBe(140);
+    expect(props?.insetBottomPx).toBe(95);
+    // T-183z props (first production consumer milestone)
+    expect(props?.noFlag).toBe(true);
+    expect(props?.subtitleColor).toBe('#FFFFFF');
+    expect(props?.font).toEqual({ family: 'Inter', weight: 300 });
+  });
+
+  it('exports APPLE_TV_LT_PROPS with ten canonical fields (T-330 AC #15)', () => {
+    expect(APPLE_TV_LT_PROPS).toEqual({
+      name: 'Sofia Coppola',
+      title: 'Director',
+      accent: '#FFFFFF',
+      background: '#000000',
+      textColor: '#FFFFFF',
+      insetLeftPx: 140,
+      insetBottomPx: 95,
+      noFlag: true,
+      subtitleColor: '#FFFFFF',
+      font: { family: 'Inter', weight: 300 },
+    });
+  });
+
+  it('PRESET_ID_BINDINGS exposes the apple-tv-lt override (T-330 AC #16)', () => {
+    expect(PRESET_ID_BINDINGS['apple-tv-lt']).toBeDefined();
+    expect(PRESET_ID_BINDINGS['apple-tv-lt']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['apple-tv-lt']?.runtimeId).toBe('frame-runtime');
+  });
+
+  it('still routes al-jazeera-orange after T-330 lands (T-330 AC #18 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'al-jazeera-orange');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#F7F7F5');
+    expect(props?.accent).toBe('#F7941D');
+  });
+
+  it('still routes bbc-reith-dark after T-330 lands (T-330 AC #18 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'bbc-reith-dark');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#1A1A1A');
+    expect(props?.accent).toBe('#BB1919');
+  });
+
+  it('falls through to cnnClassicBinding for cnn-classic after T-330 lands (T-330 AC #17 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'cnn-classic');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#FFFFFF');
+  });
+
+  it('falls through to cnnClassicBinding for unknown lowerThird presetIds after T-330 lands (T-330 AC #17)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'unknown-news-preset-3');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#FFFFFF'); // cnn-classic clipKind-default
+  });
+
+  it('falls through to cnnClassicBinding for bare lowerThird after T-330 lands (T-330 AC #17)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#FFFFFF'); // cnn-classic clipKind-default
+  });
+
+  it('routes apple-tv-lt through the renderer-side override (T-330 AC #14 round-trip)', async () => {
+    const renderSpy = vi
+      .fn<(doc: unknown, frame: number) => Promise<Uint8Array>>()
+      .mockResolvedValue(new Uint8Array([0]));
+    const renderer = createGenerateFixtureRenderer({
+      resolver: DEFAULT_CLIP_KIND_RESOLVER,
+      render: renderSpy as unknown as Parameters<typeof createGenerateFixtureRenderer>[0]['render'],
+    });
+    await renderer.render({
+      preset: presetWith('lowerThird', 'apple-tv-lt', 'news'),
+      composition: COMPOSITION,
+      frame: 60,
+    });
+    const [doc] = renderSpy.mock.calls[0] ?? [];
+    const parsed = rirDocumentSchema.parse(doc);
+    const element = parsed.elements[0];
+    if (!element || element.content.type !== 'clip') throw new Error('expected clip element');
+    expect(element.content.clipName).toBe('lower-third');
+    expect(element.content.params).toMatchObject({
+      name: 'Sofia Coppola',
+      title: 'Director',
+      accent: '#FFFFFF',
+      background: '#000000',
+      textColor: '#FFFFFF',
+      insetLeftPx: 140,
+      insetBottomPx: 95,
+      noFlag: true,
+      subtitleColor: '#FFFFFF',
+      font: { family: 'Inter', weight: 300 },
+    });
+  });
+
+  it('still returns undefined for unknown clipKinds after T-330 lands (T-330 AC #21)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind')).toBeUndefined();
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'unknown-preset-id-3')).toBeUndefined();
   });
 
   it('builds scoreBug props as a six-chip canonical over with cricket-canon colors (T-358)', () => {
