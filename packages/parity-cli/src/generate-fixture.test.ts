@@ -15,6 +15,7 @@ import {
   CNN_CLASSIC_PROPS,
   CRICKET_OUTCOME_COLORS,
   DEFAULT_CLIP_KIND_RESOLVER,
+  ESPN_BOTTOMLINE_PROPS,
   F1_SECTOR_STATE_COLORS,
   FOX_NEWS_ALERT_PROPS,
   FOX_NFL_NO_CHROME_PROPS,
@@ -2382,8 +2383,8 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']).toBeDefined();
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.runtimeId).toBe('frame-runtime');
-    // Fourteen overrides total after T-335 lands (T-333 added the 12th).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(14);
+    // Fifteen overrides total after T-339a lands (T-333 added the 12th).
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(15);
   });
 
   it('binding deep-clones nested object literals so callers can mutate freely (T-333)', () => {
@@ -2531,8 +2532,8 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']).toBeDefined();
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.runtimeId).toBe('frame-runtime');
-    // Fourteen overrides total after T-335 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(14);
+    // Fifteen overrides total after T-339a lands.
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(15);
   });
 
   it('fox-nfl-no-chrome binding deep-clones nested object literals so callers can mutate freely (T-334)', () => {
@@ -2672,8 +2673,8 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']).toBeDefined();
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.runtimeId).toBe('frame-runtime');
-    // Fourteen overrides total after T-335 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(14);
+    // Fifteen overrides total after T-339a lands.
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(15);
   });
 
   it('nbc-snf-possession-illuminated binding deep-clones nested object literals so callers can mutate freely (T-335)', () => {
@@ -2756,6 +2757,160 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(
       DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'nbc-snf-possession-illuminated'),
     ).toBeDefined();
+  });
+
+  // T-339a — second `newsTicker`-clipKind preset (`espn-bottomline-flipper`),
+  // wired via the `PRESET_ID_BINDINGS` override path (Pattern C). Fourth
+  // Cluster B preset to land; first non-`scoreBug`-clipKind Cluster B
+  // preset; first production consumer of T-356b's `mode: 'flip'`
+  // two-row stacked register on the `news-ticker-bar` primitive. The
+  // clipKind-default arm stays UNCHANGED at `newsTickerBinding` (T-356);
+  // T-333 / T-334 / T-335 scoreBug overrides stay UNCHANGED.
+  it('routes espn-bottomline-flipper through PRESET_ID_BINDINGS override (T-339a AC #13)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('newsTicker', 'espn-bottomline-flipper');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('news-ticker-bar'); // kebab-case primitive kind (T-356a)
+    const props = binding?.buildProps(undefined);
+    expect(props?.mode).toBe('flip');
+    expect(props?.flipDurationMs).toBe(4500);
+    expect(props?.bandHeight).toBe(100);
+    expect(props?.bandPosition).toBe('bottom');
+    expect(props?.background).toBe('#1A1A1A');
+    expect(props?.foreground).toBe('#FFFFFF');
+    expect(props?.upColor).toBe('#FFD700');
+    expect(props?.downColor).toBe('#CC0000');
+    expect(props?.flatColor).toBe('#FFFFFF');
+    expect(props?.entries).toEqual([
+      { symbol: 'NYK', price: '102', delta: '+5', direction: 'up' },
+      { symbol: 'BOS', price: '97', delta: 'F', direction: 'flat' },
+      { symbol: 'LAL', price: '88', delta: '-3', direction: 'down' },
+      { symbol: 'PHX', price: '91', delta: 'F', direction: 'flat' },
+      { symbol: 'PHI', price: '24', delta: '+2', direction: 'up' },
+      { symbol: 'DAL', price: '22', delta: 'F', direction: 'flat' },
+    ]);
+  });
+
+  it('exports ESPN_BOTTOMLINE_PROPS with ten canonical fields (T-339a AC #14)', () => {
+    expect(ESPN_BOTTOMLINE_PROPS).toEqual({
+      entries: [
+        { symbol: 'NYK', price: '102', delta: '+5', direction: 'up' },
+        { symbol: 'BOS', price: '97', delta: 'F', direction: 'flat' },
+        { symbol: 'LAL', price: '88', delta: '-3', direction: 'down' },
+        { symbol: 'PHX', price: '91', delta: 'F', direction: 'flat' },
+        { symbol: 'PHI', price: '24', delta: '+2', direction: 'up' },
+        { symbol: 'DAL', price: '22', delta: 'F', direction: 'flat' },
+      ],
+      mode: 'flip',
+      flipDurationMs: 4500,
+      bandHeight: 100,
+      bandPosition: 'bottom',
+      background: '#1A1A1A',
+      foreground: '#FFFFFF',
+      upColor: '#FFD700',
+      downColor: '#CC0000',
+      flatColor: '#FFFFFF',
+    });
+  });
+
+  it('PRESET_ID_BINDINGS contains espn-bottomline-flipper override (T-339a AC #15)', () => {
+    expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']).toBeDefined();
+    expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.clipName).toBe('news-ticker-bar');
+    expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.runtimeId).toBe('frame-runtime');
+    // Fifteen overrides total after T-339a lands.
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(15);
+  });
+
+  it('espn-bottomline-flipper binding deep-clones the entries array so callers can mutate freely (T-339a)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('newsTicker', 'espn-bottomline-flipper');
+    if (!binding) throw new Error('test setup');
+    const a = binding.buildProps(undefined) as {
+      entries: Array<{ symbol: string; price: string }>;
+    };
+    const b = binding.buildProps(undefined) as {
+      entries: Array<{ symbol: string; price: string }>;
+    };
+    const aFirst = a.entries[0];
+    if (!aFirst) throw new Error('test setup');
+    aFirst.symbol = 'MUT';
+    aFirst.price = 'mutated';
+    a.entries.push({ symbol: 'X', price: 'X' } as never);
+    expect(b.entries[0]?.symbol).toBe('NYK');
+    expect(b.entries[0]?.price).toBe('102');
+    expect(b.entries).toHaveLength(6);
+    expect(ESPN_BOTTOMLINE_PROPS.entries[0]?.symbol).toBe('NYK');
+    expect(ESPN_BOTTOMLINE_PROPS.entries[0]?.price).toBe('102');
+    expect(ESPN_BOTTOMLINE_PROPS.entries).toHaveLength(6);
+  });
+
+  it('clipKind-default for newsTicker STILL returns newsTickerBinding after T-339a lands (T-339a AC #16 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('newsTicker');
+    expect(binding?.clipName).toBe('news-ticker-bar');
+    // T-356 bloomberg-ticker has NO PRESET_ID_BINDINGS entry — falls through
+    // to clipKind-default arm (newsTickerBinding); resolver returns the
+    // bloomberg-canonical scroll-mode shape, NOT the espn flip-mode shape.
+    const bloomberg = DEFAULT_CLIP_KIND_RESOLVER('newsTicker', 'bloomberg-ticker');
+    expect(bloomberg?.clipName).toBe('news-ticker-bar');
+    expect(bloomberg?.buildProps(undefined).mode).toBeUndefined();
+    expect(bloomberg?.buildProps(undefined).background).toBe('#0A0A0A');
+    const unknown = DEFAULT_CLIP_KIND_RESOLVER('newsTicker', 'unknown-preset-id');
+    expect(unknown?.clipName).toBe('news-ticker-bar');
+    expect(unknown?.buildProps(undefined).mode).toBeUndefined();
+  });
+
+  it('T-333 / T-334 / T-335 scoreBug overrides STILL resolve after T-339a lands (T-339a AC #17 backward compat)', () => {
+    const pl = DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'premier-league-field-of-play');
+    expect(pl?.clipName).toBe('score-bug');
+    expect(pl?.buildProps(undefined).background).toBe('#34003A');
+    const fox = DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'fox-nfl-no-chrome');
+    expect(fox?.clipName).toBe('score-bug');
+    expect(fox?.buildProps(undefined).background).toBe('#000000');
+    const nbc = DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'nbc-snf-possession-illuminated');
+    expect(nbc?.clipName).toBe('score-bug');
+    expect(nbc?.buildProps(undefined).background).toBe('#0A0A0A');
+    expect(nbc?.buildProps(undefined).networkLogo).toBe('NBC');
+  });
+
+  it('clipKind-default for scoreBug STILL returns scoreBugDotsBinding after T-339a lands (T-339a AC #18 backward compat)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('scoreBug')?.clipName).toBe('outcome-row');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'cricket-ball-by-ball-dots')?.clipName).toBe(
+      'outcome-row',
+    );
+  });
+
+  it('still routes prior PRESET_ID_BINDINGS overrides after T-339a lands (T-339a AC #19 backward compat)', () => {
+    expect(
+      DEFAULT_CLIP_KIND_RESOLVER('bigNumber', 'big-number-stat-impact')?.buildProps(undefined)
+        .value,
+    ).toBe(87.4);
+    expect(PRESET_ID_BINDINGS['mrbeast-komika-axis']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['tiktok-rounded-box']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['ali-abdaal-opacity-karaoke']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['netflix-invisible']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['bbc-reith-dark']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['al-jazeera-orange']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['apple-tv-lt']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['netflix-doc-lt']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['fox-news-alert']?.clipName).toBe('breaking-banner');
+    expect(PRESET_ID_BINDINGS['msnbc-big-board']?.clipName).toBe('magic-wall-panel');
+    expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.clipName).toBe('score-bug');
+  });
+
+  it('all prior clipKind-defaults STILL resolve after T-339a lands (T-339a AC #20 backward compat)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('bigNumber')?.clipName).toBe('animated-value');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('caption')?.clipName).toBe('caption');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('lyrics')?.clipName).toBe('lyrics');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('titleSequence')?.clipName).toBe('titleSequence');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('scoreBug')?.clipName).toBe('outcome-row');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('newsTicker')?.clipName).toBe('news-ticker-bar');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('standings')?.clipName).toBe('standings-table');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('lowerThird')?.clipName).toBe('lower-third');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('breakingBanner')?.clipName).toBe('breaking-banner');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('fullScreen')?.clipName).toBe('magic-wall-panel');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind')).toBeUndefined();
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'espn-bottomline-flipper')).toBeDefined();
   });
 });
 
