@@ -91,9 +91,9 @@ describe('scoreBugPropsSchema — required-field rejections', () => {
   });
 
   it('rejects racing rows: [] and rows.length > 24', () => {
-    expect(
-      scoreBugPropsSchema.safeParse({ ...RACING_MIN, rows: [] as unknown }).success,
-    ).toBe(false);
+    expect(scoreBugPropsSchema.safeParse({ ...RACING_MIN, rows: [] as unknown }).success).toBe(
+      false,
+    );
     const tooMany = Array.from({ length: 25 }, (_, i) => ({ position: i + 1, code: 'XYZ' }));
     expect(scoreBugPropsSchema.safeParse({ ...RACING_MIN, rows: tooMany }).success).toBe(false);
   });
@@ -171,9 +171,9 @@ describe('scoreBugPropsSchema — required-field rejections', () => {
   });
 
   it('rejects unknown extra keys (strict at top level + nested)', () => {
-    expect(
-      scoreBugPropsSchema.safeParse({ ...FOOTBALL_MIN, unknownTopKey: true }).success,
-    ).toBe(false);
+    expect(scoreBugPropsSchema.safeParse({ ...FOOTBALL_MIN, unknownTopKey: true }).success).toBe(
+      false,
+    );
     expect(
       scoreBugPropsSchema.safeParse({
         ...FOOTBALL_MIN,
@@ -285,9 +285,11 @@ describe('<ScoreBug> racing', () => {
     expect(screen.getByTestId('score-bug-racing')).toBeTruthy();
     for (let i = 0; i < 5; i += 1) {
       const row = screen.getByTestId(`score-bug-racing-row-${i}`);
-      expect(row.textContent).toContain(rows[i]!.code);
-      expect(row.textContent).toContain(String(rows[i]!.position));
-      expect(row.textContent).toContain(rows[i]!.gap);
+      const expected = rows[i];
+      if (!expected) continue;
+      expect(row.textContent).toContain(expected.code);
+      expect(row.textContent).toContain(String(expected.position));
+      expect(row.textContent).toContain(expected.gap);
     }
   });
 
@@ -306,9 +308,10 @@ describe('<ScoreBug> racing', () => {
     const c0 = screen.getByTestId('score-bug-racing-sector-0-0');
     const c1 = screen.getByTestId('score-bug-racing-sector-0-1');
     const c2 = screen.getByTestId('score-bug-racing-sector-0-2');
-    expect(c0.style.backgroundColor).toBe('rgb(111, 46, 158)');
-    expect(c1.style.backgroundColor).toBe('rgb(0, 181, 74)');
-    expect(c2.style.backgroundColor).toBe('rgb(240, 200, 0)');
+    // happy-dom doesn't always normalize hex → rgb; accept either form.
+    expect(c0.style.backgroundColor.toLowerCase()).toMatch(/^(#6f2e9e|rgb\(111, 46, 158\))$/);
+    expect(c1.style.backgroundColor.toLowerCase()).toMatch(/^(#00b54a|rgb\(0, 181, 74\))$/);
+    expect(c2.style.backgroundColor.toLowerCase()).toMatch(/^(#f0c800|rgb\(240, 200, 0\))$/);
   });
 });
 
