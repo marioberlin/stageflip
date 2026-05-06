@@ -1,0 +1,30 @@
+{
+  "name": "nbc-snf-possession-illuminated",
+  "cluster": "sports",
+  "kind": "scoreBug",
+  "description": "Parity fixture for preset 'nbc-snf-possession-illuminated' (cluster sports, kind scoreBug)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Sweet Sans Pro + NBC Tinker",
+      "license": "commercial-byo + proprietary-byo"
+    },
+    "fallback": {
+      "family": "Public Sans",
+      "weight": 600,
+      "license": "ofl"
+    }
+  }
+}
