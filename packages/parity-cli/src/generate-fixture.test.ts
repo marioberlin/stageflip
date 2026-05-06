@@ -17,6 +17,7 @@ import {
   DEFAULT_CLIP_KIND_RESOLVER,
   F1_SECTOR_STATE_COLORS,
   FOX_NEWS_ALERT_PROPS,
+  FOX_NFL_NO_CHROME_PROPS,
   GenerateFixtureUnavailableError,
   HORMOZI_CANONICAL_WORDS,
   KARAOKE_PROGRESSIVE_WIPE_CANONICAL_LINES,
@@ -2380,8 +2381,8 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']).toBeDefined();
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.runtimeId).toBe('frame-runtime');
-    // Twelve overrides total after T-333 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(12);
+    // Thirteen overrides total after T-334 lands (T-333 added the 12th).
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(13);
   });
 
   it('binding deep-clones nested object literals so callers can mutate freely (T-333)', () => {
@@ -2477,6 +2478,141 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     // ^ presetId override path takes precedence over the clipKind-default arm
     //   per resolver shape (lines 1402–1418); a known preset id resolves
     //   regardless of clipKind. T-360 D-T360-2 contract.
+  });
+
+  // T-334 — third `scoreBug`-clipKind preset (`fox-nfl-no-chrome`), wired
+  // via the `PRESET_ID_BINDINGS` override path (Pattern C). Second Cluster
+  // B preset to land; second production consumer of T-332a's `'football'`
+  // style branch; first production consumer of `backdropGradient`, `down`,
+  // and `possession` optional props. The clipKind-default arm stays
+  // UNCHANGED at `scoreBugDotsBinding` (T-358); T-333's
+  // `premierLeagueFopBinding` stays UNCHANGED.
+  it('routes fox-nfl-no-chrome through PRESET_ID_BINDINGS override (T-334 AC #13)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'fox-nfl-no-chrome');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('score-bug'); // kebab-case primitive kind
+    const props = binding?.buildProps(undefined);
+    expect(props?.style).toBe('football');
+    expect(props?.background).toBe('#000000'); // chromeless black base
+    expect(props?.foreground).toBe('#FFFFFF');
+    expect(props?.clock).toBe('04:32');
+    expect(props?.period).toBe('Q3');
+    expect(props?.down).toBe('3rd & 7');
+    expect(props?.possession).toBe('home');
+    expect(props?.casing).toBe('as-is');
+    expect(props?.position).toEqual({ x: 280, y: 600 });
+    expect(props?.backdropGradient).toEqual({ centerOpacity: 0.4, edgeOpacity: 0 });
+    expect(props?.home).toEqual({ code: 'KC', color: '#E31837', score: '24' });
+    expect(props?.away).toEqual({ code: 'PHI', color: '#004C54', score: '17' });
+    expect(props?.font).toEqual({ family: 'Inter Display', weight: 900 });
+  });
+
+  it('exports FOX_NFL_NO_CHROME_PROPS with thirteen canonical fields (T-334 AC #14)', () => {
+    expect(FOX_NFL_NO_CHROME_PROPS).toEqual({
+      style: 'football',
+      position: { x: 280, y: 600 },
+      background: '#000000',
+      foreground: '#FFFFFF',
+      backdropGradient: { centerOpacity: 0.4, edgeOpacity: 0 },
+      home: { code: 'KC', color: '#E31837', score: '24' },
+      away: { code: 'PHI', color: '#004C54', score: '17' },
+      clock: '04:32',
+      period: 'Q3',
+      down: '3rd & 7',
+      possession: 'home',
+      font: { family: 'Inter Display', weight: 900 },
+      casing: 'as-is',
+    });
+  });
+
+  it('PRESET_ID_BINDINGS contains fox-nfl-no-chrome override (T-334 AC #15)', () => {
+    expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']).toBeDefined();
+    expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.runtimeId).toBe('frame-runtime');
+    // Thirteen overrides total after T-334 lands.
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(13);
+  });
+
+  it('fox-nfl-no-chrome binding deep-clones nested object literals so callers can mutate freely (T-334)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'fox-nfl-no-chrome');
+    if (!binding) throw new Error('test setup');
+    const a = binding.buildProps(undefined) as {
+      position: { x: number };
+      backdropGradient: { centerOpacity: number };
+      home: { score: string };
+    };
+    const b = binding.buildProps(undefined) as {
+      position: { x: number };
+      backdropGradient: { centerOpacity: number };
+      home: { score: string };
+    };
+    a.position.x = 999;
+    a.backdropGradient.centerOpacity = 0.99;
+    a.home.score = 'mutated';
+    expect(b.position.x).toBe(280);
+    expect(b.backdropGradient.centerOpacity).toBe(0.4);
+    expect(b.home.score).toBe('24');
+    expect(FOX_NFL_NO_CHROME_PROPS.position.x).toBe(280);
+    expect(FOX_NFL_NO_CHROME_PROPS.backdropGradient.centerOpacity).toBe(0.4);
+    expect(FOX_NFL_NO_CHROME_PROPS.home.score).toBe('24');
+  });
+
+  it('T-333 premier-league-field-of-play binding STILL resolves after T-334 lands (T-334 AC #16 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'premier-league-field-of-play');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('score-bug');
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#34003A');
+    expect(props?.home).toEqual({ code: 'ARS', color: '#EF0107', score: '2' });
+  });
+
+  it('clipKind-default for scoreBug STILL returns scoreBugDotsBinding after T-334 lands (T-334 AC #17 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('scoreBug');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('outcome-row');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'cricket-ball-by-ball-dots')?.clipName).toBe(
+      'outcome-row',
+    );
+    expect(DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'unknown-preset-id')?.clipName).toBe(
+      'outcome-row',
+    );
+  });
+
+  it('still routes prior PRESET_ID_BINDINGS overrides after T-334 lands (T-334 AC #18 backward compat)', () => {
+    expect(
+      DEFAULT_CLIP_KIND_RESOLVER('bigNumber', 'big-number-stat-impact')?.buildProps(undefined)
+        .value,
+    ).toBe(87.4);
+    expect(
+      DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'bbc-reith-dark')?.buildProps(undefined).background,
+    ).toBe('#1A1A1A');
+    expect(
+      DEFAULT_CLIP_KIND_RESOLVER('breakingBanner', 'fox-news-alert')?.buildProps(undefined).mode,
+    ).toBe('sliver');
+    expect(
+      DEFAULT_CLIP_KIND_RESOLVER('fullScreen', 'msnbc-big-board')?.buildProps(undefined).title,
+    ).toBe('2024 ELECTION NIGHT');
+    expect(PRESET_ID_BINDINGS['mrbeast-komika-axis']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.clipName).toBe('score-bug');
+  });
+
+  it('all prior clipKind-defaults STILL resolve after T-334 lands (T-334 AC #19 backward compat)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('bigNumber')?.clipName).toBe('animated-value');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('caption')?.clipName).toBe('caption');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('lyrics')?.clipName).toBe('lyrics');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('titleSequence')?.clipName).toBe('titleSequence');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('scoreBug')?.clipName).toBe('outcome-row');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('newsTicker')?.clipName).toBe('news-ticker-bar');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('standings')?.clipName).toBe('standings-table');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('lowerThird')?.clipName).toBe('lower-third');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('breakingBanner')?.clipName).toBe('breaking-banner');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('fullScreen')?.clipName).toBe('magic-wall-panel');
+  });
+
+  it('unknown clipKind STILL returns undefined after T-334 lands (T-334 AC #20)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind')).toBeUndefined();
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'fox-nfl-no-chrome')).toBeDefined();
   });
 });
 
