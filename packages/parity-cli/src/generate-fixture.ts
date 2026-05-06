@@ -1438,6 +1438,71 @@ const premierLeagueFopBinding: ClipKindBinding = {
 };
 
 /**
+ * Fox NFL "No-Chrome" snapshot props per D-T334-1 / D-T334-4.
+ * Cluster B preset T-334 wires the `score-bug` primitive (T-332a) as the
+ * third `scoreBug` clipKind consumer (Pattern C — `PRESET_ID_BINDINGS`
+ * override; second override after T-333 PL). SECOND production consumer
+ * of T-332a's `'football'` style branch; FIRST production consumer of
+ * the `backdropGradient`, `down`, AND `possession` optional props.
+ *
+ * Snapshot captures the 2025 NFL Super Bowl LIX register: KC red
+ * `#E31837` home box + PHI green `#004C54` away box (Super Bowl LIX
+ * rematch); chromeless `#000000` base + radial gradient backdrop
+ * (~40% center, 0 edges); 3rd-and-7 down-and-distance; possession
+ * boost on KC home box; Inter Display 900 OFL fallback for proprietary
+ * Fox Sports custom typeface. Touchdown comic-book celebration,
+ * down-and-distance possession-slide animation, 800 ms zoom-in
+ * entrance, and 120 ms score-change pulse all deferred (D-T334-3 /
+ * D-T334-11).
+ */
+export const FOX_NFL_NO_CHROME_PROPS: {
+  readonly style: 'football';
+  readonly position: { readonly x: number; readonly y: number };
+  readonly background: string;
+  readonly foreground: string;
+  readonly backdropGradient: { readonly centerOpacity: number; readonly edgeOpacity: number };
+  readonly home: { readonly code: string; readonly color: string; readonly score: string };
+  readonly away: { readonly code: string; readonly color: string; readonly score: string };
+  readonly clock: string;
+  readonly period: string;
+  readonly down: string;
+  readonly possession: 'home';
+  readonly font: { readonly family: string; readonly weight: number };
+  readonly casing: 'as-is';
+} = {
+  style: 'football',
+  position: { x: 280, y: 600 }, // bottom-center anchor (D-T334-1; 1280x720 canvas)
+  background: '#000000', // chromeless black base (D-T334-1)
+  foreground: '#FFFFFF', // white text (D-T334-1 / stub line 26)
+  backdropGradient: { centerOpacity: 0.4, edgeOpacity: 0 }, // ~40% radial darken (D-T334-1)
+  home: { code: 'KC', color: '#E31837', score: '24' }, // Kansas City Chiefs (Super Bowl LIX home)
+  away: { code: 'PHI', color: '#004C54', score: '17' }, // Philadelphia Eagles (Super Bowl LIX away)
+  clock: '04:32', // Q3 mid-quarter (D-T334-1)
+  period: 'Q3', // third-quarter token (D-T334-1)
+  down: '3rd & 7', // canonical NFL down-and-distance (D-T334-1)
+  possession: 'home', // KC has the ball; brightness(1.12) boost (D-T334-1)
+  font: { family: 'Inter Display', weight: 900 }, // OFL fallback for Fox Sports custom (D-T334-1)
+  casing: 'as-is', // numeric short-circuit covers '04:32', '24', '17', '3rd & 7'
+};
+
+const foxNflNoChromeBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'score-bug', // kebab-case primitive `kind` (T-332a line 686)
+  buildProps() {
+    // Deep-clone nested object literals so callers can mutate without
+    // aliasing the exported constant.
+    return {
+      ...FOX_NFL_NO_CHROME_PROPS,
+      position: { ...FOX_NFL_NO_CHROME_PROPS.position },
+      backdropGradient: { ...FOX_NFL_NO_CHROME_PROPS.backdropGradient },
+      home: { ...FOX_NFL_NO_CHROME_PROPS.home },
+      away: { ...FOX_NFL_NO_CHROME_PROPS.away },
+      font: { ...FOX_NFL_NO_CHROME_PROPS.font },
+    };
+  },
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -1457,6 +1522,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'fox-news-alert': foxNewsAlertBinding, // T-327
   'msnbc-big-board': msnbcBigBoardBinding, // T-328
   'premier-league-field-of-play': premierLeagueFopBinding, // T-333
+  'fox-nfl-no-chrome': foxNflNoChromeBinding, // T-334
 };
 
 /**
