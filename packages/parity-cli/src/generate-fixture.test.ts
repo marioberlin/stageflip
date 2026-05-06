@@ -21,6 +21,7 @@ import {
   MAGIC_WALL_CANONICAL_REGIONS,
   MRBEAST_CANONICAL_WORDS,
   NETFLIX_CANONICAL_WORDS,
+  NETFLIX_DOC_LT_PROPS,
   OLYMPIC_CANONICAL_STANDINGS,
   PRESET_ID_BINDINGS,
   type PresetForRender,
@@ -1757,6 +1758,135 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
   it('still returns undefined for unknown clipKinds after T-330 lands (T-330 AC #21)', () => {
     expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind')).toBeUndefined();
     expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'unknown-preset-id-3')).toBeUndefined();
+  });
+
+  // T-329 — fifth `lowerThird`-clipKind preset (`netflix-doc-lt`), wired via
+  // the `PRESET_ID_BINDINGS` override path (Pattern C — fourth
+  // `lowerThird`-keyed override after T-325 + T-326 + T-330). Fifth Cluster A
+  // preset to ship; second production consumer of T-183z's `noFlag` /
+  // `subtitleColor` / `font` props; canonical "headline Mixed + title ALL
+  // CAPS" snapshot-string casing pattern (D-T329-6).
+
+  it('routes netflix-doc-lt through the per-preset override binding (T-329 AC #14)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'netflix-doc-lt');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('lower-third');
+    const props = binding?.buildProps(undefined);
+    expect(props?.name).toBe('Ava DuVernay');
+    expect(props?.title).toBe('DIRECTOR'); // literal ALL CAPS via snapshot-string casing (D-T329-6)
+    expect(props?.accent).toBe('#FFFFFF');
+    expect(props?.background).toBe('#000000');
+    expect(props?.textColor).toBe('#FFFFFF');
+    expect(props?.insetLeftPx).toBe(120);
+    expect(props?.insetBottomPx).toBe(80);
+    // T-183z props (second production consumer milestone)
+    expect(props?.noFlag).toBe(true);
+    expect(props?.subtitleColor).toBe('#FFFFFF');
+    expect(props?.font).toEqual({ family: 'DM Sans', weight: 500 });
+  });
+
+  it('exports NETFLIX_DOC_LT_PROPS with ten canonical fields (T-329 AC #15)', () => {
+    expect(NETFLIX_DOC_LT_PROPS).toEqual({
+      name: 'Ava DuVernay',
+      title: 'DIRECTOR',
+      accent: '#FFFFFF',
+      background: '#000000',
+      textColor: '#FFFFFF',
+      insetLeftPx: 120,
+      insetBottomPx: 80,
+      noFlag: true,
+      subtitleColor: '#FFFFFF',
+      font: { family: 'DM Sans', weight: 500 },
+    });
+  });
+
+  it('PRESET_ID_BINDINGS exposes the netflix-doc-lt override (T-329 AC #16)', () => {
+    expect(PRESET_ID_BINDINGS['netflix-doc-lt']).toBeDefined();
+    expect(PRESET_ID_BINDINGS['netflix-doc-lt']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['netflix-doc-lt']?.runtimeId).toBe('frame-runtime');
+  });
+
+  it('still routes apple-tv-lt after T-329 lands (T-329 AC #18 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'apple-tv-lt');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.name).toBe('Sofia Coppola');
+    expect(props?.font).toEqual({ family: 'Inter', weight: 300 });
+  });
+
+  it('still routes al-jazeera-orange after T-329 lands (T-329 AC #18 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'al-jazeera-orange');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#F7F7F5');
+    expect(props?.accent).toBe('#F7941D');
+  });
+
+  it('still routes bbc-reith-dark after T-329 lands (T-329 AC #18 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'bbc-reith-dark');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#1A1A1A');
+    expect(props?.accent).toBe('#BB1919');
+  });
+
+  it('falls through to cnnClassicBinding for cnn-classic after T-329 lands (T-329 AC #17 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'cnn-classic');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#FFFFFF');
+  });
+
+  it('falls through to cnnClassicBinding for unknown lowerThird presetIds after T-329 lands (T-329 AC #17)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'unknown-news-preset-4');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#FFFFFF'); // cnn-classic clipKind-default
+  });
+
+  it('falls through to cnnClassicBinding for bare lowerThird after T-329 lands (T-329 AC #17)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#FFFFFF'); // cnn-classic clipKind-default
+  });
+
+  it('routes netflix-doc-lt through the renderer-side override (T-329 AC #14 round-trip)', async () => {
+    const renderSpy = vi
+      .fn<(doc: unknown, frame: number) => Promise<Uint8Array>>()
+      .mockResolvedValue(new Uint8Array([0]));
+    const renderer = createGenerateFixtureRenderer({
+      resolver: DEFAULT_CLIP_KIND_RESOLVER,
+      render: renderSpy as unknown as Parameters<typeof createGenerateFixtureRenderer>[0]['render'],
+    });
+    await renderer.render({
+      preset: presetWith('lowerThird', 'netflix-doc-lt', 'news'),
+      composition: COMPOSITION,
+      frame: 60,
+    });
+    const [doc] = renderSpy.mock.calls[0] ?? [];
+    const parsed = rirDocumentSchema.parse(doc);
+    const element = parsed.elements[0];
+    if (!element || element.content.type !== 'clip') throw new Error('expected clip element');
+    expect(element.content.clipName).toBe('lower-third');
+    expect(element.content.params).toMatchObject({
+      name: 'Ava DuVernay',
+      title: 'DIRECTOR',
+      accent: '#FFFFFF',
+      background: '#000000',
+      textColor: '#FFFFFF',
+      insetLeftPx: 120,
+      insetBottomPx: 80,
+      noFlag: true,
+      subtitleColor: '#FFFFFF',
+      font: { family: 'DM Sans', weight: 500 },
+    });
+  });
+
+  it('still returns undefined for unknown clipKinds after T-329 lands (T-329 AC #21)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind')).toBeUndefined();
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'unknown-preset-id-4')).toBeUndefined();
   });
 
   it('builds scoreBug props as a six-chip canonical over with cricket-canon colors (T-358)', () => {
