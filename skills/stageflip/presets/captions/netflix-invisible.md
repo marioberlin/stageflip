@@ -13,7 +13,7 @@ fallbackFont:
   license: ofl
 permissions: []
 signOff:
-  parityFixture: 'signed:2026-05-05'
+  parityFixture: pending-user-review
   typeDesign: pending-cluster-batch
 ---
 
@@ -98,3 +98,9 @@ Thresholds: **PSNR ≥ 42 dB**, **SSIM ≥ 0.98** (stricter than the generator d
 - ADR-004 (preset system contract — frontmatter, loader, validator, parity sign-off, integrity invariants).
 - Netflix Style Guide: 42 chars / 2 lines / ≥833 ms / ≤7 s — production rule set (validator out of v1 scope).
 - "Iconic because they're invisible" — original compass artifact prose for the Netflix accessibility-caption register.
+
+## Known issues (v1; sign-off reverted 2026-05-06)
+
+- **Active-word position diverges from rect-backdrop region.** During product-owner visual inspection on 2026-05-06, the parity golden at frame 45 rendered the active word `for` **below** the translucent rect backdrop instead of **inside** it. Per the spec contract (line 33 above) the rect backdrop's geometry should follow the active-word region — past / future words at opacity 0 contribute no visible glyphs but the rect is supposed to sit behind word 4 (`for`). The observed layout shows the rect at the canonical bottom-of-frame anchor (y ≈ 540 + 56 px tall band) but the active glyph rendering one line below that band — likely a `caption.tsx` regression in the `backdrop: 'rect'` + `muteOpacity: 0` interaction (the active-word position calculation may not account for the no-pixel-coverage past words shifting the flex-wrap baseline).
+- **`signOff.parityFixture` reverted to `pending-user-review` 2026-05-06.** Cluster F drops to **5/6 ELIGIBLE** until the primitive fix lands and the golden is regenerated. Follow-up task: `T-316b` (or similar) — `caption.tsx` rect-backdrop active-word positioning fix; T-366 retry then re-signs the frame-45 golden.
+- **Reproducer**: `pnpm tsx scripts/generate-preset-parity-fixture-prod.ts --preset=netflix-invisible --frame=45`; inspect `parity-fixtures/captions/netflix-invisible/golden-frame-45.png` — observe rect at top of band, glyph below band.
