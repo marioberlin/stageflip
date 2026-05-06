@@ -1,0 +1,30 @@
+{
+  "name": "cnn-breaking",
+  "cluster": "news",
+  "kind": "breakingBanner",
+  "description": "Parity fixture for preset 'cnn-breaking' (cluster news, kind breakingBanner)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "CNN Sans",
+      "license": "proprietary-byo"
+    },
+    "fallback": {
+      "family": "Inter Tight",
+      "weight": 800,
+      "license": "ofl"
+    }
+  }
+}

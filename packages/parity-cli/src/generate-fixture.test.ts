@@ -11,6 +11,7 @@ import {
   APPLE_TV_LT_PROPS,
   BBC_REITH_DARK_PROPS,
   BLOOMBERG_CANONICAL_SNAPSHOT,
+  CNN_BREAKING_PROPS,
   CNN_CLASSIC_PROPS,
   CRICKET_OUTCOME_COLORS,
   DEFAULT_CLIP_KIND_RESOLVER,
@@ -1887,6 +1888,159 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
   it('still returns undefined for unknown clipKinds after T-329 lands (T-329 AC #21)', () => {
     expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind')).toBeUndefined();
     expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'unknown-preset-id-4')).toBeUndefined();
+  });
+
+  // T-324 — first `breakingBanner`-clipKind preset (`cnn-breaking`), wired via
+  // the clipKind-default path (Pattern C — clipKind-default, NOT
+  // `PRESET_ID_BINDINGS` override). Sixth Cluster A preset to ship; first
+  // production consumer of the just-shipped T-324a `BreakingBanner` primitive.
+  // T-327 `fox-news-alert` (next consumer) will take the `PRESET_ID_BINDINGS`
+  // override path for the sliver-register variant.
+
+  it('resolves breakingBanner to breaking-banner on the frame-runtime (T-324 AC #13)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('breakingBanner');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('breaking-banner');
+  });
+
+  it('routes cnn-breaking through the breakingBanner clipKind-default (T-324 AC #15)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('breakingBanner', 'cnn-breaking');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('breaking-banner');
+    const props = binding?.buildProps(undefined);
+    expect(props?.headline).toBe('SUPREME COURT RULES UNANIMOUSLY');
+    expect(props?.label).toEqual({ text: 'BREAKING NEWS', fill: '#CC0000', color: '#FFFFFF' });
+    expect(props?.endCap).toEqual({ fill: '#CC0000', position: 'left' });
+    expect(props?.background).toBe('#FFFFFF');
+    expect(props?.headlineColor).toBe('#000000');
+    expect(props?.mode).toBe('banner');
+    expect(props?.slideAxis).toBe('horizontal');
+    expect(props?.casing).toBe('uppercase');
+    expect(props?.font).toEqual({ family: 'Inter Tight', weight: 800 });
+    expect(props?.insetBottomPx).toBe(60);
+  });
+
+  it('exports CNN_BREAKING_PROPS with ten canonical fields (T-324 AC #14)', () => {
+    expect(CNN_BREAKING_PROPS).toEqual({
+      headline: 'SUPREME COURT RULES UNANIMOUSLY',
+      label: { text: 'BREAKING NEWS', fill: '#CC0000', color: '#FFFFFF' },
+      endCap: { fill: '#CC0000', position: 'left' },
+      background: '#FFFFFF',
+      headlineColor: '#000000',
+      mode: 'banner',
+      slideAxis: 'horizontal',
+      casing: 'uppercase',
+      font: { family: 'Inter Tight', weight: 800 },
+      insetBottomPx: 60,
+    });
+  });
+
+  it('PRESET_ID_BINDINGS does NOT contain cnn-breaking — clipKind-default only (T-324 AC #15)', () => {
+    expect(PRESET_ID_BINDINGS['cnn-breaking']).toBeUndefined();
+  });
+
+  it('falls through to cnnBreakingBinding for bare breakingBanner (T-324 AC #13)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('breakingBanner');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#FFFFFF');
+    expect(props?.mode).toBe('banner');
+  });
+
+  it('still routes cnn-classic after T-324 lands (T-324 AC #16 backward compat — lowerThird default)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'cnn-classic');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#FFFFFF');
+    expect(props?.name).toBe('BREAKING: SUPREME COURT RULES');
+  });
+
+  it('still routes bbc-reith-dark after T-324 lands (T-324 AC #17 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'bbc-reith-dark');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#1A1A1A');
+    expect(props?.accent).toBe('#BB1919');
+  });
+
+  it('still routes al-jazeera-orange after T-324 lands (T-324 AC #18 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'al-jazeera-orange');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#F7F7F5');
+    expect(props?.accent).toBe('#F7941D');
+  });
+
+  it('still routes apple-tv-lt after T-324 lands (T-324 AC #19 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'apple-tv-lt');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.name).toBe('Sofia Coppola');
+    expect(props?.font).toEqual({ family: 'Inter', weight: 300 });
+  });
+
+  it('still routes netflix-doc-lt after T-324 lands (T-324 AC #20 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'netflix-doc-lt');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.name).toBe('Ava DuVernay');
+    expect(props?.font).toEqual({ family: 'DM Sans', weight: 500 });
+  });
+
+  it('still routes bigNumber / caption / lyrics / fullScreen / titleSequence / scoreBug / newsTicker / standings after T-324 lands (T-324 AC #21)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('bigNumber')?.clipName).toBe('animated-value');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('caption')?.clipName).toBe('caption');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('lyrics')?.clipName).toBe('lyrics');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('fullScreen')?.clipName).toBe('magic-wall-panel');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('titleSequence')?.clipName).toBe('titleSequence');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('scoreBug')?.clipName).toBe('outcome-row');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('newsTicker')?.clipName).toBe('news-ticker-bar');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('standings')?.clipName).toBe('standings-table');
+  });
+
+  it('still routes big-number-stat-impact via PRESET_ID_BINDINGS after T-324 lands (T-324 AC #21)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('bigNumber', 'big-number-stat-impact');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('animated-value');
+  });
+
+  it('routes cnn-breaking through the renderer-side clipKind-default (T-324 AC #13 round-trip)', async () => {
+    const renderSpy = vi
+      .fn<(doc: unknown, frame: number) => Promise<Uint8Array>>()
+      .mockResolvedValue(new Uint8Array([0]));
+    const renderer = createGenerateFixtureRenderer({
+      resolver: DEFAULT_CLIP_KIND_RESOLVER,
+      render: renderSpy as unknown as Parameters<typeof createGenerateFixtureRenderer>[0]['render'],
+    });
+    await renderer.render({
+      preset: presetWith('breakingBanner', 'cnn-breaking', 'news'),
+      composition: COMPOSITION,
+      frame: 60,
+    });
+    const [doc] = renderSpy.mock.calls[0] ?? [];
+    const parsed = rirDocumentSchema.parse(doc);
+    const element = parsed.elements[0];
+    if (!element || element.content.type !== 'clip') throw new Error('expected clip element');
+    expect(element.content.clipName).toBe('breaking-banner');
+    expect(element.content.params).toMatchObject({
+      headline: 'SUPREME COURT RULES UNANIMOUSLY',
+      label: { text: 'BREAKING NEWS', fill: '#CC0000', color: '#FFFFFF' },
+      endCap: { fill: '#CC0000', position: 'left' },
+      background: '#FFFFFF',
+      headlineColor: '#000000',
+      mode: 'banner',
+      slideAxis: 'horizontal',
+      casing: 'uppercase',
+      font: { family: 'Inter Tight', weight: 800 },
+      insetBottomPx: 60,
+    });
+  });
+
+  it('still returns undefined for unknown clipKinds after T-324 lands (T-324 AC #22)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind')).toBeUndefined();
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'unknown-preset-id-5')).toBeUndefined();
   });
 
   it('builds scoreBug props as a six-chip canonical over with cricket-canon colors (T-358)', () => {

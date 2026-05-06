@@ -1087,6 +1087,55 @@ const netflixDocLtBinding: ClipKindBinding = {
   },
 };
 
+/**
+ * CNN-Breaking snapshot props per D-T324-1 / D-T324-4. Cluster A preset T-324
+ * wires the `BreakingBanner` primitive (T-324a) end-to-end as the first
+ * `breakingBanner` clipKind binding (Pattern C — clipKind-default, NOT
+ * `PRESET_ID_BINDINGS` override). Sister Cluster A `breakingBanner` preset
+ * T-327 `fox-news-alert` will supply a per-preset snapshot via
+ * `PRESET_ID_BINDINGS` (T-360 D-T360-2 / Pattern C mechanism) for the
+ * sliver-register variant.
+ *
+ * Snapshot captures the canonical CNN-Breaking steady-state register: white
+ * full-width banner + red flag end-cap (left) + red `BREAKING NEWS` label
+ * badge with white text + UPPERCASE black headline rendered at Inter Tight
+ * 800 (the OFL fallback honored via the primitive's `font` prop override —
+ * D-T324-13). LIVE pulse, ticker strip, red-block-wipe text-change, CNN
+ * bug, and staged entrance red-block sweep are deferred to T-324b/c/d
+ * carve-outs IF Reviewer scrutiny demands them (per D-T324-3).
+ */
+export const CNN_BREAKING_PROPS: {
+  readonly headline: string;
+  readonly label: { readonly text: string; readonly fill: string; readonly color: string };
+  readonly endCap: { readonly fill: string; readonly position: 'left' | 'right' };
+  readonly background: string;
+  readonly headlineColor: string;
+  readonly mode: 'banner';
+  readonly slideAxis: 'horizontal';
+  readonly casing: 'uppercase';
+  readonly font: { readonly family: string; readonly weight: number };
+  readonly insetBottomPx: number;
+} = {
+  headline: 'SUPREME COURT RULES UNANIMOUSLY',
+  label: { text: 'BREAKING NEWS', fill: '#CC0000', color: '#FFFFFF' },
+  endCap: { fill: '#CC0000', position: 'left' },
+  background: '#FFFFFF', // white full-width banner (D-T324-1)
+  headlineColor: '#000000', // headline black (D-T324-1)
+  mode: 'banner', // CNN canonical register (full-width); T-324a default
+  slideAxis: 'horizontal', // CNN canonical register (slide in from left); T-324a default
+  casing: 'uppercase', // defensive — headline already UPPERCASE; D-T324-5
+  font: { family: 'Inter Tight', weight: 800 }, // OFL fallback honored via primitive `font` prop (D-T324-13)
+  insetBottomPx: 60, // closer to bottom edge than the chyron's 64 px; D-T324-4
+};
+
+const cnnBreakingBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'breaking-banner', // kebab-case primitive `kind` (D-T324-12)
+  buildProps() {
+    return { ...CNN_BREAKING_PROPS };
+  },
+};
+
 const squidGameGeometricBinding: ClipKindBinding = {
   runtimeId: 'frame-runtime',
   clipName: 'titleSequence',
@@ -1174,10 +1223,11 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
  * (T-358), `newsTicker → news-ticker-bar` (T-356), `standings →
  * standings-table` (T-357), `caption → caption` (T-362), `fullScreen →
  * magic-wall-panel` (T-355), `lyrics → lyrics` (T-367), `titleSequence →
- * titleSequence` (T-350), `lowerThird → lower-third` (T-323), with
- * per-preset overrides for multi-preset-per-
- * clipKind cases (T-360 D-T360-2). Per-preset entries take precedence;
- * absent an override, the resolver falls back to the clipKind-only mapping.
+ * titleSequence` (T-350), `lowerThird → lower-third` (T-323),
+ * `breakingBanner → breaking-banner` (T-324), with per-preset overrides for
+ * multi-preset-per-clipKind cases (T-360 D-T360-2). Per-preset entries take
+ * precedence; absent an override, the resolver falls back to the
+ * clipKind-only mapping.
  */
 export const DEFAULT_CLIP_KIND_RESOLVER: ClipKindResolver = (clipKind, presetId) => {
   if (presetId !== undefined) {
@@ -1193,6 +1243,7 @@ export const DEFAULT_CLIP_KIND_RESOLVER: ClipKindResolver = (clipKind, presetId)
   if (clipKind === 'lyrics') return lyricsBinding;
   if (clipKind === 'titleSequence') return squidGameGeometricBinding;
   if (clipKind === 'lowerThird') return cnnClassicBinding;
+  if (clipKind === 'breakingBanner') return cnnBreakingBinding;
   return undefined;
 };
 
