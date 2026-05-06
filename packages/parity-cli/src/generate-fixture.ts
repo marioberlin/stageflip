@@ -1728,6 +1728,95 @@ const wimbledonGreenPurpleBinding: ClipKindBinding = {
 };
 
 /**
+ * Masters "Red-Under-Par" snapshot props per D-T338-1 / D-T338-4.
+ * Cluster B preset T-338 wires the `standings-table` primitive (T-357a) as the
+ * second `standings` clipKind consumer (Pattern C — `PRESET_ID_BINDINGS`
+ * override; first `standings`-keyed override after T-357 olympic-medal-tracker
+ * holds the clipKind-default slot). FIRST production consumer of the canonical
+ * golf red-black-green score-to-par color semantic; per-cell color depends on
+ * the primitive's column-tinting capability and is single-color-per-column,
+ * NOT per-cell-VALUE-derived (D-T338-10) — cosmetic divergence documented
+ * under D-T338-11-a.
+ *
+ * Snapshot captures the canonical Masters Tournament mid-round register:
+ * 5-row top-5 leaderboard (Scheffler / McIlroy / Schauffele / Spieth / Bryson)
+ * with score-to-par + thru-hole columns; Augusta National green `#006747`
+ * accent on the rank column (theme-slot mapping; not a visible accent-strip
+ * per D-T338-11-d); dark broadcast base `#0E0E12`; white text; Inter 600 OFL
+ * fallback for proprietary CBS Sports custom face. Position-change row-slide,
+ * birdie/eagle flash, score count-up animation, full-screen scroll register
+ * all deferred (D-T338-3 / D-T338-11).
+ */
+export const MASTERS_PROPS: {
+  readonly rows: ReadonlyArray<{
+    readonly rank: number;
+    readonly code: string;
+    readonly values: readonly number[];
+  }>;
+  readonly columns: ReadonlyArray<{
+    readonly key: string;
+    readonly label: string;
+    readonly kind: 'rank' | 'label' | 'numeric' | 'delta' | 'total';
+    readonly color?: string;
+    readonly width?: number;
+    readonly flex?: number;
+  }>;
+  readonly background: string;
+  readonly foreground: string;
+  readonly goldColor: string;
+  readonly bandPosition: 'overlay' | 'fullscreen';
+  readonly rowHeight: number;
+  readonly headerHeight: number;
+  readonly staggerMs: number;
+} = {
+  rows: [
+    { rank: 1, code: 'Scheffler', values: [-12, 18] },
+    { rank: 2, code: 'McIlroy', values: [-10, 17] },
+    { rank: 3, code: 'Schauffele', values: [-8, 18] },
+    { rank: 4, code: 'Spieth', values: [0, 18] },
+    { rank: 5, code: 'Bryson', values: [2, 15] },
+  ],
+  columns: [
+    { key: 'rank', label: '#', kind: 'rank', width: 56, color: '#006747' },
+    { key: 'name', label: 'PLAYER', kind: 'label', flex: 2 },
+    { key: 'score', label: 'TO PAR', kind: 'numeric' },
+    { key: 'thru', label: 'THRU', kind: 'numeric' },
+    { key: 'total', label: '', kind: 'total', width: 0 },
+  ],
+  background: '#0E0E12',
+  foreground: '#FFFFFF',
+  goldColor: '#006747',
+  bandPosition: 'overlay',
+  rowHeight: 64,
+  headerHeight: 48,
+  staggerMs: 80,
+};
+
+const mastersRedUnderParBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'standings-table', // kebab-case primitive `kind` (T-357a line 352)
+  buildProps() {
+    // Deep-clone nested object literals + the rows / columns arrays so callers
+    // can mutate without aliasing the exported constant.
+    return {
+      rows: MASTERS_PROPS.rows.map((r) => ({
+        rank: r.rank,
+        code: r.code,
+        values: [...r.values],
+      })),
+      columns: MASTERS_PROPS.columns.map((c) => ({ ...c })),
+      background: MASTERS_PROPS.background,
+      foreground: MASTERS_PROPS.foreground,
+      goldColor: MASTERS_PROPS.goldColor,
+      bandPosition: MASTERS_PROPS.bandPosition,
+      rowHeight: MASTERS_PROPS.rowHeight,
+      headerHeight: MASTERS_PROPS.headerHeight,
+      staggerMs: MASTERS_PROPS.staggerMs,
+    };
+  },
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -1751,6 +1840,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'nbc-snf-possession-illuminated': nbcSnfBinding, // T-335
   'espn-bottomline-flipper': espnBottomlineBinding, // T-339a
   'wimbledon-green-purple': wimbledonGreenPurpleBinding, // T-337
+  'masters-red-under-par': mastersRedUnderParBinding, // T-338
 };
 
 /**

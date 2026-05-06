@@ -23,6 +23,7 @@ import {
   HORMOZI_CANONICAL_WORDS,
   KARAOKE_PROGRESSIVE_WIPE_CANONICAL_LINES,
   MAGIC_WALL_CANONICAL_REGIONS,
+  MASTERS_PROPS,
   MRBEAST_CANONICAL_WORDS,
   MSNBC_BIG_BOARD_PARTY_COLORS,
   MSNBC_BIG_BOARD_REGIONS,
@@ -2384,8 +2385,8 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']).toBeDefined();
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.runtimeId).toBe('frame-runtime');
-    // Sixteen overrides total after T-337 lands (T-333 added the 12th; T-337 the 16th).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(16);
+    // Seventeen overrides total after T-338 lands (T-333 added the 12th; T-338 the 17th).
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(17);
   });
 
   it('binding deep-clones nested object literals so callers can mutate freely (T-333)', () => {
@@ -2533,8 +2534,8 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']).toBeDefined();
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.runtimeId).toBe('frame-runtime');
-    // Sixteen overrides total after T-337 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(16);
+    // Seventeen overrides total after T-338 lands.
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(17);
   });
 
   it('fox-nfl-no-chrome binding deep-clones nested object literals so callers can mutate freely (T-334)', () => {
@@ -2674,8 +2675,8 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']).toBeDefined();
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.runtimeId).toBe('frame-runtime');
-    // Sixteen overrides total after T-337 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(16);
+    // Seventeen overrides total after T-338 lands.
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(17);
   });
 
   it('nbc-snf-possession-illuminated binding deep-clones nested object literals so callers can mutate freely (T-335)', () => {
@@ -2818,8 +2819,8 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']).toBeDefined();
     expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.clipName).toBe('news-ticker-bar');
     expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.runtimeId).toBe('frame-runtime');
-    // Sixteen overrides total after T-337 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(16);
+    // Seventeen overrides total after T-338 lands.
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(17);
   });
 
   it('espn-bottomline-flipper binding deep-clones the entries array so callers can mutate freely (T-339a)', () => {
@@ -2991,8 +2992,8 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['wimbledon-green-purple']).toBeDefined();
     expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.runtimeId).toBe('frame-runtime');
-    // Sixteen overrides total after T-337 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(16);
+    // Seventeen overrides total after T-338 lands.
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(17);
   });
 
   it('wimbledon-green-purple binding deep-clones nested objects + players tuple + sets arrays (T-337)', () => {
@@ -3076,6 +3077,175 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(DEFAULT_CLIP_KIND_RESOLVER('fullScreen')?.clipName).toBe('magic-wall-panel');
     expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind')).toBeUndefined();
     expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'wimbledon-green-purple')).toBeDefined();
+  });
+
+  // T-338 — sixth Cluster B preset (`masters-red-under-par`), wired via the
+  // `PRESET_ID_BINDINGS` override path (Pattern C). Second `standings`
+  // clipKind consumer; FIRST `standings`-keyed `PRESET_ID_BINDINGS` override
+  // (T-357 olympic-medal-tracker holds the clipKind-default slot via
+  // `standingsBinding`). The clipKind-default arm stays UNCHANGED at
+  // `standingsBinding` (T-357); T-333 / T-334 / T-335 / T-337 / T-339a prior
+  // overrides UNCHANGED.
+  it('routes masters-red-under-par through PRESET_ID_BINDINGS override (T-338 AC #13)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('standings', 'masters-red-under-par');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('standings-table'); // kebab-case primitive kind (T-357a line 352)
+    const props = binding?.buildProps(undefined) as {
+      rows: Array<{ rank: number; code: string; values: number[] }>;
+      columns: Array<{ key: string; kind: string; color?: string }>;
+      background: string;
+      foreground: string;
+      goldColor: string;
+      bandPosition: string;
+      rowHeight: number;
+      headerHeight: number;
+      staggerMs: number;
+    };
+    expect(props.rows).toHaveLength(5);
+    expect(props.columns).toHaveLength(5);
+    expect(props.background).toBe('#0E0E12');
+    expect(props.foreground).toBe('#FFFFFF');
+    expect(props.goldColor).toBe('#006747');
+    expect(props.bandPosition).toBe('overlay');
+    expect(props.rowHeight).toBe(64);
+    expect(props.headerHeight).toBe(48);
+    expect(props.staggerMs).toBe(80);
+    expect(props.rows[0]).toEqual({ rank: 1, code: 'Scheffler', values: [-12, 18] });
+    expect(props.rows[1]).toEqual({ rank: 2, code: 'McIlroy', values: [-10, 17] });
+    expect(props.rows[2]).toEqual({ rank: 3, code: 'Schauffele', values: [-8, 18] });
+    expect(props.rows[3]).toEqual({ rank: 4, code: 'Spieth', values: [0, 18] });
+    expect(props.rows[4]).toEqual({ rank: 5, code: 'Bryson', values: [2, 15] });
+    expect(props.columns[0]).toEqual({
+      key: 'rank',
+      label: '#',
+      kind: 'rank',
+      width: 56,
+      color: '#006747',
+    });
+    expect(props.columns[1]).toEqual({ key: 'name', label: 'PLAYER', kind: 'label', flex: 2 });
+    expect(props.columns[2]).toEqual({ key: 'score', label: 'TO PAR', kind: 'numeric' });
+    expect(props.columns[3]).toEqual({ key: 'thru', label: 'THRU', kind: 'numeric' });
+    expect(props.columns[4]).toEqual({ key: 'total', label: '', kind: 'total', width: 0 });
+  });
+
+  it('exports MASTERS_PROPS with canonical Masters mid-round leaderboard values (T-338 AC #14)', () => {
+    expect(MASTERS_PROPS.rows).toHaveLength(5);
+    expect(MASTERS_PROPS.rows[0]?.code).toBe('Scheffler');
+    expect(MASTERS_PROPS.rows[0]?.values[0]).toBe(-12);
+    expect(MASTERS_PROPS.rows[1]?.code).toBe('McIlroy');
+    expect(MASTERS_PROPS.rows[2]?.code).toBe('Schauffele');
+    expect(MASTERS_PROPS.rows[3]?.code).toBe('Spieth');
+    expect(MASTERS_PROPS.rows[3]?.values[0]).toBe(0);
+    expect(MASTERS_PROPS.rows[4]?.code).toBe('Bryson');
+    expect(MASTERS_PROPS.rows[4]?.values[0]).toBe(2);
+    expect(MASTERS_PROPS.columns).toHaveLength(5);
+    expect(MASTERS_PROPS.columns[0]?.kind).toBe('rank');
+    expect(MASTERS_PROPS.columns[0]?.color).toBe('#006747');
+    expect(MASTERS_PROPS.columns[1]?.kind).toBe('label');
+    expect(MASTERS_PROPS.columns[1]?.key).toBe('name');
+    expect(MASTERS_PROPS.columns[2]?.kind).toBe('numeric');
+    expect(MASTERS_PROPS.columns[2]?.key).toBe('score');
+    expect(MASTERS_PROPS.columns[3]?.kind).toBe('numeric');
+    expect(MASTERS_PROPS.columns[3]?.key).toBe('thru');
+    expect(MASTERS_PROPS.goldColor).toBe('#006747');
+    expect(MASTERS_PROPS.background).toBe('#0E0E12');
+    expect(MASTERS_PROPS.foreground).toBe('#FFFFFF');
+  });
+
+  it('PRESET_ID_BINDINGS contains masters-red-under-par override (T-338 AC #15)', () => {
+    expect(PRESET_ID_BINDINGS['masters-red-under-par']).toBeDefined();
+    expect(PRESET_ID_BINDINGS['masters-red-under-par']?.clipName).toBe('standings-table');
+    expect(PRESET_ID_BINDINGS['masters-red-under-par']?.runtimeId).toBe('frame-runtime');
+    // Seventeen overrides total after T-338 lands.
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(17);
+  });
+
+  it('masters-red-under-par binding deep-clones rows + columns + values arrays (T-338)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('standings', 'masters-red-under-par');
+    if (!binding) throw new Error('test setup');
+    const a = binding.buildProps(undefined) as {
+      rows: Array<{ rank: number; code: string; values: number[] }>;
+      columns: Array<{ key: string; color?: string }>;
+    };
+    const b = binding.buildProps(undefined) as {
+      rows: Array<{ rank: number; code: string; values: number[] }>;
+      columns: Array<{ key: string; color?: string }>;
+    };
+    const aRow0 = a.rows[0];
+    const aCol0 = a.columns[0];
+    if (!aRow0 || !aCol0) throw new Error('test setup');
+    aRow0.code = 'MUT';
+    aRow0.values[0] = 999;
+    aCol0.color = '#000000';
+    expect(b.rows[0]?.code).toBe('Scheffler');
+    expect(b.rows[0]?.values[0]).toBe(-12);
+    expect(b.columns[0]?.color).toBe('#006747');
+    expect(MASTERS_PROPS.rows[0]?.code).toBe('Scheffler');
+    expect(MASTERS_PROPS.rows[0]?.values[0]).toBe(-12);
+    expect(MASTERS_PROPS.columns[0]?.color).toBe('#006747');
+  });
+
+  it('clipKind-default for standings STILL returns standingsBinding after T-338 lands (T-338 AC #16 backward compat)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('standings')?.clipName).toBe('standings-table');
+    // T-357 olympic-medal-tracker has NO PRESET_ID_BINDINGS entry; falls through.
+    expect(DEFAULT_CLIP_KIND_RESOLVER('standings', 'olympic-medal-tracker')?.clipName).toBe(
+      'standings-table',
+    );
+    expect(DEFAULT_CLIP_KIND_RESOLVER('standings', 'unknown-preset-id')?.clipName).toBe(
+      'standings-table',
+    );
+    // The `standings` clipKind-default binding is `standingsBinding` (T-357),
+    // not `mastersRedUnderParBinding`. Both share `clipName: 'standings-table'`
+    // but have different snapshot props (Olympic 5-row medal table vs Masters
+    // 5-row golf leaderboard). Distinguish via the rows[].code field.
+    const oly = DEFAULT_CLIP_KIND_RESOLVER('standings');
+    const olyProps = oly?.buildProps(undefined) as {
+      rows: Array<{ code: string }>;
+    };
+    expect(olyProps.rows[0]?.code).toBe('USA');
+    const masters = DEFAULT_CLIP_KIND_RESOLVER('standings', 'masters-red-under-par');
+    const mastersProps = masters?.buildProps(undefined) as {
+      rows: Array<{ code: string }>;
+    };
+    expect(mastersProps.rows[0]?.code).toBe('Scheffler');
+  });
+
+  it('T-333 / T-334 / T-335 / T-337 / T-339a prior overrides STILL resolve after T-338 lands (T-338 AC #17-22 backward compat)', () => {
+    const pl = DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'premier-league-field-of-play');
+    expect(pl?.clipName).toBe('score-bug');
+    const fox = DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'fox-nfl-no-chrome');
+    expect(fox?.clipName).toBe('score-bug');
+    const nbc = DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'nbc-snf-possession-illuminated');
+    expect(nbc?.clipName).toBe('score-bug');
+    const wim = DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'wimbledon-green-purple');
+    expect(wim?.clipName).toBe('score-bug');
+    const espn = DEFAULT_CLIP_KIND_RESOLVER('newsTicker', 'espn-bottomline-flipper');
+    expect(espn?.clipName).toBe('news-ticker-bar');
+    // T-358 cricket clipKind-default for scoreBug also unchanged.
+    expect(DEFAULT_CLIP_KIND_RESOLVER('scoreBug')?.clipName).toBe('outcome-row');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'cricket-ball-by-ball-dots')?.clipName).toBe(
+      'outcome-row',
+    );
+  });
+
+  it('still routes prior PRESET_ID_BINDINGS overrides after T-338 lands (T-338 AC #22 backward compat)', () => {
+    expect(PRESET_ID_BINDINGS['big-number-stat-impact']?.clipName).toBe('animated-value');
+    expect(PRESET_ID_BINDINGS['mrbeast-komika-axis']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['tiktok-rounded-box']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['ali-abdaal-opacity-karaoke']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['netflix-invisible']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['bbc-reith-dark']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['al-jazeera-orange']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['apple-tv-lt']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['netflix-doc-lt']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['fox-news-alert']?.clipName).toBe('breaking-banner');
+    expect(PRESET_ID_BINDINGS['msnbc-big-board']?.clipName).toBe('magic-wall-panel');
+    expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.clipName).toBe('news-ticker-bar');
+    expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.clipName).toBe('score-bug');
   });
 });
 
