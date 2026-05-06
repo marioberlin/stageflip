@@ -8,6 +8,15 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests"
   },
+  "dependencies": {
+    "@stageflip/cdp-host-bundle": "workspace:*",
+    "@stageflip/parity": "workspace:*",
+    "@stageflip/parity-cli": "workspace:*",
+    "@stageflip/renderer-cdp": "workspace:*",
+    "@stageflip/rir": "workspace:*",
+    "@stageflip/schema": "workspace:*",
+    "@stageflip/testing": "workspace:*"
+  },
   "devDependencies": {
     "@types/node": "22.19.17",
     "@vitest/coverage-v8": "2.1.9",
