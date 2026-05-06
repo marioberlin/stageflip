@@ -13,7 +13,7 @@ fallbackFont:
   license: ofl
 permissions: []
 signOff:
-  parityFixture: 'signed:2026-05-05'
+  parityFixture: 'signed:2026-05-06'
   typeDesign: pending-cluster-batch
 ---
 
@@ -29,7 +29,7 @@ signOff:
 
 ## Typography
 - `FOX NEWS ALERT` label: rendered at fontSize 18 / fontWeight 800 with `background: '#C20017'` + `color: '#FFFFFF'` (sliver-mode primitive default). Pre-uppercased in the snapshot string per stub line 30 ("Banner label: ALL CAPS"); the primitive's `casing` prop applies to `headline` only.
-- Headline: rendered at fontSize 18 / fontWeight 800 with `color: '#FFFFFF'`. Mixed-Case applied via the primitive's `casing: 'as-is'` no-op transform — the snapshot string `'Major Storm Approaches East Coast'` is rendered verbatim. This contrasts with CNN-Breaking's `casing: 'uppercase'` (T-324) — the casing primitive is the same across consumers; the register difference is whether the consumer transforms or preserves the literal.
+- Headline: rendered at fontSize 18 / fontWeight 800 with `color: '#FFFFFF'`. Mixed-Case applied via the primitive's `casing: 'as-is'` no-op transform — the snapshot string `'Major Storm Watch'` is rendered verbatim. This contrasts with CNN-Breaking's `casing: 'uppercase'` (T-324) — the casing primitive is the same across consumers; the register difference is whether the consumer transforms or preserves the literal. (The headline was shortened from `'Major Storm Approaches East Coast'` on 2026-05-06 after product-owner visual inspection found the longer phrase truncated mid-word at the 30 % sliver width edge; sliver-fit-tested at 17 chars.)
 - Rendered family v1: `League Gothic 700` (the OFL fallback declared in frontmatter, honored at render time via the primitive's `font` prop override per T-324a D-T324a-9). Like T-324 (`Inter Tight 800` for CNN), the `BreakingBanner` primitive does honor a `font` prop; the snapshot passes `{ family: 'League Gothic', weight: 700 }` to render the declared OFL fallback faithfully (D-T327-13). The bespoke `FF Good OT Black` (commercial BYO) is declared for the type-design batch review (T-331 / sister cluster-A composer task).
 - T-327 is the **first preset to declare `League Gothic` in the font registry**. The font-registry build picks up the declaration from the frontmatter automatically; the puppeteer renderer's FontManager preload list resolves League Gothic 700 OFL TTF at render time.
 

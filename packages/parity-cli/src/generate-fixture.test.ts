@@ -2058,7 +2058,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(binding?.runtimeId).toBe('frame-runtime');
     expect(binding?.clipName).toBe('breaking-banner');
     const props = binding?.buildProps(undefined);
-    expect(props?.headline).toBe('Major Storm Approaches East Coast');
+    expect(props?.headline).toBe('Major Storm Watch');
     expect(props?.label).toEqual({ text: 'FOX NEWS ALERT', fill: '#C20017', color: '#FFFFFF' });
     expect(props?.background).toBe('#003366');
     expect(props?.headlineColor).toBe('#FFFFFF');
@@ -2074,7 +2074,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
 
   it('exports FOX_NEWS_ALERT_PROPS with ten canonical fields and no endCap (T-327 AC #14)', () => {
     expect(FOX_NEWS_ALERT_PROPS).toEqual({
-      headline: 'Major Storm Approaches East Coast',
+      headline: 'Major Storm Watch',
       label: { text: 'FOX NEWS ALERT', fill: '#C20017', color: '#FFFFFF' },
       background: '#003366',
       headlineColor: '#FFFFFF',
@@ -2175,7 +2175,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     if (!element || element.content.type !== 'clip') throw new Error('expected clip element');
     expect(element.content.clipName).toBe('breaking-banner');
     expect(element.content.params).toMatchObject({
-      headline: 'Major Storm Approaches East Coast',
+      headline: 'Major Storm Watch',
       label: { text: 'FOX NEWS ALERT', fill: '#C20017', color: '#FFFFFF' },
       background: '#003366',
       headlineColor: '#FFFFFF',

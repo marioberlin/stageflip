@@ -1169,7 +1169,10 @@ export const FOX_NEWS_ALERT_PROPS: {
   readonly casing: 'as-is';
   readonly font: { readonly family: string; readonly weight: number };
 } = {
-  headline: 'Major Storm Approaches East Coast',
+  // Shortened from 'Major Storm Approaches East Coast' on 2026-05-06 after
+  // product-owner visual inspection found the longer phrase truncated mid-word
+  // at the sliver's 30% width edge. Sliver-fit-tested at 17 chars.
+  headline: 'Major Storm Watch',
   label: { text: 'FOX NEWS ALERT', fill: '#C20017', color: '#FFFFFF' },
   background: '#003366', // Prussian Blue persistent sliver (D-T327-1)
   headlineColor: '#FFFFFF', // white Mixed-Case headline (D-T327-1)
