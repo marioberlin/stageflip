@@ -713,11 +713,11 @@ phase. Renumbered / carried as T-137 / T-138 in Phase 6.
 
 **β-closers (parity + type-design sign-off)**
 
-| ID | Task | Size |
-|---|---|---|
-| T-380 | Parity fixtures generated + signed off — Clusters A / B / C / D (user sign-off per cluster) | L |
-| T-381 | Parity fixtures generated + signed off — Clusters E / F / G / H (user sign-off per cluster) | L |
-| T-382 | Type-design-consultant batch reviews merged for Clusters A / B / D / F / G | M |
+| ID | Task | Size | Status |
+|---|---|---|---|
+| T-380 | Parity fixtures generated + signed off — Clusters A / B / C / D (user sign-off per cluster) | L | **partial — Cluster A ratified 2026-05-06; Clusters B / C / D pending (D 1/6 signed; B + C 0/N)**. Ratification log: `docs/handover-phase13-late.md` §7. |
+| T-381 | Parity fixtures generated + signed off — Clusters E / F / G / H (user sign-off per cluster) | L | **partial — Cluster E ratified 2026-05-06; Cluster F 5/6 ratified (netflix-invisible held back pending T-316b primitive fix); Clusters G + H 0/N pending**. Ratification log: `docs/handover-phase13-late.md` §7. |
+| T-382 | Type-design-consultant batch reviews merged for Clusters A / B / D / F / G | M | Cluster A unblocked (8/8 signed) → batch-review eligible. Clusters B / D / F / G still partial. |
 
 ### Phase γ — Frontier Runtime (Track A, parallel with β after α)
 
