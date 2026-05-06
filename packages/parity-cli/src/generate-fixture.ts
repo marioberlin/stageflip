@@ -1189,6 +1189,118 @@ const foxNewsAlertBinding: ClipKindBinding = {
   },
 };
 
+/**
+ * `msnbc-big-board` (T-328) — second `fullScreen`-clipKind preset; second
+ * production consumer of T-355a's `magic-wall-panel` primitive (after T-355
+ * `magic-wall-drilldown`). Wired via `PRESET_ID_BINDINGS['msnbc-big-board']`
+ * (Pattern C — `PRESET_ID_BINDINGS` override, NOT clipKind-default; the
+ * `'fullScreen'` arm in `DEFAULT_CLIP_KIND_RESOLVER` stays UNCHANGED at
+ * `fullScreenBinding` from T-355). Eighth and final Cluster A preset to land
+ * — closes Cluster A to 8/8 substantive + signed; unlocks T-382 (or sister)
+ * cluster-batch type-design review eligibility.
+ *
+ * Mirrors T-355's snapshot shape verbatim (same primitive, same canonical
+ * region grid `4×2` placeholder rectangles, same entrance posture, same
+ * background/foreground/`valueFormat` defaults) and diverges in two places:
+ * (a) tenant identity (MSNBC vs CNN) → distinct title `'2024 ELECTION
+ * NIGHT'` + subtitle `'County-level — 92% Reporting'` (D-T328-4); (b)
+ * partisan palette (NBC peacock-derived partisan-neutral hues vs CNN
+ * Dem-Blue / Rep-Red) → distinct `MSNBC_BIG_BOARD_PARTY_COLORS` constant per
+ * D-T328-4 (stub line 41 explicitly defers to the tenant's partisan-color-
+ * neutral alternative).
+ *
+ * Per-region geometry inherits T-355's placeholder rectangles (D-T355-6)
+ * arranged on a 4×2 grid sized for the 1280×720 default composition; real US
+ * state SVG paths are deferred cluster-wide to a future asset-pipeline
+ * follow-up. Each region carries `value` (electoral-vote count) rendered via
+ * `valueFormat: 'count'`, plus a `valueLabel` override that pre-formats the
+ * percentage so a single mid-hold frame surfaces both numerics. The party-
+ * shading color lives directly in `region.color` per the primitive's prop
+ * schema (no `partyAColor` / etc. on `MagicWallPanel`).
+ */
+export const MSNBC_BIG_BOARD_REGIONS: ReadonlyArray<{
+  readonly id: string;
+  readonly label: string;
+  readonly electoralVotes: number;
+  readonly percent: number;
+  readonly party: 'A' | 'B' | 'tied' | 'undecided';
+}> = [
+  { id: 'CA', label: 'CA', electoralVotes: 54, percent: 62.1, party: 'A' },
+  { id: 'TX', label: 'TX', electoralVotes: 40, percent: 56.4, party: 'B' },
+  { id: 'FL', label: 'FL', electoralVotes: 30, percent: 51.2, party: 'B' },
+  { id: 'NY', label: 'NY', electoralVotes: 28, percent: 58.7, party: 'A' },
+  { id: 'PA', label: 'PA', electoralVotes: 19, percent: 49.8, party: 'tied' },
+  { id: 'OH', label: 'OH', electoralVotes: 17, percent: 50.3, party: 'B' },
+  { id: 'GA', label: 'GA', electoralVotes: 16, percent: 50.1, party: 'undecided' },
+  { id: 'AZ', label: 'AZ', electoralVotes: 11, percent: 50.7, party: 'A' },
+];
+
+/**
+ * NBC peacock-derived partisan-neutral palette. Distinct from
+ * `MAGIC_WALL_PARTY_COLORS` (CNN Dem-Blue / Rep-Red) per stub line 41
+ * ("Do not adopt CNN's Magic Wall color palette ... as-is — defer to the
+ * tenant's partisan-color-neutral alternative when applicable").
+ *
+ * Hex values are NBC peacock-faithful: peacock blue (party A), peacock red
+ * (party B), peacock purple (tied), peacock gold (undecided). The peacock's
+ * six-color identity (yellow / orange / red / purple / blue / green) seeds
+ * these picks; the four selected swatches are the visually distinct subset
+ * that still parses as a partisan map.
+ */
+export const MSNBC_BIG_BOARD_PARTY_COLORS: Readonly<
+  Record<'A' | 'B' | 'tied' | 'undecided', string>
+> = {
+  A: '#0084CB', // NBC peacock blue (party A — typically Dem)
+  B: '#CC2229', // NBC peacock red (party B — typically Rep)
+  tied: '#9B26B6', // NBC peacock purple — contested
+  undecided: '#FCB712', // NBC peacock gold — too-close-to-call
+};
+
+const MSNBC_BIG_BOARD_DEFAULT_STAGGER_MS = 60;
+// Tile layout: 4×2 grid sized for a 1280×720 composition. Inherited from
+// T-355's `MAGIC_WALL_TILE_*` constants verbatim (D-T328-4).
+const MSNBC_BIG_BOARD_TILE_ORIGIN_X = 60;
+const MSNBC_BIG_BOARD_TILE_ORIGIN_Y = 140;
+const MSNBC_BIG_BOARD_TILE_WIDTH = 280;
+const MSNBC_BIG_BOARD_TILE_HEIGHT = 220;
+const MSNBC_BIG_BOARD_TILE_GAP = 12;
+
+const msnbcBigBoardBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'magic-wall-panel',
+  buildProps() {
+    return {
+      regions: MSNBC_BIG_BOARD_REGIONS.map((r, i) => ({
+        id: r.id,
+        label: r.label,
+        value: r.electoralVotes,
+        // Mirrors T-355's `valueLabel` override posture verbatim (D-T328-4):
+        // the leading-party percentage is the broadcast-canonical salient
+        // signal; the electoral count lives in the prose contract + `value`.
+        valueLabel: `${r.percent.toFixed(1)}%`,
+        color: MSNBC_BIG_BOARD_PARTY_COLORS[r.party],
+        bounds: {
+          x:
+            MSNBC_BIG_BOARD_TILE_ORIGIN_X +
+            (i % 4) * (MSNBC_BIG_BOARD_TILE_WIDTH + MSNBC_BIG_BOARD_TILE_GAP),
+          y:
+            MSNBC_BIG_BOARD_TILE_ORIGIN_Y +
+            Math.floor(i / 4) * (MSNBC_BIG_BOARD_TILE_HEIGHT + MSNBC_BIG_BOARD_TILE_GAP),
+          width: MSNBC_BIG_BOARD_TILE_WIDTH,
+          height: MSNBC_BIG_BOARD_TILE_HEIGHT,
+        },
+      })),
+      title: '2024 ELECTION NIGHT',
+      subtitle: 'County-level — 92% Reporting',
+      valueFormat: 'count' as const,
+      entrance: 'stagger-rise' as const,
+      staggerMs: MSNBC_BIG_BOARD_DEFAULT_STAGGER_MS,
+      background: '#0E0E12',
+      foreground: '#FFFFFF',
+    };
+  },
+};
+
 const squidGameGeometricBinding: ClipKindBinding = {
   runtimeId: 'frame-runtime',
   clipName: 'titleSequence',
@@ -1270,6 +1382,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'apple-tv-lt': appleTvLtBinding,
   'netflix-doc-lt': netflixDocLtBinding,
   'fox-news-alert': foxNewsAlertBinding, // T-327
+  'msnbc-big-board': msnbcBigBoardBinding, // T-328
 };
 
 /**
