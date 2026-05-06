@@ -143,6 +143,15 @@ export const LIVE_RUNTIME_MANIFEST: ClipsCatalogPkg = {
         // overlap on fade / dissolve; per-letter staggered entry;
         // viewport-fill ALL-CAPS letterforms; optional glow halo)
         'titleSequence',
+        // T-332a — score-bug primitive (single primitive serving six
+        // broadcast-sports presets across four sealed style bundles:
+        // `'football'` T-333 PL / T-334 Fox NFL / T-335 NBC SNF;
+        // `'racing'` T-332 F1; `'cricket'` T-336; `'tennis'` T-337
+        // Wimbledon. Discriminated-union schema on `style`; per-style
+        // render paths dispatched from a single `switch (style)`
+        // block. Static layouts in v1; animation carve-outs T-332b/c/d,
+        // T-334a, T-335a, T-336a/b, T-337a/b deferred.)
+        'score-bug',
       ],
     },
   ],

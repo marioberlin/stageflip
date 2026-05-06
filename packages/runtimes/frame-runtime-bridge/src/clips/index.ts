@@ -461,6 +461,30 @@ export {
   lyricsPropsSchema,
 } from './lyrics.js';
 
+// T-332a — score-bug primitive. Single primitive serving six broadcast-
+// sports score-bug presets across four sealed style bundles
+// (`'football'` — horizontal team-vs-team bar with optional possession
+// glow / down / direction chevrons / radial-gradient backdrop, serving
+// T-333 PL / T-334 Fox NFL / T-335 NBC SNF; `'racing'` — vertical
+// N-driver tower with team-color stripes, sector cells (canonical
+// purple/green/yellow palette), and tire-compound glyphs, serving T-332
+// F1; `'cricket'` — multi-row complex panel with team line + run rate
+// + batsmen + bowler + partnership, serving T-336; `'tennis'` — two-
+// player stack with surname / country code / seed / N set columns /
+// game score / active-server dot, serving T-337 Wimbledon). Frame-
+// deterministic; static layouts in v1 (animation carve-outs T-332b/c/d,
+// T-334a, T-335a, T-336a/b, T-337a/b deferred). Stable internal IDs
+// (e.g. `score-bug-football-gradient`); no `crypto.randomUUID()`.
+// Casing transforms applied at render time via JS string transform.
+// Theme-slot fallback (`background` → `palette.background`,
+// `foreground` → `palette.foreground`, `accent` → `palette.accent`).
+export {
+  ScoreBug,
+  type ScoreBugProps,
+  scoreBugClip,
+  scoreBugPropsSchema,
+} from './score-bug.js';
+
 // T-321 — title-sequence primitive. Multi-shot prestige-TV title
 // compositor with four sealed style bundles (`'letterform-assemble'`
 // — ALL-CAPS letterforms scaled-to-viewport with per-letter staggered
@@ -528,6 +552,7 @@ import { productRevealClip } from './product-reveal.js';
 import { pullQuoteClip } from './pull-quote.js';
 import { salesDashboardClip } from './sales-dashboard.js';
 import { scene3dClip } from './scene-3d.js';
+import { scoreBugClip } from './score-bug.js';
 import { standingsTableClip } from './standings-table.js';
 import { stockTickerClip } from './stock-ticker.js';
 import { subtitleOverlayClip } from './subtitle-overlay.js';
@@ -678,6 +703,15 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // T-367 (karaoke-progressive-wipe, last Cluster F preset). 48 → 49
   // clips.
   lyricsClip,
+  // T-332a — score-bug primitive. Single primitive serving six
+  // broadcast-sports presets across four sealed style bundles
+  // (`'football'` T-333 PL / T-334 Fox NFL / T-335 NBC SNF; `'racing'`
+  // T-332 F1; `'cricket'` T-336; `'tennis'` T-337 Wimbledon).
+  // Discriminated-union schema on `style`; per-style render functions
+  // dispatched from a single `switch (style)` block. Static layouts in
+  // v1 (animation carve-outs T-332b/c/d, T-334a, T-335a, T-336a/b,
+  // T-337a/b deferred). 51 → 52 clips.
+  scoreBugClip,
   // T-321 — title-sequence primitive (multi-shot prestige-TV title
   // compositor with four sealed style bundles: `'letterform-assemble'`
   // — ALL-CAPS letterforms scaled-to-viewport with per-letter staggered

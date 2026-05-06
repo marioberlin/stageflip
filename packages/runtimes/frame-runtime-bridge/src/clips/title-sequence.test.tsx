@@ -578,8 +578,8 @@ describe('titleSequenceClip definition (T-321)', () => {
     });
   });
 
-  it('ALL_BRIDGE_CLIPS includes titleSequenceClip and is length 51', () => {
-    expect(ALL_BRIDGE_CLIPS.length).toBe(51);
+  it('ALL_BRIDGE_CLIPS includes titleSequenceClip and is length 52', () => {
+    expect(ALL_BRIDGE_CLIPS.length).toBe(52);
     expect(ALL_BRIDGE_CLIPS.some((c) => c.kind === 'titleSequence')).toBe(true);
   });
 });
