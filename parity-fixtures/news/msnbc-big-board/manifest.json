@@ -1,0 +1,30 @@
+{
+  "name": "msnbc-big-board",
+  "cluster": "news",
+  "kind": "fullScreen",
+  "description": "Parity fixture for preset 'msnbc-big-board' (cluster news, kind fullScreen)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Roboto + NBC Tinker",
+      "license": "ofl + proprietary-byo"
+    },
+    "fallback": {
+      "family": "Roboto + Inter Tight",
+      "weight": 700,
+      "license": "ofl"
+    }
+  }
+}

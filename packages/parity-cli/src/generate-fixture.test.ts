@@ -22,6 +22,8 @@ import {
   KARAOKE_PROGRESSIVE_WIPE_CANONICAL_LINES,
   MAGIC_WALL_CANONICAL_REGIONS,
   MRBEAST_CANONICAL_WORDS,
+  MSNBC_BIG_BOARD_PARTY_COLORS,
+  MSNBC_BIG_BOARD_REGIONS,
   NETFLIX_CANONICAL_WORDS,
   NETFLIX_DOC_LT_PROPS,
   OLYMPIC_CANONICAL_STANDINGS,
@@ -2184,6 +2186,136 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
       casing: 'as-is',
       font: { family: 'League Gothic', weight: 700 },
     });
+  });
+
+  // T-328 — second `fullScreen`-clipKind preset (`msnbc-big-board`), wired
+  // via the `PRESET_ID_BINDINGS` override path (Pattern C). Eighth and final
+  // Cluster A preset to ship; second production consumer of T-355a's
+  // `magic-wall-panel` primitive (after T-355). The clipKind-default arm
+  // stays UNCHANGED at `fullScreenBinding` (T-355's CNN-default magic-wall-
+  // drilldown binding). Closes Cluster A to 8/8 substantive + signed.
+
+  it('routes msnbc-big-board through PRESET_ID_BINDINGS override (T-328 AC #14)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('fullScreen', 'msnbc-big-board');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('magic-wall-panel');
+    const props = binding?.buildProps(undefined);
+    expect(props?.title).toBe('2024 ELECTION NIGHT');
+    expect(props?.subtitle).toBe('County-level — 92% Reporting');
+    expect(props?.valueFormat).toBe('count');
+    expect(props?.entrance).toBe('stagger-rise');
+    expect(props?.staggerMs).toBe(60);
+    expect(props?.background).toBe('#0E0E12');
+    expect(props?.foreground).toBe('#FFFFFF');
+    const regions = props?.regions as ReadonlyArray<{ id: string; color: string }>;
+    expect(regions).toHaveLength(8);
+    expect(regions.map((r) => r.id)).toEqual(['CA', 'TX', 'FL', 'NY', 'PA', 'OH', 'GA', 'AZ']);
+    // Each region's color comes from MSNBC_BIG_BOARD_PARTY_COLORS, not the
+    // CNN canonical MAGIC_WALL_PARTY_COLORS (D-T328-4 / AC #16).
+    expect(regions[0]?.color).toBe(MSNBC_BIG_BOARD_PARTY_COLORS.A); // CA — peacock blue
+    expect(regions[1]?.color).toBe(MSNBC_BIG_BOARD_PARTY_COLORS.B); // TX — peacock red
+    expect(regions[4]?.color).toBe(MSNBC_BIG_BOARD_PARTY_COLORS.tied); // PA — peacock purple
+    expect(regions[6]?.color).toBe(MSNBC_BIG_BOARD_PARTY_COLORS.undecided); // GA — peacock gold
+  });
+
+  it('exports MSNBC_BIG_BOARD_REGIONS with eight entries mixing all four party colors (T-328 AC #15)', () => {
+    expect(MSNBC_BIG_BOARD_REGIONS).toHaveLength(8);
+    expect(MSNBC_BIG_BOARD_REGIONS.map((r) => r.id)).toEqual([
+      'CA',
+      'TX',
+      'FL',
+      'NY',
+      'PA',
+      'OH',
+      'GA',
+      'AZ',
+    ]);
+    const parties = MSNBC_BIG_BOARD_REGIONS.map((r) => r.party);
+    expect(parties.filter((p) => p === 'A')).toHaveLength(3); // CA, NY, AZ
+    expect(parties.filter((p) => p === 'B')).toHaveLength(3); // TX, FL, OH
+    expect(parties.filter((p) => p === 'tied')).toHaveLength(1); // PA
+    expect(parties.filter((p) => p === 'undecided')).toHaveLength(1); // GA
+  });
+
+  it('exports MSNBC_BIG_BOARD_PARTY_COLORS with NBC peacock-derived hues distinct from CNN canonical (T-328 AC #16)', () => {
+    expect(MSNBC_BIG_BOARD_PARTY_COLORS).toEqual({
+      A: '#0084CB',
+      B: '#CC2229',
+      tied: '#9B26B6',
+      undecided: '#FCB712',
+    });
+    // Distinct from MAGIC_WALL_PARTY_COLORS (CNN Dem-Blue / Rep-Red /
+    // tied-purple / neutral-gray) per stub line 41 (D-T328-4). None of
+    // the four hex values may match CNN's canonical palette.
+    const cnn = { A: '#0044CC', B: '#CC0000', tied: '#7A3FB2', undecided: '#666666' } as const;
+    expect(MSNBC_BIG_BOARD_PARTY_COLORS.A).not.toBe(cnn.A);
+    expect(MSNBC_BIG_BOARD_PARTY_COLORS.B).not.toBe(cnn.B);
+    expect(MSNBC_BIG_BOARD_PARTY_COLORS.tied).not.toBe(cnn.tied);
+    expect(MSNBC_BIG_BOARD_PARTY_COLORS.undecided).not.toBe(cnn.undecided);
+  });
+
+  it('PRESET_ID_BINDINGS contains msnbc-big-board override (T-328 AC #17)', () => {
+    expect(PRESET_ID_BINDINGS['msnbc-big-board']).toBeDefined();
+    expect(PRESET_ID_BINDINGS['msnbc-big-board']?.clipName).toBe('magic-wall-panel');
+  });
+
+  it('clipKind-default for fullScreen STILL returns fullScreenBinding after T-328 lands (T-328 AC #18 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('fullScreen');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('magic-wall-panel');
+    const props = binding?.buildProps(undefined);
+    // T-355's CNN-default canonical title/subtitle, NOT MSNBC's:
+    expect(props?.title).toBe('Election Results');
+    expect(props?.subtitle).toBe('State-by-state breakdown');
+  });
+
+  it('magic-wall-drilldown STILL falls through to fullScreen clipKind-default after T-328 lands (T-328 AC #19 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('fullScreen', 'magic-wall-drilldown');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.title).toBe('Election Results');
+    expect(PRESET_ID_BINDINGS['magic-wall-drilldown']).toBeUndefined();
+  });
+
+  it('still routes prior PRESET_ID_BINDINGS overrides after T-328 lands (T-328 AC #20–26 backward compat)', () => {
+    expect(
+      DEFAULT_CLIP_KIND_RESOLVER('breakingBanner', 'fox-news-alert')?.buildProps(undefined).mode,
+    ).toBe('sliver');
+    expect(
+      DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'bbc-reith-dark')?.buildProps(undefined).background,
+    ).toBe('#1A1A1A');
+    expect(
+      DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'al-jazeera-orange')?.buildProps(undefined).accent,
+    ).toBe('#F7941D');
+    expect(
+      DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'apple-tv-lt')?.buildProps(undefined).name,
+    ).toBe('Sofia Coppola');
+    expect(
+      DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'netflix-doc-lt')?.buildProps(undefined).name,
+    ).toBe('Ava DuVernay');
+  });
+
+  it('all prior clipKind-defaults STILL resolve after T-328 lands (T-328 AC #27 backward compat)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('bigNumber')?.clipName).toBe('animated-value');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('caption')?.clipName).toBe('caption');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('lyrics')?.clipName).toBe('lyrics');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('titleSequence')?.clipName).toBe('titleSequence');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('scoreBug')?.clipName).toBe('outcome-row');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('newsTicker')?.clipName).toBe('news-ticker-bar');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('standings')?.clipName).toBe('standings-table');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('lowerThird')?.clipName).toBe('lower-third');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('breakingBanner')?.clipName).toBe('breaking-banner');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('bigNumber', 'big-number-stat-impact')?.clipName).toBe(
+      'animated-value',
+    );
+  });
+
+  it('unknown preset id falls through to fullScreen clipKind-default after T-328 lands (T-328 AC #28)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('fullScreen', 'unknown-preset');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('magic-wall-panel');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'unknown-preset')).toBeUndefined();
   });
 
   it('builds scoreBug props as a six-chip canonical over with cricket-canon colors (T-358)', () => {
