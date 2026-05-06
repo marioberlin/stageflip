@@ -972,6 +972,60 @@ const alJazeeraOrangeBinding: ClipKindBinding = {
   },
 };
 
+/**
+ * Apple TV+ minimalist snapshot props per D-T330-1 / D-T330-6 / D-T330-12.
+ * Cluster A preset T-330 wires the `LowerThird` primitive (T-183 + T-183z)
+ * as the fourth `lowerThird` clipKind consumer (Pattern C —
+ * `PRESET_ID_BINDINGS` override; third `lowerThird`-keyed override after
+ * T-325 + T-326). Mirrors T-326's `alJazeeraOrangeBinding` shape, swapping
+ * the snapshot constants for the Apple TV+ minimalist register.
+ *
+ * T-330 is the first production consumer of the just-shipped T-183z props
+ * (`noFlag` / `subtitleColor` / `font`). All three are exercised: `noFlag:
+ * true` suppresses the 6 px accent strip (Apple TV+ has no chrome);
+ * `subtitleColor: '#FFFFFF'` decouples the talent-line from the (irrelevant)
+ * `accent` per Apple's clean register; `font: { family: 'Inter', weight:
+ * 300 }` substitutes the OFL fallback for Apple's proprietary SF Pro at
+ * Light weight (300).
+ *
+ * Snapshot captures the canonical Apple TV+ steady-state lower-third
+ * register: NO flag (T-183z) + black `#000000` card (canvas-matching;
+ * visually disappears) + Mixed-Case `'Sofia Coppola'` headline (white
+ * `#FFFFFF` Inter Light) + Mixed-Case `'Director'` subtitle (white
+ * `#FFFFFF` Inter Light via T-183z `subtitleColor`).
+ */
+export const APPLE_TV_LT_PROPS: {
+  readonly name: string;
+  readonly title: string;
+  readonly accent: string;
+  readonly background: string;
+  readonly textColor: string;
+  readonly insetLeftPx: number;
+  readonly insetBottomPx: number;
+  readonly noFlag: true;
+  readonly subtitleColor: string;
+  readonly font: { readonly family: string; readonly weight: number };
+} = {
+  name: 'Sofia Coppola',
+  title: 'Director',
+  accent: '#FFFFFF', // irrelevant — noFlag: true suppresses the strip (D-T330-3)
+  background: '#000000', // canvas-matching black; card visually disappears (D-T330-1)
+  textColor: '#FFFFFF', // headline white-on-black (D-T330-1)
+  insetLeftPx: 140, // mid-range of stub's 130–150 (D-T330-1)
+  insetBottomPx: 95, // mid-range of stub's 90–100 (D-T330-1)
+  noFlag: true, // T-183z — text-only register; no chrome (D-T330-3)
+  subtitleColor: '#FFFFFF', // T-183z — talent-line decoupled from accent (D-T330-4)
+  font: { family: 'Inter', weight: 300 }, // T-183z — Inter Light = SF Pro Light fallback (D-T330-5)
+};
+
+const appleTvLtBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'lower-third', // kebab-case primitive `kind` (mirrors T-323 / T-325 / T-326)
+  buildProps() {
+    return { ...APPLE_TV_LT_PROPS };
+  },
+};
+
 const squidGameGeometricBinding: ClipKindBinding = {
   runtimeId: 'frame-runtime',
   clipName: 'titleSequence',
@@ -1050,6 +1104,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'netflix-invisible': netflixBinding,
   'bbc-reith-dark': bbcReithDarkBinding,
   'al-jazeera-orange': alJazeeraOrangeBinding,
+  'apple-tv-lt': appleTvLtBinding,
 };
 
 /**
