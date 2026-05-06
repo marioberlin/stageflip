@@ -33,6 +33,36 @@ export const lowerThirdPropsSchema = z
     insetLeftPx: z.number().nonnegative().optional(),
     /** Distance from the viewport bottom, in px. Default 96. */
     insetBottomPx: z.number().nonnegative().optional(),
+    /**
+     * When true, hides the 6 px-wide accent strip on the left edge.
+     * Default false (existing behavior). Used by minimalist registers
+     * (e.g. netflix-doc-lt, apple-tv-lt) where the colored flag is
+     * cosmetically out-of-place.
+     */
+    noFlag: z.boolean().optional(),
+    /**
+     * Optional override for the subtitle (`title`) text color. When
+     * absent, falls back to `accent` (existing behavior). Used by
+     * presets whose talent-line color is independent of the accent
+     * (e.g. cnn-classic, bbc-reith-dark, al-jazeera-orange).
+     */
+    subtitleColor: z.string().optional(),
+    /**
+     * Optional font family + weight override. When absent, falls back to
+     * the existing hard-coded 'Plus Jakarta Sans, sans-serif' family
+     * with 700 / 500 weights for name / title.
+     */
+    font: z
+      .object({
+        family: z.string(),
+        /**
+         * Optional uniform weight applied to both name and title elements.
+         * Falls back to the primitive's defaults (700 for name, 500 for
+         * title) when absent.
+         */
+        weight: z.number().optional(),
+      })
+      .optional(),
   })
   .strict();
 
@@ -49,9 +79,16 @@ export function LowerThird({
   textColor = '#f5f7fa',
   insetLeftPx = 96,
   insetBottomPx = 96,
+  noFlag = false,
+  subtitleColor,
+  font,
 }: LowerThirdProps): ReactElement {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
+  const fontFamily = font?.family ?? 'Plus Jakarta Sans, sans-serif';
+  const nameWeight = font?.weight ?? 700;
+  const titleWeight = font?.weight ?? 500;
+  const titleColor = subtitleColor ?? accent;
 
   const enterEnd = Math.ceil(fps * 0.45);
   const exitStart = Math.max(enterEnd + 1, durationInFrames - Math.ceil(fps * 0.35));
@@ -94,10 +131,12 @@ export function LowerThird({
         gap: 16,
       }}
     >
-      <span
-        data-testid="lower-third-accent"
-        style={{ width: 6, background: accent, borderRadius: 3 }}
-      />
+      {noFlag ? null : (
+        <span
+          data-testid="lower-third-accent"
+          style={{ width: 6, background: accent, borderRadius: 3 }}
+        />
+      )}
       <div
         style={{
           background,
@@ -108,9 +147,10 @@ export function LowerThird({
         }}
       >
         <div
+          data-testid="lower-third-name"
           style={{
-            fontFamily: 'Plus Jakarta Sans, sans-serif',
-            fontWeight: 700,
+            fontFamily,
+            fontWeight: nameWeight,
             fontSize: 34,
             color: textColor,
             letterSpacing: '-0.015em',
@@ -123,10 +163,10 @@ export function LowerThird({
             data-testid="lower-third-title"
             style={{
               marginTop: 4,
-              fontFamily: 'Plus Jakarta Sans, sans-serif',
-              fontWeight: 500,
+              fontFamily,
+              fontWeight: titleWeight,
               fontSize: 18,
-              color: accent,
+              color: titleColor,
               letterSpacing: '0.02em',
             }}
           >

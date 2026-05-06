@@ -65,6 +65,95 @@ describe('<LowerThird>', () => {
     const accent = screen.getByTestId('lower-third-accent');
     expect(accent.style.background).toBe('#ff0000');
   });
+
+  // T-183z — noFlag / subtitleColor / font props
+  it('renders the accent strip by default (no T-183z props)', () => {
+    renderAt(30, { name: 'Ada Lovelace' }, 90);
+    expect(screen.queryByTestId('lower-third-accent')).not.toBeNull();
+  });
+
+  it('omits the accent strip when noFlag=true', () => {
+    renderAt(30, { name: 'Ada Lovelace', noFlag: true }, 90);
+    expect(screen.queryByTestId('lower-third-accent')).toBeNull();
+  });
+
+  it('keeps the accent strip when noFlag=false (explicit)', () => {
+    renderAt(30, { name: 'Ada Lovelace', noFlag: false }, 90);
+    expect(screen.queryByTestId('lower-third-accent')).not.toBeNull();
+  });
+
+  it('subtitle inherits accent color when subtitleColor is absent', () => {
+    renderAt(30, { name: 'Ada', title: 'Mathematician', accent: '#ff0000' }, 90);
+    const subtitle = screen.getByTestId('lower-third-title');
+    expect(subtitle.style.color).toBe('#ff0000');
+  });
+
+  it('subtitleColor overrides the accent-bound subtitle color', () => {
+    renderAt(
+      30,
+      { name: 'Ada', title: 'Mathematician', accent: '#ff0000', subtitleColor: '#FFFFFF' },
+      90,
+    );
+    const subtitle = screen.getByTestId('lower-third-title');
+    expect(subtitle.style.color).toBe('#FFFFFF');
+  });
+
+  it('uses Plus Jakarta Sans as the default font family', () => {
+    renderAt(30, { name: 'Ada', title: 'Mathematician' }, 90);
+    const nameEl = screen.getByTestId('lower-third-name');
+    const subtitleEl = screen.getByTestId('lower-third-title');
+    expect(nameEl.style.fontFamily).toContain('Plus Jakarta Sans');
+    expect(subtitleEl.style.fontFamily).toContain('Plus Jakarta Sans');
+    expect(nameEl.style.fontWeight).toBe('700');
+    expect(subtitleEl.style.fontWeight).toBe('500');
+  });
+
+  it('font.family overrides the family on both name and title', () => {
+    renderAt(30, { name: 'Ada', title: 'Mathematician', font: { family: 'Source Serif 4' } }, 90);
+    const nameEl = screen.getByTestId('lower-third-name');
+    const subtitleEl = screen.getByTestId('lower-third-title');
+    expect(nameEl.style.fontFamily).toContain('Source Serif 4');
+    expect(subtitleEl.style.fontFamily).toContain('Source Serif 4');
+    // Weight defaults preserved when font.weight absent
+    expect(nameEl.style.fontWeight).toBe('700');
+    expect(subtitleEl.style.fontWeight).toBe('500');
+  });
+
+  it('font.weight applies uniformly to name and title', () => {
+    renderAt(
+      30,
+      { name: 'Ada', title: 'Mathematician', font: { family: 'Inter Tight', weight: 700 } },
+      90,
+    );
+    const nameEl = screen.getByTestId('lower-third-name');
+    const subtitleEl = screen.getByTestId('lower-third-title');
+    expect(nameEl.style.fontFamily).toContain('Inter Tight');
+    expect(subtitleEl.style.fontFamily).toContain('Inter Tight');
+    expect(nameEl.style.fontWeight).toBe('700');
+    expect(subtitleEl.style.fontWeight).toBe('700');
+  });
+
+  it('composes noFlag + subtitleColor + font together', () => {
+    renderAt(
+      30,
+      {
+        name: 'Ada',
+        title: 'Mathematician',
+        noFlag: true,
+        subtitleColor: '#FFFFFF',
+        font: { family: 'Inter', weight: 600 },
+      },
+      90,
+    );
+    expect(screen.queryByTestId('lower-third-accent')).toBeNull();
+    const nameEl = screen.getByTestId('lower-third-name');
+    const subtitleEl = screen.getByTestId('lower-third-title');
+    expect(nameEl.style.fontFamily).toBe('Inter');
+    expect(subtitleEl.style.fontFamily).toBe('Inter');
+    expect(nameEl.style.fontWeight).toBe('600');
+    expect(subtitleEl.style.fontWeight).toBe('600');
+    expect(subtitleEl.style.color).toBe('#FFFFFF');
+  });
 });
 
 describe('lowerThirdClip definition', () => {
@@ -85,5 +174,43 @@ describe('lowerThirdClip definition', () => {
 
   it('propsSchema rejects negative inset', () => {
     expect(lowerThirdPropsSchema.safeParse({ name: 'x', insetLeftPx: -1 }).success).toBe(false);
+  });
+
+  // T-183z — schema accepts the three new optional props
+  it('propsSchema accepts noFlag', () => {
+    expect(lowerThirdPropsSchema.safeParse({ name: 'x', noFlag: true }).success).toBe(true);
+    expect(lowerThirdPropsSchema.safeParse({ name: 'x', noFlag: false }).success).toBe(true);
+  });
+
+  it('propsSchema accepts subtitleColor', () => {
+    expect(lowerThirdPropsSchema.safeParse({ name: 'x', subtitleColor: '#FFFFFF' }).success).toBe(
+      true,
+    );
+  });
+
+  it('propsSchema accepts font with family + weight', () => {
+    expect(
+      lowerThirdPropsSchema.safeParse({
+        name: 'x',
+        font: { family: 'Inter Tight', weight: 700 },
+      }).success,
+    ).toBe(true);
+  });
+
+  it('propsSchema accepts font with family only (weight optional)', () => {
+    expect(
+      lowerThirdPropsSchema.safeParse({ name: 'x', font: { family: 'Source Serif 4' } }).success,
+    ).toBe(true);
+  });
+
+  it('propsSchema rejects font missing family', () => {
+    expect(lowerThirdPropsSchema.safeParse({ name: 'x', font: { weight: 700 } }).success).toBe(
+      false,
+    );
+    expect(lowerThirdPropsSchema.safeParse({ name: 'x', font: {} }).success).toBe(false);
+  });
+
+  it('propsSchema rejects unknown keys (strict)', () => {
+    expect(lowerThirdPropsSchema.safeParse({ name: 'x', unknownKey: true }).success).toBe(false);
   });
 });
