@@ -38,6 +38,8 @@ import {
   type PresetForRender,
   SQUID_GAME_GEOMETRIC_SHOTS,
   TIKTOK_CANONICAL_WORDS,
+  UEFA_STARBALL_PALETTE,
+  UEFA_STARBALL_REGIONS,
   WIMBLEDON_PROPS,
   buildPresetDocument,
   createGenerateFixtureRenderer,
@@ -2388,7 +2390,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands (T-333 added the 12th; T-338 the 17th; T-332 the 18th).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(19);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(20);
   });
 
   it('binding deep-clones nested object literals so callers can mutate freely (T-333)', () => {
@@ -2537,7 +2539,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(19);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(20);
   });
 
   it('fox-nfl-no-chrome binding deep-clones nested object literals so callers can mutate freely (T-334)', () => {
@@ -2678,7 +2680,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(19);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(20);
   });
 
   it('nbc-snf-possession-illuminated binding deep-clones nested object literals so callers can mutate freely (T-335)', () => {
@@ -2822,7 +2824,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.clipName).toBe('news-ticker-bar');
     expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(19);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(20);
   });
 
   it('espn-bottomline-flipper binding deep-clones the entries array so callers can mutate freely (T-339a)', () => {
@@ -2995,7 +2997,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(19);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(20);
   });
 
   it('wimbledon-green-purple binding deep-clones nested objects + players tuple + sets arrays (T-337)', () => {
@@ -3160,7 +3162,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['masters-red-under-par']?.clipName).toBe('standings-table');
     expect(PRESET_ID_BINDINGS['masters-red-under-par']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(19);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(20);
   });
 
   it('masters-red-under-par binding deep-clones rows + columns + values arrays (T-338)', () => {
@@ -3320,7 +3322,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['f1-timing-tower']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['f1-timing-tower']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(19);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(20);
   });
 
   it('f1-timing-tower binding deep-clones nested objects + rows + sectorColors arrays (T-332)', () => {
@@ -3457,7 +3459,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['cricket-scorebug']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['cricket-scorebug']?.runtimeId).toBe('frame-runtime');
     // Nineteen overrides total after T-336 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(19);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(20);
   });
 
   it('cricket-scorebug binding deep-clones nested objects + batsmen array (T-336 AC #9)', () => {
@@ -3523,6 +3525,170 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['masters-red-under-par']?.clipName).toBe('standings-table');
     expect(PRESET_ID_BINDINGS['f1-timing-tower']?.clipName).toBe('score-bug');
+  });
+
+  // T-339 — ninth and final Cluster B preset (`uefa-starball-refraction`),
+  // wired via `PRESET_ID_BINDINGS` (Pattern C). Second `fullScreen`-clipKind
+  // `PRESET_ID_BINDINGS` consumer (after T-328 `msnbc-big-board`); third
+  // production consumer of T-355a's `magic-wall-panel` primitive (after
+  // T-355 `magic-wall-drilldown` clipKind-default + T-328 `msnbc-big-board`
+  // `PRESET_ID_BINDINGS`). Closes Cluster B to 9/9 substantive + signed →
+  // fourth batch-eligible cluster after E + F + A. The `'fullScreen'` arm
+  // in `DEFAULT_CLIP_KIND_RESOLVER` stays UNCHANGED at `fullScreenBinding`
+  // (T-355's CNN-default magic-wall-drilldown binding); all 19 prior
+  // `PRESET_ID_BINDINGS` entries UNCHANGED.
+  it('routes uefa-starball-refraction through PRESET_ID_BINDINGS override (T-339 AC #16)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('fullScreen', 'uefa-starball-refraction');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('magic-wall-panel');
+    const props = binding?.buildProps(undefined) as {
+      regions: Array<{
+        id: string;
+        label: string;
+        value: number;
+        valueLabel: string;
+        color: string;
+        bounds: { x: number; y: number; width: number; height: number };
+      }>;
+      title: string;
+      subtitle: string;
+      valueFormat: string;
+      entrance: string;
+      staggerMs: number;
+      background: string;
+      foreground: string;
+    };
+    expect(props.regions).toHaveLength(6);
+    expect(props.title).toBe('CHAMPIONS LEAGUE');
+    expect(props.subtitle).toBe('MATCHDAY 6 — STANDINGS');
+    expect(props.valueFormat).toBe('count');
+    expect(props.entrance).toBe('stagger-rise');
+    expect(props.staggerMs).toBe(60);
+    expect(props.background).toBe('#041E42'); // UEFA dark navy override
+    expect(props.foreground).toBe('#FFFFFF');
+    // Each region's color comes from UEFA_STARBALL_PALETTE.
+    expect(props.regions[0]?.color).toBe(UEFA_STARBALL_PALETTE.blue); // RMA
+    expect(props.regions[1]?.color).toBe(UEFA_STARBALL_PALETTE.cyan); // LIV
+    expect(props.regions[2]?.color).toBe(UEFA_STARBALL_PALETTE.magenta); // BAY
+    expect(props.regions[3]?.color).toBe(UEFA_STARBALL_PALETTE.blue); // MCI
+    expect(props.regions[4]?.color).toBe(UEFA_STARBALL_PALETTE.cyan); // PSG
+    expect(props.regions[5]?.color).toBe(UEFA_STARBALL_PALETTE.magenta); // INT
+    // Per-region valueLabel formatted as '<n> PTS'.
+    expect(props.regions[0]?.valueLabel).toBe('16 PTS');
+    expect(props.regions[5]?.valueLabel).toBe('10 PTS');
+  });
+
+  it('exports UEFA_STARBALL_REGIONS with six entries: RMA / LIV / BAY / MCI / PSG / INT (T-339 AC #9)', () => {
+    expect(UEFA_STARBALL_REGIONS).toHaveLength(6);
+    expect(UEFA_STARBALL_REGIONS.map((r) => r.id)).toEqual([
+      'RMA',
+      'LIV',
+      'BAY',
+      'MCI',
+      'PSG',
+      'INT',
+    ]);
+    // Mid-matchday standings register; descending points across the six.
+    expect(UEFA_STARBALL_REGIONS.map((r) => r.points)).toEqual([16, 15, 13, 12, 11, 10]);
+    // Snapshot exercises three of five accents (blue / cyan / magenta;
+    // `navy` is reserved for `background`, `white` for `foreground`).
+    const accents = UEFA_STARBALL_REGIONS.map((r) => r.accent);
+    expect(accents).toContain('blue');
+    expect(accents).toContain('cyan');
+    expect(accents).toContain('magenta');
+  });
+
+  it('exports UEFA_STARBALL_PALETTE with five UEFA refraction swatches distinct from CNN + NBC palettes (T-339 AC #10)', () => {
+    expect(UEFA_STARBALL_PALETTE).toEqual({
+      navy: '#041E42',
+      blue: '#2DA8D8',
+      cyan: '#6EE0E8',
+      magenta: '#C2185B',
+      white: '#FFFFFF',
+    });
+    // Palette distinctness vs MSNBC_BIG_BOARD_PARTY_COLORS (T-328 NBC peacock).
+    const uefaHexes = Object.values(UEFA_STARBALL_PALETTE);
+    const nbcHexes = Object.values(MSNBC_BIG_BOARD_PARTY_COLORS);
+    for (const hex of uefaHexes) {
+      expect(nbcHexes).not.toContain(hex);
+    }
+    // Palette distinctness vs CNN Magic Wall canonical hexes (T-355
+    // MAGIC_WALL_PARTY_COLORS is module-private; the canonical CNN partisan
+    // hexes `#0044CC` / `#CC0000` / `#666666` / `#666666` MUST NOT collide
+    // with the UEFA refraction palette).
+    const cnnCanonicalHexes = ['#0044CC', '#CC0000', '#666666'];
+    for (const hex of uefaHexes) {
+      expect(cnnCanonicalHexes).not.toContain(hex);
+    }
+  });
+
+  it('PRESET_ID_BINDINGS contains uefa-starball-refraction override; length 20 (T-339 AC #12/#15)', () => {
+    expect(PRESET_ID_BINDINGS['uefa-starball-refraction']).toBeDefined();
+    expect(PRESET_ID_BINDINGS['uefa-starball-refraction']?.clipName).toBe('magic-wall-panel');
+    expect(PRESET_ID_BINDINGS['uefa-starball-refraction']?.runtimeId).toBe('frame-runtime');
+    // Twenty overrides total after T-339 lands.
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(20);
+  });
+
+  it('uefa-starball-refraction binding deep-clones regions array per call (T-339 AC #11)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('fullScreen', 'uefa-starball-refraction');
+    if (!binding) throw new Error('test setup');
+    const a = binding.buildProps(undefined) as {
+      regions: Array<{ label: string; valueLabel: string }>;
+    };
+    const b = binding.buildProps(undefined) as typeof a;
+    const aRegion0 = a.regions[0];
+    if (!aRegion0) throw new Error('test setup');
+    aRegion0.label = 'MUTATED';
+    aRegion0.valueLabel = 'MUTATED';
+    expect(b.regions[0]?.label).toBe('RMA');
+    expect(b.regions[0]?.valueLabel).toBe('16 PTS');
+    expect(UEFA_STARBALL_REGIONS[0]?.label).toBe('RMA');
+  });
+
+  it('clipKind-default for fullScreen STILL returns fullScreenBinding after T-339 lands (T-339 AC #17/#18 backward compat)', () => {
+    // No presetId → clipKind-default magic-wall-drilldown (T-355).
+    expect(DEFAULT_CLIP_KIND_RESOLVER('fullScreen')?.clipName).toBe('magic-wall-panel');
+    // magic-wall-drilldown is NOT in PRESET_ID_BINDINGS → falls through.
+    expect(DEFAULT_CLIP_KIND_RESOLVER('fullScreen', 'magic-wall-drilldown')?.clipName).toBe(
+      'magic-wall-panel',
+    );
+    expect(PRESET_ID_BINDINGS['magic-wall-drilldown']).toBeUndefined();
+    // Unknown preset id → falls through to clipKind-default.
+    expect(DEFAULT_CLIP_KIND_RESOLVER('fullScreen', 'unknown-preset')?.clipName).toBe(
+      'magic-wall-panel',
+    );
+  });
+
+  it('msnbc-big-board STILL routes through its T-328 PRESET_ID_BINDINGS override after T-339 lands (T-339 AC #19 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('fullScreen', 'msnbc-big-board');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('magic-wall-panel');
+    const props = binding?.buildProps(undefined) as { title: string };
+    expect(props.title).toBe('2024 ELECTION NIGHT');
+  });
+
+  it('all 19 prior PRESET_ID_BINDINGS overrides STILL resolve after T-339 lands (T-339 AC #14 backward compat)', () => {
+    expect(PRESET_ID_BINDINGS['big-number-stat-impact']?.clipName).toBe('animated-value');
+    expect(PRESET_ID_BINDINGS['mrbeast-komika-axis']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['tiktok-rounded-box']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['ali-abdaal-opacity-karaoke']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['netflix-invisible']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['bbc-reith-dark']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['al-jazeera-orange']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['apple-tv-lt']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['netflix-doc-lt']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['fox-news-alert']?.clipName).toBe('breaking-banner');
+    expect(PRESET_ID_BINDINGS['msnbc-big-board']?.clipName).toBe('magic-wall-panel');
+    expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.clipName).toBe('news-ticker-bar');
+    expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['masters-red-under-par']?.clipName).toBe('standings-table');
+    expect(PRESET_ID_BINDINGS['f1-timing-tower']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['cricket-scorebug']?.clipName).toBe('score-bug');
   });
 });
 
