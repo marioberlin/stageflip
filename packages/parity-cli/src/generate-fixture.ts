@@ -1136,6 +1136,59 @@ const cnnBreakingBinding: ClipKindBinding = {
   },
 };
 
+/**
+ * Fox-News-Alert snapshot props per D-T327-1 / D-T327-4. Cluster A preset
+ * T-327 wires the `BreakingBanner` primitive (T-324a) end-to-end as the
+ * second `breakingBanner` clipKind consumer (Pattern C — `PRESET_ID_BINDINGS`
+ * override, NOT clipKind-default; the clipKind-default arm stays
+ * `cnnBreakingBinding` from T-324). First production consumer of T-324a's
+ * `mode: 'sliver'` register (per D-T324a-3 / D-T324a-6) and `slideAxis:
+ * 'vertical'` axis.
+ *
+ * Snapshot captures the canonical Fox-News-Alert steady-state register: a
+ * persistent Prussian Blue narrow sliver (`#003366`, ~30 % of frame width)
+ * anchored top-left + Fox-red `FOX NEWS ALERT` label badge with white text +
+ * Mixed-Case white headline rendered at League Gothic 700 (the OFL fallback
+ * honored via the primitive's `font` prop override — D-T327-13). Sliver mode
+ * skips entrance per T-324a D-T324a-6 — the canonical Fox posture is the
+ * persistent register, NOT entrance animation. Searchlight morph,
+ * return-from-commercial sequence, LIVE pulse, ticker, and dark overlay are
+ * deferred to T-327a/T-327b/T-324b/sister carve-outs IF Reviewer scrutiny
+ * demands them (per D-T327-3). NO `endCap` — Fox doesn't use a flag end-cap;
+ * the sliver IS the brand mark (per D-T327-4).
+ */
+export const FOX_NEWS_ALERT_PROPS: {
+  readonly headline: string;
+  readonly label: { readonly text: string; readonly fill: string; readonly color: string };
+  readonly background: string;
+  readonly headlineColor: string;
+  readonly mode: 'sliver';
+  readonly slideAxis: 'vertical';
+  readonly sliverAnchor: 'top-left';
+  readonly sliverWidthPct: number;
+  readonly casing: 'as-is';
+  readonly font: { readonly family: string; readonly weight: number };
+} = {
+  headline: 'Major Storm Approaches East Coast',
+  label: { text: 'FOX NEWS ALERT', fill: '#C20017', color: '#FFFFFF' },
+  background: '#003366', // Prussian Blue persistent sliver (D-T327-1)
+  headlineColor: '#FFFFFF', // white Mixed-Case headline (D-T327-1)
+  mode: 'sliver', // Fox canonical register (persistent narrow sliver); first production consumer of T-324a sliver mode
+  slideAxis: 'vertical', // Fox signature vertical axis; functional no-op at steady-state per D-T327-5
+  sliverAnchor: 'top-left', // T-324a default; matches Fox's canonical persistent posture in upper-left
+  sliverWidthPct: 0.3, // T-324a default; ~30 % of frame width per stub line 26 narrow-sliver characterization
+  casing: 'as-is', // Mixed-Case headline per stub line 31 (NOT all-caps); D-T327-4
+  font: { family: 'League Gothic', weight: 700 }, // OFL fallback honored via primitive `font` prop (D-T327-13)
+};
+
+const foxNewsAlertBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'breaking-banner', // kebab-case primitive `kind` (D-T327-12)
+  buildProps() {
+    return { ...FOX_NEWS_ALERT_PROPS };
+  },
+};
+
 const squidGameGeometricBinding: ClipKindBinding = {
   runtimeId: 'frame-runtime',
   clipName: 'titleSequence',
@@ -1216,6 +1269,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'al-jazeera-orange': alJazeeraOrangeBinding,
   'apple-tv-lt': appleTvLtBinding,
   'netflix-doc-lt': netflixDocLtBinding,
+  'fox-news-alert': foxNewsAlertBinding, // T-327
 };
 
 /**
