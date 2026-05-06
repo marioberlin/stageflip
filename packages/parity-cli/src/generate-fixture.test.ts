@@ -16,6 +16,7 @@ import {
   CRICKET_OUTCOME_COLORS,
   DEFAULT_CLIP_KIND_RESOLVER,
   F1_SECTOR_STATE_COLORS,
+  FOX_NEWS_ALERT_PROPS,
   GenerateFixtureUnavailableError,
   HORMOZI_CANONICAL_WORDS,
   KARAOKE_PROGRESSIVE_WIPE_CANONICAL_LINES,
@@ -2041,6 +2042,148 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
   it('still returns undefined for unknown clipKinds after T-324 lands (T-324 AC #22)', () => {
     expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind')).toBeUndefined();
     expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'unknown-preset-id-5')).toBeUndefined();
+  });
+
+  // T-327 — second `breakingBanner`-clipKind preset (`fox-news-alert`), wired
+  // via the `PRESET_ID_BINDINGS` override path (Pattern C). Seventh Cluster A
+  // preset to ship; first production consumer of T-324a sliver mode +
+  // vertical slide axis. The clipKind-default arm stays UNCHANGED at
+  // `cnnBreakingBinding` from T-324.
+
+  it('routes fox-news-alert through PRESET_ID_BINDINGS override (T-327 AC #13)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('breakingBanner', 'fox-news-alert');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('breaking-banner');
+    const props = binding?.buildProps(undefined);
+    expect(props?.headline).toBe('Major Storm Approaches East Coast');
+    expect(props?.label).toEqual({ text: 'FOX NEWS ALERT', fill: '#C20017', color: '#FFFFFF' });
+    expect(props?.background).toBe('#003366');
+    expect(props?.headlineColor).toBe('#FFFFFF');
+    expect(props?.mode).toBe('sliver');
+    expect(props?.slideAxis).toBe('vertical');
+    expect(props?.sliverAnchor).toBe('top-left');
+    expect(props?.sliverWidthPct).toBe(0.3);
+    expect(props?.casing).toBe('as-is');
+    expect(props?.font).toEqual({ family: 'League Gothic', weight: 700 });
+    // No endCap — Fox doesn't use a flag (D-T327-4)
+    expect(props?.endCap).toBeUndefined();
+  });
+
+  it('exports FOX_NEWS_ALERT_PROPS with ten canonical fields and no endCap (T-327 AC #14)', () => {
+    expect(FOX_NEWS_ALERT_PROPS).toEqual({
+      headline: 'Major Storm Approaches East Coast',
+      label: { text: 'FOX NEWS ALERT', fill: '#C20017', color: '#FFFFFF' },
+      background: '#003366',
+      headlineColor: '#FFFFFF',
+      mode: 'sliver',
+      slideAxis: 'vertical',
+      sliverAnchor: 'top-left',
+      sliverWidthPct: 0.3,
+      casing: 'as-is',
+      font: { family: 'League Gothic', weight: 700 },
+    });
+    expect((FOX_NEWS_ALERT_PROPS as { endCap?: unknown }).endCap).toBeUndefined();
+  });
+
+  it('PRESET_ID_BINDINGS contains fox-news-alert override (T-327 AC #15)', () => {
+    expect(PRESET_ID_BINDINGS['fox-news-alert']).toBeDefined();
+    expect(PRESET_ID_BINDINGS['fox-news-alert']?.clipName).toBe('breaking-banner');
+  });
+
+  it('clipKind-default for breakingBanner STILL returns cnnBreakingBinding after T-327 lands (T-327 AC #16 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('breakingBanner');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#FFFFFF');
+    expect(props?.mode).toBe('banner');
+    expect(props?.headline).toBe('SUPREME COURT RULES UNANIMOUSLY');
+  });
+
+  it('cnn-breaking STILL falls through to clipKind-default after T-327 lands (T-327 AC #17 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('breakingBanner', 'cnn-breaking');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#FFFFFF');
+    expect(props?.mode).toBe('banner');
+    expect(PRESET_ID_BINDINGS['cnn-breaking']).toBeUndefined();
+  });
+
+  it('lowerThird clipKind-default STILL returns cnnClassicBinding after T-327 lands (T-327 AC #18 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.name).toBe('BREAKING: SUPREME COURT RULES');
+  });
+
+  it('still routes bbc-reith-dark / al-jazeera-orange / apple-tv-lt / netflix-doc-lt via PRESET_ID_BINDINGS after T-327 lands (T-327 AC #19–22 backward compat)', () => {
+    expect(
+      DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'bbc-reith-dark')?.buildProps(undefined).background,
+    ).toBe('#1A1A1A');
+    expect(
+      DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'al-jazeera-orange')?.buildProps(undefined).accent,
+    ).toBe('#F7941D');
+    expect(
+      DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'apple-tv-lt')?.buildProps(undefined).name,
+    ).toBe('Sofia Coppola');
+    expect(
+      DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'netflix-doc-lt')?.buildProps(undefined).name,
+    ).toBe('Ava DuVernay');
+  });
+
+  it('all prior clipKind-defaults STILL resolve after T-327 lands (T-327 AC #23 backward compat)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('bigNumber')?.clipName).toBe('animated-value');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('caption')?.clipName).toBe('caption');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('lyrics')?.clipName).toBe('lyrics');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('fullScreen')?.clipName).toBe('magic-wall-panel');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('titleSequence')?.clipName).toBe('titleSequence');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('scoreBug')?.clipName).toBe('outcome-row');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('newsTicker')?.clipName).toBe('news-ticker-bar');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('standings')?.clipName).toBe('standings-table');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('bigNumber', 'big-number-stat-impact')?.clipName).toBe(
+      'animated-value',
+    );
+  });
+
+  it('unknown preset id falls through to clipKind-default after T-327 lands (T-327 AC #24)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('breakingBanner', 'unknown-preset');
+    expect(binding).toBeDefined();
+    const props = binding?.buildProps(undefined);
+    expect(props?.background).toBe('#FFFFFF');
+    expect(props?.mode).toBe('banner');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'unknown-preset')).toBeUndefined();
+  });
+
+  it('routes fox-news-alert through the renderer-side PRESET_ID_BINDINGS override (T-327 AC #13 round-trip)', async () => {
+    const renderSpy = vi
+      .fn<(doc: unknown, frame: number) => Promise<Uint8Array>>()
+      .mockResolvedValue(new Uint8Array([0]));
+    const renderer = createGenerateFixtureRenderer({
+      resolver: DEFAULT_CLIP_KIND_RESOLVER,
+      render: renderSpy as unknown as Parameters<typeof createGenerateFixtureRenderer>[0]['render'],
+    });
+    await renderer.render({
+      preset: presetWith('breakingBanner', 'fox-news-alert', 'news'),
+      composition: COMPOSITION,
+      frame: 60,
+    });
+    const [doc] = renderSpy.mock.calls[0] ?? [];
+    const parsed = rirDocumentSchema.parse(doc);
+    const element = parsed.elements[0];
+    if (!element || element.content.type !== 'clip') throw new Error('expected clip element');
+    expect(element.content.clipName).toBe('breaking-banner');
+    expect(element.content.params).toMatchObject({
+      headline: 'Major Storm Approaches East Coast',
+      label: { text: 'FOX NEWS ALERT', fill: '#C20017', color: '#FFFFFF' },
+      background: '#003366',
+      headlineColor: '#FFFFFF',
+      mode: 'sliver',
+      slideAxis: 'vertical',
+      sliverAnchor: 'top-left',
+      sliverWidthPct: 0.3,
+      casing: 'as-is',
+      font: { family: 'League Gothic', weight: 700 },
+    });
   });
 
   it('builds scoreBug props as a six-chip canonical over with cricket-canon colors (T-358)', () => {
