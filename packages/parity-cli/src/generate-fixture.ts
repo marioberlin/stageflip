@@ -1636,6 +1636,98 @@ const espnBottomlineBinding: ClipKindBinding = {
 };
 
 /**
+ * Wimbledon "Green-Purple" snapshot props per D-T337-1 / D-T337-4.
+ * Cluster B preset T-337 wires the `score-bug` primitive (T-332a) as the
+ * fifth `scoreBug` clipKind consumer (Pattern C — `PRESET_ID_BINDINGS`
+ * override; fourth override after T-333 PL + T-334 Fox NFL + T-335 NBC SNF).
+ * FIRST production consumer of T-332a's `'tennis'` style branch — validates
+ * the 2-player stack render with country code (uppercase) + seed + N set
+ * columns + game score + active-server dot.
+ *
+ * Snapshot captures the canonical Wimbledon final mid-match register:
+ * Djokovic (SRB, [1]) vs Alcaraz (ESP, [2]); 2 sets played + 3rd in progress
+ * with tiebreak scores ([6, 4, 7-6] vs [4, 6, 6-7]); Djokovic serving
+ * (activeServerIndex: 0; yellow dot on player[0] row); current game 40-30;
+ * Wimbledon green `#006633` base + purple `#4B0082` accent (schema-supplied
+ * but not visibly rendered by primitive — D-T337-11-e); bottom-left anchor;
+ * Montserrat 500 OFL fallback for proprietary Gotham. Entrance animation,
+ * score-change pulse, server-dot smooth transition, and set-complete flash
+ * all deferred (D-T337-3 / D-T337-11).
+ */
+export const WIMBLEDON_PROPS: {
+  readonly style: 'tennis';
+  readonly position: { readonly x: number; readonly y: number };
+  readonly background: string;
+  readonly accent: string;
+  readonly foreground: string;
+  readonly players: readonly [
+    {
+      readonly surname: string;
+      readonly countryCode: string;
+      readonly seed: number;
+      readonly sets: readonly string[];
+      readonly gameScore: string;
+    },
+    {
+      readonly surname: string;
+      readonly countryCode: string;
+      readonly seed: number;
+      readonly sets: readonly string[];
+      readonly gameScore: string;
+    },
+  ];
+  readonly activeServerIndex: 0;
+  readonly anchor: 'bottom-left';
+  readonly font: { readonly family: string; readonly weight: number };
+  readonly casing: 'as-is';
+} = {
+  style: 'tennis',
+  position: { x: 60, y: 580 }, // bottom-left anchor (D-T337-1; 1280x720 canvas)
+  background: '#006633', // Wimbledon green base (D-T337-1 / stub line 24)
+  accent: '#4B0082', // Wimbledon purple — schema-supplied; not visibly rendered (D-T337-11-e)
+  foreground: '#FFFFFF', // white text (D-T337-1)
+  players: [
+    {
+      surname: 'Djokovic', // Mixed-case; casing 'as-is' leaves untouched
+      countryCode: 'SRB', // primitive force-uppercases regardless of casing
+      seed: 1,
+      sets: ['6', '4', '7-6'], // 2 sets played + 3rd in progress (tiebreak); 2025 register
+      gameScore: '40',
+    },
+    {
+      surname: 'Alcaraz',
+      countryCode: 'ESP',
+      seed: 2,
+      sets: ['4', '6', '6-7'], // mirror Djokovic sets (each set's loser score)
+      gameScore: '30',
+    },
+  ],
+  activeServerIndex: 0, // Djokovic serving; yellow dot on player[0] row (D-T337-1)
+  anchor: 'bottom-left', // schema-supplied; primitive does NOT auto-position (D-T337-11-f)
+  font: { family: 'Montserrat', weight: 500 }, // OFL fallback for Gotham (D-T337-1)
+  casing: 'as-is', // Mixed-case surnames pass through; countryCode hard-uppercased
+};
+
+const wimbledonGreenPurpleBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'score-bug', // kebab-case primitive `kind` (T-332a line 686)
+  buildProps() {
+    // Deep-clone nested object literals + the players tuple so callers
+    // can mutate without aliasing the exported constant. The `sets`
+    // arrays per player are also cloned (new array via spread).
+    return {
+      ...WIMBLEDON_PROPS,
+      position: { ...WIMBLEDON_PROPS.position },
+      players: [
+        { ...WIMBLEDON_PROPS.players[0], sets: [...WIMBLEDON_PROPS.players[0].sets] },
+        { ...WIMBLEDON_PROPS.players[1], sets: [...WIMBLEDON_PROPS.players[1].sets] },
+      ] as const,
+      font: { ...WIMBLEDON_PROPS.font },
+    };
+  },
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -1658,6 +1750,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'fox-nfl-no-chrome': foxNflNoChromeBinding, // T-334
   'nbc-snf-possession-illuminated': nbcSnfBinding, // T-335
   'espn-bottomline-flipper': espnBottomlineBinding, // T-339a
+  'wimbledon-green-purple': wimbledonGreenPurpleBinding, // T-337
 };
 
 /**
