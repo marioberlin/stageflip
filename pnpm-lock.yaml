@@ -1592,6 +1592,28 @@ importers:
         version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   scripts:
+    dependencies:
+      '@stageflip/cdp-host-bundle':
+        specifier: workspace:*
+        version: link:../packages/cdp-host-bundle
+      '@stageflip/parity':
+        specifier: workspace:*
+        version: link:../packages/parity
+      '@stageflip/parity-cli':
+        specifier: workspace:*
+        version: link:../packages/parity-cli
+      '@stageflip/renderer-cdp':
+        specifier: workspace:*
+        version: link:../packages/renderer-cdp
+      '@stageflip/rir':
+        specifier: workspace:*
+        version: link:../packages/rir
+      '@stageflip/schema':
+        specifier: workspace:*
+        version: link:../packages/schema
+      '@stageflip/testing':
+        specifier: workspace:*
+        version: link:../packages/testing
     devDependencies:
       '@types/node':
         specifier: 22.19.17
