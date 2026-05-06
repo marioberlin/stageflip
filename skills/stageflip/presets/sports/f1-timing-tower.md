@@ -3,7 +3,7 @@ id: f1-timing-tower
 cluster: sports
 clipKind: scoreBug
 source: docs/compass_artifact.md#formula-1
-status: stub
+status: substantive
 preferredFont:
   family: Formula1 Display
   license: proprietary-byo
@@ -13,47 +13,91 @@ fallbackFont:
   license: ofl
 permissions: [network]
 signOff:
-  parityFixture: pending-user-review
+  parityFixture: 'signed:2026-05-06'
   typeDesign: pending-cluster-batch
 ---
 
 # F1 Timing Tower — scoreBug vertical
 
+The canonical Formula 1 broadcast scoreboard register: a vertical 20-driver tower anchored at the top-left of the canvas on a carbon-black `#0D0D0F` base, with thin team-color stripes on row leading edges, 3-letter driver codes, sector-color cells (purple session-best `#6F2E9E` / green personal-best `#00B54A` / yellow slower `#F0C800` / gray neutral `#666666`), tire-compound chips (S/M/H/I/W glyphs in canonical compound colors), and truncated 3-decimal-place gap times. Common uses: live F1 timing telemetry overlays where the 20-driver vertical tower + carbon-black + per-row team-color stripe + sector-color cell + tire-compound chip canonical layout is the brand signal — sister-but-distinct from T-333 / T-334 / T-335's football-style horizontal bug AND T-337's tennis-style bottom-left two-player stack.
+
+This preset is the **seventh Cluster B preset to land** AND the **seventh `scoreBug` clipKind consumer** (after T-358's clipKind-default `cricket-ball-by-ball-dots` + T-333 / T-334 / T-335 / T-337 prior overrides) AND the **first production consumer of T-332a's `'racing'` style branch** on the `score-bug` primitive. Wired via `PRESET_ID_BINDINGS['f1-timing-tower']` per Pattern C — the `'scoreBug'` arm in `DEFAULT_CLIP_KIND_RESOLVER` stays UNCHANGED at `scoreBugDotsBinding` (T-358); T-333's `premierLeagueFopBinding` + T-334's `foxNflNoChromeBinding` + T-335's `nbcSnfBinding` + T-337's `wimbledonGreenPurpleBinding` + T-339a's `espnBottomlineBinding` + T-338's `mastersRedUnderParBinding` stay UNCHANGED. Closes the T-332a primitive's production-consumer matrix to all 4 styles (`'football'` / `'racing'` / `'cricket'` / `'tennis'`) exercised — `'football'` by T-333 / T-334 / T-335; `'tennis'` by T-337; `'racing'` by T-332; `'cricket'` covered at the primitive contract level by T-332a's bundle 3 (cricket scoreBug consumer T-336 still pending).
+
 ## Visual tokens
-- Vertical tower on the LEFT side, ≈ 180 px wide @ 1080p
-- Lists all 20 drivers, each row ≈ 30 px tall
-- Background: carbon-black `#0D0D0F` @ 80% opacity
-- Each row: thin team color stripe (3–4 px wide) on the leading edge
-  - Ferrari `#ED1C24`, Red Bull `#1E5BC6`, Mercedes `#6CD3BF`, McLaren `#F58020`, Alpine `#2293D1`, Aston Martin `#2D826D` (extend per current grid)
-- F1 brand red `#E10600` for highlights / podium / fastest laps
-- Sector timing colors (mandatory, universal shorthand):
-  - Purple `#6F2E9E` — session best
-  - Green `#00B54A` — personal best
-  - Yellow `#F0C800` — slower than personal best
+
+The F1 timing-tower register is canonical and locked: vertical 20-driver tower on the left edge, carbon-black base, white text + uppercase 3-letter driver codes + team-color leading-edge stripes + per-row sector-color cells + tire-compound chips + truncated 3-decimal gap times.
+
+- **Background / carbon-black base** `#0D0D0F` — the deep neutral broadcast base per stub line 24. Passed to the primitive's `background` prop (root `backgroundColor` style on the racing branch render).
+- **Foreground / text** `#FFFFFF` — all text white: position numbers, driver codes, gap times, tire-compound glyphs.
+- **Top-left anchor position** `position: { x: 60, y: 60 }` — anchored at `(60, 60)` from canvas top-left on a 1280×720 canvas. `x = 60` is ~5% inset from the left edge; `y = 60` puts the top of the tower flush with the top safe-area. The vertical tower extends downward at the primitive default row height of 30 px × 20 rows = 600 px (well within the 720 px canvas height).
+- **20-driver vertical tower render** `rows: [VER, NOR, LEC, ..., ZHO]` — exactly 20 rows in canonical 2024 mid-session grid order (VER / NOR / LEC / SAI / HAM / PIA / ALO / RUS / PER / GAS top 10; OCO / STR / BOT / TSU / ALB / HUL / MAG / SAR / RIC / ZHO bottom 10). The Zod `racingSchema` accepts `min(1).max(24)`; 20 is well within the bound.
+- **Team-color leading-edge stripe** `row.teamColor` — each row carries a hex color matching the canonical 2024 F1 livery (Ferrari `#ED1C24`, Red Bull `#1E5BC6`, Mercedes `#6CD3BF`, McLaren `#F58020`, Alpine `#2293D1`, Aston Martin `#2D826D`, Williams `#005AFF`, RB / VCARB `#3671C6`, Haas `#B6BABD`, Sauber `#900`). The primitive renders this as a 4 px-wide left border on each row (`border-left: 4px solid {teamColor}`). NON-NEGOTIABLE per stub line 46 — the team-color stripe is the instant-ID system; collapsing to monochrome defeats the brand signal.
+- **Sector-color cells (top-10 only)** `row.sectorColors: [s1, s2, s3]` — each top-10 row carries an array of 3 sector states from the union `'session-best' | 'personal-best' | 'slower' | 'neutral'`, mapped by the primitive's `SECTOR_COLORS` constants to the canonical broadcast palette: `'session-best'` → `#6F2E9E` (purple) / `'personal-best'` → `#00B54A` (green) / `'slower'` → `#F0C800` (yellow) / `'neutral'` → `#666666` (gray). The Zod schema caps `sectorColors.max(3)`; v1 ships exactly 3 cells per top-10 row. Bottom-10 rows omit the field entirely (canonical broadcast canon — leaders' sector detail is the focus).
+- **Tire-compound chip (top-10 only)** `row.tireCompound: 'soft' | 'medium' | 'hard' | 'inter' | 'wet'` — each top-10 row carries a compound enum mapped by the primitive's `TIRE_COMPOUND_GLYPH` (S/M/H/I/W) and `TIRE_COMPOUND_COLOR` constants to the round chip rendering. v1 ships a mid-session compound spread (soft / medium / hard exercised across the top 10).
+- **Truncated 3-decimal gap times** `row.gap` — top-10 rows carry verbatim 3-decimal-place gap strings (`'+0.124'`, `'+0.487'`, etc.) per the F1 broadcast canon. Position 1 carries `'LEADER'` (the leader has no gap to themselves). Bottom-10 rows carry verbatim 3-decimal gaps (`'+3.678'` … `'+6.789'`). The primitive does NOT modify the string — truncation discipline is enforced at the snapshot authoring level (D-T332-13).
+- **Position numbers** rendered to the left of each row by the primitive at the bound foreground color + font weight. Positions 1–20 sequentially.
+- **3-letter uppercase driver codes** `row.code` — canonical F1 broadcast 3-letter codes (`'VER'`, `'NOR'`, `'LEC'`, …); already uppercase in the snapshot. The `casing: 'as-is'` setting passes them through unchanged.
+
+The vertical 20-driver tower IS the message — at frame 60 the eye locks onto the leader VER row at the top with `LEADER` gap + sector colors + soft-compound chip, then scans down through the field to the back-marker ZHO row with `+6.789` gap (no sector / no compound). Restraint is the signature; the carbon-black + white text + per-row team-color stripe + universal sector-color shorthand is the F1 broadcast register.
 
 ## Typography
-- Driver codes (3-letter): Bold, 14–16 pt, tabular
-- Gap / delta times: Regular, 12–14 pt, tabular — truncated, not rounded (per compass)
-- Position numbers: Bold, 16–18 pt
+
+- **`preferredFont: Formula1 Display`** (`proprietary-byo` per ADR-004 §D3). The bespoke F1 brand display family used across F1's broadcast graphics; the bespoke geometric-sans construction is the brand-DNA letter geometry. Tenants licensing Formula1 Display locally slot it in via the FontManager (T-072). Cluster B IS in `TYPE_DESIGN_REQUIRED_CLUSTERS`, so `signOff.typeDesign` MUST be `'pending-cluster-batch'` or `'signed:YYYY-MM-DD'`, NOT `'na'`. T-332 holds at `pending-cluster-batch`; the cluster-B type-design batch review (cluster-composer task) flips this field across all nine Cluster B presets in one downstream PR.
+- **`fallbackFont: Barlow Condensed`** weight `600` (SIL Open Font License 1.1 via Google Fonts; originally Jeremy Tribby). Barlow Condensed 600 (SemiBold) approximates Formula1 Display's condensed geometric posture — the condensed proportion is critical for the 20-driver tower's vertical density (3-letter driver codes + 3-decimal gap strings + tire chips fit in a ≈ 180 px wide tower at 16 px x-height). Substituted automatically by the FontManager on every rendering medium where the BYO Formula1 Display face is not cleared.
+- **Per-row text** the primitive applies `fontFamily` from the bound `font.family` prop on the row container. Position numbers + driver codes render at the primitive's racing-branch defaults (bold, tabular); gap times render in the same family with the gap text rendered verbatim from `row.gap`.
+- **Casing** `casing: 'as-is'` — driver codes are already uppercase in the snapshot (`'VER'` / `'NOR'` / etc.); no transform needed.
+- **Distinct numeral design** Barlow Condensed 600 numerals are the v1 render typeface for position numbers + gap times; Formula1 Display's bespoke numeral geometry is NOT preserved. Cosmetic divergence — same posture as T-333 / T-334 / T-335 / T-337 BYO/OFL fallback divergences.
+- **No italic, no underline, no strikethrough.** F1 broadcast graphics never use them.
 
 ## Animation
-- Entry: tower slides in from left with ease-out, 400–600 ms
-- Position changes: smooth sliding row animations, 300 ms
-- Purple sector bars: brief pulse (100 → 180 ms) when a record is set
-- "Smart glass" (2022+): can highlight a specific row when commentators reference a driver — implemented as `highlightIndex` prop
+
+- **Steady-state register only in v1.** The `'racing'` branch of T-332a renders a **static layout** — there is no entrance animation, no within-window transition, no position-change row-slide, no sector-record pulse, no Smart-glass row highlight. The reference frame for the parity golden is steady-state mid-session at frame 60.
+- **Tower slide-in entrance deferred (T-332b carve-out)** — stub line 30 calls for "tower slides in from left with ease-out, 400–600 ms." The `'racing'` branch is steady-state-only; entrance choreography is host-orchestration (a `LiveDataClip`-composed flow OR a runtime composition's intro segment). Candidate `T-332b` carve-out IF Reviewer scrutiny demands.
+- **Position-change row-slide animation deferred (T-332c carve-out)** — stub line 31 calls for "smooth sliding row animations, 300 ms" on position changes. Frame-derived row reordering not in v1; static snapshot. Candidate `T-332c` carve-out.
+- **Sector-record purple pulse deferred (T-332d carve-out)** — stub line 32 calls for "purple sector bars: brief pulse (100 → 180 ms) when a record is set." Per-cell pulse math requires frame-windowed animation; deferred. Candidate `T-332d` carve-out.
+- **"Smart glass" highlightIndex deferred (T-332e carve-out)** — stub line 33 calls for "can highlight a specific row when commentators reference a driver — implemented as `highlightIndex` prop." The primitive's `'racing'` branch does not expose a `highlightIndex` prop in its Zod schema (lines 99–105 of `score-bug.tsx`); adding one is a primitive-level extension. Candidate `T-332e` carve-out IF Reviewer demands.
+- **Steady-state mid-session at frame 60.** The racing branch is a static layout so any post-mount frame produces an identical render. Cluster-norm consistency (T-333 / T-334 / T-335 / T-337 / T-323 / T-325 / T-326 / T-327 / T-328 / T-329 / T-330 all use frame 60) AND the operator-default `--frame=60` are the deciding factors.
+- **No state-transition animation in v1.** State transitions (entrance, position-change, sector-pulse, highlight) belong to the live-mount surface where the data source streams updates AND to the runtime composition where the host orchestrates broadcast pacing.
 
 ## Rules
-- Team-color stripe is NON-NEGOTIABLE — it's the instant-ID system. Do not collapse to monochrome.
-- Sector color palette (purple / green / yellow) must not be re-themed; it's universal shorthand.
-- Gap times are truncated, never rounded (`+0.124` not `+0.12`).
-- Typography fallback must support tabular numerals — escalate if fallback does not.
-- Requires live data via `LiveDataClip` (ADR-005). Without frontier enabled, renders `staticFallback` showing a frozen snapshot.
+
+- **Bound primitive**: `score-bug` from `@stageflip/runtimes-frame-runtime-bridge` (`packages/runtimes/frame-runtime-bridge/src/clips/score-bug.tsx`, exported as `ScoreBug`; primitive `kind: 'score-bug'` kebab-case). T-332 wires the binding via `PRESET_ID_BINDINGS['f1-timing-tower']` (Pattern C — seventh-preset-for-clipKind via the override path, NOT clipKind-default). The `'scoreBug'` arm in `DEFAULT_CLIP_KIND_RESOLVER` stays UNCHANGED at `scoreBugDotsBinding` (T-358); T-333 / T-334 / T-335 / T-337 / T-339a / T-338 prior overrides stay UNCHANGED. Composing tools should mount `ScoreBug` with the snapshot per `F1_TIMING_TOWER_PROPS` and the resolver's `buildProps` defaults.
+- **`style: 'racing'` is the load-bearing UX render** for this preset. T-332a's `score-bug` primitive ships four style branches (`'football'` / `'racing'` / `'cricket'` / `'tennis'`) via Zod discriminated union (line 175); T-332 binds the `'racing'` branch. **First production consumer.** T-333 / T-334 / T-335 bind the `'football'` branch; T-337 binds the `'tennis'` branch; T-332 closes the production-consumer matrix on `'racing'` (T-336 cricket-scorebug will close `'cricket'`).
+- **Team-color stripe is NON-NEGOTIABLE — instant-ID system** (stub line 46). The 4 px-wide left border on each row IS the rendered slot; collapsing to monochrome defeats the brand signal. Do NOT override `row.teamColor` to the same value across rows.
+- **Sector-color palette is universal shorthand; do not re-theme** (stub line 48). The primitive's `SECTOR_COLORS` constants (`#6F2E9E` purple / `#00B54A` green / `#F0C800` yellow / `#666666` gray) match the F1 broadcast canon globally; substituting tenant-brand colors defeats the universal-shorthand semantic.
+- **Gap times are truncated, never rounded — `+0.124` not `+0.12`** (stub line 49). The primitive renders the verbatim string from `row.gap`; truncation discipline is enforced at the snapshot authoring level (D-T332-13). v1 ships authored 3-decimal gap strings per the F1 broadcast canon.
+- **Tabular numerals required for column alignment** — Barlow Condensed 600 ships tabular figures by default; the primitive's racing branch renders position numbers + gap-time strings in the bound font family. Escalate if a future fallback choice does not include tabular figures.
+- **Top-10 vs bottom-10 broadcast canon** — top-10 rows carry full data (gap + sectorColors + tireCompound); bottom-10 carry minimal data (position + code + teamColor + gap). This split mirrors the F1 broadcast register where leaders' sector / compound detail is the focus and back-markers' minimal-data rendering preserves visual hierarchy.
+- **§entrance — tower slide-in deferred (D-T332-11; T-332b carve-out)**. Stub line 30 calls for "tower slides in from left with ease-out, 400–600 ms." The `'racing'` branch is a static layout; no entrance animation. Carving out is `T-332b`. NOT a T-332 fix.
+- **§row-slide — position-change row-slide deferred (D-T332-11; T-332c carve-out)**. Stub line 31 calls for "smooth sliding row animations, 300 ms." Frame-derived row reordering not in v1. Carving out is `T-332c`. NOT a T-332 fix.
+- **§sector-pulse — purple sector pulse deferred (D-T332-11; T-332d carve-out)**. Stub line 32 calls for "purple sector bars: brief pulse (100 → 180 ms) when a record is set." Per-cell pulse math deferred. Carving out is `T-332d`. NOT a T-332 fix.
+- **§highlight — Smart glass highlightIndex deferred (D-T332-11; T-332e carve-out)**. Stub line 33 calls for `highlightIndex` prop to highlight a specific row. The primitive's `'racing'` branch does not expose `highlightIndex` in its Zod schema; adding one is a primitive-level extension. Carving out is `T-332e`. NOT a T-332 fix.
+- **§live-data — `permissions: [network]` declared; v1 ships static snapshot only** (D-T332-12). Frontmatter declares `permissions: [network]` per ADR-003 §D2 for the `LiveDataClip` frontier path. v1 ships a static 2024 mid-session snapshot; the live-data path is host orchestration (compose `LiveDataClip` with `staticFallback` per ADR-003 §D2). NOT a T-332 fix.
+- **§formula1-display — Formula1 Display preserved by the proprietary path only**. The OFL fallback Barlow Condensed 600 does NOT preserve the bespoke Formula1 Display letter shapes. Cosmetic divergence; the `proprietary-byo` path is the user's escape hatch when they license Formula1 Display locally. Same posture as T-333 / T-334 / T-335 / T-337 BYO fallback divergences.
+- **Reference frame for parity is steady-state at frame 60** per ADR-004 §D5 — single canonical variant. The racing branch is a static layout so any post-mount frame produces an identical render.
 
 ## Acceptance (parity)
-- Reference frames: 0 (pre-entry), 20 (mid-slide), 40 (settled), 80 (post-position-change)
-- PSNR ≥ 40 dB, SSIM ≥ 0.97
+
+One reference-frame fixture at `frame: 60` (steady-state mid-session per ADR-004 §D5):
+
+- `golden-frame-60.png` — the canonical F1 timing tower rendered as a vertical 20-driver tower on a `#0D0D0F` carbon-black base; tower anchored at `(60, 60)` on a 1280×720 canvas; **top-10 rows** carry full data (position + code + 4 px team-color leading-edge stripe + 3-cell sector color row + tire compound chip + 3-decimal gap, except VER which carries `LEADER`); **bottom-10 rows** carry minimal data (position + code + team-color stripe + 3-decimal gap, no sector cells / no tire chip); white `#FFFFFF` text; Barlow Condensed 600 numerals. Static layout (no animation; the racing branch renders steady-state — no entrance / position-change / sector-pulse / highlight). Tower slide-in entrance, position-change row-slide, sector-record purple pulse, and Smart-glass row highlight all deferred (Rules §entrance / §row-slide / §sector-pulse / §highlight).
+
+Thresholds: **PSNR ≥ 42 dB**, **SSIM ≥ 0.98** (matches the cross-cluster norm used by T-333 / T-334 / T-335 / T-337 / T-338 / T-339a / T-323 / T-325 / T-326 / T-327 / T-328 / T-329 / T-330 / T-355 / T-358 / T-359 / T-360 / T-356 / T-357 / T-362 / T-363 / T-364 / T-365 / T-366 / T-367 / T-350). Hand-pinned via the F-4 generator-flag route `--psnr=42 --ssim=0.98 --mark-signed` (NO manual `thresholds.json` edit per D-T332-7). The 20-row vertical tower with carbon-black base + per-row team-color stripes + sector-color cells + tire chips is aliasing-comparable to T-335's center-circle register; the small (4 px) team-color stripes and the round tire chips add curved-vector seams, but on a tall narrow tower these are small fractions of the render area.
+
+**Sign-off (T-332 D-T332-8, in-PR — Pattern D):** the canonical steady-state golden is committed at `parity-fixtures/sports/f1-timing-tower/` with the single-variant manifest shape. Frontmatter `signOff.parityFixture` is `signed:<UTC date>` after running `scripts/generate-preset-parity-fixture-prod.ts --preset=f1-timing-tower --frame=60 --psnr=42 --ssim=0.98 --mark-signed`. The golden was rendered locally via the puppeteer/CDP-bound prod renderer; the `scoreBug` clipKind binds to `score-bug` for the `f1-timing-tower` preset id via `PRESET_ID_BINDINGS['f1-timing-tower']` per the v1 resolver. Re-render + re-sign with `--force` is the operator's path if the canonical snapshot changes or the FontManager's preload list updates the rendered Barlow Condensed 600 weights. **`signOff.typeDesign` STAYS `pending-cluster-batch`** — the cluster-B type-design batch review (cluster-composer task) flips this field across all nine Cluster B presets in one downstream PR; T-332's merge brings Cluster B to **7/9 substantive + signed** (NOT YET ELIGIBLE for batch merge per D-T332-9; T-336 cricket-scorebug + T-339 uefa-starball-refraction remain).
 
 ## References
-- `docs/compass_artifact.md` § Formula 1
-- Frontier: `LiveDataClip` (ADR-005 §D1)
-- ADR-004
+
+- `docs/compass_artifact.md` § Formula 1 — canonical visual source.
+- `skills/stageflip/presets/sports/wimbledon-green-purple.md` — sister Cluster B preset (T-337; fifth Cluster B preset; bound via `PRESET_ID_BINDINGS` override on `scoreBug` clipKind; first `'tennis'` consumer); T-332 mirrors its resolver-binding shape verbatim, swapping the preset id + binding name + snapshot constant + style discriminant (`'tennis'` → `'racing'`).
+- `skills/stageflip/presets/sports/{premier-league-field-of-play,fox-nfl-no-chrome,nbc-snf-possession-illuminated}.md` — sister Cluster B `'football'` consumers (T-333 / T-334 / T-335; first three Cluster B presets; all bound via `PRESET_ID_BINDINGS` overrides on `scoreBug` clipKind). T-333 / T-334 / T-335 / T-337 / T-332 together establish the Cluster B `score-bug` template across all 4 style branches.
+- `skills/stageflip/presets/sports/masters-red-under-par.md` — sister Cluster B preset (T-338; sixth Cluster B preset; binds the `standings-table` primitive via `PRESET_ID_BINDINGS` override on `standings` clipKind — NOT `score-bug`). Sister-clipKind reference for the cluster's overall register.
+- `skills/stageflip/presets/sports/espn-bottomline-flipper.md` — sister Cluster B preset (T-339a; fourth Cluster B preset; binds the `news-ticker-bar` primitive via `PRESET_ID_BINDINGS` override on `newsTicker` clipKind — NOT `score-bug`). Sister-clipKind reference for the cluster's overall register.
+- `skills/stageflip/presets/sports/SKILL.md` — Cluster B SKILL (locked per D-T332; owned by the cluster-B composer task).
+- `skills/stageflip/presets/sports/{cricket-scorebug,uefa-starball-refraction}.md` — remaining Cluster B stubs; each has its own preset PR. T-332's merge brings Cluster B to 7/9 substantive + signed; the remaining two presets land in T-336 (cricket-scorebug; first `'cricket'` style consumer) + T-339 (uefa-starball-refraction).
+- `packages/runtimes/frame-runtime-bridge/src/clips/score-bug.tsx` — the bound primitive (`ScoreBug`); shipped by T-332a as a four-discriminant Zod union (`'football'` / `'racing'` / `'cricket'` / `'tennis'`). **First production consumer of the `'racing'` style branch**: T-332 f1-timing-tower. Closes the production-consumer matrix to all 4 styles exercised.
+- `packages/parity-cli/src/generate-fixture.ts` — v1 resolver mapping `scoreBug` → `outcome-row` clipKind-default (T-358 scoreBugDotsBinding) + per-preset `PRESET_ID_BINDINGS` overrides (T-333 / T-334 / T-335 / T-337 prior `score-bug` consumers + T-332 f1-timing-tower → `f1TimingTowerBinding`, racing-style consumer) + exported `F1_TIMING_TOWER_PROPS` constant (D-T332-4).
+- "Restraint is the signature." — the F1 broadcast bug's vertical tower + carbon-black + universal sector-color shorthand IS the canonical register; preserve faithfully.
+- ADR-003 §D2 — live-data family + `LiveDataClip` two-path contract (relevant to `permissions: [network]` declaration).
+- ADR-004 (preset system contract — frontmatter, loader, validator, parity sign-off, integrity invariants).
+- ADR-005 (frontier clip catalogue — scoreBug / score-bug posture).

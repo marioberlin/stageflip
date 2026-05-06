@@ -1817,6 +1817,162 @@ const mastersRedUnderParBinding: ClipKindBinding = {
 };
 
 /**
+ * F1 "Timing Tower" snapshot props per D-T332-1 / D-T332-4.
+ * Cluster B preset T-332 wires the `score-bug` primitive (T-332a) as the
+ * seventh `scoreBug` clipKind consumer (Pattern C — `PRESET_ID_BINDINGS`
+ * override; fifth override after T-333 PL + T-334 Fox NFL + T-335 NBC SNF +
+ * T-337 Wimbledon). FIRST production consumer of T-332a's `'racing'` style
+ * branch — closes the primitive's production-consumer matrix to all 4 styles
+ * (`'football'` / `'racing'` / `'cricket'` / `'tennis'`) exercised.
+ *
+ * Snapshot captures the canonical 2024 mid-session F1 timing tower:
+ * 20-driver vertical tower with leader VER (Red Bull) on top + canonical
+ * 2024 grid order with 3-letter driver codes + livery team-color stripes
+ * + per-row top-10 sector colors (purple session-best / green personal-best
+ * / yellow slower / gray neutral) + tire compounds + truncated 3-decimal
+ * gap times. Bottom 10 rows carry minimal data (position + code + teamColor
+ * + gap; broadcast canon — leaders' timing detail is the focus). Carbon-
+ * black `#0D0D0F` base + white text + Barlow Condensed 600 OFL fallback
+ * for proprietary Formula1 Display. Tower slide-in entrance, position-
+ * change row-slide, sector-record purple pulse, "Smart glass" highlightIndex
+ * all deferred (D-T332-3 / D-T332-11).
+ */
+export const F1_TIMING_TOWER_PROPS: {
+  readonly style: 'racing';
+  readonly position: { readonly x: number; readonly y: number };
+  readonly background: string;
+  readonly foreground: string;
+  readonly font: { readonly family: string; readonly weight: number };
+  readonly casing: 'as-is';
+  readonly rows: ReadonlyArray<{
+    readonly position: number;
+    readonly code: string;
+    readonly teamColor: string;
+    readonly gap: string;
+    readonly sectorColors?: ReadonlyArray<'session-best' | 'personal-best' | 'slower' | 'neutral'>;
+    readonly tireCompound?: 'soft' | 'medium' | 'hard' | 'inter' | 'wet';
+  }>;
+} = {
+  style: 'racing',
+  position: { x: 60, y: 60 }, // top-left tower anchor (D-T332-1; 1280x720 canvas)
+  background: '#0D0D0F', // carbon black per stub line 24
+  foreground: '#FFFFFF', // white text
+  font: { family: 'Barlow Condensed', weight: 600 }, // OFL fallback for Formula1 Display
+  casing: 'as-is',
+  rows: [
+    {
+      position: 1,
+      code: 'VER',
+      teamColor: '#1E5BC6',
+      gap: 'LEADER',
+      sectorColors: ['session-best', 'personal-best', 'session-best'],
+      tireCompound: 'soft',
+    },
+    {
+      position: 2,
+      code: 'NOR',
+      teamColor: '#F58020',
+      gap: '+0.124',
+      sectorColors: ['personal-best', 'slower', 'personal-best'],
+      tireCompound: 'medium',
+    },
+    {
+      position: 3,
+      code: 'LEC',
+      teamColor: '#ED1C24',
+      gap: '+0.487',
+      sectorColors: ['personal-best', 'personal-best', 'slower'],
+      tireCompound: 'soft',
+    },
+    {
+      position: 4,
+      code: 'SAI',
+      teamColor: '#ED1C24',
+      gap: '+0.789',
+      sectorColors: ['slower', 'personal-best', 'personal-best'],
+      tireCompound: 'medium',
+    },
+    {
+      position: 5,
+      code: 'HAM',
+      teamColor: '#6CD3BF',
+      gap: '+1.234',
+      sectorColors: ['personal-best', 'slower', 'slower'],
+      tireCompound: 'medium',
+    },
+    {
+      position: 6,
+      code: 'PIA',
+      teamColor: '#F58020',
+      gap: '+1.567',
+      sectorColors: ['slower', 'personal-best', 'slower'],
+      tireCompound: 'soft',
+    },
+    {
+      position: 7,
+      code: 'ALO',
+      teamColor: '#2D826D',
+      gap: '+2.012',
+      sectorColors: ['neutral', 'neutral', 'neutral'],
+      tireCompound: 'hard',
+    },
+    {
+      position: 8,
+      code: 'RUS',
+      teamColor: '#6CD3BF',
+      gap: '+2.456',
+      sectorColors: ['slower', 'slower', 'personal-best'],
+      tireCompound: 'medium',
+    },
+    {
+      position: 9,
+      code: 'PER',
+      teamColor: '#1E5BC6',
+      gap: '+2.901',
+      sectorColors: ['neutral', 'neutral', 'neutral'],
+      tireCompound: 'hard',
+    },
+    {
+      position: 10,
+      code: 'GAS',
+      teamColor: '#2293D1',
+      gap: '+3.345',
+      sectorColors: ['slower', 'slower', 'slower'],
+      tireCompound: 'medium',
+    },
+    { position: 11, code: 'OCO', teamColor: '#2293D1', gap: '+3.678' },
+    { position: 12, code: 'STR', teamColor: '#2D826D', gap: '+4.012' },
+    { position: 13, code: 'BOT', teamColor: '#900', gap: '+4.456' },
+    { position: 14, code: 'TSU', teamColor: '#3671C6', gap: '+4.789' },
+    { position: 15, code: 'ALB', teamColor: '#005AFF', gap: '+5.123' },
+    { position: 16, code: 'HUL', teamColor: '#B6BABD', gap: '+5.456' },
+    { position: 17, code: 'MAG', teamColor: '#B6BABD', gap: '+5.789' },
+    { position: 18, code: 'SAR', teamColor: '#005AFF', gap: '+6.123' },
+    { position: 19, code: 'RIC', teamColor: '#3671C6', gap: '+6.456' },
+    { position: 20, code: 'ZHO', teamColor: '#900', gap: '+6.789' },
+  ],
+};
+
+const f1TimingTowerBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'score-bug', // kebab-case primitive `kind` (T-332a line 686)
+  buildProps() {
+    // Deep-clone nested object literals + the rows array so callers can
+    // mutate without aliasing the exported constant. Per-row sectorColors
+    // arrays (when present) are also cloned via spread.
+    return {
+      ...F1_TIMING_TOWER_PROPS,
+      position: { ...F1_TIMING_TOWER_PROPS.position },
+      font: { ...F1_TIMING_TOWER_PROPS.font },
+      rows: F1_TIMING_TOWER_PROPS.rows.map((r) => ({
+        ...r,
+        ...(r.sectorColors !== undefined ? { sectorColors: [...r.sectorColors] } : {}),
+      })),
+    };
+  },
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -1841,6 +1997,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'espn-bottomline-flipper': espnBottomlineBinding, // T-339a
   'wimbledon-green-purple': wimbledonGreenPurpleBinding, // T-337
   'masters-red-under-par': mastersRedUnderParBinding, // T-338
+  'f1-timing-tower': f1TimingTowerBinding, // T-332
 };
 
 /**

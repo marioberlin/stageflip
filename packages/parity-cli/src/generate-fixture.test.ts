@@ -17,6 +17,7 @@ import {
   DEFAULT_CLIP_KIND_RESOLVER,
   ESPN_BOTTOMLINE_PROPS,
   F1_SECTOR_STATE_COLORS,
+  F1_TIMING_TOWER_PROPS,
   FOX_NEWS_ALERT_PROPS,
   FOX_NFL_NO_CHROME_PROPS,
   GenerateFixtureUnavailableError,
@@ -2385,8 +2386,8 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']).toBeDefined();
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.runtimeId).toBe('frame-runtime');
-    // Seventeen overrides total after T-338 lands (T-333 added the 12th; T-338 the 17th).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(17);
+    // Eighteen overrides total after T-332 lands (T-333 added the 12th; T-338 the 17th; T-332 the 18th).
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(18);
   });
 
   it('binding deep-clones nested object literals so callers can mutate freely (T-333)', () => {
@@ -2534,8 +2535,8 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']).toBeDefined();
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.runtimeId).toBe('frame-runtime');
-    // Seventeen overrides total after T-338 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(17);
+    // Eighteen overrides total after T-332 lands.
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(18);
   });
 
   it('fox-nfl-no-chrome binding deep-clones nested object literals so callers can mutate freely (T-334)', () => {
@@ -2675,8 +2676,8 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']).toBeDefined();
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.runtimeId).toBe('frame-runtime');
-    // Seventeen overrides total after T-338 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(17);
+    // Eighteen overrides total after T-332 lands.
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(18);
   });
 
   it('nbc-snf-possession-illuminated binding deep-clones nested object literals so callers can mutate freely (T-335)', () => {
@@ -2819,8 +2820,8 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']).toBeDefined();
     expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.clipName).toBe('news-ticker-bar');
     expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.runtimeId).toBe('frame-runtime');
-    // Seventeen overrides total after T-338 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(17);
+    // Eighteen overrides total after T-332 lands.
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(18);
   });
 
   it('espn-bottomline-flipper binding deep-clones the entries array so callers can mutate freely (T-339a)', () => {
@@ -2992,8 +2993,8 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['wimbledon-green-purple']).toBeDefined();
     expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.runtimeId).toBe('frame-runtime');
-    // Seventeen overrides total after T-338 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(17);
+    // Eighteen overrides total after T-332 lands.
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(18);
   });
 
   it('wimbledon-green-purple binding deep-clones nested objects + players tuple + sets arrays (T-337)', () => {
@@ -3157,8 +3158,8 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['masters-red-under-par']).toBeDefined();
     expect(PRESET_ID_BINDINGS['masters-red-under-par']?.clipName).toBe('standings-table');
     expect(PRESET_ID_BINDINGS['masters-red-under-par']?.runtimeId).toBe('frame-runtime');
-    // Seventeen overrides total after T-338 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(17);
+    // Eighteen overrides total after T-332 lands.
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(18);
   });
 
   it('masters-red-under-par binding deep-clones rows + columns + values arrays (T-338)', () => {
@@ -3246,6 +3247,152 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.clipName).toBe('news-ticker-bar');
     expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.clipName).toBe('score-bug');
+  });
+
+  // T-332 — seventh Cluster B preset (`f1-timing-tower`), wired via the
+  // `PRESET_ID_BINDINGS` override path (Pattern C). Seventh `scoreBug`
+  // clipKind consumer; FIRST production consumer of T-332a's `'racing'`
+  // style branch (vertical N-driver tower with team-color stripes + sector
+  // colors + tire compounds + truncated gap times). Closes the T-332a
+  // primitive's production-consumer matrix to all 4 styles exercised. The
+  // clipKind-default arm stays UNCHANGED at `scoreBugDotsBinding` (T-358);
+  // T-333 / T-334 / T-335 / T-337 / T-339a / T-338 prior overrides UNCHANGED.
+  it('routes f1-timing-tower through PRESET_ID_BINDINGS override (T-332 AC #10)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'f1-timing-tower');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('score-bug'); // kebab-case primitive kind (T-332a line 686)
+    const props = binding?.buildProps(undefined) as typeof F1_TIMING_TOWER_PROPS;
+    expect(props.style).toBe('racing');
+    expect(props.position).toEqual({ x: 60, y: 60 });
+    expect(props.background).toBe('#0D0D0F');
+    expect(props.foreground).toBe('#FFFFFF');
+    expect(props.casing).toBe('as-is');
+    expect(props.font).toEqual({ family: 'Barlow Condensed', weight: 600 });
+    expect(props.rows).toHaveLength(20);
+    expect(props.rows[0]).toEqual({
+      position: 1,
+      code: 'VER',
+      teamColor: '#1E5BC6',
+      gap: 'LEADER',
+      sectorColors: ['session-best', 'personal-best', 'session-best'],
+      tireCompound: 'soft',
+    });
+    expect(props.rows[19]).toEqual({
+      position: 20,
+      code: 'ZHO',
+      teamColor: '#900',
+      gap: '+6.789',
+    });
+  });
+
+  it('exports F1_TIMING_TOWER_PROPS with style="racing" + 20 rows + canonical 2024 grid (T-332 AC #8)', () => {
+    expect(F1_TIMING_TOWER_PROPS.style).toBe('racing');
+    expect(F1_TIMING_TOWER_PROPS.rows).toHaveLength(20);
+    expect(F1_TIMING_TOWER_PROPS.rows[0]?.code).toBe('VER');
+    expect(F1_TIMING_TOWER_PROPS.rows[0]?.gap).toBe('LEADER');
+    expect(F1_TIMING_TOWER_PROPS.rows[1]?.code).toBe('NOR');
+    expect(F1_TIMING_TOWER_PROPS.rows[2]?.code).toBe('LEC');
+    expect(F1_TIMING_TOWER_PROPS.rows[19]?.code).toBe('ZHO');
+    // Top-10 carry full data (gap + sectorColors + tireCompound).
+    for (let i = 0; i < 10; i++) {
+      const r = F1_TIMING_TOWER_PROPS.rows[i];
+      expect(r?.sectorColors).toBeDefined();
+      expect(r?.sectorColors).toHaveLength(3);
+      expect(r?.tireCompound).toBeDefined();
+    }
+    // Bottom-10 carry minimal data (no sectorColors / tireCompound).
+    for (let i = 10; i < 20; i++) {
+      const r = F1_TIMING_TOWER_PROPS.rows[i];
+      expect(r?.sectorColors).toBeUndefined();
+      expect(r?.tireCompound).toBeUndefined();
+    }
+    expect(F1_TIMING_TOWER_PROPS.background).toBe('#0D0D0F');
+    expect(F1_TIMING_TOWER_PROPS.foreground).toBe('#FFFFFF');
+    expect(F1_TIMING_TOWER_PROPS.font).toEqual({ family: 'Barlow Condensed', weight: 600 });
+    expect(F1_TIMING_TOWER_PROPS.position).toEqual({ x: 60, y: 60 });
+    expect(F1_TIMING_TOWER_PROPS.casing).toBe('as-is');
+  });
+
+  it('PRESET_ID_BINDINGS contains f1-timing-tower override; length 18 (T-332 AC #10/#13)', () => {
+    expect(PRESET_ID_BINDINGS['f1-timing-tower']).toBeDefined();
+    expect(PRESET_ID_BINDINGS['f1-timing-tower']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['f1-timing-tower']?.runtimeId).toBe('frame-runtime');
+    // Eighteen overrides total after T-332 lands.
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(18);
+  });
+
+  it('f1-timing-tower binding deep-clones nested objects + rows + sectorColors arrays (T-332)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'f1-timing-tower');
+    if (!binding) throw new Error('test setup');
+    const a = binding.buildProps(undefined) as {
+      position: { x: number; y: number };
+      font: { family: string; weight: number };
+      rows: Array<{
+        position: number;
+        code: string;
+        teamColor: string;
+        gap: string;
+        sectorColors?: string[];
+        tireCompound?: string;
+      }>;
+    };
+    const b = binding.buildProps(undefined) as {
+      position: { x: number; y: number };
+      font: { family: string; weight: number };
+      rows: Array<{
+        position: number;
+        code: string;
+        teamColor: string;
+        gap: string;
+        sectorColors?: string[];
+        tireCompound?: string;
+      }>;
+    };
+    a.position.x = 999;
+    a.font.weight = 999;
+    const aRow0 = a.rows[0];
+    if (!aRow0) throw new Error('test setup');
+    aRow0.code = 'MUT';
+    if (aRow0.sectorColors) aRow0.sectorColors[0] = 'mutated';
+    expect(b.position.x).toBe(60);
+    expect(b.font.weight).toBe(600);
+    expect(b.rows[0]?.code).toBe('VER');
+    expect(b.rows[0]?.sectorColors?.[0]).toBe('session-best');
+    expect(F1_TIMING_TOWER_PROPS.position.x).toBe(60);
+    expect(F1_TIMING_TOWER_PROPS.font.weight).toBe(600);
+    expect(F1_TIMING_TOWER_PROPS.rows[0]?.code).toBe('VER');
+    expect(F1_TIMING_TOWER_PROPS.rows[0]?.sectorColors?.[0]).toBe('session-best');
+  });
+
+  it('clipKind-default for scoreBug STILL returns scoreBugDotsBinding after T-332 lands (T-332 AC #11 backward compat)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('scoreBug')?.clipName).toBe('outcome-row');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'cricket-ball-by-ball-dots')?.clipName).toBe(
+      'outcome-row',
+    );
+    expect(DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'unknown-preset-id')?.clipName).toBe(
+      'outcome-row',
+    );
+  });
+
+  it('all 17 prior PRESET_ID_BINDINGS overrides STILL resolve after T-332 lands (T-332 AC #12 backward compat)', () => {
+    expect(PRESET_ID_BINDINGS['big-number-stat-impact']?.clipName).toBe('animated-value');
+    expect(PRESET_ID_BINDINGS['mrbeast-komika-axis']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['tiktok-rounded-box']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['ali-abdaal-opacity-karaoke']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['netflix-invisible']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['bbc-reith-dark']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['al-jazeera-orange']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['apple-tv-lt']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['netflix-doc-lt']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['fox-news-alert']?.clipName).toBe('breaking-banner');
+    expect(PRESET_ID_BINDINGS['msnbc-big-board']?.clipName).toBe('magic-wall-panel');
+    expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.clipName).toBe('news-ticker-bar');
+    expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['masters-red-under-par']?.clipName).toBe('standings-table');
   });
 });
 
