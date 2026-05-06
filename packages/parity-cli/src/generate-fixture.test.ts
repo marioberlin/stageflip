@@ -35,6 +35,7 @@ import {
   type PresetForRender,
   SQUID_GAME_GEOMETRIC_SHOTS,
   TIKTOK_CANONICAL_WORDS,
+  WIMBLEDON_PROPS,
   buildPresetDocument,
   createGenerateFixtureRenderer,
 } from './generate-fixture.js';
@@ -2383,8 +2384,8 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']).toBeDefined();
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.runtimeId).toBe('frame-runtime');
-    // Fifteen overrides total after T-339a lands (T-333 added the 12th).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(15);
+    // Sixteen overrides total after T-337 lands (T-333 added the 12th; T-337 the 16th).
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(16);
   });
 
   it('binding deep-clones nested object literals so callers can mutate freely (T-333)', () => {
@@ -2532,8 +2533,8 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']).toBeDefined();
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.runtimeId).toBe('frame-runtime');
-    // Fifteen overrides total after T-339a lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(15);
+    // Sixteen overrides total after T-337 lands.
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(16);
   });
 
   it('fox-nfl-no-chrome binding deep-clones nested object literals so callers can mutate freely (T-334)', () => {
@@ -2673,8 +2674,8 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']).toBeDefined();
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.runtimeId).toBe('frame-runtime');
-    // Fifteen overrides total after T-339a lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(15);
+    // Sixteen overrides total after T-337 lands.
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(16);
   });
 
   it('nbc-snf-possession-illuminated binding deep-clones nested object literals so callers can mutate freely (T-335)', () => {
@@ -2817,8 +2818,8 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']).toBeDefined();
     expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.clipName).toBe('news-ticker-bar');
     expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.runtimeId).toBe('frame-runtime');
-    // Fifteen overrides total after T-339a lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(15);
+    // Sixteen overrides total after T-337 lands.
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(16);
   });
 
   it('espn-bottomline-flipper binding deep-clones the entries array so callers can mutate freely (T-339a)', () => {
@@ -2911,6 +2912,170 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(DEFAULT_CLIP_KIND_RESOLVER('fullScreen')?.clipName).toBe('magic-wall-panel');
     expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind')).toBeUndefined();
     expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'espn-bottomline-flipper')).toBeDefined();
+  });
+
+  // T-337 — fifth Cluster B preset (`wimbledon-green-purple`), wired via the
+  // `PRESET_ID_BINDINGS` override path (Pattern C). Sixth `scoreBug` clipKind
+  // consumer; fourth `score-bug` primitive consumer; FIRST production
+  // consumer of T-332a's `'tennis'` style branch (2-player stack with
+  // country code + seed + N set columns + game score + active-server dot).
+  // The clipKind-default arm stays UNCHANGED at `scoreBugDotsBinding`
+  // (T-358); T-333 / T-334 / T-335 / T-339a prior overrides UNCHANGED.
+  it('routes wimbledon-green-purple through PRESET_ID_BINDINGS override (T-337 AC #13)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'wimbledon-green-purple');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('score-bug'); // kebab-case primitive kind (T-332a line 686)
+    const props = binding?.buildProps(undefined) as typeof WIMBLEDON_PROPS;
+    expect(props.style).toBe('tennis');
+    expect(props.position).toEqual({ x: 60, y: 580 });
+    expect(props.background).toBe('#006633');
+    expect(props.accent).toBe('#4B0082');
+    expect(props.foreground).toBe('#FFFFFF');
+    expect(props.activeServerIndex).toBe(0);
+    expect(props.anchor).toBe('bottom-left');
+    expect(props.casing).toBe('as-is');
+    expect(props.font).toEqual({ family: 'Montserrat', weight: 500 });
+    expect(props.players).toHaveLength(2);
+    expect(props.players[0]).toEqual({
+      surname: 'Djokovic',
+      countryCode: 'SRB',
+      seed: 1,
+      sets: ['6', '4', '7-6'],
+      gameScore: '40',
+    });
+    expect(props.players[1]).toEqual({
+      surname: 'Alcaraz',
+      countryCode: 'ESP',
+      seed: 2,
+      sets: ['4', '6', '6-7'],
+      gameScore: '30',
+    });
+  });
+
+  it('exports WIMBLEDON_PROPS with canonical Wimbledon final mid-match values (T-337 AC #14)', () => {
+    expect(WIMBLEDON_PROPS).toEqual({
+      style: 'tennis',
+      position: { x: 60, y: 580 },
+      background: '#006633',
+      accent: '#4B0082',
+      foreground: '#FFFFFF',
+      players: [
+        {
+          surname: 'Djokovic',
+          countryCode: 'SRB',
+          seed: 1,
+          sets: ['6', '4', '7-6'],
+          gameScore: '40',
+        },
+        {
+          surname: 'Alcaraz',
+          countryCode: 'ESP',
+          seed: 2,
+          sets: ['4', '6', '6-7'],
+          gameScore: '30',
+        },
+      ],
+      activeServerIndex: 0,
+      anchor: 'bottom-left',
+      font: { family: 'Montserrat', weight: 500 },
+      casing: 'as-is',
+    });
+    // Per Zod schema `z.array(tennisPlayerSchema).length(2)` — exactly 2.
+    expect(WIMBLEDON_PROPS.players).toHaveLength(2);
+    expect(WIMBLEDON_PROPS.players[0].sets).toHaveLength(3);
+    expect(WIMBLEDON_PROPS.players[1].sets).toHaveLength(3);
+  });
+
+  it('PRESET_ID_BINDINGS contains wimbledon-green-purple override (T-337 AC #15)', () => {
+    expect(PRESET_ID_BINDINGS['wimbledon-green-purple']).toBeDefined();
+    expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.runtimeId).toBe('frame-runtime');
+    // Sixteen overrides total after T-337 lands.
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(16);
+  });
+
+  it('wimbledon-green-purple binding deep-clones nested objects + players tuple + sets arrays (T-337)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'wimbledon-green-purple');
+    if (!binding) throw new Error('test setup');
+    const a = binding.buildProps(undefined) as {
+      position: { x: number; y: number };
+      players: Array<{ surname: string; sets: string[] }>;
+      font: { family: string; weight: number };
+    };
+    const b = binding.buildProps(undefined) as {
+      position: { x: number; y: number };
+      players: Array<{ surname: string; sets: string[] }>;
+      font: { family: string; weight: number };
+    };
+    a.position.x = 999;
+    const aPlayer0 = a.players[0];
+    if (!aPlayer0) throw new Error('test setup');
+    aPlayer0.surname = 'MUT';
+    aPlayer0.sets[0] = 'MUT';
+    a.font.weight = 999;
+    expect(b.position.x).toBe(60);
+    expect(b.players[0]?.surname).toBe('Djokovic');
+    expect(b.players[0]?.sets[0]).toBe('6');
+    expect(b.font.weight).toBe(500);
+    expect(WIMBLEDON_PROPS.position.x).toBe(60);
+    expect(WIMBLEDON_PROPS.players[0].surname).toBe('Djokovic');
+    expect(WIMBLEDON_PROPS.players[0].sets[0]).toBe('6');
+    expect(WIMBLEDON_PROPS.font.weight).toBe(500);
+  });
+
+  it('clipKind-default for scoreBug STILL returns scoreBugDotsBinding after T-337 lands (T-337 AC #19 backward compat)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('scoreBug')?.clipName).toBe('outcome-row');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'cricket-ball-by-ball-dots')?.clipName).toBe(
+      'outcome-row',
+    );
+    expect(DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'unknown-preset-id')?.clipName).toBe(
+      'outcome-row',
+    );
+  });
+
+  it('T-333 / T-334 / T-335 scoreBug overrides STILL resolve after T-337 lands (T-337 AC #16-18 backward compat)', () => {
+    const pl = DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'premier-league-field-of-play');
+    expect(pl?.clipName).toBe('score-bug');
+    expect(pl?.buildProps(undefined).background).toBe('#34003A');
+    const fox = DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'fox-nfl-no-chrome');
+    expect(fox?.clipName).toBe('score-bug');
+    expect(fox?.buildProps(undefined).background).toBe('#000000');
+    const nbc = DEFAULT_CLIP_KIND_RESOLVER('scoreBug', 'nbc-snf-possession-illuminated');
+    expect(nbc?.clipName).toBe('score-bug');
+    expect(nbc?.buildProps(undefined).background).toBe('#0A0A0A');
+  });
+
+  it('still routes prior PRESET_ID_BINDINGS overrides after T-337 lands (T-337 AC #20 backward compat)', () => {
+    expect(PRESET_ID_BINDINGS['big-number-stat-impact']?.clipName).toBe('animated-value');
+    expect(PRESET_ID_BINDINGS['mrbeast-komika-axis']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['tiktok-rounded-box']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['ali-abdaal-opacity-karaoke']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['netflix-invisible']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['bbc-reith-dark']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['al-jazeera-orange']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['apple-tv-lt']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['netflix-doc-lt']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['fox-news-alert']?.clipName).toBe('breaking-banner');
+    expect(PRESET_ID_BINDINGS['msnbc-big-board']?.clipName).toBe('magic-wall-panel');
+    expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.clipName).toBe('news-ticker-bar');
+  });
+
+  it('all prior clipKind-defaults STILL resolve after T-337 lands (T-337 AC #21 backward compat)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('bigNumber')?.clipName).toBe('animated-value');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('caption')?.clipName).toBe('caption');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('lyrics')?.clipName).toBe('lyrics');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('titleSequence')?.clipName).toBe('titleSequence');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('newsTicker')?.clipName).toBe('news-ticker-bar');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('standings')?.clipName).toBe('standings-table');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('lowerThird')?.clipName).toBe('lower-third');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('breakingBanner')?.clipName).toBe('breaking-banner');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('fullScreen')?.clipName).toBe('magic-wall-panel');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind')).toBeUndefined();
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'wimbledon-green-purple')).toBeDefined();
   });
 });
 

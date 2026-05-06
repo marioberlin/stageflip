@@ -1,0 +1,30 @@
+{
+  "name": "wimbledon-green-purple",
+  "cluster": "sports",
+  "kind": "scoreBug",
+  "description": "Parity fixture for preset 'wimbledon-green-purple' (cluster sports, kind scoreBug)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Gotham",
+      "license": "commercial-byo"
+    },
+    "fallback": {
+      "family": "Montserrat",
+      "weight": 500,
+      "license": "ofl"
+    }
+  }
+}

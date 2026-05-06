@@ -3,7 +3,7 @@ id: wimbledon-green-purple
 cluster: sports
 clipKind: scoreBug
 source: docs/compass_artifact.md#wimbledon
-status: stub
+status: substantive
 preferredFont:
   family: Gotham
   license: commercial-byo
@@ -13,42 +13,98 @@ fallbackFont:
   license: ofl
 permissions: []
 signOff:
-  parityFixture: pending-user-review
+  parityFixture: 'signed:2026-05-06'
   typeDesign: pending-cluster-batch
 ---
 
 # Wimbledon Green-Purple — scoreBug
 
+The canonical Wimbledon scoreboard register: a compact bottom-left two-player stack ≈ `400 × 72 px` on a Wimbledon green `#006633` base with purple `#4B0082` accent (schema-supplied for downstream awareness; not visibly rendered by the primitive in v1 — see Rules §accent), white text, mixed-case surnames, ALL-CAPS three-letter IOC country codes, an active-server yellow `#ffd700` 8 × 8 px disc on the serving player's row, three set-score columns (canonical Wimbledon final mid-match — 2 sets played + 3rd in progress with tiebreak scores), per-player game-score column, and Montserrat 500 OFL fallback for the proprietary Gotham face. Common uses: live tennis match overlays where the bottom-left compact two-player stack + green/purple palette + sets-with-game-score canonical layout is the brand signal — sister-but-distinct from T-333's Premier League upper-left rectangular chrome AND T-334 / T-335's bottom-center horizontal football bars.
+
+This preset is the **fifth Cluster B preset to land** AND the **sixth `scoreBug` clipKind consumer** (after T-358's clipKind-default `cricket-ball-by-ball-dots` + T-333 / T-334 / T-335 prior overrides) AND the **first production consumer of T-332a's `'tennis'` style branch** on the `score-bug` primitive. Wired via `PRESET_ID_BINDINGS['wimbledon-green-purple']` per Pattern C — the `'scoreBug'` arm in `DEFAULT_CLIP_KIND_RESOLVER` stays UNCHANGED at `scoreBugDotsBinding` (T-358); T-333's `premierLeagueFopBinding` + T-334's `foxNflNoChromeBinding` + T-335's `nbcSnfBinding` + T-339a's `espnBottomlineBinding` stay UNCHANGED. First production consumer of `activeServerIndex` + `anchor` props on the tennis branch.
+
 ## Visual tokens
-- Compact bottom-left scorebug
-- Wimbledon green `#006633` + purple `#4B0082`
-- Two player rows, ≈ 350–400 × 80 px @ 1080p — deliberately small to preserve court visibility
-- Player surname, country flag, seed number, set columns (1–5), current game score
-- Active server: small yellow / green dot indicator
-- 2025 update: full previous-set scores shown for the first time in ~20 years
+
+The Wimbledon scoreboard register is canonical and locked: bottom-left compact two-player stack on a Wimbledon green base, white text + uppercase country codes + bracketed seeds + mixed-case surnames + tabular set columns + game score, an active-server yellow dot signaling the serving player.
+
+- **Background / Wimbledon green base** `#006633` — solid green per the official Wimbledon brand register (stub line 24). Passed to the primitive's `background` prop (root `backgroundColor` style on the tennis branch render).
+- **Accent / Wimbledon purple** `#4B0082` — schema-supplied via the `accent` prop for downstream-consumer awareness. **Not visibly rendered by the primitive** — there is no `props.accent` reference anywhere in `renderTennis` (lines 607–676 of `score-bug.tsx`); a future `T-332b`-family carve-out can extend the render to consume `accent` for the active-server highlight, separator line, or seed-bracket color. v1 ships green base + white text + yellow dot only; the purple does NOT appear (see Rules §accent).
+- **Foreground / text** `#FFFFFF` — all text white: surnames, country codes, seeds, set columns, game-score, server-dot row text.
+- **Compact bottom-left position** `position: { x: 60, y: 580 }` — anchored at `(60, 580)` from canvas top-left on a 1280×720 canvas. `x = 60` is ~5% inset from the left edge; `y = 580` puts the ≈ 72 px-tall tennis bug ≈ 68 px above the bottom edge (well clear of common safe-areas). Restraint is the signature; the bottom-left anchor is deliberately register-distinct from T-334 / T-335's bottom-center football bars AND from T-333's PL upper-left rectangular chrome.
+- **Anchor (schema-supplied)** `anchor: 'bottom-left'` — supplied for schema compliance + downstream-consumer awareness. **Not consumed by `renderTennis` for auto-positioning** — there is no `props.anchor` reference in lines 607–676; the bug position is determined entirely by `position.x` / `position.y`. v1 supplies both for forward compat AND positions explicitly (see Rules §anchor).
+- **Two-player stack render** `players: [Djokovic, Alcaraz]` — exactly two players (Zod `length(2)` strict). The primitive's `'tennis'` branch default render is `400 × (32 × 2 + 8) = 72 px` (rowHeight 32 × 2 rows + 8 padding), matching the stub's "350–400 × 80 px" register at the lower bound.
+- **Per-player fields**:
+  - `surname` Mixed-case (`'Djokovic'` / `'Alcaraz'`); `casing: 'as-is'` leaves them untouched.
+  - `countryCode` 3-letter IOC code (`'SRB'` / `'ESP'`); the primitive **hard-uppercases regardless of `casing`** per line 650 (`player.countryCode.toUpperCase()`).
+  - `seed` bracketed integer (`[1]` / `[2]`); rendered when `seed !== undefined` (12 px / opacity 0.7).
+  - `sets` array of 3 set-score strings (Djokovic `['6', '4', '7-6']` vs Alcaraz `['4', '6', '6-7']`) — canonical Wimbledon final mid-match: 2 sets played + 3rd in progress with tiebreak scores. The 2025 Wimbledon update (full previous-set scores shown for the first time in ~20 years) is exercised via the variable-length 3-element `sets` array. Schema accepts 1–5.
+  - `gameScore` current game score string (`'40'` / `'30'`); rendered when present (32 px wide, right-aligned, tabular-nums).
+- **Active-server yellow dot** `activeServerIndex: 0` — Djokovic serving. The primitive renders an `8 × 8 px` round `#ffd700` yellow disc on the player[0] row per lines 635–646. **First production consumer of `activeServerIndex`.** When `activeServerIndex` is undefined, no dot renders; setting it to `1` would move the dot to the Alcaraz row.
+- **Tabular numerals on set + game-score columns** — primitive applies `fontVariantNumeric: 'tabular-nums'` UNCONDITIONALLY on every set column (line 659) and on the game-score column (line 667) — independent of `font.tabularNums`. The mandatory tabular rule (stub line 44) is satisfied at the primitive render level; setting `font.tabularNums: true` would only propagate to the root style and have no visible effect on the columns. v1 omits the flag (see Rules §tabularNums).
+- **Country flag rendering omitted** — stub line 26 mentions "country flag" as a per-player element; the primitive renders only a UPPERCASED 36 px-wide text token (`'SRB'` / `'ESP'`), not a flag image. v1 inherits the divergence — text tokens, not bitmaps. Carving out flag rendering is `T-332b`-family (would require a new optional `countryFlag: string` URL slot or asset registry; primitive-level). NOT a T-337 fix (see Rules §countryFlag).
+
+The compact bottom-left two-player stack IS the message — at frame 60 the eye locks onto the Djokovic row (`[•] SRB [1] Djokovic 6 4 7-6 40` with the yellow server-dot leading) above the Alcaraz row (`ESP [2] Alcaraz 4 6 6-7 30` without dot) on the Wimbledon green base. Restraint is the signature.
 
 ## Typography
-- Surnames: Gotham Medium fallback, Bold, 18–20 pt, Mixed Case
-- Country codes: Regular, 12–14 pt, ALL CAPS
-- Set scores: Bold, 16–18 pt, tabular / monospaced (essential for column alignment)
-- Game score: Bold, 20–22 pt, tabular
+
+- **`preferredFont: Gotham`** (`commercial-byo` per ADR-004 §D3). Hoefler & Co.'s Gotham is the proprietary geometric sans family used across Wimbledon's broadcast graphics; the bespoke spurless construction + tighter spacing is the brand-DNA letter geometry. Tenants licensing Gotham locally slot it in via the FontManager (T-072). Cluster B IS in `TYPE_DESIGN_REQUIRED_CLUSTERS`, so `signOff.typeDesign` MUST be `'pending-cluster-batch'` or `'signed:YYYY-MM-DD'`, NOT `'na'`. T-337 holds at `pending-cluster-batch`; the cluster-B type-design batch review (cluster-composer task) flips this field across all nine Cluster B presets in one downstream PR.
+- **`fallbackFont: Montserrat`** weight `500` (SIL Open Font License 1.1 via Google Fonts; originally Julieta Ulanovsky). Montserrat 500 (Medium) approximates Gotham Medium's geometric sans posture — closer in geometric construction than the heavier Public Sans 600 chosen for T-335's NBC SNF register. The Medium weight matches the stub's "Surnames: Gotham Medium fallback, Bold, 18–20 pt" register (line 31) where Medium is the weight intent. Substituted automatically by the FontManager on every rendering medium where the BYO Gotham face is not cleared.
+- **Per-row chip text** the primitive applies `fontFamily` from the bound `font.family` prop on the row container (line 614). Surnames render at 16 px / weight 700; country codes at 14 px / opacity 0.85; seeds at 12 px / opacity 0.7; set columns at 16 px / weight 700 / tabular-nums; game-score at 18 px / weight 700 / tabular-nums.
+- **Tabular numerals omitted from `font` prop; primitive applies unconditionally on columns** — T-337 omits the `font.tabularNums: true` flag (mirrors T-335 D-T335-13 / T-334 D-T334-13). The `'tennis'` branch hard-codes `fontVariantNumeric: 'tabular-nums'` on every set column AND on the game-score column independent of `font.tabularNums`. The mandatory tabular rule (stub line 44 — "Monospaced / tabular numerals are mandatory for column alignment") is satisfied at the primitive render level unconditionally. Cosmetic divergence: Reviewer may prefer `font.tabularNums: true` for cluster-internal consistency with T-333; either choice resolves to a successful golden.
+- **Casing** snapshot strings: surnames (`'Djokovic'` / `'Alcaraz'`) are Mixed-case; `casing: 'as-is'` passes them through unchanged. Country codes (`'SRB'` / `'ESP'`) are already uppercase; the primitive force-uppercases regardless of `casing` per line 650, so the ALL-CAPS rule (stub line 32) is satisfied unconditionally.
+- **Distinct numeral design** Montserrat 500 numerals are the v1 render typeface for set columns + game-score; Gotham's bespoke numeral geometry (Hoefler & Co. Gotham's specific spurless construction, tighter spacing) is NOT preserved. Cosmetic divergence — same posture as T-333 D-T333-11-b / T-334 D-T334-11-c / T-335 D-T335-11-d (see Rules §gotham).
+- **No italic, no underline, no strikethrough.** Wimbledon broadcast graphics never use them.
+
+The frontmatter schema accepts a single `preferredFont` and a single `fallbackFont` entry. The `commercial-byo` license string on `preferredFont: Gotham` is accepted shape; the OFL `Montserrat` 500 fallback satisfies the bespoke-font invariant 6 fallback half.
 
 ## Animation
-- Entry: fade + slide up from below, 500 ms ease-out
-- Score change: brief pulse (150 ms)
-- Server-dot: smooth transition on serve change, 300 ms
-- Set complete: brief flash + addition of new column, 600 ms
+
+- **Steady-state register only in v1.** The `'tennis'` branch of T-332a renders a **static layout** — there is no entrance animation, no within-window transition, no score-pulse, no server-dot-transition, no set-complete flash. The reference frame for the parity golden is steady-state mid-match at frame 60.
+- **500 ms fade + slide-up entrance deferred** (stub line 37 — "fade + slide up from below, 500 ms ease-out"). The `'tennis'` branch is steady-state-only; entrance choreography is a primitive-level concern. Candidate `T-332b`-family carve-out IF Reviewer scrutiny demands.
+- **150 ms score-change pulse deferred** (stub line 38 — "brief pulse, 150 ms"). The `'tennis'` branch renders a static layout — no frame-driven score-change pulse. Same posture as T-333 / T-334 / T-335 v1 scope. Candidate `T-332b`-family carve-out.
+- **300 ms server-dot smooth transition deferred** (stub line 39 — "smooth transition on serve change, 300 ms"). The `'tennis'` branch's `activeServerIndex` prop renders the dot **statically** on the indexed row — no frame-driven dot-position interpolation between players when `activeServerIndex` changes. v1 ships `activeServerIndex: 0` (static dot on Djokovic row). Candidate `T-337a` carve-out IF Reviewer demands the smooth transition register.
+- **600 ms set-complete flash + new-column-add deferred** (stub line 40 — "brief flash + addition of new column, 600 ms"). The `'tennis'` branch renders a **static layout** — no frame-driven flash, no animated column add. v1 shows 3 set columns (canonical Wimbledon final mid-match: 2 sets played + 3rd in progress) as static rendered columns. Candidate `T-337b` carve-out IF Reviewer demands the flash.
+- **Steady-state mid-match at frame 60.** The tennis branch is a static layout so any post-mount frame produces an identical render. Cluster-norm consistency (T-333 / T-334 / T-335 / T-323 / T-325 / T-326 / T-327 / T-328 / T-329 / T-330 all use frame 60) AND the operator-default `--frame=60` are the deciding factors.
+- **No state-transition animation in v1.** State transitions (entrance, score-pulse, server-dot transition, set-complete flash) belong to the live-mount surface where the data source streams updates AND to the runtime composition where the host orchestrates broadcast pacing.
 
 ## Rules
-- Restraint is the signature. Do not add decorative elements. In a sport obsessed with tradition, the bug must feel inevitable, not designed.
-- Monospaced / tabular numerals are mandatory for column alignment — escalate if fallback fails.
-- Active-server indicator is the directional signal; keep it small but unambiguous.
-- Do not use this preset for non-Wimbledon tennis — it's specifically the Wimbledon register.
+
+- **Bound primitive**: `score-bug` from `@stageflip/runtimes-frame-runtime-bridge` (`packages/runtimes/frame-runtime-bridge/src/clips/score-bug.tsx`, exported as `ScoreBug`; primitive `kind: 'score-bug'` kebab-case). T-337 wires the binding via `PRESET_ID_BINDINGS['wimbledon-green-purple']` (Pattern C — fifth-preset-for-clipKind via the override path, NOT clipKind-default). The `'scoreBug'` arm in `DEFAULT_CLIP_KIND_RESOLVER` stays UNCHANGED at `scoreBugDotsBinding` (T-358); T-333 / T-334 / T-335 / T-339a's prior overrides stay UNCHANGED. Composing tools should mount `ScoreBug` with the snapshot per `WIMBLEDON_PROPS` and the resolver's `buildProps` defaults.
+- **`style: 'tennis'` is the load-bearing UX render** for this preset. T-332a's `score-bug` primitive ships four style branches (`'football'` / `'racing'` / `'cricket'` / `'tennis'`) via Zod discriminated union (line 175); T-337 binds the `'tennis'` branch. **First production consumer.** T-333 / T-334 / T-335 bind the `'football'` branch; sister Cluster B presets (`f1-timing-tower`, `cricket-scorebug`) bind the `'racing'` / `'cricket'` branches in their own PRs.
+- **Restraint is the signature** (stub line 43 — "Do not add decorative elements. In a sport obsessed with tradition, the bug must feel inevitable, not designed"). The compact bottom-left two-player stack IS the load-bearing UX render; flipping to a larger or center-anchored layout defeats the brand signal AND the heritage citation. Do NOT override `position.width` / `position.height`.
+- **Monospaced / tabular numerals are mandatory for column alignment** (stub line 44). The primitive applies `fontVariantNumeric: 'tabular-nums'` UNCONDITIONALLY on every set column AND on the game-score column — the rule is satisfied at the primitive render level regardless of `font.tabularNums`. **§tabularNums** — T-337 omits the `font.tabularNums: true` flag; cluster-internal-consistency-with-T-333 substitution IF a Reviewer prefers explicit; either choice resolves to a successful golden.
+- **Active-server indicator is the directional signal** (stub line 45 — "keep it small but unambiguous"). The `8 × 8 px` yellow `#ffd700` disc IS the rendered slot; the small but unambiguous register is preserved by the primitive's hard-coded dot dimensions (lines 635–646).
+- **Do not use this preset for non-Wimbledon tennis** (stub line 46). The bottom-left compact two-player stack + Wimbledon green/purple palette + 3 set columns + active-server dot is the **Wimbledon-specific** register; tenants composing other-tournament tennis coverage should bind a different preset OR wait for a sister tennis preset (Australian Open, US Open, French Open).
+- **§accent — Wimbledon purple `#4B0082` schema-accepted but NOT visibly rendered** (D-T337-11-e). There is no `props.accent` reference anywhere in `renderTennis` (lines 607–676). v1 supplies `accent: '#4B0082'` for **schema compliance + downstream-consumer awareness** (a future `T-332b`-family carve-out can extend `renderTennis` to consume `accent` for, e.g., active-server highlight, separator line, or seed-bracket color). The visible render shows green base + white text + yellow dot only — purple does NOT appear. Cosmetic divergence; NOT a T-337 fix.
+- **§anchor — `anchor` schema-accepted but NOT consumed for auto-positioning** (D-T337-11-f). There is no `props.anchor` reference in lines 607–676; the bug position is determined entirely by `position.x` / `position.y`. v1 supplies `anchor: 'bottom-left'` for **schema compliance + downstream-consumer awareness** (a future `T-332b`-family carve-out can read this prop to auto-place the bug in the canvas corner) AND positions explicitly via `position: { x: 60, y: 580 }`. NOT a T-337 fix.
+- **§countryFlag — country flag rendering omitted; primitive renders only `countryCode` text** (D-T337-11-d). Stub line 26 mentions "country flag" as a per-player element; the primitive renders only a UPPERCASED 36 px-wide text token (`'SRB'` / `'ESP'`), not a flag image. v1 inherits — text tokens, not bitmaps. Carving out flag rendering is `T-332b`-family (would require a new optional `countryFlag: string` URL slot or asset registry; primitive-level). NOT a T-337 fix.
+- **§gotham — Gotham preserved by the proprietary path only** (D-T337-11-c). The OFL fallback Montserrat 500 does NOT preserve the bespoke Gotham-DNA letter shapes (Hoefler & Co. Gotham's specific spurless construction, tighter spacing). Cosmetic divergence; the `commercial-byo` path is the user's escape hatch when they license Gotham locally. Same posture as T-333 D-T333-11-b / T-334 D-T334-11-c / T-335 D-T335-11-d.
+- **§score-pulse — score-change pulse deferred** (D-T337-11-a). Stub line 38 calls for "brief pulse, 150 ms" on score change. The `'tennis'` branch is a static layout; no frame-driven pulse. Carving out a score-pulse axis is `T-332b`-family. NOT a T-337 fix.
+- **§server-dot-transition — server-dot smooth transition deferred** (D-T337-11-b). Stub line 39 calls for "smooth transition on serve change, 300 ms." The `'tennis'` branch renders the dot statically on the indexed row; no frame-driven dot-position interpolation. v1 ships `activeServerIndex: 0` (static dot on Djokovic row). Carving out a server-dot transition is `T-337a`. NOT a T-337 fix.
+- **2025 update preserved via 3-element `sets` array** (stub line 28 — "full previous-set scores shown for the first time in ~20 years"). T-337 exercises this via `sets: ['6', '4', '7-6']` / `['4', '6', '6-7']` — the 2 completed sets PLUS the in-progress set are all shown, validating the post-2025 register against the primitive's variable-length `sets` column rendering (`player.sets.map` on line 655).
+- **Reference frame for parity is steady-state at frame 60** per ADR-004 §D5 — single canonical variant. The tennis branch is a static layout so any post-mount frame produces an identical render.
 
 ## Acceptance (parity)
-- Reference frames: 0 (pre-entry), 15 (mid-fade), 30 (settled), 60 (post-set-update)
-- PSNR ≥ 42 dB (higher bar for minimal-motion preset), SSIM ≥ 0.98
+
+One reference-frame fixture at `frame: 60` (steady-state mid-match per ADR-004 §D5):
+
+- `golden-frame-60.png` — the canonical Wimbledon green-purple scoreboard rendered as a compact bottom-left two-player stack on a `#006633` Wimbledon green base; bug ≈ `400 × 72 px` anchored at `(60, 580)` on a 1280×720 canvas; **player[0] / Djokovic row** displays `[•] SRB [1] Djokovic 6 4 7-6 40` with the `8 × 8 px` `#ffd700` yellow server-dot leading + uppercase country code + bracketed seed + Mixed-case surname + 3 set columns + game score; **player[1] / Alcaraz row** displays `ESP [2] Alcaraz 4 6 6-7 30` (no server-dot; same column layout); white `#FFFFFF` text on the green base; tabular-numeric set + game-score columns; Montserrat 500 numerals. Static layout (no animation; the tennis branch renders steady-state — no entrance / score-pulse / server-dot transition / set-flash). Wimbledon purple `#4B0082` accent is NOT visibly rendered (see Rules §accent).
+
+Thresholds: **PSNR ≥ 42 dB**, **SSIM ≥ 0.98** (matches the cross-cluster norm used by T-333 / T-334 / T-335 / T-339a / T-323 / T-325 / T-326 / T-327 / T-328 / T-329 / T-330 / T-355 / T-358 / T-359 / T-360 / T-356 / T-357 / T-362 / T-363 / T-364 / T-365 / T-366 / T-367 / T-350). Hand-pinned via the F-4 generator-flag route `--psnr=42 --ssim=0.98 --mark-signed` (NO manual `thresholds.json` edit per D-T337-7). The compact two-player stack with green base + white text + tabular-numeric set columns + tiny yellow server-dot is aliasing-comparable to T-335's center-circle register; the 8 × 8 px server dot adds a small curved-vector seam, the seed-bracket text adds glyph seams, but on a 400 × 72 px bug both are small fractions of the render area.
+
+**Sign-off (T-337 D-T337-8, in-PR — Pattern D):** the canonical steady-state golden is committed at `parity-fixtures/sports/wimbledon-green-purple/` with the single-variant manifest shape. Frontmatter `signOff.parityFixture` is `signed:<UTC date>` after running `scripts/generate-preset-parity-fixture-prod.ts --preset=wimbledon-green-purple --frame=60 --psnr=42 --ssim=0.98 --mark-signed`. The golden was rendered locally via the puppeteer/CDP-bound prod renderer; the `scoreBug` clipKind binds to `score-bug` for the `wimbledon-green-purple` preset id via `PRESET_ID_BINDINGS['wimbledon-green-purple']` per the v1 resolver. Re-render + re-sign with `--force` is the operator's path if the canonical snapshot changes or the FontManager's preload list updates the rendered Montserrat 500 weights. **`signOff.typeDesign` STAYS `pending-cluster-batch`** — the cluster-B type-design batch review (cluster-composer task) flips this field across all nine Cluster B presets in one downstream PR; T-337's merge brings Cluster B to **5/9 substantive + signed** (NOT YET ELIGIBLE for batch merge per D-T337-10).
 
 ## References
-- `docs/compass_artifact.md` § Wimbledon
-- ADR-004
+
+- `docs/compass_artifact.md` § Wimbledon — canonical visual source (note: on-disk path mismatch flagged for resolution; integrity invariant 7 SKIPped globally per cluster norm).
+- `skills/stageflip/presets/sports/nbc-snf-possession-illuminated.md` — sister Cluster B preset (T-335; third Cluster B preset; bound via `PRESET_ID_BINDINGS` override on `scoreBug` clipKind; third `'football'` consumer); T-337 mirrors its resolver-binding shape verbatim, swapping the preset id + binding name + snapshot constant + style discriminant (`'football'` → `'tennis'`).
+- `skills/stageflip/presets/sports/{premier-league-field-of-play,fox-nfl-no-chrome}.md` — sister Cluster B `'football'` consumers (T-333 / T-334; first + second Cluster B presets; both bound via `PRESET_ID_BINDINGS` overrides on `scoreBug` clipKind). T-333 / T-334 / T-335 / T-337 together establish the Cluster B `score-bug` template: preset id → `PRESET_ID_BINDINGS` override → snapshot constant + binding + parity golden + in-PR sign-off.
+- `skills/stageflip/presets/sports/espn-bottomline-flipper.md` — sister Cluster B preset (T-339a; fourth Cluster B preset; binds the `news-ticker-bar` primitive via `PRESET_ID_BINDINGS` override on `newsTicker` clipKind — NOT `score-bug`). Sister-clipKind reference for the cluster's overall register.
+- `skills/stageflip/presets/sports/SKILL.md` — Cluster B SKILL (locked per D-T337; owned by the cluster-B composer task).
+- `skills/stageflip/presets/sports/{f1-timing-tower,cricket-scorebug,masters-red-under-par,uefa-starball-refraction}.md` — sister Cluster B stubs; each has its own preset PR. T-333 / T-334 / T-335 bound the `'football'` style branch on `score-bug`; T-337 binds the `'tennis'` style branch; sister presets bind the `'racing'` / `'cricket'` branches OR additional registers in their own PRs.
+- `packages/runtimes/frame-runtime-bridge/src/clips/score-bug.tsx` — the bound primitive (`ScoreBug`); shipped by T-332a as a four-discriminant Zod union (`'football'` / `'racing'` / `'cricket'` / `'tennis'`). **First production consumer of the `'tennis'` style branch**: T-337 wimbledon-green-purple. **First production consumer of `activeServerIndex` + `anchor` props**: T-337.
+- `packages/parity-cli/src/generate-fixture.ts` — v1 resolver mapping `scoreBug` → `outcome-row` clipKind-default (T-358 scoreBugDotsBinding) + per-preset `PRESET_ID_BINDINGS` overrides (T-333 / T-334 / T-335 football consumers + T-337 wimbledon-green-purple → `wimbledonGreenPurpleBinding`, tennis-style consumer) + exported `WIMBLEDON_PROPS` constant (D-T337-4).
+- "Restraint is the signature. Do not add decorative elements. In a sport obsessed with tradition, the bug must feel inevitable, not designed." (stub line 43) — heritage citation; preserve register faithfully.
+- 2025 Wimbledon update — full previous-set scores shown for the first time in ~20 years; preserved via the 3-element `sets` array per Rules §2025-update.
+- ADR-004 (preset system contract — frontmatter, loader, validator, parity sign-off, integrity invariants).
+- ADR-005 (frontier clip catalogue — scoreBug / score-bug posture).
