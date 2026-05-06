@@ -597,11 +597,24 @@ export function Caption(props: CaptionProps): ReactElement {
   const pillRadius = backdropRadius ?? wordHeight / 2 + backdropPadding.y;
   const rectRadius = backdropRadius ?? 8;
 
+  // T-316b — Multi-line aware rect backdrop sizing. When the caption block's
+  // approximate `totalWidth` exceeds the container `position.width`, content
+  // flex-wraps to 2+ lines; the rect must extend to cover the wrapped lines or
+  // the active word renders below the rect (regression caught during product-
+  // owner ratification of `netflix-invisible` 2026-05-06; see
+  // docs/handover-phase13-late.md §7).
+  const containerWidth = props.position.width;
+  const lineCount = Math.max(1, Math.ceil(totalWidth / containerWidth));
+  const rectWidth =
+    lineCount > 1 ? containerWidth + backdropPadding.x * 2 : totalWidth + backdropPadding.x * 2;
+  const rectHeight = lineCount * wordHeight + backdropPadding.y * 2;
+
   return (
     <div data-testid="caption-clip" style={containerStyle}>
       {/* Backdrop layer (rect only — pill backdrops are inlined per
           word via per-word <svg> overlays). The rect backdrop sits
-          behind the caption's bounding box. */}
+          behind the caption's bounding box. T-316b: rect spans the
+          actual rendered content bounding box, including wrapped lines. */}
       {backdrop === 'rect' ? (
         <svg
           aria-hidden
@@ -609,8 +622,8 @@ export function Caption(props: CaptionProps): ReactElement {
             position: 'absolute',
             left: props.position.x - backdropPadding.x,
             top: props.position.y - backdropPadding.y,
-            width: totalWidth + backdropPadding.x * 2,
-            height: wordHeight + backdropPadding.y * 2,
+            width: rectWidth,
+            height: rectHeight,
             pointerEvents: 'none',
           }}
         >

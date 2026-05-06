@@ -211,6 +211,56 @@ describe('Caption component (T-316)', () => {
     expect(screen.queryByTestId('caption-backdrop-0')).toBeNull();
   });
 
+  // T-316b — multi-line aware rect backdrop. Discovered during product-owner
+  // ratification of netflix-invisible 2026-05-06: with 5 words at 56px in a
+  // 1024px container, content wrapped to 2 lines but rect was sized for 1.
+  // Active word rendered below the rect.
+  it("backdrop 'rect' SVG height grows with line count when content wraps", () => {
+    // Long phrase that flex-wraps to >1 line at default font.size in the
+    // narrow container. `approxWordWidth = text.length * fontSize * 0.55` —
+    // with fontSize=56 and a 1024 container, totalWidth will exceed the
+    // container, forcing line wrap.
+    renderAt(30, {
+      words: [
+        { text: 'Captions', startMs: 0, endMs: 400 },
+        { text: 'enable', startMs: 400, endMs: 800 },
+        { text: 'accessibility', startMs: 800, endMs: 1200 },
+        { text: 'for', startMs: 1200, endMs: 1600 },
+        { text: 'everyone', startMs: 1600, endMs: 2000 },
+      ],
+      style: 'netflix',
+      position: { x: 128, y: 540, width: 1024, alignment: 'center' as const },
+      backdrop: 'rect',
+      entrance: 'none',
+    });
+    const backdrop = screen.getByTestId('caption-backdrop');
+    const svg = backdrop.parentElement as SVGSVGElement | null;
+    expect(svg).not.toBeNull();
+    if (!svg) return;
+    // Single-line height would be ~font.size * 1.2 + 2 * padding ≈ 67 + small
+    // padding ≈ 75. Two lines should be ≥ 130. Assert the SVG outer height
+    // exceeds 100 (proxy for >1 line).
+    const heightStyle = svg.style.height;
+    const heightPx = Number.parseFloat(heightStyle);
+    expect(heightPx).toBeGreaterThan(100);
+  });
+
+  it("backdrop 'rect' SVG height stays single-line for short content", () => {
+    renderAt(30, {
+      words: [{ text: 'short', startMs: 0, endMs: 500 }],
+      style: 'netflix',
+      position: { x: 128, y: 540, width: 1024, alignment: 'center' as const },
+      backdrop: 'rect',
+      entrance: 'none',
+    });
+    const backdrop = screen.getByTestId('caption-backdrop');
+    const svg = backdrop.parentElement as SVGSVGElement | null;
+    if (!svg) return;
+    const heightPx = Number.parseFloat(svg.style.height);
+    // Single-line height: font.size * 1.2 + 2 * padding ≈ 67 + ~16 = ~83.
+    expect(heightPx).toBeLessThan(100);
+  });
+
   it("backdrop 'none' renders no backdrop element", () => {
     renderAt(30, {
       words: SIMPLE_WORDS,
