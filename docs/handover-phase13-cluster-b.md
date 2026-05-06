@@ -69,14 +69,14 @@ pnpm tsx scripts/check-cluster-eligibility.ts --cluster=captions   # → ELIGIBL
 | Cluster | Domain | Total | Signed | Eligible? | Ratified? |
 |---|---|---|---|---|---|
 | **A** | broadcast / news | **8** | **8** | ✅ ELIGIBLE | ✅ RATIFIED 2026-05-06 |
-| **B** | **sports** | **9** | **9** | **✅ ELIGIBLE (this session)** | NOT yet ratified — pending PO visual inspection |
+| **B** | **sports** | **9** | **9** | ✅ ELIGIBLE | ✅ RATIFIED 2026-05-07 |
 | C | weather | 4 | 0 | no | — |
 | D | title sequences | 6 | 1 | no | — |
 | **E** | data | **6** | **6** | ✅ ELIGIBLE | ✅ RATIFIED 2026-05-06 |
-| **F** | captions | **6** | **6** | ✅ ELIGIBLE (this session) | partial — netflix-invisible re-signed via T-316b 2026-05-06 |
+| **F** | captions | **6** | **6** | ✅ ELIGIBLE | ✅ RATIFIED 2026-05-06 (netflix-invisible re-signed via T-316b) |
 | G | CTA / social | 5 | 0 | no | — |
 | H | AR overlays | 5 | 0 | no | — |
-| **TOTAL** | — | **50** | **30** | **4 of 8** | 2 fully + 2 partial |
+| **TOTAL** | — | **50** | **30** | **4 of 8** | **4 fully ratified** |
 
 ### Bridge clip count: 52
 
@@ -261,8 +261,25 @@ A pragmatic ordering: **F-16 CI fix → PO ratification of Cluster B → T-340/T
 - **Cluster F**: netflix-invisible re-signed `signed:2026-05-06` after T-316b primitive fix → **6/6 RATIFIED**
 - **Cluster B**: 9/9 ELIGIBLE post-T-339; **NOT YET RATIFIED** (awaiting PO visual inspection of 9 goldens)
 
+### Cluster B (sports) — RATIFIED 2026-05-07
+
+All 9 preset goldens visually inspected against compass. PASS:
+- `premier-league-field-of-play` (1st `'football'` style consumer; ARS 2 vs CHE 1; PL purple chrome `67:42 2H`; Space Grotesk 600)
+- `fox-nfl-no-chrome` (chromeless gradient; KC 24 vs PHI 17; `Q3 04:32` + `3rd & 7` down/distance; Inter Display 900)
+- `nbc-snf-possession-illuminated` (KC 21 vs BUF 14; NBC center circle; `Q2 08:14` + `<< 1st & 10` directional possession chevrons; Public Sans 600)
+- `espn-bottomline-flipper` (1st T-356b `mode: 'flip'` consumer; two-row stacked `NYK 102 ▲ +5 / BOS 97 ▬ F`; ESPN red+yellow on dark charcoal)
+- `wimbledon-green-purple` (1st `'tennis'` style consumer; `SRB [1] Djokovic 6 4 7-6 40` / `ESP [2] Alcaraz 4 6 6-7 30`; yellow server-dot; Wimbledon green; Montserrat 500)
+- `masters-red-under-par` (1st `standings` PRESET_ID override; 5-row leaderboard Scheffler -12 / McIlroy -10 / Schauffele -8 / Spieth 0 / Bryson +2; Augusta-green numerals on black)
+- `f1-timing-tower` (1st `'racing'` style consumer; full 20-driver grid VER → ZHO; team-color slivers + sector RGB squares for top-10 + tire compound badges; Barlow Condensed 600)
+- `cricket-scorebug` (1st `'cricket'` style consumer; `IND 247/4 (42.3 ov) v AUS`; striker `* Kohli 87 (92)` / `Rahul 34 (41)`; bowler `Cummins 2-58`; partnership `P/S 64 (78)`; IBM Plex Sans 600)
+- `uefa-starball-refraction` (Cluster B closer; 2nd `fullScreen` PRESET_ID override; `CHAMPIONS LEAGUE — MATCHDAY 6 STANDINGS` 6-tile placeholder grid at UEFA navy + cyan + magenta; Fraunces 700; 8 cosmetic divergences deferred to F-15 / T-339a/b/c carve-outs)
+
+Ratification authority: product owner (mario.tiedemann@showheroes.com).
+
+Cluster B is **9/9 ELIGIBLE + RATIFIED**.
+
 ### Pending PO inspection
-- Cluster B (9 goldens to inspect)
+_(none — all 4 batch-eligible clusters now fully ratified)_
 
 ---
 
