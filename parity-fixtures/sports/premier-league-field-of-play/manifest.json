@@ -1,0 +1,30 @@
+{
+  "name": "premier-league-field-of-play",
+  "cluster": "sports",
+  "kind": "scoreBug",
+  "description": "Parity fixture for preset 'premier-league-field-of-play' (cluster sports, kind scoreBug)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Premier Sans",
+      "license": "proprietary-byo"
+    },
+    "fallback": {
+      "family": "Space Grotesk",
+      "weight": 600,
+      "license": "ofl"
+    }
+  }
+}

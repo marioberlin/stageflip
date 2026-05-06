@@ -1368,6 +1368,76 @@ const squidGameGeometricBinding: ClipKindBinding = {
 };
 
 /**
+ * `premier-league-field-of-play` (T-333) — first Cluster B preset; second
+ * `scoreBug` clipKind consumer; first production consumer of T-332a's
+ * `score-bug` primitive AND its `'football'` style branch. Wired via
+ * `PRESET_ID_BINDINGS['premier-league-field-of-play']` (Pattern C — second-
+ * preset-for-clipKind via the override path, NOT clipKind-default; the
+ * `'scoreBug'` arm in `DEFAULT_CLIP_KIND_RESOLVER` stays UNCHANGED at
+ * `scoreBugDotsBinding` from T-358, which binds the `outcome-row` primitive
+ * with the cricket canonical six-ball over).
+ *
+ * Snapshot captures the Premier League 2017+ broadcast canon: PL purple
+ * `#34003A` chrome + Arsenal red `#EF0107` home box + Chelsea blue `#034694`
+ * away box + 3-letter team codes (`'ARS'` / `'CHE'`) + tabular `'2'` / `'1'`
+ * scores + `'67:42'` mid-second-half clock + `'2H'` period token. Position
+ * anchored at upper-left `(60, 60)` per stub line 23. Goal celebrations,
+ * per-team variants (Arsenal cannon / Brighton seagulls / United devils),
+ * 6 px outer-edge kit-color stripes (vs the primitive's full-tile fill),
+ * "Field of Play" companion motion, and 2 s cubic-bezier entrance are all
+ * deferred to `T-332b`-family follow-ups OR external composition (D-T333-3,
+ * D-T333-11). v1 ships the steady-state mid-hold scoreclock layer only.
+ */
+export const PREMIER_LEAGUE_FOP_PROPS: {
+  readonly style: 'football';
+  readonly position: { readonly x: number; readonly y: number };
+  readonly background: string;
+  readonly foreground: string;
+  readonly home: { readonly code: string; readonly color: string; readonly score: string };
+  readonly away: { readonly code: string; readonly color: string; readonly score: string };
+  readonly clock: string;
+  readonly period: string;
+  readonly font: {
+    readonly family: string;
+    readonly weight: number;
+    readonly tabularNums: boolean;
+  };
+  readonly casing: 'as-is';
+} = {
+  style: 'football',
+  position: { x: 60, y: 60 }, // upper-left anchor per D-T333-1 / stub line 23
+  background: '#34003A', // PL purple chrome (D-T333-1 / stub line 24)
+  foreground: '#FFFFFF', // white text (D-T333-1 / stub line 26)
+  home: { code: 'ARS', color: '#EF0107', score: '2' }, // Arsenal — canonical kit red
+  away: { code: 'CHE', color: '#034694', score: '1' }, // Chelsea — canonical kit blue
+  clock: '67:42', // mid-second-half (D-T333-1)
+  period: '2H', // second-half token (D-T333-1)
+  // OFL fallback for proprietary-byo `Premier Sans`; weight 600 matches the stub's
+  // SemiBold tabular register; tabularNums for column-edge alignment of scores.
+  font: { family: 'Space Grotesk', weight: 600, tabularNums: true },
+  // Snapshot strings already in target casing; `'as-is'` skips `applyCasing`
+  // transforms (D-T333-1 / D-T333-4). Numerics short-circuit `applyCasing`
+  // regardless per primitive lines 233–235.
+  casing: 'as-is',
+};
+
+const premierLeagueFopBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'score-bug', // kebab-case primitive `kind` (T-332a line 686)
+  buildProps() {
+    // Deep-clone the nested object literals so the binding's caller can
+    // mutate the returned props without aliasing the exported constant.
+    return {
+      ...PREMIER_LEAGUE_FOP_PROPS,
+      position: { ...PREMIER_LEAGUE_FOP_PROPS.position },
+      home: { ...PREMIER_LEAGUE_FOP_PROPS.home },
+      away: { ...PREMIER_LEAGUE_FOP_PROPS.away },
+      font: { ...PREMIER_LEAGUE_FOP_PROPS.font },
+    };
+  },
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -1386,6 +1456,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'netflix-doc-lt': netflixDocLtBinding,
   'fox-news-alert': foxNewsAlertBinding, // T-327
   'msnbc-big-board': msnbcBigBoardBinding, // T-328
+  'premier-league-field-of-play': premierLeagueFopBinding, // T-333
 };
 
 /**
