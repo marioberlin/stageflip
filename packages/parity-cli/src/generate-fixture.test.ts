@@ -36,6 +36,7 @@ import {
   PREMIER_LEAGUE_FOP_PROPS,
   PRESET_ID_BINDINGS,
   type PresetForRender,
+  SOCIAL_HANDLE_LOWER_THIRD_PROPS,
   SQUID_GAME_GEOMETRIC_SHOTS,
   TIKTOK_CANONICAL_WORDS,
   UEFA_STARBALL_PALETTE,
@@ -2391,7 +2392,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands (T-333 added the 12th; T-338 the 17th; T-332 the 18th).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(21);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(22);
   });
 
   it('binding deep-clones nested object literals so callers can mutate freely (T-333)', () => {
@@ -2540,7 +2541,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(21);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(22);
   });
 
   it('fox-nfl-no-chrome binding deep-clones nested object literals so callers can mutate freely (T-334)', () => {
@@ -2681,7 +2682,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(21);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(22);
   });
 
   it('nbc-snf-possession-illuminated binding deep-clones nested object literals so callers can mutate freely (T-335)', () => {
@@ -2825,7 +2826,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.clipName).toBe('news-ticker-bar');
     expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(21);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(22);
   });
 
   it('espn-bottomline-flipper binding deep-clones the entries array so callers can mutate freely (T-339a)', () => {
@@ -2998,7 +2999,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(21);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(22);
   });
 
   it('wimbledon-green-purple binding deep-clones nested objects + players tuple + sets arrays (T-337)', () => {
@@ -3163,7 +3164,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['masters-red-under-par']?.clipName).toBe('standings-table');
     expect(PRESET_ID_BINDINGS['masters-red-under-par']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(21);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(22);
   });
 
   it('masters-red-under-par binding deep-clones rows + columns + values arrays (T-338)', () => {
@@ -3323,7 +3324,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['f1-timing-tower']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['f1-timing-tower']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(21);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(22);
   });
 
   it('f1-timing-tower binding deep-clones nested objects + rows + sectorColors arrays (T-332)', () => {
@@ -3460,7 +3461,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['cricket-scorebug']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['cricket-scorebug']?.runtimeId).toBe('frame-runtime');
     // Nineteen overrides total after T-336 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(21);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(22);
   });
 
   it('cricket-scorebug binding deep-clones nested objects + batsmen array (T-336 AC #9)', () => {
@@ -3629,7 +3630,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['uefa-starball-refraction']?.clipName).toBe('magic-wall-panel');
     expect(PRESET_ID_BINDINGS['uefa-starball-refraction']?.runtimeId).toBe('frame-runtime');
     // Twenty overrides total after T-339 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(21);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(22);
   });
 
   it('uefa-starball-refraction binding deep-clones regions array per call (T-339 AC #11)', () => {
@@ -3724,7 +3725,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['youtube-subscribe-bounce']?.clipName).toBe('subscribe-button');
     expect(PRESET_ID_BINDINGS['youtube-subscribe-bounce']?.runtimeId).toBe('frame-runtime');
     // Twenty-one overrides total after T-369 lands (20 prior + youtube-subscribe-bounce).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(21);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(22);
   });
 
   it('youtube-subscribe-bounce binding deep-clones the position object so callers can mutate freely (T-369 AC #13)', () => {
@@ -3797,6 +3798,112 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     // Per T-360 D-T360-2: PRESET_ID_BINDINGS hit overrides clipKind mismatch.
     expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'youtube-subscribe-bounce')?.clipName).toBe(
       'subscribe-button',
+    );
+  });
+
+  // T-373 — second Cluster G preset (`social-handle-lower-third`), wired via
+  // the `PRESET_ID_BINDINGS` override path (Pattern C). FIFTH `lowerThird`-
+  // keyed override (after T-325 / T-326 / T-330 / T-329) and SIXTH
+  // `lowerThird` clipKind consumer overall (T-323 holds the clipKind-default
+  // arm). FIFTH production consumer of T-183z's `noFlag` / `subtitleColor` /
+  // `font` props. All 21 prior `PRESET_ID_BINDINGS` entries UNCHANGED.
+  it('routes social-handle-lower-third through PRESET_ID_BINDINGS override (T-373 AC #14)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'social-handle-lower-third');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('lower-third'); // kebab-case primitive kind
+    const props = binding?.buildProps(undefined) as typeof SOCIAL_HANDLE_LOWER_THIRD_PROPS;
+    expect(props.name).toBe('@yourbrand');
+    expect(props.title).toBe('Follow us everywhere');
+    expect(props.accent).toBe('#FFFFFF');
+    expect(props.background).toBe('#000000');
+    expect(props.textColor).toBe('#FFFFFF');
+    expect(props.insetLeftPx).toBe(96);
+    expect(props.insetBottomPx).toBe(96);
+    expect(props.noFlag).toBe(true);
+    expect(props.subtitleColor).toBe('#FFFFFF');
+    expect(props.font).toEqual({ family: 'Inter', weight: 700 });
+  });
+
+  it('exports SOCIAL_HANDLE_LOWER_THIRD_PROPS with ten canonical fields (T-373 AC #15)', () => {
+    expect(SOCIAL_HANDLE_LOWER_THIRD_PROPS).toEqual({
+      name: '@yourbrand',
+      title: 'Follow us everywhere',
+      accent: '#FFFFFF',
+      background: '#000000',
+      textColor: '#FFFFFF',
+      insetLeftPx: 96,
+      insetBottomPx: 96,
+      noFlag: true,
+      subtitleColor: '#FFFFFF',
+      font: { family: 'Inter', weight: 700 },
+    });
+    expect(Object.keys(SOCIAL_HANDLE_LOWER_THIRD_PROPS)).toHaveLength(10);
+  });
+
+  it('PRESET_ID_BINDINGS contains social-handle-lower-third override; length 22 (T-373 AC #16)', () => {
+    expect(PRESET_ID_BINDINGS['social-handle-lower-third']).toBeDefined();
+    expect(PRESET_ID_BINDINGS['social-handle-lower-third']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['social-handle-lower-third']?.runtimeId).toBe('frame-runtime');
+    // Twenty-two overrides total after T-373 lands (21 prior + social-handle-lower-third).
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(22);
+  });
+
+  it('lowerThird clipKind-default arm STILL returns cnnClassicBinding after T-373 lands (T-373 AC #17)', () => {
+    // No presetId → clipKind-default arm.
+    expect(DEFAULT_CLIP_KIND_RESOLVER('lowerThird')?.clipName).toBe('lower-third');
+    const fallback = DEFAULT_CLIP_KIND_RESOLVER('lowerThird')?.buildProps(undefined) as {
+      name: string;
+    };
+    expect(fallback.name).toBe('BREAKING: SUPREME COURT RULES'); // CNN-classic default (CNN_CLASSIC_PROPS.name)
+    // Unknown preset id → PRESET_ID_BINDINGS miss → clipKind-default fall-through.
+    expect(DEFAULT_CLIP_KIND_RESOLVER('lowerThird', 'unknown-preset-id')?.clipName).toBe(
+      'lower-third',
+    );
+  });
+
+  it('all 21 prior PRESET_ID_BINDINGS overrides STILL resolve after T-373 lands (T-373 AC #18 backward compat)', () => {
+    expect(PRESET_ID_BINDINGS['big-number-stat-impact']?.clipName).toBe('animated-value');
+    expect(PRESET_ID_BINDINGS['mrbeast-komika-axis']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['tiktok-rounded-box']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['ali-abdaal-opacity-karaoke']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['netflix-invisible']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['bbc-reith-dark']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['al-jazeera-orange']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['apple-tv-lt']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['netflix-doc-lt']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['fox-news-alert']?.clipName).toBe('breaking-banner');
+    expect(PRESET_ID_BINDINGS['msnbc-big-board']?.clipName).toBe('magic-wall-panel');
+    expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.clipName).toBe('news-ticker-bar');
+    expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['masters-red-under-par']?.clipName).toBe('standings-table');
+    expect(PRESET_ID_BINDINGS['f1-timing-tower']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['cricket-scorebug']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['uefa-starball-refraction']?.clipName).toBe('magic-wall-panel');
+    expect(PRESET_ID_BINDINGS['youtube-subscribe-bounce']?.clipName).toBe('subscribe-button');
+  });
+
+  it('clipKind-default arms for other clipKinds STILL resolve after T-373 lands (T-373 AC #20 backward compat)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('bigNumber')?.clipName).toBe('animated-value');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('scoreBug')?.clipName).toBe('outcome-row');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('newsTicker')?.clipName).toBe('news-ticker-bar');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('standings')?.clipName).toBe('standings-table');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('caption')?.clipName).toBe('caption');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('fullScreen')?.clipName).toBe('magic-wall-panel');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('lyrics')?.clipName).toBe('lyrics');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('titleSequence')?.clipName).toBe('titleSequence');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('lowerThird')?.clipName).toBe('lower-third');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('breakingBanner')?.clipName).toBe('breaking-banner');
+  });
+
+  it('unknown clipKind STILL returns undefined after T-373 lands (T-373 AC #21)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('unknownKind')).toBeUndefined();
+    // Per T-360 D-T360-2: PRESET_ID_BINDINGS hit overrides clipKind mismatch.
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'social-handle-lower-third')?.clipName).toBe(
+      'lower-third',
     );
   });
 });

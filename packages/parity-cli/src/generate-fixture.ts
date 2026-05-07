@@ -1088,6 +1088,67 @@ const netflixDocLtBinding: ClipKindBinding = {
 };
 
 /**
+ * Social-handle cross-platform-passport snapshot props per D-T373-1 /
+ * D-T373-6 / D-T373-12. Cluster G preset T-373 wires the `LowerThird`
+ * primitive (T-183 + T-183z) as the **sixth `lowerThird` clipKind consumer**
+ * (Pattern C — `PRESET_ID_BINDINGS` override; **fifth `lowerThird`-keyed
+ * override** after T-325 + T-326 + T-330 + T-329). Mirrors T-330's
+ * `appleTvLtBinding` shape, swapping the snapshot constants for the
+ * cross-platform social-handle register.
+ *
+ * T-373 is the **fifth production consumer of T-183z's `noFlag` /
+ * `subtitleColor` / `font` props**. All three are exercised: `noFlag: true`
+ * suppresses the 6 px accent strip (cross-platform register has no per-
+ * platform accent); `subtitleColor: '#FFFFFF'` keeps the subtitle in white
+ * (decoupled from `accent`); `font: { family: 'Inter', weight: 700 }`
+ * substitutes the OFL fallback for the compound preferred font (Roboto /
+ * Montserrat / Proxima Nova) at Bold weight.
+ *
+ * Snapshot captures the canonical social-handle steady-state lower-third:
+ * NO flag (T-183z) + flat black `#000000` card (translucent register
+ * approximated; D-T373-12-a) + Mixed-Case `'@yourbrand'` headline (white
+ * `#FFFFFF` Inter Bold) + Mixed-Case `'Follow us everywhere'` subtitle
+ * (white `#FFFFFF` Inter Bold via T-183z `subtitleColor`).
+ *
+ * 1280×720 canvas-size lesson (D-T373-12 / T-369): the parity-CLI generator
+ * uses a 1280×720 default canvas, NOT 1920×1080. The primitive's
+ * `insetLeftPx` / `insetBottomPx` are bottom-left-anchored offsets (NOT
+ * absolute coordinates), so `(96, 96)` insets fit comfortably inside the
+ * canvas at any size.
+ */
+export const SOCIAL_HANDLE_LOWER_THIRD_PROPS: {
+  readonly name: string;
+  readonly title: string;
+  readonly accent: string;
+  readonly background: string;
+  readonly textColor: string;
+  readonly insetLeftPx: number;
+  readonly insetBottomPx: number;
+  readonly noFlag: true;
+  readonly subtitleColor: string;
+  readonly font: { readonly family: string; readonly weight: number };
+} = {
+  name: '@yourbrand',
+  title: 'Follow us everywhere',
+  accent: '#FFFFFF', // irrelevant — noFlag: true suppresses the strip (D-T373-3)
+  background: '#000000', // flat black; translucent register approximated (D-T373-12-a)
+  textColor: '#FFFFFF', // headline white-on-black per cross-platform handle canon (D-T373-1)
+  insetLeftPx: 96, // primitive default; canvas-safe at 1280×720 (D-T373-12)
+  insetBottomPx: 96, // primitive default; canvas-safe at 1280×720 (D-T373-12)
+  noFlag: true, // T-183z — text-only register; no chrome (D-T373-3)
+  subtitleColor: '#FFFFFF', // T-183z — subtitle decoupled from accent (D-T373-4)
+  font: { family: 'Inter', weight: 700 }, // T-183z — Inter Bold = compound-preferred OFL fallback (D-T373-5)
+};
+
+const socialHandleLowerThirdBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'lower-third', // kebab-case primitive `kind` (mirrors T-323 / T-325 / T-326 / T-330 / T-329)
+  buildProps() {
+    return { ...SOCIAL_HANDLE_LOWER_THIRD_PROPS };
+  },
+};
+
+/**
  * CNN-Breaking snapshot props per D-T324-1 / D-T324-4. Cluster A preset T-324
  * wires the `BreakingBanner` primitive (T-324a) end-to-end as the first
  * `breakingBanner` clipKind binding (Pattern C — clipKind-default, NOT
@@ -2267,6 +2328,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'cricket-scorebug': cricketScorebugBinding, // T-336
   'uefa-starball-refraction': uefaStarballRefractionBinding, // T-339
   'youtube-subscribe-bounce': youtubeSubscribeBounceBinding, // T-369
+  'social-handle-lower-third': socialHandleLowerThirdBinding, // T-373
 };
 
 /**
