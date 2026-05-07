@@ -17,7 +17,7 @@ edit by hand — run `pnpm skills-sync` after adding or removing a
 clip; `pnpm skills-sync:check` fails in CI if the committed file
 drifts.
 
-Currently 62 clips across 6 runtimes.
+Currently 63 clips across 6 runtimes.
 
 The table below lists every clip `kind` the dispatcher can resolve
 via `findClip(kind)`. Per-clip detail (props schema, theme slots,
@@ -98,6 +98,7 @@ present — per-clip source headers.
 - `score-bug`
 - `standings-table`
 - `stock-ticker`
+- `subscribe-button`
 - `subtitle-overlay`
 - `testimonial-card`
 - `timeline-milestones`

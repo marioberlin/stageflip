@@ -152,6 +152,18 @@ export const LIVE_RUNTIME_MANIFEST: ClipsCatalogPkg = {
         // block. Static layouts in v1; animation carve-outs T-332b/c/d,
         // T-334a, T-335a, T-336a/b, T-337a/b deferred.)
         'score-bug',
+        // T-317 — subscribe-button primitive (Cluster G first entry;
+        // sealed-platform creator subscribe / follow CTA button with
+        // `platform: 'youtube' | 'tiktok' | 'instagram' | 'generic'`
+        // discriminated-union dispatch + three sealed animation
+        // phases: `'idle'` 0 → 1.10 → 1.00 entrance bounce overshoot;
+        // `'pressing'` 1.00 → 0.95 → 1.00 scale dip;
+        // `'subscribed'` static post-press settled state. Brand canon
+        // dominates theme on branded platforms; theme-slot fallback
+        // only for `'generic'`. Carve-outs: bell-glyph wiggle T-317a,
+        // animated cursor slide-in T-317b, infinite-breathing idle
+        // pulse T-317c. Unblocks T-369 (youtube-subscribe-bounce).)
+        'subscribe-button',
       ],
     },
   ],
