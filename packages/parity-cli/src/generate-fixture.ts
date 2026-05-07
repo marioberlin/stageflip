@@ -2453,6 +2453,65 @@ const coinbaseDvdQrBinding: ClipKindBinding = {
 };
 
 /**
+ * Instagram link-sticker snapshot props per D-T371-1 / D-T371-2 / D-T371-4.
+ * Cluster G preset T-371 wires the `link-sticker` primitive (T-371a; just
+ * merged at main `8f7dbd4b`) as the FIRST `socialMedia` clipKind consumer
+ * (Pattern C — `PRESET_ID_BINDINGS` override; no clipKind-default arm in
+ * v1 since v1 has exactly one `socialMedia`-bound preset). FIRST production
+ * consumer of T-371a's `link-sticker` primitive. T-371 is the FIFTH and
+ * FINAL Cluster G preset — its merge closes Cluster G to 5/5 ELIGIBLE
+ * (first cluster expansion beyond the four originally-ratified clusters
+ * to fully close).
+ *
+ * Snapshot captures the Instagram Stories link-sticker canon: a rounded
+ * pill with `label: 'instagram.com/yourhandle'` (D-T371-2 — domain-canon
+ * placeholder; does NOT encode any real handle) + `variant:
+ * 'white-on-dark'` (stub line 43 default — pure-black `#000000` backdrop /
+ * white `#FFFFFF` Inter Medium 14 px text / black drop-shadow / white
+ * shimmer-highlight per `VARIANT_TOKENS['white-on-dark']`) + `position:
+ * { x: 540, y: 338 }` (canvas-centered top-left on parity-CLI 1280×720;
+ * `(1280-200)/2 = 540`, `(720-44)/2 = 338`; D-T371-4). Snapshot
+ * intentionally minimal — only the three REQUIRED fields (`label`,
+ * `variant`, `position`); every other knob (`phase`, `width`, `height`,
+ * `fontSize`, `shimmer`, per-variant tokens) inherits primitive defaults
+ * (`'shimmering'`, 200×44 pill, 14 px font-size, `cycleFrames = ceil(fps *
+ * 3) = 90`, `bandWidth = 40`, white shimmer-highlight).
+ *
+ * At frame 60 with default `cycleFrames = 90`: phase progress
+ * `60 / 90 ≈ 0.667`; `shimmerX = round(0.667 * 240 - 40) = 120`. Band
+ * lands at `left = 540 + 120 = 660` on the canvas (right portion of the
+ * pill; on-pill left=120, right=160 within 200-px pill width). Captures
+ * the canonical mid-shimmer register. T-371 ships **cluster-norm
+ * thresholds** (PSNR ≥ 42 / SSIM ≥ 0.98) — NOT preset-pinned 38 / 0.94
+ * like T-372 — because the shimmer is a steady-state-icon register: no
+ * motion blur (linear-gradient sweep over a STATIC pill), static glyph
+ * layout (no per-frame reflow), no per-frame color cycling (variant
+ * defaults are fixed). Stub line 47 explicitly pre-declares 42 / 0.98.
+ */
+export const INSTAGRAM_LINK_STICKER_PROPS: {
+  readonly label: string;
+  readonly variant: 'white-on-dark';
+  readonly position: { readonly x: number; readonly y: number };
+} = {
+  label: 'instagram.com/yourhandle', // domain-canon placeholder (D-T371-2)
+  variant: 'white-on-dark', // stub line 43 default (D-T371-1)
+  position: { x: 540, y: 338 }, // canvas-centered top-left on 1280×720 (D-T371-4)
+};
+
+const instagramLinkStickerBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'link-sticker', // kebab-case primitive `kind` (T-371a line 324)
+  buildProps() {
+    // Deep-clone the nested `position` object so callers can mutate the
+    // returned props without aliasing the exported constant.
+    return {
+      ...INSTAGRAM_LINK_STICKER_PROPS,
+      position: { ...INSTAGRAM_LINK_STICKER_PROPS.position },
+    };
+  },
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -2484,6 +2543,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'social-handle-lower-third': socialHandleLowerThirdBinding, // T-373
   'tiktok-follow-pulse': tiktokFollowPulseBinding, // T-370
   'coinbase-dvd-qr': coinbaseDvdQrBinding, // T-372
+  'instagram-link-sticker': instagramLinkStickerBinding, // T-371 (Cluster G closer; 5/5)
 };
 
 /**
