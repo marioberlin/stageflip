@@ -538,6 +538,36 @@ export {
   qrCodeBouncePropsSchema,
 } from './qr-code-bounce.js';
 
+// T-371a — link-sticker primitive (Cluster G fourth entry; first
+// 'link-sticker' kind / 'socialMedia' clipKind consumer). Rounded-pill
+// Instagram-style link sticker (~200 × 44 px native) free-form-
+// positioned on a Story frame with closed-form linear shimmer / high-
+// light sweep across the label glyphs (3 s default cycle). Single
+// Zod `object().strict()` schema with sealed `variant` enum (4 values:
+// 'white-on-dark' | 'dark-on-white' | 'frosted-glass' | 'brand-color')
+// and sealed `phase` enum (2 values: 'idle' | 'shimmering'). NO
+// `discriminatedUnion` — variant drives only color / contrast defaults
+// via a constant token table. Inter Medium (OFL, T-307) registered as
+// the hard fallback font; the Instagram proprietary system font is
+// `platform-byo`. v1 carve-outs: tap-depress + link-preview card
+// (T-371a-followup), `backdrop-filter: blur` for `'frosted-glass'`
+// (T-371a-blur — CDP determinism hazard), additional sticker kinds
+// (T-371a-extend), real Instagram-domain icon SVG (T-371a-glyph).
+// Unblocks T-371 (`instagram-link-sticker`, Cluster G's last unsigned
+// preset). With T-371a merged, all four Cluster G blocking primitives
+// (T-317 + T-318 + T-319 + T-371a) are shipped; T-371 closes Cluster
+// G. 55 → 56 clips.
+export {
+  LinkSticker,
+  type LinkStickerPhase,
+  type LinkStickerProps,
+  type LinkStickerVariant,
+  computeShimmerX,
+  linkStickerClip,
+  linkStickerPropsSchema,
+  resolveTokens,
+} from './link-sticker.js';
+
 // T-321 — title-sequence primitive. Multi-shot prestige-TV title
 // compositor with four sealed style bundles (`'letterform-assemble'`
 // — ALL-CAPS letterforms scaled-to-viewport with per-letter staggered
@@ -589,6 +619,7 @@ import { kineticTextClip } from './kinetic-text.js';
 import { kpiGridClip } from './kpi-grid.js';
 import { lightLeakClip } from './light-leak.js';
 import { lineChartDrawClip } from './line-chart-draw.js';
+import { linkStickerClip } from './link-sticker.js';
 import { logoIntroClip } from './logo-intro.js';
 import { lowerThirdClip } from './lower-third.js';
 import { lyricsClip } from './lyrics.js';
@@ -818,7 +849,27 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // T-319b; custom palettes T-319c). Always-moving / always-cycling
   // register; lightModuleColor NOT theme-bound to preserve dark-on-
   // light scannability. Unblocks T-372 (coinbase-dvd-qr, primary v1
-  // consumer). 54 → 55 clips. Cluster G's third + final blocking
-  // primitive (T-317 + T-318 + T-319 close cluster G).
+  // consumer). 54 → 55 clips.
   qrCodeBounceClip,
+  // T-371a — link-sticker primitive (Cluster G fourth entry; first
+  // 'link-sticker' kind / 'socialMedia' clipKind consumer). Rounded-
+  // pill Instagram-style link sticker (~200 × 44 px native) free-form-
+  // positioned on a Story frame with closed-form linear shimmer /
+  // highlight sweep across the label glyphs. Single Zod
+  // `object().strict()` schema with sealed `variant` enum
+  // (`'white-on-dark' | 'dark-on-white' | 'frosted-glass' |
+  // 'brand-color'`) and sealed `phase` enum (`'idle' | 'shimmering'`).
+  // NO `discriminatedUnion` — variant drives only color / contrast
+  // defaults via a constant token table. Closed-form shimmer math
+  // (`shimmerX(f) = round(((f % cycleFrames) / cycleFrames) *
+  // (pillWidth + bandWidth) - bandWidth)`). Inter Medium (OFL, T-307)
+  // registered as fallback font; Instagram proprietary system font is
+  // `platform-byo`. v1 carve-outs: tap-depress + link-preview card
+  // (T-371a-followup), `backdrop-filter: blur` for `'frosted-glass'`
+  // (T-371a-blur), additional sticker kinds (T-371a-extend), branded
+  // icon SVG (T-371a-glyph). Unblocks T-371 (instagram-link-sticker —
+  // Cluster G's last unsigned preset). 55 → 56 clips. Cluster G's
+  // fourth + final blocking primitive (T-317 + T-318 + T-319 + T-371a
+  // close cluster G; T-371 ships next as the consumer preset).
+  linkStickerClip,
 ];

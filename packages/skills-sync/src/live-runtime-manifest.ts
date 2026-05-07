@@ -189,6 +189,24 @@ export const LIVE_RUNTIME_MANIFEST: ClipsCatalogPkg = {
         // →matrix encoding T-319a; branded variant T-319b; custom
         // palettes T-319c). Unblocks T-372 (coinbase-dvd-qr).
         'qr-code-bounce',
+        // T-371a — link-sticker primitive (Cluster G fourth entry;
+        // first 'link-sticker' kind / 'socialMedia' clipKind
+        // consumer). Rounded-pill Instagram-style link sticker free-
+        // form-positioned on a Story frame with closed-form linear
+        // shimmer / highlight sweep across the label glyphs. Single
+        // Zod `object().strict()` schema with sealed `variant` enum
+        // (4 values: white-on-dark / dark-on-white / frosted-glass /
+        // brand-color) and sealed `phase` enum (2 values: idle /
+        // shimmering). NO `discriminatedUnion` — variant drives only
+        // color / contrast defaults via a constant token table.
+        // Inter Medium (OFL, T-307) registered as fallback font;
+        // Instagram proprietary system font is `platform-byo`. v1
+        // carve-outs: tap-depress + link-preview card (T-371a-
+        // followup), backdrop-filter blur for frosted-glass (T-371a-
+        // blur), additional sticker kinds (T-371a-extend), branded
+        // icon SVG (T-371a-glyph). Unblocks T-371 (instagram-link-
+        // sticker — Cluster G's last unsigned preset).
+        'link-sticker',
       ],
     },
   ],
