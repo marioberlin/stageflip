@@ -109,6 +109,12 @@ export const CANONICAL_BUNDLES: readonly ToolBundle[] = [
     tools: [],
   },
   {
+    name: 'cluster-e-compose',
+    description:
+      'Cluster E (Data) composer tools — preset-binding factories for live-data / market-ticker / election-board / big-number / stat-callout briefs across the 6 ratified Cluster E presets (T-361).',
+    tools: [],
+  },
+  {
     name: 'cluster-f-compose',
     description:
       'Cluster F (Captions / Lyrics) composer tools — preset-binding factories for creator-caption / subtitle / lyric-video / keyword-highlight briefs (T-368).',

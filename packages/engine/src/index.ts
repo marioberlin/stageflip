@@ -155,6 +155,12 @@ export {
   registerClusterBComposeBundle,
 } from './handlers/cluster-b-compose/register.js';
 export {
+  CLUSTER_E_COMPOSE_BUNDLE_NAME,
+  CLUSTER_E_COMPOSE_HANDLERS,
+  CLUSTER_E_COMPOSE_TOOL_DEFINITIONS,
+  registerClusterEComposeBundle,
+} from './handlers/cluster-e-compose/register.js';
+export {
   CLUSTER_F_COMPOSE_BUNDLE_NAME,
   CLUSTER_F_COMPOSE_HANDLERS,
   CLUSTER_F_COMPOSE_TOOL_DEFINITIONS,

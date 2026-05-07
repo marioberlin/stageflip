@@ -16,6 +16,7 @@ import {
   registerClipAnimationBundle,
   registerClusterAComposeBundle,
   registerClusterBComposeBundle,
+  registerClusterEComposeBundle,
   registerClusterFComposeBundle,
   registerCreateMutateBundle,
   registerDataSourceBindingsBundle,
@@ -79,6 +80,7 @@ function buildPopulatedBundleRegistry(): BundleRegistry {
   registerArrangeVariantsBundle(registry, router as ToolRouter<never>);
   registerClusterAComposeBundle(registry, router);
   registerClusterBComposeBundle(registry, router);
+  registerClusterEComposeBundle(registry, router);
   registerClusterFComposeBundle(registry, router);
   return registry;
 }
