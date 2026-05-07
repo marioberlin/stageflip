@@ -23,6 +23,7 @@ import {
   createCanonicalRegistry,
   registerArrangeVariantsBundle,
   registerClusterBComposeBundle,
+  registerClusterFComposeBundle,
   registerReadBundle,
   registerCreateMutateBundle,
   registerTimingBundle,
@@ -63,6 +64,7 @@ const OWNER_TASK_MAP: Record<string, string> = {
   'display-mode': 'T-206',
   'arrange-variants': 'T-386',
   'cluster-b-compose': 'T-340',
+  'cluster-f-compose': 'T-368',
 };
 
 function populateRegistry() {
@@ -88,6 +90,7 @@ function populateRegistry() {
   registerSemanticLayoutBundle(registry, router);
   registerArrangeVariantsBundle(registry, router);
   registerClusterBComposeBundle(registry, router);
+  registerClusterFComposeBundle(registry, router);
   return registry;
 }
 

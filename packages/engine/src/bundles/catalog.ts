@@ -102,6 +102,12 @@ export const CANONICAL_BUNDLES: readonly ToolBundle[] = [
       'Cluster B (Sports) composer tools — preset-binding factories for live-sports score / standings / VAR / player-intro briefs (T-340).',
     tools: [],
   },
+  {
+    name: 'cluster-f-compose',
+    description:
+      'Cluster F (Captions / Lyrics) composer tools — preset-binding factories for creator-caption / subtitle / lyric-video / keyword-highlight briefs (T-368).',
+    tools: [],
+  },
 ];
 
 export const CANONICAL_BUNDLE_NAMES: readonly string[] = CANONICAL_BUNDLES.map((b) => b.name);
