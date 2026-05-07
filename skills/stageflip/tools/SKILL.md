@@ -17,7 +17,7 @@ NOT edit by hand — run `pnpm skills-sync` after registering a
 new bundle; `pnpm skills-sync:check` fails in CI if this file
 drifts.
 
-18 bundles, 116 tools total.
+19 bundles, 116 tools total.
 
 StageFlip ships tools grouped into bundles so an agent context
 rarely needs more than 30 tool definitions loaded at once
@@ -47,6 +47,7 @@ rarely needs more than 30 tool definitions loaded at once
 | [`display-mode`](./display-mode/SKILL.md) | 2 | StageFlip.Display profile tools — file-size optimization planning, multi-size preview resolution (T-206 and onward). |
 | [`arrange-variants`](./arrange-variants/SKILL.md) | 1 | Variant generation — turn one canonical Document into a message × locale matrix of variants (T-386). |
 | [`cluster-b-compose`](./cluster-b-compose/SKILL.md) | 4 | Cluster B (Sports) composer tools — preset-binding factories for live-sports score / standings / VAR / player-intro briefs (T-340). |
+| [`cluster-f-compose`](./cluster-f-compose/SKILL.md) | 0 | Cluster F (Captions / Lyrics) composer tools — preset-binding factories for creator-caption / subtitle / lyric-video / keyword-highlight briefs (T-368). |
 
 ## Per-bundle reference
 
