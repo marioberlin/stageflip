@@ -518,6 +518,26 @@ export {
   followPromptPropsSchema,
 } from './follow-prompt.js';
 
+// T-319 — qr-code-bounce primitive (Cluster G third entry; first
+// 'qr-code-bounce' kind consumer). DVD-screensaver-bouncing QR code
+// rectangle with rainbow hue cycling on a pure-black backdrop. Single
+// Zod object schema (NO platform/register enum), NO font surface, NO
+// phase enum. Closed-form bounce physics
+// (`x_t = fold(x0 + vx*t, 2*(W-rectW))`); uniform HSL hue rotation
+// (`h(f) = (f % cycleFrames) / cycleFrames * 360`). Pre-rendered QR
+// matrix in v1 (live URL→matrix encoding deferred to T-319a; branded
+// variant T-319b; custom palettes T-319c). Unblocks T-372
+// (`coinbase-dvd-qr`, primary v1 consumer).
+export {
+  QRCodeBounce,
+  type QRCodeBounceProps,
+  computeBouncePosition,
+  currentHue,
+  hslToRgb,
+  qrCodeBounceClip,
+  qrCodeBouncePropsSchema,
+} from './qr-code-bounce.js';
+
 // T-321 — title-sequence primitive. Multi-shot prestige-TV title
 // compositor with four sealed style bundles (`'letterform-assemble'`
 // — ALL-CAPS letterforms scaled-to-viewport with per-letter staggered
@@ -584,6 +604,7 @@ import { productCarouselClip } from './product-carousel.js';
 import { productDashboardClip } from './product-dashboard.js';
 import { productRevealClip } from './product-reveal.js';
 import { pullQuoteClip } from './pull-quote.js';
+import { qrCodeBounceClip } from './qr-code-bounce.js';
 import { salesDashboardClip } from './sales-dashboard.js';
 import { scene3dClip } from './scene-3d.js';
 import { scoreBugClip } from './score-bug.js';
@@ -786,4 +807,18 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // #FF0000); theme-slot fallback only for `'generic'`. Unblocks T-370
   // (tiktok-follow-pulse, primary v1 consumer). 53 → 54 clips.
   followPromptClip,
+  // T-319 — qr-code-bounce primitive (Cluster G third entry; first
+  // 'qr-code-bounce' kind consumer). DVD-screensaver-bouncing QR code
+  // rectangle with rainbow hue cycling on a pure-black backdrop.
+  // Single Zod object schema (NO platform/register enum), NO font
+  // surface, NO phase enum. Closed-form bounce physics
+  // (`x_t = fold(x0 + vx*t, 2*(W-rectW))`); uniform HSL hue rotation
+  // (`h(f) = (f % cycleFrames) / cycleFrames * 360`). Pre-rendered QR
+  // matrix in v1 (live URL→matrix encoding T-319a; branded variant
+  // T-319b; custom palettes T-319c). Always-moving / always-cycling
+  // register; lightModuleColor NOT theme-bound to preserve dark-on-
+  // light scannability. Unblocks T-372 (coinbase-dvd-qr, primary v1
+  // consumer). 54 → 55 clips. Cluster G's third + final blocking
+  // primitive (T-317 + T-318 + T-319 close cluster G).
+  qrCodeBounceClip,
 ];

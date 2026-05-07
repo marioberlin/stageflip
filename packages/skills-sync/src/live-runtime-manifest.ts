@@ -179,6 +179,16 @@ export const LIVE_RUNTIME_MANIFEST: ClipsCatalogPkg = {
         // Instagram story-ring trim T-318c. Unblocks T-370
         // (tiktok-follow-pulse).)
         'follow-prompt',
+        // T-319 — qr-code-bounce primitive (Cluster G third entry;
+        // first 'qr-code-bounce' kind consumer). DVD-screensaver-
+        // bouncing QR code rectangle with rainbow hue cycling on a
+        // pure-black backdrop. Single Zod object schema (no platform
+        // /register enum), no font surface, no phase enum. Closed-
+        // form bounce physics (fold + mod triangle wave); uniform
+        // HSL hue rotation. Pre-rendered QR matrix in v1 (live URL
+        // →matrix encoding T-319a; branded variant T-319b; custom
+        // palettes T-319c). Unblocks T-372 (coinbase-dvd-qr).
+        'qr-code-bounce',
       ],
     },
   ],

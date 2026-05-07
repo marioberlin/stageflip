@@ -355,9 +355,9 @@ describe('<FollowPrompt> size + position', () => {
 });
 
 describe('clip registration', () => {
-  it('registers as kind "follow-prompt" and is in ALL_BRIDGE_CLIPS at length 54', () => {
+  it('registers as kind "follow-prompt" and is in ALL_BRIDGE_CLIPS at length 55', () => {
     expect(followPromptClip.kind).toBe('follow-prompt');
-    expect(ALL_BRIDGE_CLIPS).toHaveLength(54);
+    expect(ALL_BRIDGE_CLIPS).toHaveLength(55);
     expect(ALL_BRIDGE_CLIPS).toContain(followPromptClip);
   });
 
