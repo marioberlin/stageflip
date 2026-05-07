@@ -142,3 +142,9 @@ export {
   type VariantPersistenceContext,
   registerArrangeVariantsBundle,
 } from './handlers/arrange-variants/register.js';
+export {
+  CLUSTER_B_COMPOSE_BUNDLE_NAME,
+  CLUSTER_B_COMPOSE_HANDLERS,
+  CLUSTER_B_COMPOSE_TOOL_DEFINITIONS,
+  registerClusterBComposeBundle,
+} from './handlers/cluster-b-compose/register.js';

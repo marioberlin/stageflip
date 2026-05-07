@@ -44,6 +44,10 @@ Do **not** invoke for fitness / lifestyle / creator sports content — that's Cl
 - `compose_var_call(decision, sport, brand)` — routes to `VARBanner` (gap clip T-320); PL / UCL register only
 - `compose_standings_table(teams, sport, brand)` — picks standings preset
 
+### Implementation
+
+The four signatures above ship in the `cluster-b-compose` engine handler bundle (T-340). Full Zod input / output schemas live in [`skills/stageflip/tools/cluster-b-compose/SKILL.md`](../../tools/cluster-b-compose/SKILL.md). v1 dispatches `compose_sports_score` + `compose_standings_table` substantively; `compose_var_call` (awaits T-320 `VARBanner`) and `compose_player_intro` (awaits the eventual Cluster B `playerIntro` preset) return `not_yet_implemented` with reserved input/output schemas for forward compatibility.
+
 ## Cluster conventions (from the compass canon)
 
 - **Team color stripes > reading text.** F1, Premier League, and others use color to identify — the text is redundancy. Every preset must preserve the brand's color-identification system; don't collapse to monochrome.

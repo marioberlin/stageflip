@@ -96,6 +96,12 @@ export const CANONICAL_BUNDLES: readonly ToolBundle[] = [
       'Variant generation — turn one canonical Document into a message × locale matrix of variants (T-386).',
     tools: [],
   },
+  {
+    name: 'cluster-b-compose',
+    description:
+      'Cluster B (Sports) composer tools — preset-binding factories for live-sports score / standings / VAR / player-intro briefs (T-340).',
+    tools: [],
+  },
 ];
 
 export const CANONICAL_BUNDLE_NAMES: readonly string[] = CANONICAL_BUNDLES.map((b) => b.name);
