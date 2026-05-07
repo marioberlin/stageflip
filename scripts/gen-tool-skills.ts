@@ -22,6 +22,7 @@ import {
   CANONICAL_BUNDLES,
   createCanonicalRegistry,
   registerArrangeVariantsBundle,
+  registerClusterBComposeBundle,
   registerReadBundle,
   registerCreateMutateBundle,
   registerTimingBundle,
@@ -61,6 +62,7 @@ const OWNER_TASK_MAP: Record<string, string> = {
   'video-mode': 'T-185',
   'display-mode': 'T-206',
   'arrange-variants': 'T-386',
+  'cluster-b-compose': 'T-340',
 };
 
 function populateRegistry() {
@@ -85,6 +87,7 @@ function populateRegistry() {
   registerDataSourceBindingsBundle(registry, router);
   registerSemanticLayoutBundle(registry, router);
   registerArrangeVariantsBundle(registry, router);
+  registerClusterBComposeBundle(registry, router);
   return registry;
 }
 
@@ -95,15 +98,16 @@ function renderTool(def: {
 }): string {
   const schema = def.input_schema as {
     required?: string[];
-    properties?: Record<string, { description?: string; enum?: unknown[]; type?: string | string[] }>;
+    properties?: Record<
+      string,
+      { description?: string; enum?: unknown[]; type?: string | string[] }
+    >;
   };
   const required = new Set(schema?.required ?? []);
   const rows: string[] = [];
   const props = schema?.properties ?? {};
   for (const [name, meta] of Object.entries(props)) {
-    const typeLabel = Array.isArray(meta.type)
-      ? meta.type.join(' | ')
-      : meta.type ?? 'object';
+    const typeLabel = Array.isArray(meta.type) ? meta.type.join(' | ') : (meta.type ?? 'object');
     const tag = required.has(name) ? '' : ' _(optional)_';
     const enumNote = meta.enum ? ` — enum: \`${meta.enum.map(String).join('` / `')}\`` : '';
     const desc = meta.description ? ` — ${meta.description.replace(/\n/g, ' ')}` : '';
@@ -113,7 +117,13 @@ function renderTool(def: {
   return `### \`${def.name}\`\n\n${def.description}${signature}`;
 }
 
-function renderBundle(bundleName: string, bundle: { description: string; tools: ReadonlyArray<{ name: string; description: string; input_schema: unknown }> }): string {
+function renderBundle(
+  bundleName: string,
+  bundle: {
+    description: string;
+    tools: ReadonlyArray<{ name: string; description: string; input_schema: unknown }>;
+  },
+): string {
   const owner = OWNER_TASK_MAP[bundleName] ?? 'unknown';
   const toolSections = bundle.tools.map(renderTool).join('\n');
   const titlePrefix = 'Tools — ';
@@ -238,6 +248,6 @@ async function run(check: boolean): Promise<void> {
 
 const mode = process.argv.includes('--check') ? 'check' : 'write';
 run(mode === 'check').catch((err) => {
-  process.stderr.write(`${String(err instanceof Error ? err.stack ?? err.message : err)}\n`);
+  process.stderr.write(`${String(err instanceof Error ? (err.stack ?? err.message) : err)}\n`);
   process.exit(1);
 });
