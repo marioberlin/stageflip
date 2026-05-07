@@ -70,10 +70,10 @@ describe('registerAllLiveRuntimes', () => {
     expect(resolved?.runtime.id).toBe('three');
   });
 
-  it('registers all T-131b/d/f.1 + T-131e.1/.2 + T-131f.2/.3 + T-131d.4 + T-183a + T-183b + T-202a + T-202b + T-406 + T-358a + T-356a + T-357a + T-316 + T-355a + T-322 + T-321 + T-324a + T-332a + T-317 tranches on the frame-runtime bridge (53 clips)', () => {
+  it('registers all T-131b/d/f.1 + T-131e.1/.2 + T-131f.2/.3 + T-131d.4 + T-183a + T-183b + T-202a + T-202b + T-406 + T-358a + T-356a + T-357a + T-316 + T-355a + T-322 + T-321 + T-324a + T-332a + T-317 + T-318 tranches on the frame-runtime bridge (54 clips)', () => {
     registerAllLiveRuntimes();
     const bridge = listRuntimes().find((r) => r.id === 'frame-runtime');
-    expect(bridge?.clips.size).toBe(53);
+    expect(bridge?.clips.size).toBe(54);
     const expectedKinds = [
       // b.1 (light)
       'counter',
@@ -153,6 +153,8 @@ describe('registerAllLiveRuntimes', () => {
       'score-bug',
       // T-317 — subscribe-button primitive
       'subscribe-button',
+      // T-318 — follow-prompt primitive
+      'follow-prompt',
     ];
     for (const kind of expectedKinds) {
       const resolved = findClip(kind);

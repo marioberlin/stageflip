@@ -293,8 +293,8 @@ describe('breakingBannerClip definition', () => {
     ]);
   });
 
-  it('is appended to ALL_BRIDGE_CLIPS (length 53, includes breaking-banner kind)', () => {
-    expect(ALL_BRIDGE_CLIPS).toHaveLength(53);
+  it('is appended to ALL_BRIDGE_CLIPS (length 54, includes breaking-banner kind)', () => {
+    expect(ALL_BRIDGE_CLIPS).toHaveLength(54);
     expect(ALL_BRIDGE_CLIPS.some((c) => c.kind === 'breaking-banner')).toBe(true);
   });
 });

@@ -164,6 +164,21 @@ export const LIVE_RUNTIME_MANIFEST: ClipsCatalogPkg = {
         // animated cursor slide-in T-317b, infinite-breathing idle
         // pulse T-317c. Unblocks T-369 (youtube-subscribe-bounce).)
         'subscribe-button',
+        // T-318 — follow-prompt primitive (Cluster G second entry;
+        // sealed-platform vertical-video right-thumb-zone follow CTA
+        // with `platform: 'tiktok' | 'instagram' | 'youtube' |
+        // 'generic'` discriminated-union dispatch + three sealed
+        // animation phases: `'idle'` static avatar circle + corner "+"
+        // badge; `'pulsing'` bounded 1.00 → 1.05 → 1.00 scale-pulse
+        // over 1500 ms with optional 30%-alpha expanding ring,
+        // `pulseRepeat` 1..10; `'followed'` "+" → checkmark glyph
+        // swap with 1.00 → 1.20 → 1.00 scale-pop on the badge over
+        // 300 ms. Brand canon dominates theme on branded platforms;
+        // theme-slot fallback only for `'generic'`. Carve-outs:
+        // algorithmic toast T-318a, continuous-breathing pulse T-318b,
+        // Instagram story-ring trim T-318c. Unblocks T-370
+        // (tiktok-follow-pulse).)
+        'follow-prompt',
       ],
     },
   ],

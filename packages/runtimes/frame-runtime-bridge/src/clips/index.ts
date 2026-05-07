@@ -501,6 +501,23 @@ export {
   subscribeButtonPropsSchema,
 } from './subscribe-button.js';
 
+// T-318 — follow-prompt primitive (Cluster G second entry; first
+// 'follow-prompt' kind consumer). Sealed-platform vertical-video right-
+// thumb-zone follow CTA with `platform: 'tiktok' | 'instagram' |
+// 'youtube' | 'generic'` discriminated-union dispatch + three sealed
+// animation phases (`'idle'` static avatar; `'pulsing'` bounded
+// 1.00 → 1.05 → 1.00 sustained-pulse over 1500 ms with optional 30%-
+// alpha expanding ring; `'followed'` "+" → checkmark glyph swap with
+// 1.00 → 1.20 → 1.00 scale-pop on the badge over 300 ms). Brand canon
+// dominates theme on branded platforms; theme-slot fallback only for
+// `'generic'`. Unblocks T-370 (tiktok-follow-pulse).
+export {
+  FollowPrompt,
+  type FollowPromptProps,
+  followPromptClip,
+  followPromptPropsSchema,
+} from './follow-prompt.js';
+
 // T-321 — title-sequence primitive. Multi-shot prestige-TV title
 // compositor with four sealed style bundles (`'letterform-assemble'`
 // — ALL-CAPS letterforms scaled-to-viewport with per-letter staggered
@@ -543,6 +560,7 @@ import { counterClip } from './counter.js';
 import { ctaPulseClip } from './cta-pulse.js';
 import { endslateLogoClip } from './endslate-logo.js';
 import { financialStatementClip } from './financial-statement.js';
+import { followPromptClip } from './follow-prompt.js';
 import { gifPlayerClip } from './gif-player.js';
 import { hookMomentClip } from './hook-moment.js';
 import { hrDashboardClip } from './hr-dashboard.js';
@@ -754,4 +772,18 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // Unblocks T-369 (youtube-subscribe-bounce, first Cluster G preset).
   // 52 → 53 clips.
   subscribeButtonClip,
+  // T-318 — follow-prompt primitive (Cluster G second entry; first
+  // 'follow-prompt' kind consumer). Sealed-platform vertical-video
+  // right-thumb-zone follow CTA with `platform: 'tiktok' | 'instagram'
+  // | 'youtube' | 'generic'` discriminated-union dispatch + three
+  // sealed animation phases (`'idle'` static avatar circle + corner
+  // "+" badge; `'pulsing'` bounded 1.00 → 1.05 → 1.00 scale-pulse over
+  // 1500 ms with optional 30%-alpha expanding ring, `pulseRepeat`
+  // 1..10; `'followed'` "+" → checkmark glyph swap with 1.00 → 1.20 →
+  // 1.00 scale-pop on the badge over 300 ms; avatar surface stays at
+  // scale 1.00). Brand canon dominates theme on branded platforms
+  // (TikTok pink #FE2C55 / Instagram magenta #DD2A7B / YouTube red
+  // #FF0000); theme-slot fallback only for `'generic'`. Unblocks T-370
+  // (tiktok-follow-pulse, primary v1 consumer). 53 → 54 clips.
+  followPromptClip,
 ];
