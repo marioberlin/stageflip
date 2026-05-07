@@ -1,0 +1,30 @@
+{
+  "name": "tiktok-follow-pulse",
+  "cluster": "ctas",
+  "kind": "followPrompt",
+  "description": "Parity fixture for preset 'tiktok-follow-pulse' (cluster ctas, kind followPrompt)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    30
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "TikTok Sans",
+      "license": "platform-byo"
+    },
+    "fallback": {
+      "family": "Source Sans 3",
+      "weight": 600,
+      "license": "ofl"
+    }
+  }
+}
