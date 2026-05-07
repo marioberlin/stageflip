@@ -485,6 +485,22 @@ export {
   scoreBugPropsSchema,
 } from './score-bug.js';
 
+// T-317 — subscribe-button primitive (Cluster G first entry).
+// Sealed-platform creator subscribe / follow CTA button with
+// `platform: 'youtube' | 'tiktok' | 'instagram' | 'generic'`
+// discriminated-union dispatch + three sealed animation phases
+// (`'idle'` entrance bounce 0 → 1.10 → 1.00; `'pressing'` 1.00 →
+// 0.95 → 1.00 dip; `'subscribed'` static post-press). Brand canon
+// dominates theme on branded platforms; theme-slot fallback only for
+// `'generic'`. Unblocks T-369 (youtube-subscribe-bounce) and the
+// broader Cluster G platform-button register.
+export {
+  SubscribeButton,
+  type SubscribeButtonProps,
+  subscribeButtonClip,
+  subscribeButtonPropsSchema,
+} from './subscribe-button.js';
+
 // T-321 — title-sequence primitive. Multi-shot prestige-TV title
 // compositor with four sealed style bundles (`'letterform-assemble'`
 // — ALL-CAPS letterforms scaled-to-viewport with per-letter staggered
@@ -555,6 +571,7 @@ import { scene3dClip } from './scene-3d.js';
 import { scoreBugClip } from './score-bug.js';
 import { standingsTableClip } from './standings-table.js';
 import { stockTickerClip } from './stock-ticker.js';
+import { subscribeButtonClip } from './subscribe-button.js';
 import { subtitleOverlayClip } from './subtitle-overlay.js';
 import { testimonialCardClip } from './testimonial-card.js';
 import { timelineMilestonesClip } from './timeline-milestones.js';
@@ -726,4 +743,15 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // shot-id-derived clipPath / filter / per-letter IDs. Unblocks
   // Cluster D presets T-348..T-353. 49 → 50 clips.
   titleSequenceClip,
+  // T-317 — subscribe-button primitive (Cluster G first entry; first
+  // `'subscribe-button'` kind consumer). Sealed-platform creator
+  // subscribe / follow CTA button with `platform: 'youtube' |
+  // 'tiktok' | 'instagram' | 'generic'` discriminated-union dispatch
+  // + three sealed animation phases (`'idle'` 0 → 1.10 → 1.00
+  // entrance bounce; `'pressing'` 1.00 → 0.95 → 1.00 dip;
+  // `'subscribed'` static post-press). Brand canon dominates theme
+  // on branded platforms; theme-slot fallback only for `'generic'`.
+  // Unblocks T-369 (youtube-subscribe-bounce, first Cluster G preset).
+  // 52 → 53 clips.
+  subscribeButtonClip,
 ];
