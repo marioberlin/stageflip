@@ -1,0 +1,30 @@
+{
+  "name": "instagram-link-sticker",
+  "cluster": "ctas",
+  "kind": "socialMedia",
+  "description": "Parity fixture for preset 'instagram-link-sticker' (cluster ctas, kind socialMedia)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Instagram platform font (proprietary)",
+      "license": "platform-byo"
+    },
+    "fallback": {
+      "family": "Inter",
+      "weight": 500,
+      "license": "ofl"
+    }
+  }
+}
