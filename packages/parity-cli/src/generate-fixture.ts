@@ -2300,6 +2300,59 @@ const youtubeSubscribeBounceBinding: ClipKindBinding = {
 };
 
 /**
+ * TikTok follow-pulse snapshot props per D-T370-1 / D-T370-4.
+ * Cluster G preset T-370 wires the `follow-prompt` primitive (T-318;
+ * just merged at main `25bb0c09`) as the FIRST `followPrompt` clipKind
+ * consumer (Pattern C — `PRESET_ID_BINDINGS` override; no clipKind-default
+ * arm in v1 since other Cluster G presets bind different primitives:
+ * T-369 → `subscribe-button`, T-372 → `qr-code-bounce`, T-373 →
+ * `lower-third`). FIRST production consumer of T-318's `'tiktok'` platform
+ * branch.
+ *
+ * Snapshot captures the TikTok native follow-prompt mobile-CTA canon:
+ * 40 × 40 px white avatar circle (size hardcoded by `DEFAULT_SIZE`) +
+ * TikTok-Pink `#FE2C55` "+" badge bottom-right of avatar (badge color
+ * hardcoded by `TIKTOK_PINK`; brand canon dominates theme — `props.badgeColor`
+ * is no-op on the TikTok branch per D-T318-6) + 30%-alpha expanding TikTok-
+ * Pink pulse ring drawn behind the avatar in the `'pulsing'` phase (single
+ * cycle; default `pulseRepeat = 1`) + right-thumb-zone anchor at (1180, 504)
+ * on the parity-CLI default 1280 × 720 canvas (`DEFAULT_COMPOSITION`).
+ * Position math: 1280 − 100 right-margin = 1180; 720 × 0.70 = 504 (~70% down
+ * from top per stub line 25).
+ *
+ * Phase is `'pulsing'`; the parity golden is rendered at frame 30 (peakFrame
+ * = 15 at fps 30; cycleFrames = 45; phaseFrame = 30 is past peak, mid-decay
+ * → avatarScale ≈ 1.025; ring radiusFactor ≈ 1.33; ring opacity ≈ 0.10).
+ * Captures the visually canonical mid-pulse register: avatar mid-pulse +
+ * visible expanding pulse ring + TikTok-Pink "+" badge. Frame 60 is past
+ * `totalFrames = 45 * pulseRepeat=1` — the avatar settles to scale 1.0 and
+ * the ring stops rendering, equivalent to `'idle'` phase; T-370 OVERRIDES
+ * the cluster-norm `--frame=60` to `--frame=30` (D-T370-5).
+ */
+export const TIKTOK_FOLLOW_PULSE_PROPS: {
+  readonly platform: 'tiktok';
+  readonly position: { readonly x: number; readonly y: number };
+  readonly phase: 'pulsing';
+} = {
+  platform: 'tiktok',
+  position: { x: 1180, y: 504 }, // right-thumb-zone on parity-CLI 1280×720 (D-T370-1 / D-T370-4)
+  phase: 'pulsing', // mid-flight pulse register per D-T370-1
+};
+
+const tiktokFollowPulseBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'follow-prompt', // kebab-case primitive `kind` (T-318 line 677)
+  buildProps() {
+    // Deep-clone the nested `position` object so callers can mutate the
+    // returned props without aliasing the exported constant.
+    return {
+      ...TIKTOK_FOLLOW_PULSE_PROPS,
+      position: { ...TIKTOK_FOLLOW_PULSE_PROPS.position },
+    };
+  },
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -2329,6 +2382,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'uefa-starball-refraction': uefaStarballRefractionBinding, // T-339
   'youtube-subscribe-bounce': youtubeSubscribeBounceBinding, // T-369
   'social-handle-lower-third': socialHandleLowerThirdBinding, // T-373
+  'tiktok-follow-pulse': tiktokFollowPulseBinding, // T-370
 };
 
 /**
