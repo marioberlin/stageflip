@@ -14,7 +14,9 @@ import {
   createCanonicalRegistry,
   registerArrangeVariantsBundle,
   registerClipAnimationBundle,
+  registerClusterAComposeBundle,
   registerClusterBComposeBundle,
+  registerClusterFComposeBundle,
   registerCreateMutateBundle,
   registerDataSourceBindingsBundle,
   registerDisplayModeBundle,
@@ -75,7 +77,9 @@ function buildPopulatedBundleRegistry(): BundleRegistry {
   registerVideoModeBundle(registry, router);
   registerDisplayModeBundle(registry, router);
   registerArrangeVariantsBundle(registry, router as ToolRouter<never>);
+  registerClusterAComposeBundle(registry, router);
   registerClusterBComposeBundle(registry, router);
+  registerClusterFComposeBundle(registry, router);
   return registry;
 }
 

@@ -143,6 +143,12 @@ export {
   registerArrangeVariantsBundle,
 } from './handlers/arrange-variants/register.js';
 export {
+  CLUSTER_A_COMPOSE_BUNDLE_NAME,
+  CLUSTER_A_COMPOSE_HANDLERS,
+  CLUSTER_A_COMPOSE_TOOL_DEFINITIONS,
+  registerClusterAComposeBundle,
+} from './handlers/cluster-a-compose/register.js';
+export {
   CLUSTER_B_COMPOSE_BUNDLE_NAME,
   CLUSTER_B_COMPOSE_HANDLERS,
   CLUSTER_B_COMPOSE_TOOL_DEFINITIONS,
