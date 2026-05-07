@@ -31,6 +31,7 @@ import {
   createCanonicalRegistry,
   registerArrangeVariantsBundle,
   registerClipAnimationBundle,
+  registerClusterAComposeBundle,
   registerClusterBComposeBundle,
   registerClusterFComposeBundle,
   registerCreateMutateBundle,
@@ -111,6 +112,7 @@ function populate(registry: BundleRegistry, router: ToolRouter<ExecutorContext>)
   registerVideoModeBundle(registry, router);
   registerDisplayModeBundle(registry, router);
   registerArrangeVariantsBundle(registry, router);
+  registerClusterAComposeBundle(registry, router);
   registerClusterBComposeBundle(registry, router);
   registerClusterFComposeBundle(registry, router);
 }

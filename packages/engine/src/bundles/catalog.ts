@@ -97,6 +97,12 @@ export const CANONICAL_BUNDLES: readonly ToolBundle[] = [
     tools: [],
   },
   {
+    name: 'cluster-a-compose',
+    description:
+      'Cluster A (News & Broadcast) composer tools — preset-binding factories for breaking-news / ongoing-update / guest-intro / documentary-title-card briefs across the 8 ratified Cluster A presets (T-331).',
+    tools: [],
+  },
+  {
     name: 'cluster-b-compose',
     description:
       'Cluster B (Sports) composer tools — preset-binding factories for live-sports score / standings / VAR / player-intro briefs (T-340).',

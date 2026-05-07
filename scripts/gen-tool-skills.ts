@@ -22,6 +22,7 @@ import {
   CANONICAL_BUNDLES,
   createCanonicalRegistry,
   registerArrangeVariantsBundle,
+  registerClusterAComposeBundle,
   registerClusterBComposeBundle,
   registerClusterFComposeBundle,
   registerReadBundle,
@@ -63,6 +64,7 @@ const OWNER_TASK_MAP: Record<string, string> = {
   'video-mode': 'T-185',
   'display-mode': 'T-206',
   'arrange-variants': 'T-386',
+  'cluster-a-compose': 'T-331',
   'cluster-b-compose': 'T-340',
   'cluster-f-compose': 'T-368',
 };
@@ -89,6 +91,7 @@ function populateRegistry() {
   registerDataSourceBindingsBundle(registry, router);
   registerSemanticLayoutBundle(registry, router);
   registerArrangeVariantsBundle(registry, router);
+  registerClusterAComposeBundle(registry, router);
   registerClusterBComposeBundle(registry, router);
   registerClusterFComposeBundle(registry, router);
   return registry;
