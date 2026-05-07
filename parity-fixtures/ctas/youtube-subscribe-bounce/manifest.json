@@ -1,0 +1,30 @@
+{
+  "name": "youtube-subscribe-bounce",
+  "cluster": "ctas",
+  "kind": "subscribeButton",
+  "description": "Parity fixture for preset 'youtube-subscribe-bounce' (cluster ctas, kind subscribeButton)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Roboto",
+      "license": "apache-2.0"
+    },
+    "fallback": {
+      "family": "Roboto",
+      "weight": 500,
+      "license": "apache-2.0"
+    }
+  }
+}

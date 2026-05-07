@@ -2187,6 +2187,58 @@ const cricketScorebugBinding: ClipKindBinding = {
 };
 
 /**
+ * YouTube subscribe-bounce snapshot props per D-T369-1 / D-T369-4.
+ * Cluster G preset T-369 wires the `subscribe-button` primitive (T-317;
+ * just merged at main `1cc4da93`) as the FIRST `subscribeButton` clipKind
+ * consumer (Pattern C — `PRESET_ID_BINDINGS` override; no clipKind-default
+ * arm in v1 since other Cluster G presets bind different primitives:
+ * T-371 / T-373 → `follow-prompt`, T-372 → `qr-code-bounce`). FIRST
+ * production consumer of T-317's `'youtube'` platform branch.
+ *
+ * Snapshot captures the YouTube native subscribe-button broadcast canon:
+ * YouTube-Red `#FF0000` rounded pill (border-radius 8 px hardcoded by the
+ * primitive's `YOUTUBE_BORDER_RADIUS` default) + white force-uppercased
+ * "SUBSCRIBE" label in Roboto Medium 500 (per-platform defaults applied
+ * inside `renderYoutube`) + drop shadow `0 4px 8px rgba(0,0,0,0.20)`
+ * (primitive default `dropShadow !== false`) + lower-right anchor at
+ * `(1040, 640)` on the parity-CLI default 1280×720 canvas (`DEFAULT_COMPOSITION`).
+ * Position math: 1280 − ~180 button-width − ~60 right-margin = 1040;
+ * 720 − ~40 button-height − ~40 bottom-margin = 640.
+ *
+ * Phase defaults to `'idle'`; the parity golden is rendered at frame 60,
+ * well past the bounce-overshoot settle frame (`ceil(fps * 0.5) = 15` at
+ * fps 30) — scale clamps to 1.00 via `extrapolateRight: 'clamp'`. Bell
+ * glyph (`'subscribed'` phase) and cursor glyph (`'pressing'` phase) are
+ * NOT rendered in v1 (D-T369-3 / D-T369-11 a / b — `T-317a` / `T-317b`
+ * carve-outs). YouTube branch force-uppercases the label regardless of
+ * `casing` (D-T369-11-c — primitive contract per T-317 D-T317-8); the
+ * snapshot label `'SUBSCRIBE'` is already uppercase so the transform has
+ * no observable effect on the parity golden.
+ */
+export const YOUTUBE_SUBSCRIBE_BOUNCE_PROPS: {
+  readonly platform: 'youtube';
+  readonly position: { readonly x: number; readonly y: number };
+  readonly label: string;
+} = {
+  platform: 'youtube',
+  position: { x: 1040, y: 640 }, // lower-right on parity-CLI 1280×720 canvas (D-T369-1 / D-T369-4)
+  label: 'SUBSCRIBE', // YouTube-canon CTA copy (D-T369-1)
+};
+
+const youtubeSubscribeBounceBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'subscribe-button', // kebab-case primitive `kind` (T-317 line 599)
+  buildProps() {
+    // Deep-clone the nested `position` object so callers can mutate the
+    // returned props without aliasing the exported constant.
+    return {
+      ...YOUTUBE_SUBSCRIBE_BOUNCE_PROPS,
+      position: { ...YOUTUBE_SUBSCRIBE_BOUNCE_PROPS.position },
+    };
+  },
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -2214,6 +2266,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'f1-timing-tower': f1TimingTowerBinding, // T-332
   'cricket-scorebug': cricketScorebugBinding, // T-336
   'uefa-starball-refraction': uefaStarballRefractionBinding, // T-339
+  'youtube-subscribe-bounce': youtubeSubscribeBounceBinding, // T-369
 };
 
 /**

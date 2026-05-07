@@ -1,0 +1,7 @@
+---
+'@stageflip/parity-cli': patch
+---
+
+T-369 — Add `youtube-subscribe-bounce` preset binding (Cluster G first preset; first `subscribeButton` clipKind consumer; first production consumer of T-317's `subscribe-button` primitive AND its `'youtube'` platform branch).
+
+`PRESET_ID_BINDINGS['youtube-subscribe-bounce']` → `youtubeSubscribeBounceBinding` → `subscribe-button` primitive on `frame-runtime`. New `YOUTUBE_SUBSCRIBE_BOUNCE_PROPS` export ships the canonical YouTube native subscribe-button broadcast canon (3 fields: `platform: 'youtube'`, `position: { x: 1480, y: 920 }` lower-right anchor on 1920×1080, `label: 'SUBSCRIBE'`). Brand canon dominates theme on the YouTube branch (D-T317-6) — chrome (`#FF0000`) / text (`#FFFFFF`) / font (Roboto Medium 500 @ 18 px) / border-radius (8 px) / drop shadow (`0 4px 8px rgba(0,0,0,0.20)`) all inherit from `renderYoutube` defaults; minimal 3-field snapshot follows D-T369-2 budget. `DEFAULT_CLIP_KIND_RESOLVER` UNCHANGED — no `'subscribeButton'` clipKind-default arm added (sister Cluster G presets bind different primitives: `follow-prompt` / `qr-code-bounce` / `lower-third`). All 20 prior `PRESET_ID_BINDINGS` entries UNCHANGED. Cluster G goes from 0/5 → 1/5 substantive + signed. Three primitive-level cosmetic divergences from the stub register (D-T369-11) accepted as `T-317a` bell-wiggle / `T-317b` cursor-slide-in carve-outs and a documented YouTube force-uppercase contract (T-317 D-T317-8); not T-369 fixes.
