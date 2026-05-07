@@ -1,0 +1,7 @@
+---
+'@stageflip/parity-cli': patch
+---
+
+T-373 — Add `social-handle-lower-third` preset binding (Cluster G second preset; sixth `lowerThird` clipKind consumer; fifth `lowerThird`-keyed `PRESET_ID_BINDINGS` override after T-325 / T-326 / T-330 / T-329; fifth production consumer of T-183z's `noFlag` / `subtitleColor` / `font` props).
+
+`PRESET_ID_BINDINGS['social-handle-lower-third']` → `socialHandleLowerThirdBinding` → `lower-third` primitive on `frame-runtime`. New `SOCIAL_HANDLE_LOWER_THIRD_PROPS` export ships the canonical cross-platform social-handle steady-state lower-third (10 fields: `'@yourbrand'` Mixed-Case headline + `'Follow us everywhere'` sentence-case subtitle, both in white `#FFFFFF` Inter Bold weight 700; flat black `#000000` background; `noFlag: true` suppresses the accent strip; `subtitleColor: '#FFFFFF'` decouples the subtitle line from `accent`; `insetLeftPx: 96` / `insetBottomPx: 96` canvas-safe defaults at 1280×720). All 21 prior `PRESET_ID_BINDINGS` entries UNCHANGED. `DEFAULT_CLIP_KIND_RESOLVER`'s `'lowerThird'` arm UNCHANGED — `cnnClassicBinding` still holds the clipKind-default slot. Cluster G goes from 1/5 → 2/5 substantive + signed. Six primitive-level cosmetic divergences from the stub register (D-T373-12 a–f — opaque background approximating 60–80% translucent register, hard-coded boxShadow, uniform corner radius, ease-out-quart entry curve, no multi-handle cascade, no platform-icon row) accepted as `T-183z`-family / `T-373a`-family follow-ups; not T-373 fixes.
