@@ -24,6 +24,7 @@ import {
   registerArrangeVariantsBundle,
   registerClusterAComposeBundle,
   registerClusterBComposeBundle,
+  registerClusterEComposeBundle,
   registerClusterFComposeBundle,
   registerReadBundle,
   registerCreateMutateBundle,
@@ -66,6 +67,7 @@ const OWNER_TASK_MAP: Record<string, string> = {
   'arrange-variants': 'T-386',
   'cluster-a-compose': 'T-331',
   'cluster-b-compose': 'T-340',
+  'cluster-e-compose': 'T-361',
   'cluster-f-compose': 'T-368',
 };
 
@@ -93,6 +95,7 @@ function populateRegistry() {
   registerArrangeVariantsBundle(registry, router);
   registerClusterAComposeBundle(registry, router);
   registerClusterBComposeBundle(registry, router);
+  registerClusterEComposeBundle(registry, router);
   registerClusterFComposeBundle(registry, router);
   return registry;
 }
