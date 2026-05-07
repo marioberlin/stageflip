@@ -1,0 +1,30 @@
+{
+  "name": "coinbase-dvd-qr",
+  "cluster": "ctas",
+  "kind": "qrCodeBounce",
+  "description": "Parity fixture for preset 'coinbase-dvd-qr' (cluster ctas, kind qrCodeBounce)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "N/A",
+      "license": "na"
+    },
+    "fallback": {
+      "family": "N/A",
+      "weight": 0,
+      "license": "na"
+    }
+  }
+}

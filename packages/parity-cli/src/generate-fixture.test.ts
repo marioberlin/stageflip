@@ -13,6 +13,8 @@ import {
   BLOOMBERG_CANONICAL_SNAPSHOT,
   CNN_BREAKING_PROPS,
   CNN_CLASSIC_PROPS,
+  COINBASE_DVD_QR_MATRIX,
+  COINBASE_DVD_QR_PROPS,
   CRICKET_OUTCOME_COLORS,
   CRICKET_SCOREBUG_PROPS,
   DEFAULT_CLIP_KIND_RESOLVER,
@@ -2393,7 +2395,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands (T-333 added the 12th; T-338 the 17th; T-332 the 18th).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(23);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(24);
   });
 
   it('binding deep-clones nested object literals so callers can mutate freely (T-333)', () => {
@@ -2542,7 +2544,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(23);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(24);
   });
 
   it('fox-nfl-no-chrome binding deep-clones nested object literals so callers can mutate freely (T-334)', () => {
@@ -2683,7 +2685,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(23);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(24);
   });
 
   it('nbc-snf-possession-illuminated binding deep-clones nested object literals so callers can mutate freely (T-335)', () => {
@@ -2827,7 +2829,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.clipName).toBe('news-ticker-bar');
     expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(23);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(24);
   });
 
   it('espn-bottomline-flipper binding deep-clones the entries array so callers can mutate freely (T-339a)', () => {
@@ -3000,7 +3002,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(23);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(24);
   });
 
   it('wimbledon-green-purple binding deep-clones nested objects + players tuple + sets arrays (T-337)', () => {
@@ -3165,7 +3167,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['masters-red-under-par']?.clipName).toBe('standings-table');
     expect(PRESET_ID_BINDINGS['masters-red-under-par']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(23);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(24);
   });
 
   it('masters-red-under-par binding deep-clones rows + columns + values arrays (T-338)', () => {
@@ -3325,7 +3327,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['f1-timing-tower']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['f1-timing-tower']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(23);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(24);
   });
 
   it('f1-timing-tower binding deep-clones nested objects + rows + sectorColors arrays (T-332)', () => {
@@ -3462,7 +3464,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['cricket-scorebug']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['cricket-scorebug']?.runtimeId).toBe('frame-runtime');
     // Nineteen overrides total after T-336 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(23);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(24);
   });
 
   it('cricket-scorebug binding deep-clones nested objects + batsmen array (T-336 AC #9)', () => {
@@ -3631,7 +3633,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['uefa-starball-refraction']?.clipName).toBe('magic-wall-panel');
     expect(PRESET_ID_BINDINGS['uefa-starball-refraction']?.runtimeId).toBe('frame-runtime');
     // Twenty overrides total after T-339 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(23);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(24);
   });
 
   it('uefa-starball-refraction binding deep-clones regions array per call (T-339 AC #11)', () => {
@@ -3726,7 +3728,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['youtube-subscribe-bounce']?.clipName).toBe('subscribe-button');
     expect(PRESET_ID_BINDINGS['youtube-subscribe-bounce']?.runtimeId).toBe('frame-runtime');
     // Twenty-one overrides total after T-369 lands (20 prior + youtube-subscribe-bounce).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(23);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(24);
   });
 
   it('youtube-subscribe-bounce binding deep-clones the position object so callers can mutate freely (T-369 AC #13)', () => {
@@ -3847,7 +3849,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['social-handle-lower-third']?.clipName).toBe('lower-third');
     expect(PRESET_ID_BINDINGS['social-handle-lower-third']?.runtimeId).toBe('frame-runtime');
     // Twenty-two overrides total after T-373 lands (21 prior + social-handle-lower-third).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(23);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(24);
   });
 
   it('lowerThird clipKind-default arm STILL returns cnnClassicBinding after T-373 lands (T-373 AC #17)', () => {
@@ -3940,7 +3942,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['tiktok-follow-pulse']?.clipName).toBe('follow-prompt');
     expect(PRESET_ID_BINDINGS['tiktok-follow-pulse']?.runtimeId).toBe('frame-runtime');
     // Twenty-three overrides total after T-370 lands (22 prior + tiktok-follow-pulse).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(23);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(24);
   });
 
   it('tiktok-follow-pulse binding deep-clones the position object so callers can mutate freely (T-370 AC #13)', () => {
@@ -4012,6 +4014,142 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     // Per T-360 D-T360-2: PRESET_ID_BINDINGS hit overrides clipKind mismatch.
     expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'tiktok-follow-pulse')?.clipName).toBe(
       'follow-prompt',
+    );
+  });
+
+  // T-372 — fourth Cluster G preset (`coinbase-dvd-qr`), wired via the
+  // `PRESET_ID_BINDINGS` override path (Pattern C). FIRST `qrCodeBounce`
+  // clipKind consumer; FIRST production consumer of T-319's `qr-code-bounce`
+  // primitive. The clipKind-default arm for `'qrCodeBounce'` is INTENTIONALLY
+  // ABSENT (D-T372-4 — only one `qrCodeBounce`-bound preset in v1). FIRST
+  // non-cluster-norm parity threshold pin in Phase 13 (PSNR=38 / SSIM=0.94
+  // preset-pinned per stub line 48). All 23 prior `PRESET_ID_BINDINGS`
+  // entries UNCHANGED.
+  it('routes coinbase-dvd-qr through PRESET_ID_BINDINGS override (T-372 AC #13)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('qrCodeBounce', 'coinbase-dvd-qr');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('qr-code-bounce'); // kebab-case primitive kind (T-319 line 357)
+    const props = binding?.buildProps(undefined) as {
+      qrMatrix: readonly string[];
+      bounce: {
+        startPosition: { x: number; y: number };
+        startVelocity: { vx: number; vy: number };
+      };
+    };
+    expect(props.qrMatrix).toEqual([...COINBASE_DVD_QR_MATRIX]);
+    expect(props.bounce.startPosition).toEqual({ x: 0, y: 0 });
+    expect(props.bounce.startVelocity).toEqual({ vx: 8, vy: 6 });
+  });
+
+  it('exports COINBASE_DVD_QR_PROPS with the canonical Coinbase DVD-QR snapshot (T-372 AC #14)', () => {
+    expect(COINBASE_DVD_QR_PROPS.qrMatrix).toBe(COINBASE_DVD_QR_MATRIX);
+    expect(COINBASE_DVD_QR_PROPS.bounce.startPosition).toEqual({ x: 0, y: 0 });
+    expect(COINBASE_DVD_QR_PROPS.bounce.startVelocity).toEqual({ vx: 8, vy: 6 });
+    // Snapshot intentionally minimal — only the two REQUIRED fields
+    // (`qrMatrix`, `bounce`); every other axis (`sizePercent`,
+    // `colorCycle`, `background`, `lightModuleColor`) inherits primitive
+    // defaults per D-T372-1 / D-T372-4.
+    expect(Object.keys(COINBASE_DVD_QR_PROPS)).toHaveLength(2);
+  });
+
+  it('exports COINBASE_DVD_QR_MATRIX as a square 21×21 0/1-row-string matrix (T-372 AC #15 / D-T372-2)', () => {
+    expect(COINBASE_DVD_QR_MATRIX).toHaveLength(21);
+    for (const row of COINBASE_DVD_QR_MATRIX) {
+      expect(row).toHaveLength(21);
+      expect(/^[01]+$/.test(row)).toBe(true);
+    }
+    // Top-left finder (rows 0..6, cols 0..6) — outer ring is `'1'`.
+    expect(COINBASE_DVD_QR_MATRIX[0]?.startsWith('1111111')).toBe(true);
+    // Top-right finder (rows 0..6, cols 14..20) — outer ring is `'1'`.
+    expect(COINBASE_DVD_QR_MATRIX[0]?.endsWith('1111111')).toBe(true);
+    // Bottom-left finder (rows 14..20, cols 0..6) — outer ring is `'1'`.
+    expect(COINBASE_DVD_QR_MATRIX[14]?.startsWith('1111111')).toBe(true);
+    expect(COINBASE_DVD_QR_MATRIX[20]?.startsWith('1111111')).toBe(true);
+  });
+
+  it('PRESET_ID_BINDINGS contains coinbase-dvd-qr override; length 24 (T-372 AC #16)', () => {
+    expect(PRESET_ID_BINDINGS['coinbase-dvd-qr']).toBeDefined();
+    expect(PRESET_ID_BINDINGS['coinbase-dvd-qr']?.clipName).toBe('qr-code-bounce');
+    expect(PRESET_ID_BINDINGS['coinbase-dvd-qr']?.runtimeId).toBe('frame-runtime');
+    // Twenty-four overrides total after T-372 lands (23 prior + coinbase-dvd-qr).
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(24);
+  });
+
+  it('coinbase-dvd-qr binding deep-clones the bounce config so callers can mutate freely (T-372 AC #13)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('qrCodeBounce', 'coinbase-dvd-qr');
+    if (!binding) throw new Error('test setup');
+    const a = binding.buildProps(undefined) as {
+      qrMatrix: string[];
+      bounce: {
+        startPosition: { x: number; y: number };
+        startVelocity: { vx: number; vy: number };
+      };
+    };
+    const b = binding.buildProps(undefined) as typeof a;
+    a.bounce.startPosition.x = 999;
+    a.bounce.startVelocity.vx = 999;
+    a.qrMatrix.push('mutated');
+    expect(b.bounce.startPosition.x).toBe(0);
+    expect(b.bounce.startVelocity.vx).toBe(8);
+    expect(b.qrMatrix).toHaveLength(21);
+    // Exported constant unchanged after caller mutates the returned object.
+    expect(COINBASE_DVD_QR_PROPS.bounce.startPosition.x).toBe(0);
+    expect(COINBASE_DVD_QR_PROPS.bounce.startVelocity.vx).toBe(8);
+    expect(COINBASE_DVD_QR_MATRIX).toHaveLength(21);
+  });
+
+  it('NO clipKind-default arm for qrCodeBounce (T-372 AC #17)', () => {
+    // No presetId → no clipKind-default arm; resolver returns undefined.
+    expect(DEFAULT_CLIP_KIND_RESOLVER('qrCodeBounce')).toBeUndefined();
+    // Unknown preset id → PRESET_ID_BINDINGS miss; no clipKind-default fall-through.
+    expect(DEFAULT_CLIP_KIND_RESOLVER('qrCodeBounce', 'unknown-preset-id')).toBeUndefined();
+  });
+
+  it('all 23 prior PRESET_ID_BINDINGS overrides STILL resolve after T-372 lands (T-372 AC #18 backward compat)', () => {
+    expect(PRESET_ID_BINDINGS['big-number-stat-impact']?.clipName).toBe('animated-value');
+    expect(PRESET_ID_BINDINGS['mrbeast-komika-axis']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['tiktok-rounded-box']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['ali-abdaal-opacity-karaoke']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['netflix-invisible']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['bbc-reith-dark']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['al-jazeera-orange']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['apple-tv-lt']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['netflix-doc-lt']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['fox-news-alert']?.clipName).toBe('breaking-banner');
+    expect(PRESET_ID_BINDINGS['msnbc-big-board']?.clipName).toBe('magic-wall-panel');
+    expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.clipName).toBe('news-ticker-bar');
+    expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['masters-red-under-par']?.clipName).toBe('standings-table');
+    expect(PRESET_ID_BINDINGS['f1-timing-tower']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['cricket-scorebug']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['uefa-starball-refraction']?.clipName).toBe('magic-wall-panel');
+    expect(PRESET_ID_BINDINGS['youtube-subscribe-bounce']?.clipName).toBe('subscribe-button');
+    expect(PRESET_ID_BINDINGS['social-handle-lower-third']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['tiktok-follow-pulse']?.clipName).toBe('follow-prompt');
+  });
+
+  it('clipKind-default arms for other clipKinds STILL resolve after T-372 lands (T-372 AC #19 backward compat)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('bigNumber')?.clipName).toBe('animated-value');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('scoreBug')?.clipName).toBe('outcome-row');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('newsTicker')?.clipName).toBe('news-ticker-bar');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('standings')?.clipName).toBe('standings-table');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('caption')?.clipName).toBe('caption');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('fullScreen')?.clipName).toBe('magic-wall-panel');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('lyrics')?.clipName).toBe('lyrics');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('titleSequence')?.clipName).toBe('titleSequence');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('lowerThird')?.clipName).toBe('lower-third');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('breakingBanner')?.clipName).toBe('breaking-banner');
+  });
+
+  it('unknown clipKind STILL returns undefined after T-372 lands (T-372 AC #20)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('unknownKind')).toBeUndefined();
+    // Per T-360 D-T360-2: PRESET_ID_BINDINGS hit overrides clipKind mismatch.
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'coinbase-dvd-qr')?.clipName).toBe(
+      'qr-code-bounce',
     );
   });
 });

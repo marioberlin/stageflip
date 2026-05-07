@@ -2353,6 +2353,106 @@ const tiktokFollowPulseBinding: ClipKindBinding = {
 };
 
 /**
+ * Synthetic 21 × 21 Version 1 placeholder QR matrix for the
+ * `coinbase-dvd-qr` parity fixture (T-372 D-T372-2). Carries the three
+ * canonical finder patterns (top-left, top-right, bottom-left 7×7 blocks
+ * with outer ring `'1'`, inner ring `'0'`, center 3×3 `'1'`) + timing
+ * patterns (row 6 / col 6 alternating 1/0 between the finders) + the
+ * mandatory dark-module bit at row 13 col 8 + arbitrary deterministic
+ * data bits in the remaining cells. Does NOT encode any real URL —
+ * Reed-Solomon parity bits are NOT computed; this matrix would NOT scan
+ * as a real QR code. The brand-register identity is the
+ * bouncing-rainbow-QR shape, not a literal scannable URL; the parity
+ * test only cares about the rendered pixel pattern.
+ */
+export const COINBASE_DVD_QR_MATRIX: readonly string[] = [
+  '111111100101001111111',
+  '100000100101001000001',
+  '101110101001001011101',
+  '101110100011101011101',
+  '101110101111101011101',
+  '100000100011101000001',
+  '111111101010101111111',
+  '000000000101000000000',
+  '001010100101010010101',
+  '110010011001001100100',
+  '000111100011100001110',
+  '111111011111111111111',
+  '000111100011100001110',
+  '000000001001001100100',
+  '111111100101010010101',
+  '100000100101010010101',
+  '101110101001001100100',
+  '101110100011100001110',
+  '101110101111111111111',
+  '100000100011100001110',
+  '111111101001001100100',
+];
+
+/**
+ * Coinbase DVD-QR snapshot props per D-T372-1 / D-T372-3 / D-T372-4.
+ * Cluster G preset T-372 wires the `qr-code-bounce` primitive (T-319;
+ * just merged at main `4d0879c8`) as the FIRST `qrCodeBounce` clipKind
+ * consumer (Pattern C — `PRESET_ID_BINDINGS` override; no clipKind-default
+ * arm in v1 since other Cluster G presets bind different primitives:
+ * T-369 → `subscribe-button`, T-370 → `follow-prompt`, T-373 →
+ * `lower-third`). FIRST production consumer of T-319's `qr-code-bounce`
+ * primitive.
+ *
+ * Snapshot captures the Coinbase Super Bowl LVI DVD-screensaver QR canon:
+ * 21 × 21 Version 1 synthetic-placeholder QR matrix on pure-black backdrop
+ * (primitive default `#000000` per `DEFAULT_BACKGROUND`; zero-brand canon
+ * dominates theme — the snapshot does NOT pass `background`) +
+ * ~22 % canvas-min-dimension size (primitive default `sizePercent: 22`;
+ * `rectSize ≈ 158 px` on the parity-CLI 1280×720 canvas) + rainbow HSL
+ * hue cycle (primitive default `colorCycle.palette: 'rainbow'`,
+ * `cycleFrames = ceil(fps * 7) = 210` at fps 30) + DVD-screensaver bounce
+ * starting at top-left corner with non-degenerate axis-asymmetric
+ * velocities (D-T372-3: `vx: 8, vy: 6` — 4× faster than the stub's
+ * 1.3–2.0 px/frame to deliver a visually-canonical mid-flight register
+ * at frame 60).
+ *
+ * At frame 60 with these values: position ≈ `(480, 360)` — center-canvas,
+ * still in the first up-leg of the bounce (no rebound yet —
+ * `spanX = 1280 - 158 = 1122`, `spanY = 720 - 158 = 562`; both axes
+ * within span). Hue ≈ `60 / 210 * 360 ≈ 102.86°` (yellow-green) →
+ * `darkColor ≈ #7BFF00` per HSL→RGB conversion. Captures the canonical
+ * mid-bounce + mid-rainbow register. T-372 is the FIRST non-cluster-norm
+ * parity threshold pin in Phase 13: PSNR=38 / SSIM=0.94 (preset-pinned
+ * per stub line 48), NOT cluster-norm 42 / 0.98.
+ */
+export const COINBASE_DVD_QR_PROPS: {
+  readonly qrMatrix: readonly string[];
+  readonly bounce: {
+    readonly startPosition: { readonly x: number; readonly y: number };
+    readonly startVelocity: { readonly vx: number; readonly vy: number };
+  };
+} = {
+  qrMatrix: COINBASE_DVD_QR_MATRIX,
+  bounce: {
+    startPosition: { x: 0, y: 0 }, // top-left corner anchor (D-T372-1)
+    startVelocity: { vx: 8, vy: 6 }, // mid-flight at frame 60 (D-T372-3)
+  },
+};
+
+const coinbaseDvdQrBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'qr-code-bounce', // kebab-case primitive `kind` (T-319 line 357)
+  buildProps() {
+    // Deep-clone the nested objects so callers can mutate the returned
+    // props without aliasing the exported constant. The `qrMatrix` itself
+    // is `readonly`-typed; we expand it into a fresh array.
+    return {
+      qrMatrix: [...COINBASE_DVD_QR_PROPS.qrMatrix],
+      bounce: {
+        startPosition: { ...COINBASE_DVD_QR_PROPS.bounce.startPosition },
+        startVelocity: { ...COINBASE_DVD_QR_PROPS.bounce.startVelocity },
+      },
+    };
+  },
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -2383,6 +2483,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'youtube-subscribe-bounce': youtubeSubscribeBounceBinding, // T-369
   'social-handle-lower-third': socialHandleLowerThirdBinding, // T-373
   'tiktok-follow-pulse': tiktokFollowPulseBinding, // T-370
+  'coinbase-dvd-qr': coinbaseDvdQrBinding, // T-372
 };
 
 /**
