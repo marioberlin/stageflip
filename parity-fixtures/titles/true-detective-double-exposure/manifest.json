@@ -1,0 +1,30 @@
+{
+  "name": "true-detective-double-exposure",
+  "cluster": "titles",
+  "kind": "titleSequence",
+  "description": "Parity fixture for preset 'true-detective-double-exposure' (cluster titles, kind titleSequence)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    120
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Custom sans serif (clean, unobtrusive)",
+      "license": "license-cleared"
+    },
+    "fallback": {
+      "family": "Inter",
+      "weight": 400,
+      "license": "ofl"
+    }
+  }
+}
