@@ -1502,6 +1502,7 @@ const uefaStarballRefractionBinding: ClipKindBinding = {
 };
 
 /**
+/**
  * `bbc-mark-allen-clouds` (T-347c) — first `weatherMap`-clipKind preset; wired
  * via `DEFAULT_CLIP_KIND_RESOLVER` (Pattern C — first preset for a clipKind
  * goes through the clipKind-default arm; later weatherMap consumers
@@ -1625,6 +1626,152 @@ const bbcMarkAllenCloudsBinding: ClipKindBinding = {
       },
       // Optional legend — top-right per BBC GEL canon (8-point grid).
       legend: { enabled: true, position: 'top-right' as const },
+    };
+  },
+};
+
+/**
+ * `nhc-cone-of-uncertainty` (T-347f) — first + only `stormTracker`-clipKind
+ * consumer in v1; wired via `DEFAULT_CLIP_KIND_RESOLVER` (Pattern C —
+ * first preset for a clipKind goes through the clipKind-default arm).
+ * Synthetic Atlantic hurricane "MARGOT" with canonical NHC 5-day cone +
+ * 6 forecast track dots (D→S→H→M intensity arc per NWS mandate) + 3
+ * coastal warnings demonstrating the sealed `warningType` enum dispatch.
+ *
+ * **Mandatory disclaimer**: the primitive always emits the
+ * `'Impacts extend beyond the cone'` disclaimer per D-T347b-2 — this
+ * binding uses the default wording.
+ *
+ * v1 ships single-frame static at frame 60; multi-advisory animated
+ * time-lapse deferred to T-347b-advisory-cycle.
+ *
+ * Synthetic geometry sized to 1280×720; real-time NHC consumers wire
+ * higher-fidelity coastal + cone data via T-347b-live-data
+ * (LiveDataClip integration; Track A frontier per ADR-005).
+ */
+
+/** D-T347f-3: 6 forecast track dots covering 0/24/48/72/96/120h. */
+export const NHC_CONE_TRACK_DOTS = [
+  {
+    id: 'pos-0h',
+    timestamp: '5pm Mon',
+    position: { x: 700, y: 460 },
+    intensity: 'H' as const,
+  },
+  {
+    id: 'pos-24h',
+    timestamp: '5pm Tue',
+    position: { x: 760, y: 420 },
+    intensity: 'H' as const,
+  },
+  {
+    id: 'pos-48h',
+    timestamp: '5pm Wed',
+    position: { x: 820, y: 360 },
+    intensity: 'M' as const,
+  },
+  {
+    id: 'pos-72h',
+    timestamp: '5pm Thu',
+    position: { x: 880, y: 300 },
+    intensity: 'M' as const,
+  },
+  {
+    id: 'pos-96h',
+    timestamp: '5pm Fri',
+    position: { x: 940, y: 240 },
+    intensity: 'H' as const,
+  },
+  {
+    id: 'pos-120h',
+    timestamp: '5pm Sat',
+    position: { x: 1000, y: 200 },
+    intensity: 'S' as const,
+  },
+] as const;
+
+/**
+ * D-T347f-4: cone polygon widening over 5 days. Narrow at current
+ * position (∼20px wide), widening to ∼160px at 120h endpoint.
+ */
+export const NHC_CONE_POLYGON_D =
+  'M 690,470 L 710,450 L 770,410 L 830,350 L 890,290 L 950,230 L 1010,180 L 1100,160 L 1080,250 L 1020,310 L 940,370 L 870,440 L 800,490 L 730,505 L 690,490 Z';
+
+/** D-T347f-5: 3 coastal-warning regions demonstrating sealed warningType enum. */
+export const NHC_CONE_COASTAL_WARNINGS = [
+  {
+    id: 'florida-coast',
+    regionPaths: [
+      'M 540,460 L 580,450 L 620,470 L 640,520 L 620,580 L 580,610 L 540,600 L 530,540 Z',
+    ],
+    warningType: 'hurricane-warning' as const,
+  },
+  {
+    id: 'ga-sc-coast',
+    regionPaths: ['M 540,420 L 580,410 L 600,430 L 580,460 L 540,470 L 530,440 Z'],
+    warningType: 'storm-surge-warning' as const,
+  },
+  {
+    id: 'nc-coast',
+    regionPaths: ['M 540,360 L 600,355 L 620,380 L 600,410 L 560,415 L 535,390 Z'],
+    warningType: 'hurricane-watch' as const,
+  },
+] as const;
+
+/** D-T347f-6: synthetic SE US + Atlantic basin map paths. */
+export const NHC_CONE_MAP_PATHS = [
+  {
+    id: 'se-us-coast',
+    d: 'M 380,360 L 460,340 L 520,360 L 540,400 L 560,460 L 600,520 L 620,580 L 580,640 L 500,650 L 420,620 L 380,560 L 360,480 L 360,400 Z',
+    fill: '#22354F',
+  },
+  {
+    id: 'bahamas-caribbean',
+    d: 'M 660,540 L 720,520 L 750,560 L 730,610 L 670,605 Z',
+    fill: '#1A2A3F',
+  },
+] as const;
+
+const nhcConeOfUncertaintyBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'stormTracker',
+  buildProps() {
+    return {
+      storm: {
+        name: 'HURRICANE MARGOT',
+        advisoryTimestamp: 'Advisory 18 — 5 PM EDT Mon',
+      },
+      cone: {
+        d: NHC_CONE_POLYGON_D,
+        // fill + opacity DELIBERATELY OMITTED — primitive defaults
+        // (#FFFFFF semi-transparent at 0.4 opacity) are canonical NHC.
+      },
+      trackDots: NHC_CONE_TRACK_DOTS.map((d) => ({
+        id: d.id,
+        position: { ...d.position },
+        intensity: d.intensity,
+        timestamp: d.timestamp,
+      })),
+      coastalWarnings: NHC_CONE_COASTAL_WARNINGS.map((w) => ({
+        id: w.id,
+        regionPaths: [...w.regionPaths],
+        warningType: w.warningType,
+      })),
+      mapPaths: NHC_CONE_MAP_PATHS.map((p) => ({
+        id: p.id,
+        d: p.d,
+        fill: p.fill,
+      })),
+      // Open Sans Bold for storm-name banner; primitive uses font.size
+      // for the top banner per stub line 35 ("Bold, 28-32pt"); top of
+      // range = 32.
+      font: {
+        family: 'Open Sans, system-ui, -apple-system, sans-serif',
+        weight: 700,
+        size: 32,
+      },
+      // disclaimerText DELIBERATELY OMITTED — primitive default
+      // 'Impacts extend beyond the cone' is the canonical NHC text.
     };
   },
 };
@@ -3574,6 +3721,7 @@ export const DEFAULT_CLIP_KIND_RESOLVER: ClipKindResolver = (clipKind, presetId)
   if (clipKind === 'lowerThird') return cnnClassicBinding;
   if (clipKind === 'breakingBanner') return cnnBreakingBinding;
   if (clipKind === 'weatherMap') return bbcMarkAllenCloudsBinding;
+  if (clipKind === 'stormTracker') return nhcConeOfUncertaintyBinding;
   return undefined;
 };
 
