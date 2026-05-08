@@ -2816,6 +2816,184 @@ const trueDetectiveDoubleExposureBinding: ClipKindBinding = {
 };
 
 /**
+ * `succession-home-video` (T-352) — fourth Cluster D preset; THIRD
+ * `titleSequence`-clipKind preset wired via `PRESET_ID_BINDINGS` (Pattern C
+ * override; T-350's `squidGameGeometricBinding` stays the clipKind-default
+ * arm) AND **third multi-clip-composition consumer in StageFlip parity-CLI
+ * history** (D-T352-1; reuses T-348's `ClipKindBinding.overlays?` surface
+ * verbatim — no architectural extension). Composes the parent `titleSequence`
+ * primitive (T-321) with two atmospheric overlays in z-order: `grain`
+ * (T-321a) and `photographic-overlay` (T-321d). T-352 is the **FIRST
+ * end-to-end consumer of `mode: 'sepia'`** (T-348 picked `'fade'`; T-351
+ * picked `'cinematic-lut'`) AND the **FIRST end-to-end consumer of
+ * non-default grain intensity** (T-348/T-351 used the canonical 0.15 default;
+ * T-352 explicitly raises grain `intensity` to 0.30 for VHS-tape chatter per
+ * stub line 26 — "moderate film grain, subtle frame chatter"). Sepia tonal
+ * grading at `intensity: 0.7` DOMINATES the visual register, anchoring the
+ * canonical warm yellow-brown home-video VHS mood per stub line 26. NO
+ * light-leak (would over-saturate the sepia register to muddy-brown) NOR
+ * particles (no atmospheric drift in the canon) per D-T352-2 (intentional
+ * 3-clip stack matching T-351's shape with different mode + grain intensity).
+ * Lowered parity thresholds 34/0.90 (D-T352-5; matches T-351's bar — mixed-
+ * grade footage variance per stub line 48 + HIGH grain intensity 0.30).
+ * IBM Plex Sans Condensed weight 600 (OFL fallback) is the rendered show-logo
+ * typography per D-T352-10; bespoke Engravers Gothic + Sackers Gothic
+ * preferred faces are commercial-byo (consumer-wired). Single-shot
+ * `kind: 'titlePlate'` ALL-CAPS "SUCCESSION" show-logo hold under
+ * `style: 'photographic-overlay'` (SECOND end-to-end consumer of this style
+ * register after T-351). videoShot shot-kind extension deferred to
+ * T-352-followup per D-T352-1; v1 stays within the existing 5-kind sealed
+ * envelope.
+ */
+
+/** D-T352-6: titleSequence parent props (`'photographic-overlay'` style; show-logo hold). */
+export const SUCCESSION_HOME_VIDEO_TITLE_SEQUENCE_PROPS = {
+  shots: [
+    {
+      id: 'main-credit',
+      startMs: 0,
+      endMs: 90000, // 90s sequence per stub line 35
+      kind: 'titlePlate' as const,
+      // titlePlate content shape is `{ text }` (D-T352-6); show-logo identity
+      // per stub line 30 ("Show logo: Engravers Gothic fallback, ALL CAPS,
+      // wide tracking, classic stationery-engraving style").
+      content: { text: 'SUCCESSION' },
+      transitionOut: 'cut' as const,
+    },
+  ],
+  // T-321 line 566–578: only `titlePlate` + `creditsBlock` shots render
+  // under this style; defers everything else to a sister photographic clip.
+  // T-351 was the FIRST end-to-end consumer; T-352 is the SECOND.
+  style: 'photographic-overlay' as const,
+  font: {
+    // IBM Plex Sans Condensed weight 600 (OFL fallback; registered via
+    // T-336 / T-356 family). Bespoke Engravers Gothic + Sackers Gothic
+    // preferred faces are commercial-byo (consumer-wired) per D-T352-10;
+    // Copperplate (the system-only half of the license-mixed fallback) is
+    // macOS-system-only and cannot render reproducibly across CDP. The
+    // family chain falls through to non-condensed IBM Plex Sans, then to
+    // system fallbacks, if Condensed is missing from the registry.
+    family: 'IBM Plex Sans Condensed, IBM Plex Sans, system-ui, -apple-system, sans-serif',
+    // Match stub fallbackFont.weight (600); aligns with the dynastic-
+    // stationery register (heavy display weight) per stub lines 30–31.
+    weight: 600,
+    // Show-logo size — larger than T-351's 28 (credit hold). Stub line 30
+    // designates "Show logo" framing; show logos canonically render larger
+    // than credit holds. 56pt fits comfortably within the 1280-wide canvas
+    // at +250 tracking.
+    size: 56,
+    // +250 letterSpacing — mid-range of stub line 32's "+200, often +300"
+    // envelope. +200 is the floor; +300 stresses font rasterization across
+    // CDP and is reserved for a T-352-letterspacing-extreme follow-up.
+    letterSpacing: 250,
+  },
+  // ALL CAPS per stub line 30 — show-logo register; also stub line 31 —
+  // credits ALL CAPS (D-T352-6).
+  casing: 'uppercase' as const,
+  // Deep warm-brown under-canvas placeholder (R=26, G=20, B=16). The sepia
+  // tonal grading at intensity 0.7 dominates visually so the painted
+  // background is largely hidden; '#1A1410' anchors the "warm yellow-brown"
+  // register per stub line 26.
+  background: '#1A1410',
+  // Warm off-white / pale cream (R=244, G=232, B=200). Under the sepia
+  // matrix at 0.7 intensity, '#F4E8C8' ages gracefully into the warm-yellow
+  // tint while preserving legibility against the warm-brown background.
+  foreground: '#F4E8C8',
+  // highlightColor omitted (titlePlate doesn't use highlight under
+  // 'photographic-overlay' style; would be inert).
+  // Centered show-logo placement on a 1280×720 canvas; y=360 places the
+  // baseline at canvas mid-height — the dynastic-stationery "show logo"
+  // register wants center-of-frame placement, NOT lower-third like T-351's
+  // credit hold. Wrapper renders at `left: x - width / 2`, so x=640 +
+  // width=1280 spans x=0..1280 (full canvas width).
+  position: { x: 640, y: 360, width: 1280, alignment: 'center' as const },
+  entrance: 'fade' as const,
+  // glow omitted — titlePlate under 'photographic-overlay' style does NOT
+  // exercise glow per the title-sequence renderTitlePlate path.
+  // letterformScale omitted — only used by 'letterform-assemble' style.
+  // transitionDurationMs omitted (default 300; single-shot — no transition).
+  // musicCue omitted (parity golden does not exercise music keyframes).
+} as const;
+
+/** D-T352-7: grain overlay props (HIGH intensity 0.30 — VHS-tape chatter). */
+export const SUCCESSION_HOME_VIDEO_GRAIN_PROPS = {
+  // HIGH intensity — opposite posture from T-348/T-351's 0.15 canonical
+  // subtle default. Stub line 26 ("moderate film grain, subtle frame
+  // chatter"): the "subtle" annotation is relative-to-VHS-tape, NOT
+  // relative-to-T-348/T-351; actual VHS chatter is visibly heavier than the
+  // default Stranger-Things-grade subtle grain. 0.30 is the centroid of
+  // the canonical 0.25–0.35 VHS-chatter envelope; lower (0.20) would not
+  // adequately register the "VHS chatter" annotation; higher (0.40+) would
+  // start to obscure the show-logo letterforms. **FIRST end-to-end
+  // consumer of non-default grain intensity** (D-T352-7).
+  intensity: 0.3,
+  cellSize: 1,
+  seed: 0,
+} as const;
+
+/** D-T352-3: photographic-overlay overlay props (sepia @ 0.70 — DOMINATES the visual). */
+export const SUCCESSION_HOME_VIDEO_PHOTOGRAPHIC_OVERLAY_PROPS = {
+  // Closest sealed-enum match for Succession's "warm yellow-brown tint"
+  // home-video VHS register per stub line 26. The SEPIA_MATRIX
+  // (photographic-overlay.tsx:88–98) is the canonical W3C-style sepia
+  // transform — collapses RGB to a warm-yellow gradient with explicit
+  // per-channel scaling (`[0.393 0.769 0.189; 0.349 0.686 0.168;
+  // 0.272 0.534 0.131]`). **FIRST end-to-end consumer of `mode: 'sepia'`**
+  // in StageFlip parity-CLI history (T-348 picked `'fade'`; T-351 picked
+  // `'cinematic-lut'`).
+  mode: 'sepia' as const,
+  // DOMINANT intensity — the sepia tint IS the canonical mood signal per
+  // stub line 26. Without it, the render reads as a generic credit hold;
+  // WITH the sepia at 0.7 dominant intensity, it reads unmistakably as the
+  // home-video VHS register. HIGHER than T-351's 0.6 (cinematic-LUT cast)
+  // and T-348's 0.4 (modest fade cast) because Succession's stub explicitly
+  // designates the sepia tint as the canonical mood anchor. Pushing
+  // intensity above 0.85 would obliterate the credit typography under the
+  // sepia cast; capping at 0.7 preserves typographic legibility (D-T352-3).
+  intensity: 0.7,
+  // position omitted (defaults to full-canvas at runtime).
+} as const;
+
+const successionHomeVideoGrainOverlay = {
+  runtimeId: 'frame-runtime',
+  clipName: 'grain',
+  buildProps() {
+    return { ...SUCCESSION_HOME_VIDEO_GRAIN_PROPS };
+  },
+};
+
+const successionHomeVideoPhotographicOverlayOverlay = {
+  runtimeId: 'frame-runtime',
+  clipName: 'photographic-overlay',
+  buildProps() {
+    return { ...SUCCESSION_HOME_VIDEO_PHOTOGRAPHIC_OVERLAY_PROPS };
+  },
+};
+
+const successionHomeVideoBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'titleSequence', // camelCase primitive kind (title-sequence.tsx:800)
+  buildProps() {
+    // Deep-clone nested arrays / objects so callers can mutate the returned
+    // props without aliasing the exported constant.
+    return {
+      ...SUCCESSION_HOME_VIDEO_TITLE_SEQUENCE_PROPS,
+      shots: SUCCESSION_HOME_VIDEO_TITLE_SEQUENCE_PROPS.shots.map((s) => ({
+        ...s,
+        content: { ...s.content },
+      })),
+      font: { ...SUCCESSION_HOME_VIDEO_TITLE_SEQUENCE_PROPS.font },
+      position: { ...SUCCESSION_HOME_VIDEO_TITLE_SEQUENCE_PROPS.position },
+    };
+  },
+  // D-T352-2: declaration order = z-order. titleSequence base (zIndex 0)
+  // → grain HIGH (1) → photographic-overlay sepia (2). NO light-leak /
+  // particles (intentional 3-clip stack — would over-saturate the sepia
+  // warm-yellow register to muddy-brown per stub line 26).
+  overlays: [successionHomeVideoGrainOverlay, successionHomeVideoPhotographicOverlayOverlay],
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -2850,6 +3028,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'instagram-link-sticker': instagramLinkStickerBinding, // T-371 (Cluster G closer; 5/5)
   'stranger-things-benguiat': strangerThingsBenguiatBinding, // T-348 (Cluster D 2/6; first multi-clip composition)
   'true-detective-double-exposure': trueDetectiveDoubleExposureBinding, // T-351 (Cluster D 3/6; second multi-clip composition; PRIMARY consumer of T-321d photographic-overlay)
+  'succession-home-video': successionHomeVideoBinding, // T-352 (Cluster D 4/6; third multi-clip composition; FIRST consumer of mode: 'sepia' AND non-default grain intensity 0.30)
 };
 
 /**
