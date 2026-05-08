@@ -664,6 +664,38 @@ export {
   photographicOverlayPropsSchema,
 } from './photographic-overlay.js';
 
+// T-347a — weatherMap primitive (Cluster C first-of-two new primitives;
+// first 'weatherMap' kind consumer). Sealed three-style sealed-bundle
+// compositor: 'mark-allen-clouds' / 'doppler-radar' / 'heat-map'. Single
+// primitive, discriminatedUnion on style, canonical palettes baked as
+// static module constants (NOT theme-able per cluster SKILL.md "Color
+// palettes are standard, not brand"). v1 ships flat 2D maps + single-
+// frame static; 3D globe (BBC), multi-frame radar loop, and heat-map
+// time-period cycling deferred to T-347a-3d-globe / T-347a-loop-cycle /
+// T-347a-time-lapse follow-ups. Mirrors T-321 titleSequence's 4-style
+// architecture (D-T347a-1 / -2). Theme slots: `background` → palette.
+// background, `foreground` → palette.foreground (D-T347a-8). Frame-
+// deterministic (D-T347a-9). Unblocks 3 of 6 Cluster C presets:
+// bbc-mark-allen-clouds, doppler-dbz-standard, heat-map-cool-to-warm.
+// 58 → 59 clips.
+export {
+  WeatherMap,
+  type WeatherMapMapPath,
+  type WeatherMapProps,
+  type WeatherMapRegion,
+  type WeatherMapStyle,
+  type WeatherMapSymbol,
+  DOPPLER_DBZ_REFLECTIVITY,
+  DOPPLER_VELOCITY,
+  MARK_ALLEN_TEMPERATURE_DISCS,
+  MERIAM_38_CLASS_HEAT,
+  resolveDopplerPalette,
+  resolveHeatMapFill,
+  resolveMarkAllenDisc,
+  weatherMapClip,
+  weatherMapPropsSchema,
+} from './weather-map.js';
+
 import { animatedMapClip } from './animated-map.js';
 import { animatedValueClip } from './animated-value.js';
 import { audioVisualizerReactiveClip } from './audio-visualizer-reactive.js';
@@ -722,6 +754,7 @@ import { titleSequenceClip } from './title-sequence.js';
 import { typewriterClip } from './typewriter-clip.js';
 import { videoBackgroundClip } from './video-background.js';
 import { voiceoverNarrationClip } from './voiceover-narration.js';
+import { weatherMapClip } from './weather-map.js';
 
 import type { ClipDefinition } from '@stageflip/runtimes-contract';
 
@@ -990,4 +1023,39 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // integration + video-shot kind defer to consumer-preset tasks).
   // 57 → 58 clips.
   photographicOverlayClip,
+  // T-347a — weatherMap primitive (Cluster C first-of-two new primitives;
+  // first 'weatherMap' kind consumer). Sealed three-style sealed-bundle
+  // compositor: 'mark-allen-clouds' / 'doppler-radar' / 'heat-map'.
+  // Single primitive, discriminatedUnion on style, canonical palettes
+  // baked as static module-level constants (NOT theme-able per cluster
+  // SKILL "Color palettes are standard, not brand"). Mirrors T-321
+  // titleSequence's 4-style sealed-bundle architecture. v1 ships flat
+  // 2D maps + single-frame static (`loopFrameIndex` pinned by caller);
+  // 3D globe (BBC) deferred to T-347a-3d-globe (Track A frontier per
+  // ADR-005), multi-frame radar loop deferred to T-347a-loop-cycle,
+  // heat-map time-period cycling deferred to T-347a-time-lapse. Per-
+  // style content shape via `discriminatedUnion('style', [...])`:
+  //   - 'mark-allen-clouds' carries optional `symbols[]` (cloud / sun /
+  //     raindrop / snow icon-set instances per Mark Allen 1975 BBC
+  //     canon); region labels rendered in colored discs from
+  //     MARK_ALLEN_TEMPERATURE_DISCS palette.
+  //   - 'doppler-radar' carries `productMode: 'reflectivity' |
+  //     'velocity'` + `loopFrameIndex: 0..31` + optional
+  //     `sweepBeamPhase: 0..1`. NEXRAD universal palette
+  //     (DOPPLER_DBZ_REFLECTIVITY) preserves mesocyclone signature in
+  //     velocity mode (DOPPLER_VELOCITY: bright green inbound + bright
+  //     red outbound).
+  //   - 'heat-map' carries `units: 'F' | 'C'` + optional
+  //     `oscillation` (Meriam light-dark across classes for color-blind
+  //     differentiation). MERIAM_38_CLASS_HEAT 38-step gradient from
+  //     deep purple sub-zero F to dark maroon extreme heat.
+  // Common across styles: regions[] (positioned text overlays),
+  // mapPaths[] (consumer-supplied SVG path data — primitive does NOT
+  // bundle map geometry per D-T347a-7), legend, font, theme-slot
+  // fallback. Frame-deterministic (no Date / Math.random / crypto /
+  // setTimeout / fetch / requestAnimationFrame). Unblocks 3 of 6
+  // Cluster C presets (bbc-mark-allen-clouds, doppler-dbz-standard,
+  // heat-map-cool-to-warm). 58 → 59 clips. T-347b stormTracker is the
+  // sibling Cluster C primitive shipping next.
+  weatherMapClip,
 ];

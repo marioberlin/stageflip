@@ -302,9 +302,9 @@ describe('<PhotographicOverlay> render — multi-clip composition (T-348a / T-34
 });
 
 describe('clip registration', () => {
-  it('registers as kind "photographic-overlay" and is in ALL_BRIDGE_CLIPS at length 58', () => {
+  it('registers as kind "photographic-overlay" and is in ALL_BRIDGE_CLIPS at length 59', () => {
     expect(photographicOverlayClip.kind).toBe('photographic-overlay');
-    expect(ALL_BRIDGE_CLIPS).toHaveLength(58);
+    expect(ALL_BRIDGE_CLIPS).toHaveLength(59);
     expect(ALL_BRIDGE_CLIPS).toContain(photographicOverlayClip);
   });
 
