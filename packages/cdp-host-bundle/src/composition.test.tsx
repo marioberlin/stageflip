@@ -253,6 +253,37 @@ describe('Composition', () => {
     expect(container.querySelectorAll('#__sf_root')).toHaveLength(0);
     expect(container.querySelectorAll('[data-sf-composition]')).toHaveLength(1);
   });
+
+  it('applies clip-definition mixBlendMode at the OUTER per-element wrapper (T-348a.1)', () => {
+    // Each per-element wrapper has its own z-index + position-absolute, so
+    // an inline mix-blend-mode declared inside the clip's React subtree
+    // would be isolated within its own stacking context. Hoisting the
+    // declaration to the wrapper makes the blend's backdrop = the
+    // Composition root's prior-z-order siblings, which is the multi-clip-
+    // composition contract.
+    const clips = new Map<string, ClipDefinition<unknown>>();
+    clips.set('blendy', {
+      kind: 'blendy',
+      render: () => <div data-testid="blendy-inner" />,
+      mixBlendMode: 'multiply',
+    });
+    clips.set('plain', {
+      kind: 'plain',
+      render: () => <div data-testid="plain-inner" />,
+    });
+    const runtime: ClipRuntime = { id: 'rt', tier: 'live', clips };
+    registerRuntime(runtime);
+
+    const doc = mkDoc([clipEl('a', 'rt', 'plain'), clipEl('b', 'rt', 'blendy')]);
+    const { container } = render(<Composition document={doc} frame={0} />);
+
+    const plainWrapper = container.querySelector<HTMLElement>('[data-sf-el="a"]');
+    const blendyWrapper = container.querySelector<HTMLElement>('[data-sf-el="b"]');
+    expect(plainWrapper?.style.mixBlendMode).toBe('');
+    expect(plainWrapper?.getAttribute('data-sf-blend-mode')).toBeNull();
+    expect(blendyWrapper?.style.mixBlendMode).toBe('multiply');
+    expect(blendyWrapper?.getAttribute('data-sf-blend-mode')).toBe('multiply');
+  });
 });
 
 describe('BootedComposition', () => {
