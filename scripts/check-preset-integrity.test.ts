@@ -7,11 +7,12 @@
 // AC numbers refer to docs/tasks/T-308.md.
 
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { PNG } from 'pngjs';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -23,6 +24,7 @@ import {
   checkFrontmatter,
   checkInteractiveStaticFallback,
   checkParityFixtureSignOff,
+  checkParityGoldenNonBlank,
   checkAiChatProps,
   checkLiveDataProps,
   checkShaderProps,
@@ -31,7 +33,9 @@ import {
   checkAiGenerativeProps,
   checkVoiceProps,
   checkWebEmbedProps,
+  decodeNonBlankMetrics,
   formatReport,
+  listGoldenPngs,
   loadCompassAnchors,
   runIntegrityChecks,
 } from './check-preset-integrity.js';
@@ -382,6 +386,270 @@ describe('check-preset-integrity invariant 6: parityFixture sign-off (AC #8)', (
       parityFixture: 'na',
     });
     expect(result.ok).toBe(true);
+  });
+});
+
+// ---------- Invariant 15 (T-348b): parityFixture-non-blank ----------
+
+/**
+ * Encode a synthetic 1280x720 PNG into a tmp file. Each pixel in the buffer
+ * is filled by `paint(x, y) → [r, g, b, a]`. Returns the absolute path to
+ * the written file.
+ */
+function writeSyntheticPng(opts: {
+  dir: string;
+  filename: string;
+  width?: number;
+  height?: number;
+  paint: (x: number, y: number) => [number, number, number, number];
+}): string {
+  const width = opts.width ?? 1280;
+  const height = opts.height ?? 720;
+  const png = new PNG({ width, height, colorType: 6 });
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const i = (y * width + x) * 4;
+      const [r, g, b, a] = opts.paint(x, y);
+      png.data[i] = r;
+      png.data[i + 1] = g;
+      png.data[i + 2] = b;
+      png.data[i + 3] = a;
+    }
+  }
+  const bytes = PNG.sync.write(png);
+  const path = join(opts.dir, opts.filename);
+  writeFileSync(path, bytes);
+  return path;
+}
+
+describe('check-preset-integrity invariant 15: parityFixture-non-blank (T-348b)', () => {
+  let tmp: string;
+
+  function setup(): string {
+    tmp = mkdtempSync(join(tmpdir(), 'check-preset-integrity-non-blank-'));
+    return tmp;
+  }
+
+  function teardown(): void {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+
+  it('FAILS on a pure-white PNG (Cluster D regression mode — true-detective / severance)', () => {
+    setup();
+    try {
+      const goldenPath = writeSyntheticPng({
+        dir: tmp,
+        filename: 'pure-white.png',
+        paint: () => [255, 255, 255, 255],
+      });
+      const r = checkParityGoldenNonBlank({ presetId: 'p', goldenPath });
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.message).toMatch(/appears blank/);
+        expect(r.message).toMatch(/significant color bucket/);
+      }
+    } finally {
+      teardown();
+    }
+  });
+
+  it('FAILS on a pure-pale-yellow PNG (Cluster D regression mode — succession / got-trajan sepia)', () => {
+    setup();
+    try {
+      const goldenPath = writeSyntheticPng({
+        dir: tmp,
+        filename: 'pure-sepia.png',
+        // Approximate sepia-of-white: 255*0.393 + 255*0.769 + 255*0.189 ≈ 345
+        // → clamped per-channel; sepia matrix W3C output is roughly RGB(255,
+        // 230, 180) for the modal post-filter pixel.
+        paint: () => [255, 230, 180, 255],
+      });
+      const r = checkParityGoldenNonBlank({ presetId: 'p', goldenPath });
+      expect(r.ok).toBe(false);
+    } finally {
+      teardown();
+    }
+  });
+
+  it('FAILS on a near-blank with sub-significance fringe noise (anti-aliasing alone)', () => {
+    setup();
+    try {
+      // 99.97 % white + 0.03 % stray noise in scattered pixels — far below
+      // the 0.05 % significance floor; gate must still fire.
+      const goldenPath = writeSyntheticPng({
+        dir: tmp,
+        filename: 'near-blank-fringe.png',
+        paint: (x, y) => {
+          // Stray noise in 0.03 % of pixels (every ~3300th pixel by simple LCG).
+          const idx = y * 1280 + x;
+          if (idx % 3333 === 0) return [128, 128, 128, 255];
+          return [255, 255, 255, 255];
+        },
+      });
+      const r = checkParityGoldenNonBlank({ presetId: 'p', goldenPath });
+      expect(r.ok).toBe(false);
+    } finally {
+      teardown();
+    }
+  });
+
+  it('PASSES on a small-element-on-flat-canvas (legitimate small-element preset register)', () => {
+    setup();
+    try {
+      // 100x100 px white square (0.86 % of canvas) on solid black canvas
+      // — analogous to coinbase-dvd-qr's small QR rectangle on black. Two
+      // significant buckets clear stage 1 of the gate.
+      const goldenPath = writeSyntheticPng({
+        dir: tmp,
+        filename: 'small-element.png',
+        paint: (x, y) => {
+          const inSquare = x >= 590 && x < 690 && y >= 310 && y < 410;
+          return inSquare ? [255, 255, 255, 255] : [0, 0, 0, 255];
+        },
+      });
+      const r = checkParityGoldenNonBlank({ presetId: 'p', goldenPath });
+      expect(r.ok).toBe(true);
+    } finally {
+      teardown();
+    }
+  });
+
+  it('PASSES on a flat canvas with > 0.05 % spread non-modal pixels (single significant bucket OK if dominance < 99.95 %)', () => {
+    setup();
+    try {
+      // White canvas with ~0.06 % red pixels spread across many quantized
+      // buckets via varying intensity — none individually significant, but
+      // dominance drops below 99.95 % so the gate's stage 2 saves us.
+      const goldenPath = writeSyntheticPng({
+        dir: tmp,
+        filename: 'spread-fringe.png',
+        paint: (x, y) => {
+          const idx = y * 1280 + x;
+          if (idx % 1500 === 0) {
+            const channel = (idx >> 8) & 0xff; // varying red intensity → many buckets
+            return [128 + (channel >> 1), 0, 0, 255];
+          }
+          return [255, 255, 255, 255];
+        },
+      });
+      const metrics = decodeNonBlankMetrics(readFileSync(goldenPath));
+      // Sanity: most pixels white, <1% non-modal.
+      expect(metrics.maxBucketFraction).toBeGreaterThan(0.99);
+      expect(metrics.maxBucketFraction).toBeLessThan(0.9995);
+      const r = checkParityGoldenNonBlank({ presetId: 'p', goldenPath });
+      expect(r.ok).toBe(true);
+    } finally {
+      teardown();
+    }
+  });
+
+  it('FAILS with a decoder error message when the file is not a valid PNG', () => {
+    setup();
+    try {
+      const bogus = join(tmp, 'not-a-png.png');
+      writeFileSync(bogus, Buffer.from('not a real png'));
+      const r = checkParityGoldenNonBlank({ presetId: 'p', goldenPath: bogus });
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.message).toMatch(/failed to decode parity golden/);
+      }
+    } finally {
+      teardown();
+    }
+  });
+
+  it('FAILS with a missing-file message when the golden does not exist', () => {
+    setup();
+    try {
+      const r = checkParityGoldenNonBlank({
+        presetId: 'p',
+        goldenPath: join(tmp, 'never-existed.png'),
+      });
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.message).toMatch(/does not exist/);
+      }
+    } finally {
+      teardown();
+    }
+  });
+
+  it('listGoldenPngs returns sorted matches and filters non-golden PNGs', () => {
+    setup();
+    try {
+      // Set up parity-fixtures/<cluster>/<preset>/ structure.
+      const presetDir = join(tmp, 'news', 'preset-x');
+      mkdirSync(presetDir, { recursive: true });
+      writeFileSync(join(presetDir, 'golden-frame-60.png'), Buffer.from([]));
+      writeFileSync(join(presetDir, 'golden-frame-120-variantA.png'), Buffer.from([]));
+      writeFileSync(join(presetDir, 'unrelated.png'), Buffer.from([]));
+      writeFileSync(join(presetDir, 'golden-frame-30.png'), Buffer.from([]));
+      const found = listGoldenPngs({
+        parityFixturesRoot: tmp,
+        cluster: 'news',
+        presetId: 'preset-x',
+      });
+      expect(found).toHaveLength(3);
+      expect(found.every((p) => p.endsWith('.png'))).toBe(true);
+      expect(found.every((p) => /golden-frame-/.test(p))).toBe(true);
+      // Sorted ascending — frame-120 sorts before frame-30 lexicographically.
+      const names = found.map((p) => p.split('/').pop());
+      expect(names).toEqual([
+        'golden-frame-120-variantA.png',
+        'golden-frame-30.png',
+        'golden-frame-60.png',
+      ]);
+    } finally {
+      teardown();
+    }
+  });
+
+  it('listGoldenPngs returns [] when the preset directory does not exist', () => {
+    setup();
+    try {
+      const found = listGoldenPngs({
+        parityFixturesRoot: tmp,
+        cluster: 'news',
+        presetId: 'never-created',
+      });
+      expect(found).toEqual([]);
+    } finally {
+      teardown();
+    }
+  });
+
+  it('decodeNonBlankMetrics: pure-color image → 1 distinct bucket, 1 significant bucket, 100 % dominance', () => {
+    setup();
+    try {
+      const path = writeSyntheticPng({
+        dir: tmp,
+        filename: 'pure.png',
+        paint: () => [200, 100, 50, 255],
+      });
+      const m = decodeNonBlankMetrics(readFileSync(path));
+      expect(m.distinctBuckets).toBe(1);
+      expect(m.significantBuckets).toBe(1);
+      expect(m.maxBucketFraction).toBe(1);
+    } finally {
+      teardown();
+    }
+  });
+
+  it('decodeNonBlankMetrics: 50/50 two-color image → 2 distinct buckets, 2 significant, 50 % dominance', () => {
+    setup();
+    try {
+      const path = writeSyntheticPng({
+        dir: tmp,
+        filename: 'two-color.png',
+        paint: (x) => (x < 640 ? [0, 0, 0, 255] : [255, 255, 255, 255]),
+      });
+      const m = decodeNonBlankMetrics(readFileSync(path));
+      expect(m.distinctBuckets).toBe(2);
+      expect(m.significantBuckets).toBe(2);
+      expect(m.maxBucketFraction).toBe(0.5);
+    } finally {
+      teardown();
+    }
   });
 });
 
@@ -1291,7 +1559,13 @@ describe('check-preset-integrity CLI (AC #11, #12)', () => {
 describe('check-preset-integrity end-to-end at HEAD (AC #11, #14, #15)', () => {
   it('PASSES (or PASSES-WITH-WARNINGS) against the real on-disk presets', () => {
     const start = Date.now();
-    const report = runIntegrityChecks({ presetsRoot: PRESETS_ROOT });
+    // T-348b: parity-fixtures path is workspace-relative; the test runner's
+    // cwd may be `scripts/` rather than the repo root, so pass an absolute
+    // path explicitly to keep invariant 15 reading the actual signed goldens.
+    const report = runIntegrityChecks({
+      presetsRoot: PRESETS_ROOT,
+      parityFixturesRoot: resolve(REPO_ROOT, 'parity-fixtures'),
+    });
     const elapsedMs = Date.now() - start;
     if (report.exitCode !== 0) {
       // Surface the per-invariant error list to make CI failure debuggable.
