@@ -18,6 +18,7 @@ import {
   registerClusterBComposeBundle,
   registerClusterEComposeBundle,
   registerClusterFComposeBundle,
+  registerClusterGComposeBundle,
   registerCreateMutateBundle,
   registerDataSourceBindingsBundle,
   registerDisplayModeBundle,
@@ -82,6 +83,7 @@ function buildPopulatedBundleRegistry(): BundleRegistry {
   registerClusterBComposeBundle(registry, router);
   registerClusterEComposeBundle(registry, router);
   registerClusterFComposeBundle(registry, router);
+  registerClusterGComposeBundle(registry, router);
   return registry;
 }
 

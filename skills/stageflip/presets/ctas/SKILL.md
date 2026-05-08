@@ -3,7 +3,7 @@ title: Cluster G — Calls-to-action & social
 id: skills/stageflip/presets/ctas
 tier: cluster
 status: substantive
-last_updated: 2026-04-25
+last_updated: 2026-05-08
 owner_task: T-374
 related:
   - skills/stageflip/agents/type-design-consultant/SKILL.md
@@ -38,6 +38,10 @@ Do **not** invoke for news / sports / weather / captions — this cluster is exc
 - `compose_subscribe_prompt(channel_brand)` — YouTube-native register
 - `compose_social_handle(handles, brand)` — multi-platform cascade lower-third
 - `compose_qr_bounce(url, brand)` — Coinbase-register or branded variant
+
+## Implementation
+
+The four composer tools above are implemented in the `cluster-g-compose` engine handler bundle (T-374). See [`skills/stageflip/tools/cluster-g-compose/SKILL.md`](../../tools/cluster-g-compose/SKILL.md) for the full Zod input/output schemas, dispatch tables, and per-preset prop defaults. All four tools are read-only (`ToolContext`); the caller mounts the chosen clip via a separate write-tier tool (e.g., `add_clip` from `create-mutate`).
 
 ## Cluster conventions (from the compass canon)
 

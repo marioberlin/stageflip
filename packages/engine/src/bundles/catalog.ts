@@ -120,6 +120,12 @@ export const CANONICAL_BUNDLES: readonly ToolBundle[] = [
       'Cluster F (Captions / Lyrics) composer tools — preset-binding factories for creator-caption / subtitle / lyric-video / keyword-highlight briefs (T-368).',
     tools: [],
   },
+  {
+    name: 'cluster-g-compose',
+    description:
+      'Cluster G (CTAs / social) composer tools — preset-binding factories for subscribe / follow / link-sticker / QR-bounce / social-handle briefs across the 5 ratified Cluster G presets (T-374).',
+    tools: [],
+  },
 ];
 
 export const CANONICAL_BUNDLE_NAMES: readonly string[] = CANONICAL_BUNDLES.map((b) => b.name);
