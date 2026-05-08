@@ -103,6 +103,7 @@ present — per-clip source headers.
 - `score-bug`
 - `standings-table`
 - `stock-ticker`
+- `stormTracker`
 - `subscribe-button`
 - `subtitle-overlay`
 - `testimonial-card`
