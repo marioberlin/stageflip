@@ -672,12 +672,29 @@ function base64ToBytes(data: string): Uint8Array {
  * The `platform` option overrides `process.platform` so tests can
  * exercise the Linux branch without running on Linux.
  */
+/**
+ * Default CDP protocol timeout in milliseconds. Puppeteer's built-in
+ * default is 180000ms (3 min); under load on slow CI runners that's
+ * been observed to time out `Page.captureScreenshot` calls on
+ * font-heavy or shimmer-gradient renders (F-18, observed 4× during
+ * the 2026-05-07 cluster-G session). 600000ms (10 min) gives ample
+ * slack on the slowest GitHub-Actions runners while still failing
+ * fast on a genuinely wedged session.
+ */
+export const DEFAULT_CDP_PROTOCOL_TIMEOUT_MS = 600_000;
+
 export function createPuppeteerBrowserFactory(opts: {
   readonly executablePath?: string;
   readonly args?: readonly string[];
   readonly headless?: boolean;
   readonly captureMode?: CaptureMode;
   readonly platform?: NodeJS.Platform;
+  /**
+   * CDP protocol timeout in milliseconds. Overrides puppeteer-core's
+   * default (180000ms). Pass `undefined` to use puppeteer-core's
+   * default; omit to use {@link DEFAULT_CDP_PROTOCOL_TIMEOUT_MS}.
+   */
+  readonly protocolTimeout?: number;
 }): BrowserFactory {
   return async () => {
     const puppeteer = (await import('puppeteer-core')) as unknown as {
@@ -686,6 +703,7 @@ export function createPuppeteerBrowserFactory(opts: {
           executablePath?: string;
           args?: readonly string[];
           headless?: boolean | 'shell';
+          protocolTimeout?: number;
         }): Promise<PuppetBrowser>;
       };
     };
@@ -700,7 +718,12 @@ export function createPuppeteerBrowserFactory(opts: {
       executablePath?: string;
       args?: readonly string[];
       headless: boolean | 'shell';
-    } = { headless: opts.headless ?? true };
+      protocolTimeout?: number;
+    } = {
+      headless: opts.headless ?? true,
+      protocolTimeout:
+        'protocolTimeout' in opts ? opts.protocolTimeout : DEFAULT_CDP_PROTOCOL_TIMEOUT_MS,
+    };
     if (opts.executablePath !== undefined) launchOpts.executablePath = opts.executablePath;
     if (effectiveArgs !== undefined) launchOpts.args = effectiveArgs;
     return puppeteer.default.launch(launchOpts);
