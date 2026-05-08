@@ -389,9 +389,9 @@ describe('<LinkSticker> render', () => {
 });
 
 describe('clip registration', () => {
-  it('registers as kind "link-sticker" and is in ALL_BRIDGE_CLIPS at length 57', () => {
+  it('registers as kind "link-sticker" and is in ALL_BRIDGE_CLIPS at length 58', () => {
     expect(linkStickerClip.kind).toBe('link-sticker');
-    expect(ALL_BRIDGE_CLIPS).toHaveLength(57);
+    expect(ALL_BRIDGE_CLIPS).toHaveLength(58);
     expect(ALL_BRIDGE_CLIPS).toContain(linkStickerClip);
   });
 

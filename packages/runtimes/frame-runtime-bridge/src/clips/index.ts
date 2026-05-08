@@ -625,6 +625,45 @@ export {
   synthesizeNoiseBytes,
 } from './grain.js';
 
+// T-321d — photographic-overlay primitive (Cluster D last new-primitive
+// carve-out from the T-321 roadmap; first 'photographic-overlay' kind
+// consumer). Static film-grade tonal overlay rendered via SVG
+// `<filter>` primitives (`<feColorMatrix>` / `<feComponentTransfer>`).
+// Sealed `mode: 'sepia' | 'cross-process' | 'cinematic-lut' | 'fade'`
+// flat enum with canonical pre-tuned color matrices/curves embedded
+// as static constants; NO theme slots (per D-T321d-9 — tonal canon,
+// not brand canvas). NO `discriminatedUnion` — all 4 modes share
+// identical prop surface; only the underlying SVG filter primitives
+// differ. Optional `intensity` ∈ [0, 1] alpha-blends the filter onto
+// the underlying via `<feMerge>` chain (per D-T321d-10); optional
+// `position` for partial-frame application (defaults to full-canvas).
+// Static (no frame counter; no animation in v1) per D-T321d-8 —
+// filter is a constant per `(mode, intensity)`. Deterministic across
+// CDP per SVG 1.1 §15.3 (Filter Effects spec); pins
+// `color-interpolation-filters="sRGB"` on every filter element.
+// Primary consumer T-351 true-detective-double-exposure (compass
+// canon "photographic clip" register); secondary T-348 stranger-
+// things-benguiat. Last of T-321's new-primitive carve-outs (T-321a
+// grain shipped; T-321b lightLeak superseded by T-131b.2; T-321c
+// particles superseded by T-131d.1; T-321d photographic-overlay here;
+// T-321 ThreeSceneClip integration + video-shot kind defer to
+// consumer-preset tasks). 57 → 58 clips.
+export {
+  PhotographicOverlay,
+  type PhotographicOverlayMode,
+  type PhotographicOverlayProps,
+  CINEMATIC_LUT_MATRIX,
+  CROSS_PROCESS_B_TABLE,
+  CROSS_PROCESS_G_TABLE,
+  CROSS_PROCESS_R_TABLE,
+  FADE_INTERCEPT,
+  FADE_SLOPE,
+  SEPIA_MATRIX,
+  filterId,
+  photographicOverlayClip,
+  photographicOverlayPropsSchema,
+} from './photographic-overlay.js';
+
 import { animatedMapClip } from './animated-map.js';
 import { animatedValueClip } from './animated-value.js';
 import { audioVisualizerReactiveClip } from './audio-visualizer-reactive.js';
@@ -662,6 +701,7 @@ import { newsTickerBarClip } from './news-ticker-bar.js';
 import { okrDashboardClip } from './okr-dashboard.js';
 import { outcomeRowClip } from './outcome-row.js';
 import { particlesClip } from './particles.js';
+import { photographicOverlayClip } from './photographic-overlay.js';
 import { pieChartBuildClip } from './pie-chart-build.js';
 import { priceRevealClip } from './price-reveal.js';
 import { productCarouselClip } from './product-carousel.js';
@@ -925,4 +965,29 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // octave (T-321a-octaves), ramped intensity (T-321a-ramp). First of
   // five T-321 carve-outs. 56 → 57 clips.
   grainClip,
+  // T-321d — photographic-overlay primitive (Cluster D last new-
+  // primitive carve-out from the T-321 roadmap; first 'photographic-
+  // overlay' kind consumer). Static film-grade tonal overlay rendered
+  // via SVG `<filter>` primitives (`<feColorMatrix>` /
+  // `<feComponentTransfer>`). Sealed `mode: 'sepia' | 'cross-process'
+  // | 'cinematic-lut' | 'fade'` flat enum with canonical pre-tuned
+  // color matrices/curves embedded as static constants; NO theme
+  // slots (per D-T321d-9 — tonal canon, not brand canvas). NO
+  // `discriminatedUnion` — all 4 modes share identical prop surface;
+  // only the underlying SVG filter primitives differ. Optional
+  // `intensity` ∈ [0, 1] alpha-blends the filter onto the underlying
+  // via `<feMerge>` chain (per D-T321d-10); optional `position` for
+  // partial-frame application (defaults to full-canvas). Static (no
+  // frame counter; no animation in v1) per D-T321d-8 — filter is a
+  // constant per `(mode, intensity)`. Deterministic across CDP per
+  // SVG 1.1 §15.3 (Filter Effects spec); pins
+  // `color-interpolation-filters="sRGB"` on every filter element.
+  // Primary consumer T-351 true-detective-double-exposure (compass
+  // canon "photographic clip" register); secondary T-348 stranger-
+  // things-benguiat. Last new-primitive carve-out from T-321 roadmap
+  // (T-321a grain shipped; T-321b lightLeak superseded by T-131b.2;
+  // T-321c particles superseded by T-131d.1; ThreeSceneClip
+  // integration + video-shot kind defer to consumer-preset tasks).
+  // 57 → 58 clips.
+  photographicOverlayClip,
 ];

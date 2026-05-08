@@ -64,6 +64,7 @@ export const VALID_CLIP_KINDS = new Set<string>([
   // Cluster D — titles
   'titleSequence',
   'grain', // T-321a — atmospheric effect carve-out (film-grain noise overlay)
+  'photographicOverlay', // T-321d — film-grade tonal overlay carve-out (sepia / cross-process / cinematic-lut / fade)
   // Cluster E — data
   'bigNumber',
   'fullScreen',
