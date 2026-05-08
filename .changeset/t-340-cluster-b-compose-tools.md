@@ -1,7 +1,0 @@
----
-'@stageflip/engine': patch
----
-
-T-340 — Add the `cluster-b-compose` engine handler bundle: 4 read-only composer tools (`compose_sports_score` / `compose_standings_table` / `compose_var_call` / `compose_player_intro`) that bind a semantic Cluster B (Sports) brief to a ratified preset id + opaque props payload. Tools declare `ToolContext` (no document reads, no patch sink); the caller mounts the chosen clip via a separate write-tier tool (`add_clip` / `add_element`).
-
-Dispatches across the 9 ratified Cluster B presets (T-332..T-339): `compose_sports_score` covers 7 of 9 (6 `scoreBug` consumers — premier-league-field-of-play / fox-nfl-no-chrome / nbc-snf-possession-illuminated / f1-timing-tower / cricket-scorebug / wimbledon-green-purple — plus `espn-bottomline-flipper` `newsTicker` for live-score scrolls); `compose_standings_table` covers `masters-red-under-par` (golf only in v1). `compose_var_call` (awaits T-320 `VARBanner`) and `compose_player_intro` (awaits the eventual Cluster B `playerIntro` preset) return `{ ok: false, reason: 'not_yet_implemented' }` with full-fidelity input / output schemas reserved for forward compatibility — when those upstream tasks land, only the dispatch body fills in. First M-sized cluster-composer task; sets the pattern for T-331 (Cluster A news), T-361 (Cluster D ceremonial), T-368 (Cluster F captions). No clip / parity-cli / preset markdown / parity golden touched.

@@ -1,6 +1,6 @@
 {
   "name": "@stageflip/plugin",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "description": "StageFlip Claude-plugin bundler — packages skills + MCP config + OAuth provider into a `claude plugin install`-ready directory.",
   "license": "BUSL-1.1",

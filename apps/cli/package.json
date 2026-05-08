@@ -1,6 +1,6 @@
 {
   "name": "@stageflip/cli",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "description": "StageFlip CLI — command-line access to the motion platform (slides, video, display).",
   "license": "BUSL-1.1",

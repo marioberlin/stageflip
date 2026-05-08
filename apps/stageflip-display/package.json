@@ -1,6 +1,6 @@
 {
   "name": "@stageflip/app-display",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "StageFlip.Display editor — Next.js 15 walking skeleton (T-207).",

@@ -1,6 +1,6 @@
 {
   "name": "@stageflip/auth-client",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "description": "StageFlip auth client — React hooks for current user, current org, role gating, and active-org switching (T-262).",
   "license": "BUSL-1.1",

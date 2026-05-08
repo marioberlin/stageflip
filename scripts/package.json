@@ -1,6 +1,6 @@
 {
   "name": "@stageflip/scripts",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "description": "Workspace scripts (T-271 migrate-org-region; T-272 backup-restore). Not published; tests run in-repo via vitest.",

@@ -1,6 +1,6 @@
 {
   "name": "@stageflip/auth-middleware",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "description": "StageFlip auth middleware — resolvePrincipal + requireAuth + requireRole + api-key verify (T-262).",
   "license": "BUSL-1.1",

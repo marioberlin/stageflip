@@ -1,6 +1,6 @@
 {
   "name": "@stageflip/blender-worker",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "description": "Blender bake worker — BullMQ consumer + Blender CLI invoker (T-265).",

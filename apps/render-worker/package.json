@@ -1,6 +1,6 @@
 {
   "name": "@stageflip/app-render-worker",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "StageFlip Cloud Run render worker — consumes a render job and dispatches to @stageflip/export-* (T-231).",

@@ -1,6 +1,6 @@
 {
   "name": "@stageflip/auth-schema",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "description": "StageFlip auth schema — Zod types for User/Org/Membership/ApiKey/Role + role-hierarchy primitive (T-262).",
   "license": "BUSL-1.1",
