@@ -172,7 +172,15 @@ const DEFAULT_FONT = {
 } as const;
 const DEFAULT_FOREGROUND = '#FFFFFF';
 const DEFAULT_HIGHLIGHT = '#FF0000';
-const DEFAULT_BACKGROUND = '#000000';
+// T-348a: no `DEFAULT_BACKGROUND` constant — when the caller omits
+// `props.background`, the container renders WITHOUT an opaque
+// `backgroundColor` so layers below in the z-stack composite through.
+// Callers that want a deep-canvas backdrop pass `background:'#000000'`
+// explicitly (the 5 Cluster D multi-clip preset bindings do exactly
+// this; squid-game-geometric passes `'#0E0E12'`). The
+// `palette-jump-cut` style keeps its colorPanel-driven backgroundColor
+// override (line 718-731) — that's the style's defining behaviour, not
+// a default-fallback.
 const DEFAULT_LETTERFORM_SCALE = 0.7;
 const DEFAULT_TRANSITION_DURATION_MS = 300;
 const DEFAULT_STAGGER_MS = 200;
@@ -320,7 +328,7 @@ interface ShotRenderInput {
   casing: CasingMode;
   foreground: string;
   highlightColor: string;
-  background: string;
+  background: string | undefined;
   position: TitleSequenceProps['position'];
   entrance: EntranceMode;
   letterformScale: number;
@@ -690,7 +698,9 @@ export function TitleSequence(props: TitleSequenceProps): ReactElement {
   const font = props.font ?? DEFAULT_FONT;
   const foreground = props.foreground ?? DEFAULT_FOREGROUND;
   const highlightColor = props.highlightColor ?? props.foreground ?? DEFAULT_HIGHLIGHT;
-  const background = props.background ?? DEFAULT_BACKGROUND;
+  // T-348a: no DEFAULT_BACKGROUND fallback — undefined when caller omits
+  // so the container is transparent and layers below composite through.
+  const background = props.background;
   const entrance = props.entrance ?? 'fade';
   const letterformScale = props.letterformScale ?? DEFAULT_LETTERFORM_SCALE;
   const transitionDurationMs = props.transitionDurationMs ?? DEFAULT_TRANSITION_DURATION_MS;
@@ -706,10 +716,10 @@ export function TitleSequence(props: TitleSequenceProps): ReactElement {
   const containerStyle: CSSProperties = {
     width: '100%',
     height: '100%',
-    backgroundColor: background,
     position: 'relative',
     overflow: 'hidden',
     boxSizing: 'border-box',
+    ...(background !== undefined ? { backgroundColor: background } : {}),
   };
 
   // Determine background override for palette-jump-cut: pick the most-recent

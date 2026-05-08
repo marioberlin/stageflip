@@ -568,6 +568,75 @@ describe('TitleSequence component (T-321)', () => {
   });
 });
 
+describe('TitleSequence — multi-clip composition (T-348a)', () => {
+  // T-348a defensive default: when the caller omits `background`, the
+  // root container renders WITHOUT an opaque `backgroundColor` so layers
+  // below in the z-stack composite through. Pre-T-348a behaviour set a
+  // hard-coded `#000000` fallback that masked content below.
+  it('renders no backgroundColor on the root container when background prop is omitted', () => {
+    renderAt(60, {
+      shots: [
+        {
+          id: 's0',
+          startMs: 0,
+          endMs: 5000,
+          kind: 'titlePlate',
+          content: { text: 'TITLE' },
+        },
+      ],
+      style: 'plate-and-credits',
+      position: MIN_POSITION,
+      entrance: 'none',
+      // background deliberately omitted
+    });
+    const root = screen.getByTestId('title-sequence-clip');
+    // Empty string when no inline backgroundColor is set on the element.
+    expect(root.style.backgroundColor).toBe('');
+  });
+
+  it('respects an explicit background prop and applies it as backgroundColor', () => {
+    renderAt(60, {
+      shots: [
+        {
+          id: 's0',
+          startMs: 0,
+          endMs: 5000,
+          kind: 'titlePlate',
+          content: { text: 'TITLE' },
+        },
+      ],
+      style: 'plate-and-credits',
+      position: MIN_POSITION,
+      entrance: 'none',
+      background: '#000000',
+    });
+    const root = screen.getByTestId('title-sequence-clip');
+    // jsdom normalises the hex literal; rgb form is acceptable too.
+    const bg = root.style.backgroundColor.toLowerCase();
+    expect(bg === '#000000' || bg === 'rgb(0, 0, 0)').toBe(true);
+  });
+
+  it("'palette-jump-cut' colorPanel still overrides container background even when background prop is omitted", () => {
+    renderAt(60, {
+      shots: [
+        {
+          id: 's0',
+          startMs: 0,
+          endMs: 5000,
+          kind: 'colorPanel',
+          content: { color: '#E91E63' },
+        },
+      ],
+      style: 'palette-jump-cut',
+      position: MIN_POSITION,
+      entrance: 'none',
+      // background deliberately omitted; colorPanel must still drive bg.
+    });
+    const root = screen.getByTestId('title-sequence-clip');
+    expect(root.style.backgroundColor.toLowerCase()).toContain('e91e63');
+  });
+});
+
 describe('titleSequenceClip definition (T-321)', () => {
   it("registers under kind 'titleSequence' with the expected theme slots", () => {
     expect(titleSequenceClip.kind).toBe('titleSequence');
