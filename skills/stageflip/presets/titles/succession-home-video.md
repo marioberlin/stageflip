@@ -13,7 +13,7 @@ fallbackFont:
   license: license-mixed
 permissions: []
 signOff:
-  parityFixture: pending-user-review
+  parityFixture: 'signed:2026-05-08'
   typeDesign: pending-cluster-batch
 ---
 

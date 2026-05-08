@@ -104,6 +104,33 @@ export interface ClipDefinition<P = unknown> {
    * safety on prop names is the author's responsibility at definition site.
    */
   readonly themeSlots?: Readonly<Record<string, ThemeSlot>>;
+  /**
+   * T-348a.1 — optional CSS `mix-blend-mode` value the host renderer must
+   * apply at the **outer absolute-positioned wrapper** for every instance
+   * of this clip kind. When omitted, the host renders the wrapper with the
+   * default `normal` blend mode. When set (e.g. `'multiply'`,
+   * `'screen'`, `'overlay'`), the host applies it AT THE WRAPPER LEVEL —
+   * NOT inside the clip's React subtree — so the blend's backdrop is the
+   * Composition root's stacking context (sibling clip elements), not the
+   * primitive's own isolated stacking context.
+   *
+   * This solves the multi-clip composition issue caught by Cluster D PO
+   * ratification (`docs/handover-cluster-d-regression.md`): each
+   * `RIRElement` wrapper carries its own `z-index` + `position: absolute`
+   * (a stacking context), which isolates any `mixBlendMode` declared
+   * inside the clip's React tree from sibling elements. The host reads
+   * `ClipDefinition.mixBlendMode` at element-mount time and applies it on
+   * the wrapper itself, where it correctly composites against siblings
+   * below in z-order.
+   *
+   * Primary use: `photographic-overlay` clip declaring `'multiply'` so
+   * its tonal output tints content rendered below in multi-clip
+   * compositions (Cluster D `stranger-things-benguiat` /
+   * `true-detective-double-exposure` / etc.) while still rendering as
+   * an opaque solo-canvas tint when used alone over the host's white
+   * canvas backdrop (`white × tinted-white = tinted-white`).
+   */
+  readonly mixBlendMode?: string;
 }
 
 export interface RuntimePrepareContext {

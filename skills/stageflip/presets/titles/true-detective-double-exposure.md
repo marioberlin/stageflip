@@ -5,7 +5,7 @@ clipKind: titleSequence
 source: docs/compass_artifact.md#true-detective-season-1
 status: substantive
 preferredFont:
-  family: Custom sans serif (clean, unobtrusive)
+  family: 'Custom sans serif (clean, unobtrusive)'
   license: license-cleared
 fallbackFont:
   family: Inter
@@ -13,7 +13,7 @@ fallbackFont:
   license: ofl
 permissions: []
 signOff:
-  parityFixture: pending-user-review
+  parityFixture: 'signed:2026-05-08'
   typeDesign: pending-cluster-batch
 ---
 

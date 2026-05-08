@@ -278,40 +278,26 @@ describe('<PhotographicOverlay> render — static (no frame-driven state)', () =
   });
 });
 
-describe('<PhotographicOverlay> render — multi-clip composition (T-348a)', () => {
+describe('<PhotographicOverlay> render — multi-clip composition (T-348a / T-348a.1)', () => {
   // The photographic-overlay primitive renders an opaque-white pre-filter
-  // rect that the SVG filter transforms into a tonal output. Without
-  // `mix-blend-mode: multiply` on the SVG container, that opaque rect
-  // covers content rendered below in the z-stack — which is the Cluster D
-  // multi-clip regression mode (see docs/handover-cluster-d-regression.md).
-  // Multiply makes the SVG composite multiplicatively with siblings below
-  // in the parent's stacking context, tinting them with the filter output
-  // rather than masking them.
-  it("declares mix-blend-mode 'multiply' on the SVG container", () => {
+  // rect that the SVG filter transforms into a tonal output. To composite
+  // correctly with content rendered below in the z-stack, the host renderer
+  // applies `mix-blend-mode: multiply` at the OUTER per-element wrapper —
+  // NOT inline on this SVG (each per-element wrapper has its own
+  // `position: absolute` + `z-index` and creates a stacking context, which
+  // would isolate an inline mix-blend-mode from sibling elements; that was
+  // the original Cluster D regression mode caught by PO ratification 2026-
+  // 05-08). The clip definition declares `mixBlendMode: 'multiply'` so the
+  // host can pick it up at element-mount time. See
+  // `docs/handover-cluster-d-regression.md`.
+  it('does NOT declare inline mix-blend-mode on the SVG (host applies at wrapper level)', () => {
     renderAt(0, MIN_PROPS);
     const svg = screen.getByTestId('photographic-overlay');
-    // jsdom normalises CSS prop names — `mix-blend-mode` shows as
-    // `mixBlendMode` on the inline-style accessor and as `mix-blend-mode`
-    // when reading the raw style attribute.
-    expect((svg as HTMLElement).style.mixBlendMode).toBe('multiply');
+    expect((svg as HTMLElement).style.mixBlendMode).toBe('');
   });
 
-  it("declares mix-blend-mode 'multiply' across all 4 modes", () => {
-    for (const mode of ['sepia', 'cross-process', 'cinematic-lut', 'fade'] as const) {
-      cleanup();
-      renderAt(0, { mode });
-      const svg = screen.getByTestId('photographic-overlay');
-      expect((svg as HTMLElement).style.mixBlendMode).toBe('multiply');
-    }
-  });
-
-  it("declares mix-blend-mode 'multiply' regardless of intensity", () => {
-    for (const intensity of [0, 0.3, 0.5, 0.8, 1] as const) {
-      cleanup();
-      renderAt(0, { mode: 'sepia', intensity });
-      const svg = screen.getByTestId('photographic-overlay');
-      expect((svg as HTMLElement).style.mixBlendMode).toBe('multiply');
-    }
+  it("declares mixBlendMode: 'multiply' at the clip-definition level", () => {
+    expect(photographicOverlayClip.mixBlendMode).toBe('multiply');
   });
 });
 

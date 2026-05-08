@@ -131,8 +131,38 @@ function ElementNode({ element, frame, document }: ElementNodeProps): ReactEleme
 
   if (element.type === 'clip' && element.content.type === 'clip') {
     const clipContent = element.content;
+    // T-348a.1: read `mixBlendMode` off the clip definition (set by the
+    // primitive at registration time, e.g. photographic-overlay declares
+    // `'multiply'`) and apply it on the OUTER wrapper. Each per-element
+    // wrapper has its own z-index + position-absolute → stacking context;
+    // applying mix-blend-mode at the wrapper level makes its backdrop the
+    // Composition root's prior-z-order siblings, which is the multi-clip-
+    // composition contract. Applying it inside the clip's React subtree
+    // would isolate the blend within the wrapper's stacking context (only
+    // the clip's own paint is visible to the blend) — the Cluster D
+    // regression mode pre-T-348a.1.
+    const resolved = findClip(clipContent.clipName);
+    const clipBlendMode =
+      resolved !== null && resolved.runtime.id === clipContent.runtime
+        ? resolved.clip.mixBlendMode
+        : undefined;
+    const wrapperStyle: CSSProperties = {
+      ...baseStyle,
+      // Cast at the assignment boundary: `ClipDefinition.mixBlendMode` is
+      // typed as `string` so any primitive can declare a value, but
+      // CSSProperties wants the strict `Property.MixBlendMode` union from
+      // csstype. The clip-author owns choosing a valid CSS value.
+      ...(clipBlendMode !== undefined
+        ? { mixBlendMode: clipBlendMode as CSSProperties['mixBlendMode'] }
+        : {}),
+    };
     return (
-      <div data-sf-el={element.id} data-sf-type="clip" style={baseStyle}>
+      <div
+        data-sf-el={element.id}
+        data-sf-type="clip"
+        data-sf-blend-mode={clipBlendMode}
+        style={wrapperStyle}
+      >
         <ClipSlot
           element={element}
           kind={clipContent.clipName}

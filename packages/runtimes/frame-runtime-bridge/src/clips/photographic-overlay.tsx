@@ -261,17 +261,18 @@ export function PhotographicOverlay(props: PhotographicOverlayProps): ReactEleme
       </>
     ) : null;
 
-  // T-348a: composite over content rendered below in the z-stack via
-  // `mix-blend-mode: multiply`. The pre-filter rect is opaque white;
-  // post-filter it becomes a tonal output (sepia-cream / cinematic-LUT
-  // tint / cross-process tone / faded grey). Multiply preserves the
-  // solo-use register (white canvas backdrop × tinted-white = tinted-
-  // white, byte-identical to pre-T-348a output) AND tints underlying
-  // content in multi-clip composition (titleSequence base + atmospheric
-  // overlays below × tinted-white = tinted base content). Without this,
-  // the SVG's opaque rect covers everything below in the z-stack —
-  // T-348 / T-349 / T-351 / T-352 / T-353 regression mode (see
-  // `docs/handover-cluster-d-regression.md`).
+  // T-348a / T-348a.1: multi-clip-composition `mix-blend-mode: multiply`
+  // semantics are declared on the clip definition (see
+  // `photographicOverlayClip.mixBlendMode` below) and applied by the host
+  // renderer at the OUTER per-element wrapper — NOT inline on this SVG.
+  // The host wrapper has its own `z-index` + `position: absolute` and
+  // therefore creates a stacking context; mix-blend-mode declared inside
+  // that context only blends within the wrapper itself (no sibling
+  // visibility), which is the original Cluster D regression mode pre-
+  // T-348a.1. Hoisting the blend declaration to the wrapper makes the
+  // blend's backdrop = the Composition root's prior z-order siblings,
+  // which is the multi-clip-composition contract. See
+  // `docs/handover-cluster-d-regression.md`.
   const style: CSSProperties = {
     position: 'absolute',
     left: region.x,
@@ -279,7 +280,6 @@ export function PhotographicOverlay(props: PhotographicOverlayProps): ReactEleme
     width: region.width,
     height: region.height,
     pointerEvents: 'none',
-    mixBlendMode: 'multiply',
   };
 
   return (
@@ -324,4 +324,12 @@ export const photographicOverlayClip: ClipDefinition<unknown> =
     component: PhotographicOverlay,
     propsSchema: photographicOverlayPropsSchema,
     themeSlots: {},
+    // T-348a.1: applied at the host's outer per-element wrapper so the
+    // blend's backdrop is the Composition root's prior z-order siblings
+    // (titleSequence base + atmospheric overlays below). Solo-use against
+    // the white canvas backdrop is byte-near-identical to pre-T-348a output
+    // (white × tinted-white ≈ tinted-white); multi-clip overlay-use tints
+    // underlying content (titleSequence-output × tinted-white = tinted-
+    // output). See `docs/handover-cluster-d-regression.md`.
+    mixBlendMode: 'multiply',
   });

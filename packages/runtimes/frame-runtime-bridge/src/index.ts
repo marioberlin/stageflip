@@ -57,6 +57,12 @@ export interface DefineFrameClipInput<P> {
    * `@stageflip/runtimes-contract`.
    */
   themeSlots?: Readonly<Record<string, ThemeSlot>>;
+  /**
+   * T-348a.1 — optional CSS `mix-blend-mode` value applied at the host's
+   * outer wrapper around this clip kind (NOT inside the clip's React
+   * subtree). See `ClipDefinition.mixBlendMode` for compositing semantics.
+   */
+  mixBlendMode?: string;
 }
 
 /**
@@ -96,6 +102,9 @@ export function defineFrameClip<P>(input: DefineFrameClipInput<P>): ClipDefiniti
   }
   if (input.themeSlots !== undefined) {
     (def as { themeSlots?: Readonly<Record<string, ThemeSlot>> }).themeSlots = input.themeSlots;
+  }
+  if (input.mixBlendMode !== undefined) {
+    (def as { mixBlendMode?: string }).mixBlendMode = input.mixBlendMode;
   }
   return def as unknown as ClipDefinition<unknown>;
 }
