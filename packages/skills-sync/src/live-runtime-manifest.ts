@@ -248,6 +248,25 @@ export const LIVE_RUNTIME_MANIFEST: ClipsCatalogPkg = {
         // grain shipped; T-321b lightLeak superseded by T-131b.2;
         // T-321c particles superseded by T-131d.1).
         'photographic-overlay',
+        // T-347a — weatherMap primitive (Cluster C first-of-two new
+        // primitives; first 'weatherMap' kind consumer). Sealed three-
+        // style sealed-bundle compositor: 'mark-allen-clouds' (BBC
+        // Mark-Allen icon set + temperature discs) / 'doppler-radar'
+        // (NEXRAD reflectivity dBZ palette + sweep beam +
+        // productMode reflectivity/velocity) / 'heat-map' (Esri/NWS
+        // Meriam 38-class temperature gradient + units F/C). Single
+        // primitive, discriminatedUnion on style, canonical palettes
+        // baked as static module constants (NOT theme-able per
+        // cluster SKILL "Color palettes are standard, not brand"). v1
+        // ships flat 2D maps + single-frame static; 3D globe (BBC),
+        // multi-frame radar loop, and heat-map time-period cycling
+        // deferred to T-347a-3d-globe / T-347a-loop-cycle / T-347a-
+        // time-lapse follow-ups. Theme slots: background → palette.
+        // background, foreground → palette.foreground (palettes
+        // themselves NOT theme-bound). Frame-deterministic. Unblocks
+        // 3 of 6 Cluster C presets: bbc-mark-allen-clouds, doppler-
+        // dbz-standard, heat-map-cool-to-warm.
+        'weatherMap',
       ],
     },
   ],
