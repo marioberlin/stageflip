@@ -696,6 +696,44 @@ export {
   weatherMapPropsSchema,
 } from './weather-map.js';
 
+// T-347b — stormTracker primitive (Cluster C second-of-two new
+// primitives; first 'stormTracker' kind consumer). Single-style v1
+// (no `discriminatedUnion` — only consumer is nhc-cone-of-uncertainty).
+// NHC 5-day cone-of-uncertainty register with mandatory beyond-cone-
+// impact disclaimer (caller cannot suppress rendering — public-safety
+// failure mode per cluster SKILL "non-negotiable" rule). Canonical
+// NHC coastal-warning palette baked as static module constants
+// (NOT theme-able). Cone polygon, base map, coastal-warning region
+// paths consumer-supplied as SVG path data per the T-347a mapPaths[]
+// precedent (primitive does NOT bundle storm-by-storm geometry). Track
+// dots render as circles with centered intensity letters from
+// NHC_INTENSITY_LETTERS (D/S/H/M per NWS mandate). Theme slots:
+// background → palette.background, foreground → palette.foreground.
+// Frame-deterministic. v1 carve-outs: T-347b-advisory-cycle (multi-
+// advisory animated time-lapse), T-347b-live-data (LiveDataClip
+// integration; Track A frontier per ADR-005), T-347b-2026-inland-
+// warnings (would introduce style enum at that point).
+// 59 → 60 clips.
+export {
+  type CoastalWarningType,
+  NHC_HURRICANE_WARNING_RED,
+  NHC_HURRICANE_WATCH_MAGENTA,
+  NHC_INTENSITY_LETTERS,
+  NHC_STORM_SURGE_PURPLE,
+  NHC_TROPICAL_STORM_FIREBRICK,
+  StormTracker,
+  type StormTrackerCoastalWarning,
+  type StormTrackerCone,
+  type StormTrackerIntensity,
+  type StormTrackerMapPath,
+  type StormTrackerProps,
+  type StormTrackerStorm,
+  type StormTrackerTrackDot,
+  resolveCoastalWarningColor,
+  stormTrackerClip,
+  stormTrackerPropsSchema,
+} from './storm-tracker.js';
+
 import { animatedMapClip } from './animated-map.js';
 import { animatedValueClip } from './animated-value.js';
 import { audioVisualizerReactiveClip } from './audio-visualizer-reactive.js';
@@ -746,6 +784,7 @@ import { scene3dClip } from './scene-3d.js';
 import { scoreBugClip } from './score-bug.js';
 import { standingsTableClip } from './standings-table.js';
 import { stockTickerClip } from './stock-ticker.js';
+import { stormTrackerClip } from './storm-tracker.js';
 import { subscribeButtonClip } from './subscribe-button.js';
 import { subtitleOverlayClip } from './subtitle-overlay.js';
 import { testimonialCardClip } from './testimonial-card.js';
@@ -1058,4 +1097,31 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // heat-map-cool-to-warm). 58 → 59 clips. T-347b stormTracker is the
   // sibling Cluster C primitive shipping next.
   weatherMapClip,
+  // T-347b — stormTracker primitive (Cluster C second-of-two new
+  // primitives; first 'stormTracker' kind consumer). Single-style v1
+  // (no `discriminatedUnion` — only consumer is nhc-cone-of-uncertainty).
+  // NHC 5-day cone-of-uncertainty register: mandatory beyond-cone-
+  // impact disclaimer (caller cannot suppress rendering per D-T347b-2 —
+  // public-safety failure mode per cluster SKILL "non-negotiable"
+  // rule); canonical NHC coastal-warning palette baked as static
+  // module constants (NHC_HURRICANE_WARNING_RED #DC143C,
+  // NHC_HURRICANE_WATCH_MAGENTA #FF00FF, NHC_TROPICAL_STORM_FIREBRICK
+  // #B22222, NHC_STORM_SURGE_PURPLE #B524F7); NWS-mandated intensity-
+  // letter shorthand NHC_INTENSITY_LETTERS = ['D', 'S', 'H', 'M'].
+  // Cone polygon (consumer-supplied SVG path), base map (mapPaths[]),
+  // coastal-warning regions (sealed warningType enum) all rendered
+  // inside an SVG with z-stack: base map → coastal warnings → cone
+  // polygon → track dots. Storm name renders as ALL-CAPS top banner
+  // (28-32pt bold per stub line 35); optional advisory timestamp
+  // small label below. Theme slots: background → palette.background,
+  // foreground → palette.foreground. Palettes themselves NOT theme-
+  // bound. Frame-deterministic. v1 ships single-frame static; multi-
+  // advisory animated time-lapse deferred to T-347b-advisory-cycle;
+  // LiveDataClip integration deferred to T-347b-live-data (Track A
+  // frontier per ADR-005); 2026 NHC inland-warnings update deferred
+  // to T-347b-2026-inland-warnings (would introduce style enum at
+  // that point). Unblocks 1 of 6 Cluster C presets:
+  // nhc-cone-of-uncertainty (only stormTracker consumer in v1).
+  // 59 → 60 clips.
+  stormTrackerClip,
 ];

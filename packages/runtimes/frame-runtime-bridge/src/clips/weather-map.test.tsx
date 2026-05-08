@@ -492,8 +492,8 @@ describe('weatherMapClip definition (T-347a)', () => {
     expect(weatherMapClip.fontRequirements).toBeUndefined();
   });
 
-  it('ALL_BRIDGE_CLIPS includes weatherMapClip and is length 59 (58 → 59)', () => {
-    expect(ALL_BRIDGE_CLIPS).toHaveLength(59);
+  it('ALL_BRIDGE_CLIPS includes weatherMapClip and is length 60 (post-T-347b sibling)', () => {
+    expect(ALL_BRIDGE_CLIPS).toHaveLength(60);
     expect(ALL_BRIDGE_CLIPS).toContain(weatherMapClip);
   });
 });
