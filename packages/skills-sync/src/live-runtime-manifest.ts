@@ -207,6 +207,26 @@ export const LIVE_RUNTIME_MANIFEST: ClipsCatalogPkg = {
         // icon SVG (T-371a-glyph). Unblocks T-371 (instagram-link-
         // sticker — Cluster G's last unsigned preset).
         'link-sticker',
+        // T-321a — grain primitive (Cluster D first carve-out; first
+        // 'grain' kind consumer). Deterministic per-pixel film-grain
+        // noise overlay computed from `(x, y, frame, seed)` via a
+        // closed-form integer hash (xxhash32-style mixer via
+        // `Math.imul` + `>>>` for bit-exact 32-bit arithmetic across
+        // V8). Single Zod `object().strict()` schema (NO
+        // `discriminatedUnion`, NO style/phase enum, NO theme slots,
+        // NO font surface) with all-optional props (`intensity`
+        // default 0.15, `cellSize` default 1, `seed` default 0,
+        // `position` defaults to full canvas). Always-animated. Renders
+        // via a single `<canvas>` with `useEffect`-driven `ImageData`
+        // write (SVG `<feTurbulence>` rejected for cross-CDP
+        // determinism hazard; per-pixel `<rect>` matrix rejected for
+        // DOM-size cost). Mandatory for T-348 stranger-things-benguiat
+        // per compass canon. Reusable across Cluster D presets (T-348,
+        // T-351, T-353). v1 carve-outs: tinted grain (T-321a-tint),
+        // blue-noise / Perlin / simplex models (T-321a-noise-quality),
+        // multi-octave (T-321a-octaves), ramped intensity (T-321a-
+        // ramp). First of five T-321 carve-outs.
+        'grain',
       ],
     },
   ],

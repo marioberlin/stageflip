@@ -593,6 +593,38 @@ export {
   titleSequencePropsSchema,
 } from './title-sequence.js';
 
+// T-321a — grain primitive (Cluster D first carve-out; first 'grain'
+// kind consumer). Deterministic per-pixel film-grain noise overlay
+// computed from `(x, y, frame, seed)` via a closed-form integer hash
+// (xxhash32-style mixer using `Math.imul` + `>>>` for bit-exact 32-bit
+// arithmetic across V8). Single Zod `object().strict()` schema (NO
+// `discriminatedUnion`, NO style/phase enum, NO theme slots, NO font
+// surface) with all-optional props (`intensity` default 0.15,
+// `cellSize` default 1, `seed` default 0, `position` defaults to full
+// canvas). Always-animated: each frame's noise field shifts via
+// `(x, y, frame, seed)` → producing the perceived "moving grain"
+// register. Renders via a single `<canvas>` with `useEffect`-driven
+// `ImageData` write (per D-T321a-5 — SVG `<feTurbulence>` rejected for
+// cross-CDP determinism hazard; per-pixel `<rect>` matrix rejected for
+// DOM-size cost). Mandatory for T-348 stranger-things-benguiat per
+// compass canon ("Optical film grain is mandatory; clean digital looks
+// wrong"); reusable across Cluster D presets (T-348, T-351, T-353)
+// without coupling grain to titleSequence. v1 carve-outs: tinted grain
+// (T-321a-tint), blue-noise / Perlin / simplex models (T-321a-noise-
+// quality), multi-octave (T-321a-octaves), ramped intensity
+// (T-321a-ramp). First of five T-321 carve-outs (T-321a grain →
+// T-321b lightLeak → T-321c particles → T-321d photographic-overlay →
+// T-321 ThreeSceneClip integration). 56 → 57 clips.
+export {
+  Grain,
+  type GrainProps,
+  grainClip,
+  grainPropsSchema,
+  hash,
+  luminanceOffset,
+  synthesizeNoiseBytes,
+} from './grain.js';
+
 import { animatedMapClip } from './animated-map.js';
 import { animatedValueClip } from './animated-value.js';
 import { audioVisualizerReactiveClip } from './audio-visualizer-reactive.js';
@@ -612,6 +644,7 @@ import { endslateLogoClip } from './endslate-logo.js';
 import { financialStatementClip } from './financial-statement.js';
 import { followPromptClip } from './follow-prompt.js';
 import { gifPlayerClip } from './gif-player.js';
+import { grainClip } from './grain.js';
 import { hookMomentClip } from './hook-moment.js';
 import { hrDashboardClip } from './hr-dashboard.js';
 import { imageGalleryClip } from './image-gallery.js';
@@ -872,4 +905,24 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // fourth + final blocking primitive (T-317 + T-318 + T-319 + T-371a
   // close cluster G; T-371 ships next as the consumer preset).
   linkStickerClip,
+  // T-321a — grain primitive (Cluster D first carve-out; first 'grain'
+  // kind consumer). Deterministic per-pixel film-grain noise overlay
+  // computed from `(x, y, frame, seed)` via a closed-form integer hash
+  // (xxhash32-style mixer using `Math.imul` + `>>>` for bit-exact 32-
+  // bit arithmetic across V8). Single Zod `object().strict()` schema
+  // (NO `discriminatedUnion`, NO style/phase enum, NO theme slots, NO
+  // font surface) with all-optional props (`intensity` default 0.15,
+  // `cellSize` default 1, `seed` default 0, `position` defaults to
+  // full canvas). Always-animated: each frame's noise field shifts via
+  // `(x, y, frame, seed)`. Renders via a single `<canvas>` with
+  // `useEffect`-driven `ImageData` write (per D-T321a-5 — SVG
+  // `<feTurbulence>` rejected for cross-CDP determinism hazard; per-
+  // pixel `<rect>` matrix rejected for DOM-size cost). Mandatory for
+  // T-348 stranger-things-benguiat per compass canon. Reusable across
+  // Cluster D presets (T-348, T-351, T-353) without coupling grain to
+  // titleSequence. v1 carve-outs: tinted grain (T-321a-tint), blue-
+  // noise / Perlin / simplex models (T-321a-noise-quality), multi-
+  // octave (T-321a-octaves), ramped intensity (T-321a-ramp). First of
+  // five T-321 carve-outs. 56 → 57 clips.
+  grainClip,
 ];

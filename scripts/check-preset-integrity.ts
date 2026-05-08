@@ -63,6 +63,7 @@ export const VALID_CLIP_KINDS = new Set<string>([
   'stormTracker',
   // Cluster D — titles
   'titleSequence',
+  'grain', // T-321a — atmospheric effect carve-out (film-grain noise overlay)
   // Cluster E — data
   'bigNumber',
   'fullScreen',
