@@ -93,7 +93,7 @@ Add a CI gate that asserts at least N% of pixels in a parity golden are non-unif
 
 Specs that introduce structural extensions (like T-348's `ClipKindBinding.overlays?`) need **end-to-end render verification**, not just unit-test verification. Future structural-extension specs should require a real-render integration test before the spec PR ships.
 
-Documented as F-30 in handover follow-up list.
+**F-30 documented**: the rule lives in `CLAUDE.md` §13 ("Structural-extension specs require end-to-end render verification") and a corresponding implementer-checklist item under §11. The T-348b `parityFixture-non-blank` CI gate (`scripts/check-preset-integrity.ts` invariant 15) is the recovery backstop — `CLAUDE.md` §13 is the prevention.
 
 ## Pointers
 
