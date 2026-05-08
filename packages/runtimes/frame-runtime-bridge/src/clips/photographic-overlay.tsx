@@ -273,6 +273,7 @@ export function PhotographicOverlay(props: PhotographicOverlayProps): ReactEleme
       xmlns="http://www.w3.org/2000/svg"
       style={style}
     >
+      <title>{`Photographic overlay: ${props.mode}`}</title>
       <defs>
         <filter id={id} x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
           {primitives}
