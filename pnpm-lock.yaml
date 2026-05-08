@@ -1004,6 +1004,9 @@ importers:
         specifier: workspace:*
         version: link:../testing
     devDependencies:
+      '@stageflip/runtimes-frame-runtime-bridge':
+        specifier: workspace:*
+        version: link:../runtimes/frame-runtime-bridge
       '@types/pngjs':
         specifier: 6.0.5
         version: 6.0.5
