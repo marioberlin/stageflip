@@ -1954,6 +1954,141 @@ const dopplerDbzStandardBinding: ClipKindBinding = {
   },
 };
 
+/**
+ * `heat-map-cool-to-warm` (T-347e) — third + final `weatherMap`-clipKind
+ * consumer in v1; wired via `PRESET_ID_BINDINGS` override (Pattern C).
+ * Esri/NWS Meriam 38-class temperature gradient `MERIAM_38_CLASS_HEAT`
+ * (deep-purple-sub-zero → dark-maroon-extreme-heat); `units: 'F'`
+ * (US-domestic); `oscillation: true` (Meriam light-dark across classes
+ * for color-blind differentiation per stub line 47, "non-negotiable").
+ *
+ * **mapPath fill derivation pattern**: each `mapPath.id` matches a
+ * `region.id`; `mapPath.fill` is OMITTED so the primitive's heat-map
+ * style branch derives the fill from `region.paletteIndex` via
+ * `resolveHeatMapFill(paletteIndex, oscillation)` (per primitive
+ * D-T347a-7). This is the elegant binding pattern for heat-map presets.
+ *
+ * v1 ships single-frame static at frame 60; multi-frame time-lapse
+ * cycling deferred to T-347a-time-lapse.
+ *
+ * After T-347e + T-347c + T-347d ship, all three weatherMap §13
+ * obligations are closed.
+ */
+
+/** D-T347e-2: 8 US regions spanning the canonical Meriam 38-class spectrum. */
+export const HEAT_MAP_COOL_TO_WARM_REGIONS = [
+  {
+    id: 'anchorage',
+    name: 'Anchorage',
+    dataValue: 'Anchorage 18°F',
+    screenPosition: { x: 220, y: 200 },
+    paletteIndex: 4,
+  },
+  {
+    id: 'minneapolis',
+    name: 'Minneapolis',
+    dataValue: 'Minneapolis 38°F',
+    screenPosition: { x: 600, y: 240 },
+    paletteIndex: 6,
+  },
+  {
+    id: 'seattle',
+    name: 'Seattle',
+    dataValue: 'Seattle 52°F',
+    screenPosition: { x: 320, y: 280 },
+    paletteIndex: 11,
+  },
+  {
+    id: 'denver',
+    name: 'Denver',
+    dataValue: 'Denver 65°F',
+    screenPosition: { x: 540, y: 380 },
+    paletteIndex: 14,
+  },
+  {
+    id: 'atlanta',
+    name: 'Atlanta',
+    dataValue: 'Atlanta 78°F',
+    screenPosition: { x: 820, y: 460 },
+    paletteIndex: 18,
+  },
+  {
+    id: 'los-angeles',
+    name: 'LA',
+    dataValue: 'Los Angeles 85°F',
+    screenPosition: { x: 280, y: 480 },
+    paletteIndex: 20,
+  },
+  {
+    id: 'phoenix',
+    name: 'Phoenix',
+    dataValue: 'Phoenix 102°F',
+    screenPosition: { x: 440, y: 500 },
+    paletteIndex: 26,
+  },
+  {
+    id: 'death-valley',
+    name: 'Death Valley',
+    dataValue: 'Death Valley 118°F',
+    screenPosition: { x: 360, y: 420 },
+    paletteIndex: 32,
+  },
+] as const;
+
+/**
+ * D-T347e-3: 8 mapPaths with `id` matching `regions[].id`; `fill` omitted
+ * so the primitive's heat-map branch derives the fill from
+ * `region.paletteIndex` (id-equality lookup). Synthetic US-state-rough
+ * polygons sized to 1280×720.
+ */
+export const HEAT_MAP_COOL_TO_WARM_MAP_PATHS = [
+  { id: 'anchorage', d: 'M 80,140 L 320,120 L 360,220 L 240,300 L 100,260 Z' },
+  { id: 'minneapolis', d: 'M 540,180 L 700,180 L 720,300 L 580,320 L 540,260 Z' },
+  { id: 'seattle', d: 'M 240,260 L 400,260 L 420,360 L 280,380 L 240,340 Z' },
+  { id: 'denver', d: 'M 480,360 L 620,360 L 620,460 L 480,460 Z' },
+  { id: 'atlanta', d: 'M 760,440 L 900,440 L 920,540 L 800,560 L 760,500 Z' },
+  { id: 'los-angeles', d: 'M 220,460 L 360,460 L 360,540 L 240,560 L 200,520 Z' },
+  { id: 'phoenix', d: 'M 380,460 L 520,460 L 520,560 L 400,580 L 360,520 Z' },
+  { id: 'death-valley', d: 'M 320,400 L 400,400 L 400,440 L 320,440 Z' },
+] as const;
+
+const heatMapCoolToWarmBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'weatherMap',
+  buildProps() {
+    return {
+      style: 'heat-map' as const,
+      units: 'F' as const,
+      oscillation: true,
+      regions: HEAT_MAP_COOL_TO_WARM_REGIONS.map((r) => ({
+        id: r.id,
+        name: r.name,
+        dataValue: r.dataValue,
+        screenPosition: { ...r.screenPosition },
+        paletteIndex: r.paletteIndex,
+      })),
+      mapPaths: HEAT_MAP_COOL_TO_WARM_MAP_PATHS.map((p) => ({
+        id: p.id,
+        d: p.d,
+        // fill DELIBERATELY OMITTED — primitive derives from matching
+        // region.paletteIndex (D-T347e-3).
+      })),
+      // Open Sans Bold per stub line 35 "Bold, 18-22pt tabular".
+      font: {
+        family: 'Open Sans, system-ui, -apple-system, sans-serif',
+        weight: 700,
+        size: 18,
+      },
+      // Bottom-right legend with °F suffix.
+      legend: { enabled: true, position: 'bottom-right' as const },
+      // Light grey base for non-data regions per stub line 32 ("muted
+      // gray #E8E8E8 for non-data regions"). Primitive default for
+      // 'heat-map' is already #E8E8E8 — explicit for clarity.
+      background: '#E8E8E8',
+    };
+  },
+};
+
 const squidGameGeometricBinding: ClipKindBinding = {
   runtimeId: 'frame-runtime',
   clipName: 'titleSequence',
@@ -3871,6 +4006,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'severance-surreal-3d': severanceSurreal3dBinding, // T-353 (Cluster D 5/6; fourth multi-clip composition; SECOND consumer of mode: 'cinematic-lut'; FIRST below-default grain intensity 0.10; live ThreeSceneClip integration deferred per stub-canon-explicit static-fallback allowance)
   'got-trajan-clockwork': gotTrajanClockworkBinding, // T-349 (Cluster D 6/6 — CLOSES Cluster D ELIGIBLE; fifth multi-clip composition; SECOND consumer of mode: 'sepia' confirms stable; canonical-default grain 0.15; live ThreeSceneClip integration deferred per stub-canon-explicit static-fallback allowance — stub line 41)
   'doppler-dbz-standard': dopplerDbzStandardBinding, // T-347d (Cluster C 2/6; second weatherMap consumer; first 'doppler-radar' style branch; verifies §13 (F-30) doppler-radar branch end-to-end)
+  'heat-map-cool-to-warm': heatMapCoolToWarmBinding, // T-347e (Cluster C 3/6; third + final weatherMap consumer; verifies §13 (F-30) heat-map branch end-to-end; closes all three weatherMap §13 obligations once T-347c + T-347d also land)
 };
 
 /**

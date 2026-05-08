@@ -3,7 +3,7 @@ id: heat-map-cool-to-warm
 cluster: weather
 clipKind: weatherMap
 source: docs/compass_artifact.md#temperature-heat-maps
-status: stub
+status: substantive
 preferredFont:
   family: Open Sans
   license: ofl
@@ -13,7 +13,7 @@ fallbackFont:
   license: ofl
 permissions: []
 signOff:
-  parityFixture: pending-user-review
+  parityFixture: 'signed:2026-05-08'
   typeDesign: na
 ---
 
