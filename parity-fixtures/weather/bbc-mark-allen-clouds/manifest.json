@@ -1,0 +1,30 @@
+{
+  "name": "bbc-mark-allen-clouds",
+  "cluster": "weather",
+  "kind": "weatherMap",
+  "description": "Parity fixture for preset 'bbc-mark-allen-clouds' (cluster weather, kind weatherMap)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "BBC Reith Sans",
+      "license": "proprietary-byo"
+    },
+    "fallback": {
+      "family": "Source Sans 3",
+      "weight": 600,
+      "license": "ofl"
+    }
+  }
+}
