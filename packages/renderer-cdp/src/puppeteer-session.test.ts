@@ -655,6 +655,38 @@ describe('createPuppeteerBrowserFactory', () => {
     expect(args[0]).toBe('--window-size=800,600');
     expect(args).toContain('--enable-begin-frame-control');
   });
+
+  /** Pull the `protocolTimeout` from the most recent launch call. */
+  function lastLaunchProtocolTimeout(): number | undefined {
+    const call = launchSpy.mock.calls[0];
+    if (!call) throw new Error('expected one puppeteer launch call');
+    const opts = call[0] as { protocolTimeout?: number };
+    return opts?.protocolTimeout;
+  }
+
+  it('defaults protocolTimeout to DEFAULT_CDP_PROTOCOL_TIMEOUT_MS (600s) when omitted (F-18)', async () => {
+    const factory = createPuppeteerBrowserFactory({ platform: 'darwin' });
+    await factory();
+    expect(lastLaunchProtocolTimeout()).toBe(600_000);
+  });
+
+  it('passes through a caller-supplied protocolTimeout override', async () => {
+    const factory = createPuppeteerBrowserFactory({
+      platform: 'darwin',
+      protocolTimeout: 30_000,
+    });
+    await factory();
+    expect(lastLaunchProtocolTimeout()).toBe(30_000);
+  });
+
+  it('opts out of the default by passing protocolTimeout: undefined explicitly', async () => {
+    const factory = createPuppeteerBrowserFactory({
+      platform: 'darwin',
+      protocolTimeout: undefined,
+    });
+    await factory();
+    expect(lastLaunchProtocolTimeout()).toBeUndefined();
+  });
 });
 
 describe('PuppeteerCdpSession — document threading (T-100c)', () => {

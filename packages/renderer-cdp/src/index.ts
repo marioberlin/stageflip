@@ -153,6 +153,7 @@ export {
   type CaptureMode,
   createPuppeteerBrowserFactory,
   createRuntimeBundleHostHtml,
+  DEFAULT_CDP_PROTOCOL_TIMEOUT_MS,
   type HostHtmlBuilder,
   probeBeginFrameSupport,
   PuppeteerCdpSession,
