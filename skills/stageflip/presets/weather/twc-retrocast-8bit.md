@@ -3,7 +3,7 @@ id: twc-retrocast-8bit
 cluster: weather
 clipKind: fullScreen
 source: docs/compass_artifact.md#the-weather-channel
-status: stub
+status: substantive
 preferredFont:
   family: WeatherStar 4000 8-bit pixel
   license: ofl-equivalent (custom)
@@ -13,7 +13,7 @@ fallbackFont:
   license: ofl
 permissions: []
 signOff:
-  parityFixture: pending-user-review
+  parityFixture: 'signed:2026-05-08'
   typeDesign: na
 ---
 

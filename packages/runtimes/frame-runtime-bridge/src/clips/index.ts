@@ -664,6 +664,38 @@ export {
   photographicOverlayPropsSchema,
 } from './photographic-overlay.js';
 
+// T-347g — weatherStar4000Panel primitive (Cluster C 5/6; new
+// dedicated primitive for the WeatherStar 4000 / 5000 era register
+// because the existing magic-wall-panel primitive — which serves the
+// fullScreen clipKind via DEFAULT_CLIP_KIND_RESOLVER — does NOT fit
+// the period-authentic L-bar + 8-bit pixel-precision register).
+// Single-style v1 (no discriminatedUnion); future TWC variants would
+// extend to a sealed-style enum then. Pixel-precision non-negotiable
+// (image-rendering: pixelated, 8-px-step font sizing, no
+// anti-aliasing softeners). Closed-form integer ticker scroll
+// (deterministic; no useEffect). Frame-deterministic. Theme slots
+// background → palette.background, foreground → palette.foreground;
+// canonical palettes (WEATHER_STAR_BLUE_GRADIENT, _ORANGE_GOLD,
+// _FOREGROUND_WHITE_GOLD) NOT theme-bound. Bound to the
+// twc-retrocast-8bit preset via PRESET_ID_BINDINGS (preset's
+// clipKind: fullScreen stays unchanged; binding overrides clipName
+// to 'weatherStar4000Panel' per the T-328 / T-339 PRESET_ID_BINDINGS
+// precedent). 60 → 61 clips.
+export {
+  WEATHER_STAR_BLUE_GRADIENT,
+  WEATHER_STAR_FOREGROUND_WHITE_GOLD,
+  WEATHER_STAR_ORANGE_GOLD,
+  WeatherStar4000Panel,
+  type WeatherStar4000PanelProps,
+  type WeatherStarHeader,
+  type WeatherStarTemperature,
+  type WeatherStarTicker,
+  snapTo8px,
+  tickerScrollPosition,
+  weatherStar4000PanelClip,
+  weatherStar4000PanelPropsSchema,
+} from './weather-star-panel.js';
+
 // T-347a — weatherMap primitive (Cluster C first-of-two new primitives;
 // first 'weatherMap' kind consumer). Sealed three-style sealed-bundle
 // compositor: 'mark-allen-clouds' / 'doppler-radar' / 'heat-map'. Single
@@ -794,6 +826,7 @@ import { typewriterClip } from './typewriter-clip.js';
 import { videoBackgroundClip } from './video-background.js';
 import { voiceoverNarrationClip } from './voiceover-narration.js';
 import { weatherMapClip } from './weather-map.js';
+import { weatherStar4000PanelClip } from './weather-star-panel.js';
 
 import type { ClipDefinition } from '@stageflip/runtimes-contract';
 
@@ -1124,4 +1157,27 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // nhc-cone-of-uncertainty (only stormTracker consumer in v1).
   // 59 → 60 clips.
   stormTrackerClip,
+  // T-347g — weatherStar4000Panel primitive (Cluster C 5/6;
+  // dedicated primitive for the WeatherStar 4000 / 5000 era register
+  // because magic-wall-panel — which serves the fullScreen clipKind
+  // via DEFAULT_CLIP_KIND_RESOLVER — does NOT fit the period-
+  // authentic L-bar + 8-bit pixel-precision register). Single-style
+  // v1; pixel-precision non-negotiable (image-rendering: pixelated,
+  // 8-px-step font sizing, no anti-aliasing softeners); closed-form
+  // integer ticker scroll (deterministic; no useEffect). Canonical
+  // palettes WEATHER_STAR_BLUE_GRADIENT (#000066 → #000099 deep
+  // blue), WEATHER_STAR_ORANGE_GOLD (#FF9900 / #DAA520 accent bars),
+  // WEATHER_STAR_FOREGROUND_WHITE_GOLD (#FFFFFF / #DAA520) NOT
+  // theme-bound (TWC RetroCast first-class register canon per
+  // cluster SKILL "Retrocast register is nostalgia, not throwaway").
+  // Theme slots: background → palette.background, foreground →
+  // palette.foreground. Bound to twc-retrocast-8bit preset via
+  // PRESET_ID_BINDINGS (preset clipKind: fullScreen stays unchanged;
+  // binding overrides clipName to 'weatherStar4000Panel' per T-328
+  // msnbc-big-board / T-339 uefa-starball-refraction precedent).
+  // v1 carve-outs: T-347g-music-cue (period-authentic smooth-jazz /
+  // muzak audio cue per stub line 47), T-347g-multi-city (multi-
+  // city panel transitions with hard-cut sequencing per stub line
+  // 40). 60 → 61 clips.
+  weatherStar4000PanelClip,
 ];
