@@ -1,10 +1,10 @@
 ---
-title: Cluster D regression — multi-clip composition rendering bug discovered during PO ratification 2026-05-08
+title: Cluster D regression — multi-clip composition rendering bug (CLOSED 2026-05-08)
 id: docs/handover-cluster-d-regression
 phase: 13
 size: S
 owner_role: orchestrator
-status: open
+status: closed
 last_updated: 2026-05-08
 adr: docs/decisions/ADR-004-preset-system.md
 ---
@@ -61,33 +61,45 @@ In contrast, the single-clip `youtube-subscribe-bounce` (T-369) renders correctl
 | #441 | T-353 severance-surreal-3d | Reused mechanism. |
 | #443 | T-349 got-trajan-clockwork | Reused mechanism. Closed Cluster D to 6/6. |
 
-## Recommended remediation
+## Remediation closeout
 
-### Phase 1: Revert frontmatter (this session, immediate)
+**All 5 phases shipped 2026-05-08.** Cluster D restored to 6/6 ELIGIBLE+RATIFIED.
 
-Revert `signOff.parityFixture` of the 5 affected presets from `signed:2026-05-08` back to `pending-user-review`. This is the truthful state — the parity goldens are not visually correct, even if they pass byte-comparison parity scoring.
+### Phase 1 — Revert frontmatter ✅ landed (PR #444)
 
-After revert: Cluster D goes 6/6 → 1/6 ELIGIBLE (only squid-game-geometric remains signed).
+Reverted `signOff.parityFixture` of the 5 affected presets from `signed:2026-05-08` back to `pending-user-review`. Cluster D 6/6 → 1/6 ELIGIBLE.
 
-The 5 spec docs + 5 impl PRs stay on main as architectural-pattern-deliverables (ClipKindBinding.overlays mechanism, multi-clip-composition pattern, sibling impl agents' code) — they're correct in intent; only the rendering output is broken.
+### Phase 2 — Architectural fix (FIRST attempt; superseded) ⚠️ landed but ineffective (PR #445)
 
-### Phase 2: Architectural fix (separate task — F-31 / T-455)
+Shipped `mix-blend-mode: multiply` inline on `photographic-overlay`'s SVG + made `title-sequence` default-to-transparent when caller omits `background`. Passed unit tests + all CI gates. **But the regression was NOT fixed** — Phase 3 re-regeneration showed identical blank output. Diagnosis: each `RIRElement` per-element wrapper has `position: absolute` + `z-index`, forming its own stacking context, which isolates an inline mix-blend-mode on the SVG from sibling elements. The blend's backdrop becomes the (empty) per-element wrapper, NOT the Composition root's prior z-order siblings.
 
-Two architectural options:
+The Phase 2 PR is on main as architectural-pattern-deliverable (the title-sequence transparent default IS still useful for future overlay-context use of titleSequence; the inline SVG mix-blend-mode was removed in Phase 2.5).
 
-**Option A — Per-element transparent backgrounds**: Modify each affected primitive's render output to emit transparent background by default (so layers composite). Touches `title-sequence.tsx` (deep black bg → transparent), `grain.tsx` (already transparent), `light-leak.tsx` (already transparent), `particles.tsx` (already transparent), `photographic-overlay.tsx` (verify). Lowest-risk; minimal code change. Each primitive consumer (single-clip use cases) needs to verify it still works without the assumed white-canvas backstop.
+### Phase 2.5 — Hoist mix-blend-mode to host wrapper ✅ landed (PR #448, with Phase 3)
 
-**Option B — Canvas-blending composition in the renderer**: Modify `host-html-builder` or the renderer-cdp's mount path to composite multiple clip-element layers via canvas blending instead of opaque DOM stacking. Architectural change; higher risk; broader scope. Pro: works for any future multi-clip preset without touching primitives.
+Added optional `ClipDefinition.mixBlendMode?: string` field. Host renderer (`composition.tsx` ElementNode) reads it and applies on the **outer** per-element wrapper. Wrapper participates in the Composition root's stacking context, so the blend correctly composites against prior z-order siblings. `photographic-overlay` declares `mixBlendMode: 'multiply'` on its clip definition; inline SVG style removed.
 
-**Recommendation: Option A** — narrower scope; can be unit-tested per-primitive; matches the multi-clip composition spec D-T348-2 ("z-stack via N+1 elements with strictly-increasing zIndex") which assumed transparent compositing.
+This is the Option A architectural fix from the original recommendation, executed correctly. The original Option A description ("per-element transparent backgrounds") was over-prescriptive — only `photographic-overlay` was the visible mask; `grain` / `light-leak` / `particles` already render transparent. Option B (renderer-side compositing) was deferred — Phase 2.5 reaches the same outcome with a smaller diff scoped to a single new clip-definition field.
 
-### Phase 3: Re-sign goldens (after fix)
+### Phase 3 — Re-generate + re-sign 5 goldens ✅ landed (PR #448, with Phase 2.5)
 
-Re-run parity-fixture generation for the 5 affected presets after the architectural fix lands. Re-ratify visually with PO. Restore Cluster D to 6/6 ELIGIBLE.
+After Phase 2.5 fix, regenerated parity-fixtures for all 5 affected presets and visually ratified each:
 
-### Phase 4: CI gate (preventive)
+- `stranger-things-benguiat` — black canvas + STRANGER THINGS letterforms in red neon glow + grain + light-leak + particles + fade overlay
+- `true-detective-double-exposure` — muted dark canvas + CREATED BY NIC PIZZOLATTO credit-block typography + cinematic-LUT subtle tone shift
+- `succession-home-video` — sepia-tinted canvas + SUCC... title + heavy film grain
+- `severance-surreal-3d` — sterile dark green-black canvas + SEVERANCE title in mid-century corporate typography + low grain
+- `got-trajan-clockwork` — sepia-tinted canvas + GAME OF THRONES Trajan-style metallic gold serif title
 
-Add a CI gate that asserts at least N% of pixels in a parity golden are non-uniform (catches blank frames). Existing `pnpm tsx scripts/check-preset-integrity.ts` could grow this rule.
+Frontmatter `signOff.parityFixture` promoted from `pending-user-review` → `signed:2026-05-08` for all 5. Cluster D back to 6/6 ELIGIBLE.
+
+### Phase 4 — Non-blank CI gate ✅ landed (PR #446)
+
+`scripts/check-preset-integrity.ts` invariant 15 (`parityFixture-non-blank`). Two-stage detection: fail when `(significantBuckets < 2)` AND `(maxBucketFraction > 99.95%)`. Empirically tuned against 35 on-disk signed goldens; passes all 5 newly-signed Cluster D goldens as positive verification.
+
+### Phase 5 — F-30 process lesson ✅ landed (PR #447)
+
+`CLAUDE.md` §13 — "Structural-extension specs require end-to-end render verification". §13 is prevention; the Phase 4 CI gate is recovery. The Phase 2-vs-2.5 split in this remediation is a concrete instance of the rule playing out: Phase 2's unit tests verified the wiring; Phase 3's pixel-level verification revealed the wiring failure that motivated Phase 2.5.
 
 ## Process lesson
 
