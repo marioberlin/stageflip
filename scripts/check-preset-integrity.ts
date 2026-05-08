@@ -16,11 +16,12 @@
 // `check-licenses.ts` and `check-determinism.ts` (per-check progress lines +
 // final PASS/FAIL).
 
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import matter from 'gray-matter';
+import { PNG } from 'pngjs';
 
 import { aiChatClipPropsSchema } from '../packages/schema/src/clips/interactive/ai-chat-props.js';
 import { aiGenerativeClipPropsSchema } from '../packages/schema/src/clips/interactive/ai-generative-props.js';
@@ -41,6 +42,69 @@ import {
 
 const PRESETS_ROOT_DEFAULT = 'skills/stageflip/presets';
 const COMPASS_PATH_DEFAULT = 'docs/compass.md';
+
+/**
+ * Root directory holding signed parity goldens — `parity-fixtures/<cluster>/<preset-id>/golden-frame-*.png`.
+ * Resolved relative to the workspace root unless overridden via {@link RunOpts.parityFixturesRoot}.
+ * T-348b D-T348b-1: only `signed:*` presets are scanned; `pending-user-review`
+ * + `na` are skipped.
+ */
+const PARITY_FIXTURES_ROOT_DEFAULT = 'parity-fixtures';
+
+/**
+ * T-348b non-blank invariant — two-stage detection (D-T348b-2).
+ *
+ * Quantize each pixel into a 5-bit-per-channel color bucket (32^3 = 32_768
+ * cells total). Scan every pixel (no stride) so tiny elements reliably
+ * contribute pixels to non-background buckets.
+ *
+ * Fire ONLY when BOTH:
+ *   1. fewer than {@link NON_BLANK_MIN_SIGNIFICANT_BUCKETS} significant
+ *      buckets (i.e. only 1 bucket holds at least
+ *      {@link NON_BLANK_SIGNIFICANT_BUCKET_FRACTION} of pixels), AND
+ *   2. the dominant-bucket fraction exceeds
+ *      {@link NON_BLANK_BLANK_DOMINANCE_THRESHOLD} (i.e. essentially the
+ *      ENTIRE image is the dominant color — anti-aliasing fringe accounts
+ *      for less than 0.05 % of pixels).
+ *
+ * **Why two criteria**: small-element-on-flat-canvas presets sit between
+ * legitimate and blank in the most-obvious metrics:
+ *   - `coinbase-dvd-qr` (small QR on solid black) → 2 significant buckets
+ *     (background + QR white); clears stage 1 immediately.
+ *   - `tiktok-follow-pulse` (faded pulse circle on white at frame 30) →
+ *     1 significant bucket (the pulse is anti-aliased across ~28 colors,
+ *     none individually clearing 0.05 %), 99.94 % dominance — clears
+ *     stage 2 because dominance < 99.95 % indicates ~0.06 % of pixels
+ *     ARE non-modal real content.
+ *   - Cluster D regression goldens (5 affected) → 1 significant bucket,
+ *     ≥ 99.99 % dominance (essentially the whole image was the modal
+ *     tint, with only stray fringe pixels). FAIL on both criteria.
+ *
+ * The 0.05 % gap between `NON_BLANK_BLANK_DOMINANCE_THRESHOLD` (99.95 %)
+ * and `NON_BLANK_SIGNIFICANT_BUCKET_FRACTION` (0.05 %) is intentional:
+ * a golden that has > 0.05 % non-modal pixels EITHER concentrates them
+ * in one bucket (clears stage 1) OR spreads them across many micro-fringe
+ * buckets (the dominance is < 99.95 %, clearing stage 2).
+ */
+export const NON_BLANK_QUANTIZE_BITS = 5;
+/**
+ * A bucket counts as "significant" when it holds at least this fraction of
+ * total pixels. 0.0005 = 0.05 % = ~1_037 pixels on a 1080p canvas — small
+ * enough to credit ~32x32-px legitimate elements, large enough to reject
+ * anti-aliased fringe noise around an otherwise-uniform image.
+ */
+export const NON_BLANK_SIGNIFICANT_BUCKET_FRACTION = 0.0005;
+/** Minimum number of significant buckets required to skip the dominance check. */
+export const NON_BLANK_MIN_SIGNIFICANT_BUCKETS = 2;
+/**
+ * Single-bucket dominance threshold used as the second-stage criterion when
+ * `significantBuckets < 2`. 0.9995 = 99.95 % — passes
+ * `tiktok-follow-pulse` (99.94 % dominance, 1 sig bucket) while still
+ * catching pure-blank / near-pure-blank goldens (≥ 99.99 % dominance, 1
+ * sig bucket). Tightening below 99.95 % would risk false positives on
+ * legitimate small-element-on-flat-canvas presets at frame boundaries.
+ */
+export const NON_BLANK_BLANK_DOMINANCE_THRESHOLD = 0.9995;
 
 /**
  * The set of valid `clipKind` strings a preset may declare. Per ADR-004 §D6
@@ -165,6 +229,9 @@ const INVARIANT_KEYS = [
   'typeDesign-signOff',
   'parityFixture-signOff',
   'compass-anchor',
+  // T-348b — Phase 4 of Cluster D regression remediation. Asserts every
+  // signed parity golden is positively content-bearing (non-blank).
+  'parityFixture-non-blank',
 ] as const;
 
 type InvariantKey = (typeof INVARIANT_KEYS)[number];
@@ -647,6 +714,138 @@ export function checkCompassAnchor(args: {
   return { ok: true };
 }
 
+// ---------- T-348b parity-golden non-blank check ----------
+
+export interface NonBlankMetrics {
+  /** Distinct quantized color buckets observed across all pixels. */
+  distinctBuckets: number;
+  /**
+   * Number of buckets holding at least
+   * {@link NON_BLANK_SIGNIFICANT_BUCKET_FRACTION} of total pixels. The
+   * primary discriminator — `>= 2` clears the gate.
+   */
+  significantBuckets: number;
+  /** Fraction of pixels in the single most-populated bucket (informational). */
+  maxBucketFraction: number;
+  /** Total pixels examined (= width * height; no stride). */
+  totalPixels: number;
+}
+
+/**
+ * Decode a PNG and compute significant-bucket blank-detection metrics
+ * (D-T348b-2). Synchronous via `pngjs.PNG.sync.read` (D-T348b-5). Scans
+ * every pixel — no stride — so even ~15-px-square elements reliably
+ * contribute to their own bucket. Cost on a 1080p canvas: ~50 ms typical
+ * (~2 MP @ ~50ns / pixel for the 5-bit quantize + Map increment).
+ */
+export function decodeNonBlankMetrics(pngBytes: Uint8Array): NonBlankMetrics {
+  const png = PNG.sync.read(Buffer.from(pngBytes));
+  const data = png.data; // RGBA Buffer, length = width * height * 4
+  const totalPixels = png.width * png.height;
+  if (totalPixels === 0) {
+    return { distinctBuckets: 0, significantBuckets: 0, maxBucketFraction: 1, totalPixels: 0 };
+  }
+  const shift = 8 - NON_BLANK_QUANTIZE_BITS;
+  const buckets = new Map<number, number>();
+  for (let p = 0; p < totalPixels; p += 1) {
+    const byteOffset = p * 4;
+    const r = (data[byteOffset] ?? 0) >> shift;
+    const g = (data[byteOffset + 1] ?? 0) >> shift;
+    const b = (data[byteOffset + 2] ?? 0) >> shift;
+    const key = (r << (NON_BLANK_QUANTIZE_BITS * 2)) | (g << NON_BLANK_QUANTIZE_BITS) | b;
+    buckets.set(key, (buckets.get(key) ?? 0) + 1);
+  }
+  const significanceThreshold = totalPixels * NON_BLANK_SIGNIFICANT_BUCKET_FRACTION;
+  let significantBuckets = 0;
+  let maxBucket = 0;
+  for (const count of buckets.values()) {
+    if (count >= significanceThreshold) significantBuckets += 1;
+    if (count > maxBucket) maxBucket = count;
+  }
+  return {
+    distinctBuckets: buckets.size,
+    significantBuckets,
+    maxBucketFraction: maxBucket / totalPixels,
+    totalPixels,
+  };
+}
+
+/**
+ * Invariant 15 — every signed parity golden is positively content-bearing.
+ * Skips presets where `signOff.parityFixture` is `pending-user-review` or
+ * `na`. Fires when the golden file is missing OR fails the dual-criterion
+ * blank check (D-T348b-2). Returns ok-but-no-op when the file is missing
+ * AND the preset's parityFixture is not signed (the pending-* case is
+ * already covered by invariant 6's warning).
+ */
+export function checkParityGoldenNonBlank(args: {
+  presetId: string;
+  goldenPath: string;
+}): CheckResult {
+  if (!existsSync(args.goldenPath)) {
+    return {
+      ok: false,
+      message: `signed parity golden file does not exist: ${args.goldenPath}`,
+    };
+  }
+  let bytes: Buffer;
+  try {
+    bytes = readFileSync(args.goldenPath);
+  } catch (err) {
+    return {
+      ok: false,
+      message: `failed to read parity golden ${args.goldenPath}: ${err instanceof Error ? err.message : String(err)}`,
+    };
+  }
+  let metrics: NonBlankMetrics;
+  try {
+    metrics = decodeNonBlankMetrics(bytes);
+  } catch (err) {
+    return {
+      ok: false,
+      message: `failed to decode parity golden ${args.goldenPath}: ${err instanceof Error ? err.message : String(err)}`,
+    };
+  }
+  const { significantBuckets, distinctBuckets, maxBucketFraction } = metrics;
+  if (
+    significantBuckets < NON_BLANK_MIN_SIGNIFICANT_BUCKETS &&
+    maxBucketFraction > NON_BLANK_BLANK_DOMINANCE_THRESHOLD
+  ) {
+    return {
+      ok: false,
+      message: `parity golden ${args.goldenPath} appears blank — only ${significantBuckets} significant color bucket(s) (≥${NON_BLANK_MIN_SIGNIFICANT_BUCKETS} required, where a "significant" bucket holds ≥${(NON_BLANK_SIGNIFICANT_BUCKET_FRACTION * 100).toFixed(2)}% of pixels) AND ${(maxBucketFraction * 100).toFixed(2)}% of pixels concentrated in the dominant bucket (gate fires above ${(NON_BLANK_BLANK_DOMINANCE_THRESHOLD * 100).toFixed(2)}%). Total distinct buckets: ${distinctBuckets}. Phase 4 two-stage gate per docs/handover-cluster-d-regression.md.`,
+    };
+  }
+  return { ok: true };
+}
+
+/**
+ * Walk `parity-fixtures/<cluster>/<preset-id>/` and return every PNG that
+ * looks like a golden frame (`golden-frame-*.png`). Returns an empty array
+ * if the directory does not exist (caller's invariant decides whether that's
+ * a hard error — for signed presets it IS, since the sign-off claims the
+ * golden exists; for `pending-*` presets the directory may legitimately
+ * be missing).
+ */
+export function listGoldenPngs(args: {
+  parityFixturesRoot: string;
+  cluster: string;
+  presetId: string;
+}): string[] {
+  const dir = join(args.parityFixturesRoot, args.cluster, args.presetId);
+  if (!existsSync(dir)) return [];
+  let entries: string[];
+  try {
+    entries = readdirSync(dir);
+  } catch {
+    return [];
+  }
+  return entries
+    .filter((name) => name.startsWith('golden-frame-') && name.endsWith('.png'))
+    .map((name) => join(dir, name))
+    .sort();
+}
+
 // ---------- compass loading ----------
 
 /**
@@ -692,6 +891,11 @@ function emptyBuckets(): Record<InvariantKey, InvariantBucket> {
 interface RunOpts {
   presetsRoot: string;
   compassPath?: string;
+  /**
+   * Workspace-relative root for parity goldens (T-348b). Defaults to
+   * {@link PARITY_FIXTURES_ROOT_DEFAULT}. Tests pass a per-case temp dir.
+   */
+  parityFixturesRoot?: string;
 }
 
 /**
@@ -884,6 +1088,35 @@ export function runIntegrityChecks(opts: RunOpts): IntegrityReport {
       const r = checkCompassAnchor({ presetId: id, source: fm.source, compass });
       if (!r.ok)
         buckets['compass-anchor'].errors.push({ presetId: id, filePath, message: r.message });
+    }
+
+    // Invariant 15 (T-348b) — every signed parity golden is non-blank.
+    // Only runs for presets where `signOff.parityFixture` matches `signed:*`;
+    // pending-user-review + na are skipped (D-T348b-1).
+    if (/^signed:/.test(fm.signOff.parityFixture)) {
+      const goldens = listGoldenPngs({
+        parityFixturesRoot: opts.parityFixturesRoot ?? PARITY_FIXTURES_ROOT_DEFAULT,
+        cluster: fm.cluster,
+        presetId: id,
+      });
+      if (goldens.length === 0) {
+        buckets['parityFixture-non-blank'].errors.push({
+          presetId: id,
+          filePath,
+          message: `signOff.parityFixture is '${fm.signOff.parityFixture}' but no golden PNGs found under parity-fixtures/${fm.cluster}/${id}/`,
+        });
+      } else {
+        for (const goldenPath of goldens) {
+          const r = checkParityGoldenNonBlank({ presetId: id, goldenPath });
+          if (!r.ok) {
+            buckets['parityFixture-non-blank'].errors.push({
+              presetId: id,
+              filePath,
+              message: r.message,
+            });
+          }
+        }
+      }
     }
   }
 
