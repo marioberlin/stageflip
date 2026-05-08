@@ -53,6 +53,9 @@ import {
   STRANGER_PARTICLES_PROPS,
   STRANGER_PHOTOGRAPHIC_OVERLAY_PROPS,
   STRANGER_TITLE_SEQUENCE_PROPS,
+  SUCCESSION_HOME_VIDEO_GRAIN_PROPS,
+  SUCCESSION_HOME_VIDEO_PHOTOGRAPHIC_OVERLAY_PROPS,
+  SUCCESSION_HOME_VIDEO_TITLE_SEQUENCE_PROPS,
   TIKTOK_CANONICAL_WORDS,
   TIKTOK_FOLLOW_PULSE_PROPS,
   TRUE_DETECTIVE_GRAIN_PROPS,
@@ -2411,7 +2414,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands (T-333 added the 12th; T-338 the 17th; T-332 the 18th).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(27);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(28);
   });
 
   it('binding deep-clones nested object literals so callers can mutate freely (T-333)', () => {
@@ -2560,7 +2563,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(27);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(28);
   });
 
   it('fox-nfl-no-chrome binding deep-clones nested object literals so callers can mutate freely (T-334)', () => {
@@ -2701,7 +2704,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(27);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(28);
   });
 
   it('nbc-snf-possession-illuminated binding deep-clones nested object literals so callers can mutate freely (T-335)', () => {
@@ -2845,7 +2848,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.clipName).toBe('news-ticker-bar');
     expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(27);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(28);
   });
 
   it('espn-bottomline-flipper binding deep-clones the entries array so callers can mutate freely (T-339a)', () => {
@@ -3018,7 +3021,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(27);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(28);
   });
 
   it('wimbledon-green-purple binding deep-clones nested objects + players tuple + sets arrays (T-337)', () => {
@@ -3183,7 +3186,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['masters-red-under-par']?.clipName).toBe('standings-table');
     expect(PRESET_ID_BINDINGS['masters-red-under-par']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(27);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(28);
   });
 
   it('masters-red-under-par binding deep-clones rows + columns + values arrays (T-338)', () => {
@@ -3343,7 +3346,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['f1-timing-tower']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['f1-timing-tower']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(27);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(28);
   });
 
   it('f1-timing-tower binding deep-clones nested objects + rows + sectorColors arrays (T-332)', () => {
@@ -3480,7 +3483,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['cricket-scorebug']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['cricket-scorebug']?.runtimeId).toBe('frame-runtime');
     // Nineteen overrides total after T-336 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(27);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(28);
   });
 
   it('cricket-scorebug binding deep-clones nested objects + batsmen array (T-336 AC #9)', () => {
@@ -3649,7 +3652,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['uefa-starball-refraction']?.clipName).toBe('magic-wall-panel');
     expect(PRESET_ID_BINDINGS['uefa-starball-refraction']?.runtimeId).toBe('frame-runtime');
     // Twenty overrides total after T-339 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(27);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(28);
   });
 
   it('uefa-starball-refraction binding deep-clones regions array per call (T-339 AC #11)', () => {
@@ -3744,7 +3747,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['youtube-subscribe-bounce']?.clipName).toBe('subscribe-button');
     expect(PRESET_ID_BINDINGS['youtube-subscribe-bounce']?.runtimeId).toBe('frame-runtime');
     // Twenty-one overrides total after T-369 lands (20 prior + youtube-subscribe-bounce).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(27);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(28);
   });
 
   it('youtube-subscribe-bounce binding deep-clones the position object so callers can mutate freely (T-369 AC #13)', () => {
@@ -3865,7 +3868,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['social-handle-lower-third']?.clipName).toBe('lower-third');
     expect(PRESET_ID_BINDINGS['social-handle-lower-third']?.runtimeId).toBe('frame-runtime');
     // Twenty-two overrides total after T-373 lands (21 prior + social-handle-lower-third).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(27);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(28);
   });
 
   it('lowerThird clipKind-default arm STILL returns cnnClassicBinding after T-373 lands (T-373 AC #17)', () => {
@@ -3958,7 +3961,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['tiktok-follow-pulse']?.clipName).toBe('follow-prompt');
     expect(PRESET_ID_BINDINGS['tiktok-follow-pulse']?.runtimeId).toBe('frame-runtime');
     // Twenty-three overrides total after T-370 lands (22 prior + tiktok-follow-pulse).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(27);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(28);
   });
 
   it('tiktok-follow-pulse binding deep-clones the position object so callers can mutate freely (T-370 AC #13)', () => {
@@ -4090,7 +4093,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['coinbase-dvd-qr']?.runtimeId).toBe('frame-runtime');
     // Twenty-seven overrides total after T-351 lands (26 post-T-348 + true-detective-double-exposure;
     // the post-T-372 count was 24 — assertion updated for T-348 / T-351 forward compat).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(27);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(28);
   });
 
   it('coinbase-dvd-qr binding deep-clones the bounce config so callers can mutate freely (T-372 AC #13)', () => {
@@ -4211,7 +4214,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['instagram-link-sticker']?.runtimeId).toBe('frame-runtime');
     // Twenty-seven overrides total after T-351 lands (the post-T-371 count was 25;
     // assertion updated for T-348 + T-351 forward compat).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(27);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(28);
   });
 
   it('instagram-link-sticker binding deep-clones the position object so callers can mutate freely (T-371 AC #13)', () => {
@@ -4355,7 +4358,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['stranger-things-benguiat']?.runtimeId).toBe('frame-runtime');
     expect(PRESET_ID_BINDINGS['stranger-things-benguiat']?.overlays).toHaveLength(4);
     // Twenty-seven overrides total after T-351 lands (26 post-T-348 + true-detective-double-exposure).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(27);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(28);
   });
 
   it('stranger-things-benguiat binding deep-clones nested arrays/objects so callers can mutate freely (T-348 AC #17)', () => {
@@ -4522,7 +4525,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['true-detective-double-exposure']?.clipName).toBe('titleSequence');
     expect(PRESET_ID_BINDINGS['true-detective-double-exposure']?.runtimeId).toBe('frame-runtime');
     expect(PRESET_ID_BINDINGS['true-detective-double-exposure']?.overlays).toHaveLength(2);
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(27);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(28);
   });
 
   it('true-detective-double-exposure binding deep-clones nested arrays/objects so callers can mutate freely (T-351 AC #18)', () => {
@@ -4567,6 +4570,133 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(binding?.overlays?.[1]?.clipName).toBe('light-leak');
     expect(binding?.overlays?.[2]?.clipName).toBe('particles');
     expect(binding?.overlays?.[3]?.clipName).toBe('photographic-overlay');
+  });
+
+  // T-352 — fourth Cluster D preset (`succession-home-video`); THIRD
+  // `titleSequence`-clipKind preset wired via `PRESET_ID_BINDINGS` override
+  // AND **third multi-clip-composition consumer in StageFlip parity-CLI
+  // history** (D-T352-1; reuses T-348's `overlays?` surface verbatim — no
+  // architectural extension). Composes the parent `titleSequence` primitive
+  // (T-321) with two atmospheric overlays — `grain` (T-321a) and
+  // `photographic-overlay` (T-321d) — in declaration order = z-order
+  // (D-T352-2). NO light-leak / particles per the sepia warm-yellow canon
+  // (would over-saturate to muddy-brown). Lowered parity thresholds
+  // 34/0.90 (D-T352-5; matches T-351's bar — mixed-grade footage variance
+  // per stub line 48 + HIGH grain intensity 0.30). T-352 is the **FIRST
+  // end-to-end consumer of `mode: 'sepia'`** (T-348 picked 'fade'; T-351
+  // picked 'cinematic-lut') AND the **FIRST end-to-end consumer of
+  // non-default grain intensity** (T-348/T-351 used the canonical 0.15
+  // default; T-352 raises to 0.30 for VHS-tape chatter per stub line 26).
+  it('routes succession-home-video through PRESET_ID_BINDINGS override (T-352 AC #18)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('titleSequence', 'succession-home-video');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('titleSequence');
+    const props = binding?.buildProps(undefined) as {
+      style: string;
+      foreground: string;
+      casing: string;
+    };
+    expect(props.style).toBe('photographic-overlay');
+    expect(props.foreground).toBe('#F4E8C8');
+    expect(props.casing).toBe('uppercase');
+  });
+
+  it('succession-home-video binding declares 2 overlays in declaration order = z-order (T-352 AC #18 / D-T352-2)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('titleSequence', 'succession-home-video');
+    expect(binding?.overlays).toBeDefined();
+    expect(binding?.overlays).toHaveLength(2);
+    expect(binding?.overlays?.[0]?.runtimeId).toBe('frame-runtime');
+    expect(binding?.overlays?.[0]?.clipName).toBe('grain');
+    expect(binding?.overlays?.[1]?.clipName).toBe('photographic-overlay');
+  });
+
+  it('succession-home-video overlays buildProps deep-equal the exported SUCCESSION_HOME_VIDEO_*_PROPS constants (T-352 AC #18)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('titleSequence', 'succession-home-video');
+    if (!binding?.overlays) throw new Error('test setup');
+    expect(binding.overlays[0]?.buildProps(undefined)).toEqual(SUCCESSION_HOME_VIDEO_GRAIN_PROPS);
+    expect(binding.overlays[1]?.buildProps(undefined)).toEqual(
+      SUCCESSION_HOME_VIDEO_PHOTOGRAPHIC_OVERLAY_PROPS,
+    );
+  });
+
+  it('SUCCESSION_HOME_VIDEO_TITLE_SEQUENCE_PROPS satisfies titleSequencePropsSchema (T-352 AC #19)', () => {
+    expect(
+      titleSequencePropsSchema.safeParse(SUCCESSION_HOME_VIDEO_TITLE_SEQUENCE_PROPS).success,
+    ).toBe(true);
+  });
+
+  it('SUCCESSION_HOME_VIDEO_GRAIN_PROPS satisfies grainPropsSchema; intensity=0.30 (T-352 AC #19 / D-T352-7)', () => {
+    expect(grainPropsSchema.safeParse(SUCCESSION_HOME_VIDEO_GRAIN_PROPS).success).toBe(true);
+    expect(SUCCESSION_HOME_VIDEO_GRAIN_PROPS.intensity).toBe(0.3);
+  });
+
+  it('SUCCESSION_HOME_VIDEO_PHOTOGRAPHIC_OVERLAY_PROPS satisfies photographicOverlayPropsSchema; mode=sepia intensity=0.7 (T-352 AC #19 / D-T352-3)', () => {
+    expect(
+      photographicOverlayPropsSchema.safeParse(SUCCESSION_HOME_VIDEO_PHOTOGRAPHIC_OVERLAY_PROPS)
+        .success,
+    ).toBe(true);
+    expect(SUCCESSION_HOME_VIDEO_PHOTOGRAPHIC_OVERLAY_PROPS.mode).toBe('sepia');
+    expect(SUCCESSION_HOME_VIDEO_PHOTOGRAPHIC_OVERLAY_PROPS.intensity).toBe(0.7);
+  });
+
+  it('PRESET_ID_BINDINGS contains succession-home-video override; length 28 (T-352 AC #20)', () => {
+    expect(PRESET_ID_BINDINGS['succession-home-video']).toBeDefined();
+    expect(PRESET_ID_BINDINGS['succession-home-video']?.clipName).toBe('titleSequence');
+    expect(PRESET_ID_BINDINGS['succession-home-video']?.runtimeId).toBe('frame-runtime');
+    expect(PRESET_ID_BINDINGS['succession-home-video']?.overlays).toHaveLength(2);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(28);
+  });
+
+  it('succession-home-video binding deep-clones nested arrays/objects so callers can mutate freely (T-352 AC #18)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('titleSequence', 'succession-home-video');
+    if (!binding) throw new Error('test setup');
+    const a = binding.buildProps(undefined) as {
+      shots: Array<{ content: { text: string } }>;
+      font: { family: string };
+      position: { x: number };
+    };
+    const aShot0 = a.shots[0];
+    if (!aShot0) throw new Error('test setup');
+    aShot0.content.text = 'MUTATED';
+    a.font.family = 'mutated-family';
+    a.position.x = 999;
+    const b = binding.buildProps(undefined) as typeof a;
+    expect(b.shots[0]?.content.text).toBe('SUCCESSION');
+    expect(b.font.family).toBe(
+      'IBM Plex Sans Condensed, IBM Plex Sans, system-ui, -apple-system, sans-serif',
+    );
+    expect(b.position.x).toBe(640);
+    // Exported constants unchanged after caller mutates the returned props.
+    expect(SUCCESSION_HOME_VIDEO_TITLE_SEQUENCE_PROPS.shots[0]?.content.text).toBe('SUCCESSION');
+    expect(SUCCESSION_HOME_VIDEO_TITLE_SEQUENCE_PROPS.position.x).toBe(640);
+  });
+
+  it('clipKind-default for titleSequence STILL returns squidGameGeometric without presetId after T-352 lands (T-352 AC #21)', () => {
+    // No presetId → clipKind-default arm; T-350's squidGameGeometricBinding
+    // remains the fallthrough. T-352 is an OVERRIDE only; does NOT touch
+    // DEFAULT_CLIP_KIND_RESOLVER's `if (clipKind === 'titleSequence')` arm.
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('titleSequence');
+    expect(binding?.clipName).toBe('titleSequence');
+    expect(binding?.overlays).toBeUndefined();
+    const props = binding?.buildProps(undefined) as { style: string };
+    expect(props.style).toBe('palette-jump-cut'); // T-350 D-T350-7 register
+  });
+
+  it('stranger-things-benguiat binding STILL fans out 4 overlays after T-352 lands (T-352 AC #22 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('titleSequence', 'stranger-things-benguiat');
+    expect(binding?.overlays).toHaveLength(4);
+    expect(binding?.overlays?.[0]?.clipName).toBe('grain');
+    expect(binding?.overlays?.[1]?.clipName).toBe('light-leak');
+    expect(binding?.overlays?.[2]?.clipName).toBe('particles');
+    expect(binding?.overlays?.[3]?.clipName).toBe('photographic-overlay');
+  });
+
+  it('true-detective-double-exposure binding STILL fans out 2 overlays after T-352 lands (T-352 AC #22 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('titleSequence', 'true-detective-double-exposure');
+    expect(binding?.overlays).toHaveLength(2);
+    expect(binding?.overlays?.[0]?.clipName).toBe('grain');
+    expect(binding?.overlays?.[1]?.clipName).toBe('photographic-overlay');
   });
 });
 
@@ -4790,6 +4920,26 @@ describe('buildPresetDocument', () => {
       props: binding.buildProps(undefined),
     });
     // 3 elements (parent + 2 overlays); fewer than T-348's 5 (intentional 3-clip stack).
+    expect(doc.elements).toHaveLength(3);
+    expect(doc.elements.map((e) => e.zIndex)).toEqual([0, 1, 2]);
+    const clipNames = doc.elements.map((e) =>
+      e.content.type === 'clip' ? e.content.clipName : null,
+    );
+    expect(clipNames).toEqual(['titleSequence', 'grain', 'photographic-overlay']);
+  });
+
+  it('succession-home-video binding fans out 3 elements through buildPresetDocument (T-352 AC #11 / D-T352-2)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('titleSequence', 'succession-home-video');
+    if (!binding) throw new Error('test setup');
+    const doc = buildPresetDocument({
+      preset: presetWith('titleSequence', 'succession-home-video', 'titles'),
+      composition: COMPOSITION,
+      binding,
+      props: binding.buildProps(undefined),
+    });
+    // 3 elements (parent + 2 overlays); matches T-351's shape (intentional
+    // 3-clip stack — sepia + grain VHS canon does not enumerate light-leak
+    // / particles per stub line 26).
     expect(doc.elements).toHaveLength(3);
     expect(doc.elements.map((e) => e.zIndex)).toEqual([0, 1, 2]);
     const clipNames = doc.elements.map((e) =>
