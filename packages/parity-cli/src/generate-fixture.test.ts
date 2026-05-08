@@ -3,6 +3,13 @@
 // `PrimeRenderFn` (no Chrome / ffmpeg dependency).
 
 import { rirDocumentSchema } from '@stageflip/rir';
+import {
+  grainPropsSchema,
+  lightLeakPropsSchema,
+  particlesPropsSchema,
+  photographicOverlayPropsSchema,
+  titleSequencePropsSchema,
+} from '@stageflip/runtimes-frame-runtime-bridge';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -41,6 +48,11 @@ import {
   type PresetForRender,
   SOCIAL_HANDLE_LOWER_THIRD_PROPS,
   SQUID_GAME_GEOMETRIC_SHOTS,
+  STRANGER_GRAIN_PROPS,
+  STRANGER_LIGHT_LEAK_PROPS,
+  STRANGER_PARTICLES_PROPS,
+  STRANGER_PHOTOGRAPHIC_OVERLAY_PROPS,
+  STRANGER_TITLE_SEQUENCE_PROPS,
   TIKTOK_CANONICAL_WORDS,
   TIKTOK_FOLLOW_PULSE_PROPS,
   UEFA_STARBALL_PALETTE,
@@ -2396,7 +2408,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands (T-333 added the 12th; T-338 the 17th; T-332 the 18th).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(25);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(26);
   });
 
   it('binding deep-clones nested object literals so callers can mutate freely (T-333)', () => {
@@ -2545,7 +2557,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(25);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(26);
   });
 
   it('fox-nfl-no-chrome binding deep-clones nested object literals so callers can mutate freely (T-334)', () => {
@@ -2686,7 +2698,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(25);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(26);
   });
 
   it('nbc-snf-possession-illuminated binding deep-clones nested object literals so callers can mutate freely (T-335)', () => {
@@ -2830,7 +2842,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.clipName).toBe('news-ticker-bar');
     expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(25);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(26);
   });
 
   it('espn-bottomline-flipper binding deep-clones the entries array so callers can mutate freely (T-339a)', () => {
@@ -3003,7 +3015,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(25);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(26);
   });
 
   it('wimbledon-green-purple binding deep-clones nested objects + players tuple + sets arrays (T-337)', () => {
@@ -3168,7 +3180,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['masters-red-under-par']?.clipName).toBe('standings-table');
     expect(PRESET_ID_BINDINGS['masters-red-under-par']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(25);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(26);
   });
 
   it('masters-red-under-par binding deep-clones rows + columns + values arrays (T-338)', () => {
@@ -3328,7 +3340,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['f1-timing-tower']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['f1-timing-tower']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(25);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(26);
   });
 
   it('f1-timing-tower binding deep-clones nested objects + rows + sectorColors arrays (T-332)', () => {
@@ -3465,7 +3477,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['cricket-scorebug']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['cricket-scorebug']?.runtimeId).toBe('frame-runtime');
     // Nineteen overrides total after T-336 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(25);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(26);
   });
 
   it('cricket-scorebug binding deep-clones nested objects + batsmen array (T-336 AC #9)', () => {
@@ -3634,7 +3646,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['uefa-starball-refraction']?.clipName).toBe('magic-wall-panel');
     expect(PRESET_ID_BINDINGS['uefa-starball-refraction']?.runtimeId).toBe('frame-runtime');
     // Twenty overrides total after T-339 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(25);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(26);
   });
 
   it('uefa-starball-refraction binding deep-clones regions array per call (T-339 AC #11)', () => {
@@ -3729,7 +3741,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['youtube-subscribe-bounce']?.clipName).toBe('subscribe-button');
     expect(PRESET_ID_BINDINGS['youtube-subscribe-bounce']?.runtimeId).toBe('frame-runtime');
     // Twenty-one overrides total after T-369 lands (20 prior + youtube-subscribe-bounce).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(25);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(26);
   });
 
   it('youtube-subscribe-bounce binding deep-clones the position object so callers can mutate freely (T-369 AC #13)', () => {
@@ -3850,7 +3862,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['social-handle-lower-third']?.clipName).toBe('lower-third');
     expect(PRESET_ID_BINDINGS['social-handle-lower-third']?.runtimeId).toBe('frame-runtime');
     // Twenty-two overrides total after T-373 lands (21 prior + social-handle-lower-third).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(25);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(26);
   });
 
   it('lowerThird clipKind-default arm STILL returns cnnClassicBinding after T-373 lands (T-373 AC #17)', () => {
@@ -3943,7 +3955,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['tiktok-follow-pulse']?.clipName).toBe('follow-prompt');
     expect(PRESET_ID_BINDINGS['tiktok-follow-pulse']?.runtimeId).toBe('frame-runtime');
     // Twenty-three overrides total after T-370 lands (22 prior + tiktok-follow-pulse).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(25);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(26);
   });
 
   it('tiktok-follow-pulse binding deep-clones the position object so callers can mutate freely (T-370 AC #13)', () => {
@@ -4069,12 +4081,13 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(COINBASE_DVD_QR_MATRIX[20]?.startsWith('1111111')).toBe(true);
   });
 
-  it('PRESET_ID_BINDINGS contains coinbase-dvd-qr override; length 24 (T-372 AC #16)', () => {
+  it('PRESET_ID_BINDINGS contains coinbase-dvd-qr override (T-372 AC #16)', () => {
     expect(PRESET_ID_BINDINGS['coinbase-dvd-qr']).toBeDefined();
     expect(PRESET_ID_BINDINGS['coinbase-dvd-qr']?.clipName).toBe('qr-code-bounce');
     expect(PRESET_ID_BINDINGS['coinbase-dvd-qr']?.runtimeId).toBe('frame-runtime');
-    // Twenty-four overrides total after T-372 lands (23 prior + coinbase-dvd-qr).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(25);
+    // Twenty-six overrides total after T-348 lands (25 prior + stranger-things-benguiat;
+    // the post-T-372 count was 24 — assertion updated for T-348 forward compat).
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(26);
   });
 
   it('coinbase-dvd-qr binding deep-clones the bounce config so callers can mutate freely (T-372 AC #13)', () => {
@@ -4189,12 +4202,13 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(Object.keys(INSTAGRAM_LINK_STICKER_PROPS)).toHaveLength(3);
   });
 
-  it('PRESET_ID_BINDINGS contains instagram-link-sticker override; length 25 (T-371 AC #16)', () => {
+  it('PRESET_ID_BINDINGS contains instagram-link-sticker override (T-371 AC #16)', () => {
     expect(PRESET_ID_BINDINGS['instagram-link-sticker']).toBeDefined();
     expect(PRESET_ID_BINDINGS['instagram-link-sticker']?.clipName).toBe('link-sticker');
     expect(PRESET_ID_BINDINGS['instagram-link-sticker']?.runtimeId).toBe('frame-runtime');
-    // Twenty-five overrides total after T-371 lands (24 prior + instagram-link-sticker).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(25);
+    // Twenty-six overrides total after T-348 lands (the post-T-371 count was 25;
+    // assertion updated for T-348 forward compat).
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(26);
   });
 
   it('instagram-link-sticker binding deep-clones the position object so callers can mutate freely (T-371 AC #13)', () => {
@@ -4269,6 +4283,172 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
       'link-sticker',
     );
   });
+
+  // T-348 — second Cluster D preset (`stranger-things-benguiat`); FIRST
+  // `titleSequence`-clipKind preset wired via `PRESET_ID_BINDINGS` override
+  // (T-350's `squidGameGeometricBinding` stays the clipKind-default arm)
+  // AND **first multi-clip-composition consumer in StageFlip parity-CLI
+  // history** (D-T348-1). Composes the parent `titleSequence` primitive
+  // (T-321) with four atmospheric overlays — `grain` (T-321a), `light-leak`
+  // (T-131b.2), `particles` (T-131d.1), `photographic-overlay` (T-321d) —
+  // in declaration order = z-order (D-T348-2). Lowered parity thresholds
+  // 36/0.92 (D-T348-10; mandatory film grain reduces compression precision
+  // per stub line 49). All 25 prior `PRESET_ID_BINDINGS` entries UNCHANGED.
+  it('routes stranger-things-benguiat through PRESET_ID_BINDINGS override (T-348 AC #17)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('titleSequence', 'stranger-things-benguiat');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('titleSequence'); // camelCase primitive kind (title-sequence.tsx:800)
+    const props = binding?.buildProps(undefined) as { style: string; foreground: string };
+    expect(props.style).toBe('letterform-assemble');
+    expect(props.foreground).toBe('#FFFFFF');
+  });
+
+  it('stranger-things-benguiat binding declares 4 overlays in declaration order = z-order (T-348 AC #17 / D-T348-2)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('titleSequence', 'stranger-things-benguiat');
+    expect(binding?.overlays).toBeDefined();
+    expect(binding?.overlays).toHaveLength(4);
+    expect(binding?.overlays?.[0]?.runtimeId).toBe('frame-runtime');
+    expect(binding?.overlays?.[0]?.clipName).toBe('grain');
+    expect(binding?.overlays?.[1]?.clipName).toBe('light-leak');
+    expect(binding?.overlays?.[2]?.clipName).toBe('particles');
+    expect(binding?.overlays?.[3]?.clipName).toBe('photographic-overlay');
+  });
+
+  it('stranger-things-benguiat overlays buildProps deep-equal the exported STRANGER_*_PROPS constants (T-348 AC #17)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('titleSequence', 'stranger-things-benguiat');
+    if (!binding?.overlays) throw new Error('test setup');
+    expect(binding.overlays[0]?.buildProps(undefined)).toEqual(STRANGER_GRAIN_PROPS);
+    expect(binding.overlays[1]?.buildProps(undefined)).toEqual(STRANGER_LIGHT_LEAK_PROPS);
+    expect(binding.overlays[2]?.buildProps(undefined)).toEqual(STRANGER_PARTICLES_PROPS);
+    expect(binding.overlays[3]?.buildProps(undefined)).toEqual(STRANGER_PHOTOGRAPHIC_OVERLAY_PROPS);
+  });
+
+  it('STRANGER_TITLE_SEQUENCE_PROPS satisfies titleSequencePropsSchema (T-348 AC #18)', () => {
+    expect(titleSequencePropsSchema.safeParse(STRANGER_TITLE_SEQUENCE_PROPS).success).toBe(true);
+  });
+
+  it('STRANGER_GRAIN_PROPS satisfies grainPropsSchema (T-348 AC #18)', () => {
+    expect(grainPropsSchema.safeParse(STRANGER_GRAIN_PROPS).success).toBe(true);
+  });
+
+  it('STRANGER_LIGHT_LEAK_PROPS satisfies lightLeakPropsSchema (T-348 AC #18)', () => {
+    expect(lightLeakPropsSchema.safeParse(STRANGER_LIGHT_LEAK_PROPS).success).toBe(true);
+  });
+
+  it('STRANGER_PARTICLES_PROPS satisfies particlesPropsSchema (T-348 AC #18)', () => {
+    expect(particlesPropsSchema.safeParse(STRANGER_PARTICLES_PROPS).success).toBe(true);
+  });
+
+  it('STRANGER_PHOTOGRAPHIC_OVERLAY_PROPS satisfies photographicOverlayPropsSchema (T-348 AC #18)', () => {
+    expect(
+      photographicOverlayPropsSchema.safeParse(STRANGER_PHOTOGRAPHIC_OVERLAY_PROPS).success,
+    ).toBe(true);
+  });
+
+  it('PRESET_ID_BINDINGS contains stranger-things-benguiat override; length 26 (T-348 AC #19)', () => {
+    expect(PRESET_ID_BINDINGS['stranger-things-benguiat']).toBeDefined();
+    expect(PRESET_ID_BINDINGS['stranger-things-benguiat']?.clipName).toBe('titleSequence');
+    expect(PRESET_ID_BINDINGS['stranger-things-benguiat']?.runtimeId).toBe('frame-runtime');
+    expect(PRESET_ID_BINDINGS['stranger-things-benguiat']?.overlays).toHaveLength(4);
+    // Twenty-six overrides total after T-348 lands (25 prior + stranger-things-benguiat).
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(26);
+  });
+
+  it('stranger-things-benguiat binding deep-clones nested arrays/objects so callers can mutate freely (T-348 AC #17)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('titleSequence', 'stranger-things-benguiat');
+    if (!binding) throw new Error('test setup');
+    const a = binding.buildProps(undefined) as {
+      shots: Array<{ content: { text: string } }>;
+      glow: { color: string };
+      position: { x: number };
+    };
+    const aShot0 = a.shots[0];
+    if (!aShot0) throw new Error('test setup');
+    aShot0.content.text = 'MUTATED';
+    a.glow.color = '#000000';
+    a.position.x = 999;
+    const b = binding.buildProps(undefined) as typeof a;
+    expect(b.shots[0]?.content.text).toBe('STRANGER THINGS');
+    expect(b.glow.color).toBe('#FF0000');
+    expect(b.position.x).toBe(640);
+    // Exported constants unchanged after caller mutates the returned props.
+    expect(STRANGER_TITLE_SEQUENCE_PROPS.shots[0]?.content.text).toBe('STRANGER THINGS');
+    expect(STRANGER_TITLE_SEQUENCE_PROPS.glow.color).toBe('#FF0000');
+    expect(STRANGER_TITLE_SEQUENCE_PROPS.position.x).toBe(640);
+  });
+
+  it('clipKind-default for titleSequence STILL returns squidGameGeometric without presetId after T-348 lands (T-348 AC #20)', () => {
+    // No presetId → clipKind-default arm; T-350's squidGameGeometricBinding
+    // remains the fallthrough. T-348 is an OVERRIDE only; does NOT touch
+    // DEFAULT_CLIP_KIND_RESOLVER's `if (clipKind === 'titleSequence')` arm.
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('titleSequence');
+    expect(binding?.clipName).toBe('titleSequence');
+    expect(binding?.overlays).toBeUndefined();
+    // squid-game-geometric is the parent here; verify by buildProps shape.
+    const props = binding?.buildProps(undefined) as { style: string };
+    expect(props.style).toBe('palette-jump-cut'); // T-350 D-T350-7 register
+  });
+
+  it('all 25 prior PRESET_ID_BINDINGS overrides STILL resolve after T-348 lands (T-348 AC #21 backward compat)', () => {
+    expect(PRESET_ID_BINDINGS['big-number-stat-impact']?.clipName).toBe('animated-value');
+    expect(PRESET_ID_BINDINGS['mrbeast-komika-axis']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['tiktok-rounded-box']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['ali-abdaal-opacity-karaoke']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['netflix-invisible']?.clipName).toBe('caption');
+    expect(PRESET_ID_BINDINGS['bbc-reith-dark']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['al-jazeera-orange']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['apple-tv-lt']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['netflix-doc-lt']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['fox-news-alert']?.clipName).toBe('breaking-banner');
+    expect(PRESET_ID_BINDINGS['msnbc-big-board']?.clipName).toBe('magic-wall-panel');
+    expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.clipName).toBe('news-ticker-bar');
+    expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['masters-red-under-par']?.clipName).toBe('standings-table');
+    expect(PRESET_ID_BINDINGS['f1-timing-tower']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['cricket-scorebug']?.clipName).toBe('score-bug');
+    expect(PRESET_ID_BINDINGS['uefa-starball-refraction']?.clipName).toBe('magic-wall-panel');
+    expect(PRESET_ID_BINDINGS['youtube-subscribe-bounce']?.clipName).toBe('subscribe-button');
+    expect(PRESET_ID_BINDINGS['social-handle-lower-third']?.clipName).toBe('lower-third');
+    expect(PRESET_ID_BINDINGS['tiktok-follow-pulse']?.clipName).toBe('follow-prompt');
+    expect(PRESET_ID_BINDINGS['coinbase-dvd-qr']?.clipName).toBe('qr-code-bounce');
+    expect(PRESET_ID_BINDINGS['instagram-link-sticker']?.clipName).toBe('link-sticker');
+  });
+
+  it('every prior single-clip PRESET_ID_BINDINGS entry has NO overlays field (T-348 AC #21 backward compat)', () => {
+    // All 25 prior entries are single-clip — `overlays` field is OPTIONAL
+    // on `ClipKindBinding` and undefined for them. Only T-348's
+    // stranger-things-benguiat declares overlays.
+    expect(PRESET_ID_BINDINGS['big-number-stat-impact']?.overlays).toBeUndefined();
+    expect(PRESET_ID_BINDINGS['bbc-reith-dark']?.overlays).toBeUndefined();
+    expect(PRESET_ID_BINDINGS['instagram-link-sticker']?.overlays).toBeUndefined();
+    expect(PRESET_ID_BINDINGS['cricket-scorebug']?.overlays).toBeUndefined();
+    expect(PRESET_ID_BINDINGS['coinbase-dvd-qr']?.overlays).toBeUndefined();
+  });
+
+  it('clipKind-default arms for other clipKinds STILL resolve after T-348 lands (T-348 AC #22 backward compat)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('bigNumber')?.clipName).toBe('animated-value');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('scoreBug')?.clipName).toBe('outcome-row');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('newsTicker')?.clipName).toBe('news-ticker-bar');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('standings')?.clipName).toBe('standings-table');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('caption')?.clipName).toBe('caption');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('fullScreen')?.clipName).toBe('magic-wall-panel');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('lyrics')?.clipName).toBe('lyrics');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('titleSequence')?.clipName).toBe('titleSequence');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('lowerThird')?.clipName).toBe('lower-third');
+    expect(DEFAULT_CLIP_KIND_RESOLVER('breakingBanner')?.clipName).toBe('breaking-banner');
+  });
+
+  it('unknown clipKind STILL returns undefined after T-348 lands (T-348 AC #23)', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('unknownKind')).toBeUndefined();
+    // Per T-360 D-T360-2: PRESET_ID_BINDINGS hit overrides clipKind mismatch.
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'stranger-things-benguiat')?.clipName).toBe(
+      'titleSequence',
+    );
+  });
 });
 
 describe('buildPresetDocument', () => {
@@ -4333,6 +4513,152 @@ describe('buildPresetDocument', () => {
     expect(element.content.params).toEqual({ value: 99, color: '#abcdef' });
     expect(element.content.runtime).toBe('frame-runtime');
     expect(element.content.clipName).toBe('animated-value');
+  });
+
+  // T-348 — multi-clip composition surface (D-T348-1). Bindings that
+  // declare an `overlays?` array fan out one RIRDocument.elements entry per
+  // overlay in declaration order = z-order (parent at zIndex 0; overlays
+  // at zIndex 1, 2, 3, ...). Single-clip bindings (no `overlays`) emit
+  // exactly one element — backward compat for all 25 existing
+  // PRESET_ID_BINDINGS entries + the 10 clipKind-default arms.
+  it('single-clip binding (no overlays) emits exactly one element (T-348 AC #12 backward compat)', () => {
+    const doc = buildPresetDocument({
+      preset: presetWith('bigNumber', 'demo'),
+      composition: COMPOSITION,
+      binding: {
+        runtimeId: 'frame-runtime',
+        clipName: 'animated-value',
+        buildProps: () => ({}),
+      },
+      props: { value: 1 },
+    });
+    expect(doc.elements).toHaveLength(1);
+    expect(doc.elements[0]?.zIndex).toBe(0);
+    expect(doc.elements[0]?.id).toBe('preset-clip-0');
+  });
+
+  it('multi-clip binding (with overlays) fans out N+1 elements with strictly increasing zIndex (T-348 AC #10 / AC #11)', () => {
+    const doc = buildPresetDocument({
+      preset: presetWith('titleSequence', 'demo', 'titles'),
+      composition: COMPOSITION,
+      binding: {
+        runtimeId: 'frame-runtime',
+        clipName: 'titleSequence',
+        buildProps: () => ({ parent: true }),
+        overlays: [
+          { runtimeId: 'frame-runtime', clipName: 'grain', buildProps: () => ({ a: 1 }) },
+          { runtimeId: 'frame-runtime', clipName: 'light-leak', buildProps: () => ({ b: 2 }) },
+          { runtimeId: 'frame-runtime', clipName: 'particles', buildProps: () => ({ c: 3 }) },
+          {
+            runtimeId: 'frame-runtime',
+            clipName: 'photographic-overlay',
+            buildProps: () => ({ d: 4 }),
+          },
+        ],
+      },
+      props: { parent: true },
+    });
+    expect(doc.elements).toHaveLength(5);
+    expect(doc.elements.map((e) => e.zIndex)).toEqual([0, 1, 2, 3, 4]);
+    expect(doc.elements.map((e) => e.id)).toEqual([
+      'preset-clip-0',
+      'preset-clip-1',
+      'preset-clip-2',
+      'preset-clip-3',
+      'preset-clip-4',
+    ]);
+    // Parent + 4 overlays bind to their declared clipNames in declaration order.
+    const clipNames = doc.elements.map((e) =>
+      e.content.type === 'clip' ? e.content.clipName : null,
+    );
+    expect(clipNames).toEqual([
+      'titleSequence',
+      'grain',
+      'light-leak',
+      'particles',
+      'photographic-overlay',
+    ]);
+  });
+
+  it('every fanned-out element shares the parent transform + timing (T-348 AC #10)', () => {
+    const doc = buildPresetDocument({
+      preset: presetWith('titleSequence', 'demo', 'titles'),
+      composition: COMPOSITION,
+      binding: {
+        runtimeId: 'frame-runtime',
+        clipName: 'titleSequence',
+        buildProps: () => ({}),
+        overlays: [
+          { runtimeId: 'frame-runtime', clipName: 'grain', buildProps: () => ({}) },
+          { runtimeId: 'frame-runtime', clipName: 'particles', buildProps: () => ({}) },
+        ],
+      },
+      props: {},
+    });
+    for (const el of doc.elements) {
+      expect(el.transform).toEqual({
+        x: 0,
+        y: 0,
+        width: COMPOSITION.width,
+        height: COMPOSITION.height,
+        rotation: 0,
+        opacity: 1,
+      });
+      expect(el.timing).toEqual({
+        startFrame: 0,
+        endFrame: COMPOSITION.durationInFrames,
+        durationFrames: COMPOSITION.durationInFrames,
+      });
+    }
+  });
+
+  it('overlay buildProps are routed through the fanout with the parent variant (T-348 AC #10)', () => {
+    const doc = buildPresetDocument({
+      preset: presetWith('titleSequence', 'demo', 'titles'),
+      composition: COMPOSITION,
+      binding: {
+        runtimeId: 'frame-runtime',
+        clipName: 'titleSequence',
+        buildProps: (v) => ({ kind: 'parent', variant: v }),
+        overlays: [
+          {
+            runtimeId: 'frame-runtime',
+            clipName: 'grain',
+            buildProps: (v) => ({ kind: 'grain', variant: v }),
+          },
+        ],
+      },
+      props: { kind: 'parent', variant: 'demoVariant' },
+      variant: 'demoVariant',
+    });
+    expect(doc.elements).toHaveLength(2);
+    const overlayContent = doc.elements[1]?.content;
+    if (!overlayContent || overlayContent.type !== 'clip') throw new Error('expected clip');
+    expect(overlayContent.params).toEqual({ kind: 'grain', variant: 'demoVariant' });
+    expect(overlayContent.clipName).toBe('grain');
+  });
+
+  it('stranger-things-benguiat binding fans out 5 elements through buildPresetDocument (T-348 AC #10 / AC #11)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('titleSequence', 'stranger-things-benguiat');
+    if (!binding) throw new Error('test setup');
+    const doc = buildPresetDocument({
+      preset: presetWith('titleSequence', 'stranger-things-benguiat', 'titles'),
+      composition: COMPOSITION,
+      binding,
+      props: binding.buildProps(undefined),
+    });
+    expect(doc.elements).toHaveLength(5);
+    expect(doc.elements.map((e) => e.zIndex)).toEqual([0, 1, 2, 3, 4]);
+    const clipNames = doc.elements.map((e) =>
+      e.content.type === 'clip' ? e.content.clipName : null,
+    );
+    expect(clipNames).toEqual([
+      'titleSequence',
+      'grain',
+      'light-leak',
+      'particles',
+      'photographic-overlay',
+    ]);
   });
 });
 

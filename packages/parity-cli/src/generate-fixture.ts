@@ -74,6 +74,26 @@ export interface ClipKindBinding {
    * placed directly into the RIR clip element's `params`.
    */
   buildProps(variant: string | undefined): Record<string, unknown>;
+  /**
+   * Optional secondary atmospheric overlays composed above the parent clip
+   * in declaration order = z-order (T-348 D-T348-1). Each overlay renders
+   * at the same `transform` (full-canvas) and `timing` (full-duration) as
+   * the parent; the parent renders at `zIndex: 0`, overlays at
+   * `zIndex: 1, 2, 3, ...` in array order. Single-clip presets omit this
+   * field; existing 25 single-clip bindings (24 in `PRESET_ID_BINDINGS` +
+   * the clipKind-default arms) remain unchanged.
+   *
+   * v1 scope (T-348 D-T348-1): full-canvas + full-duration only. Per-overlay
+   * `transform` / `timing` overrides + per-overlay blend-mode declarations
+   * are out-of-scope; primitives bake their own blend modes (e.g.
+   * `light-leak` uses `mixBlendMode: 'screen'`; `photographic-overlay` uses
+   * SVG filter primitives).
+   */
+  readonly overlays?: ReadonlyArray<{
+    readonly runtimeId: string;
+    readonly clipName: string;
+    buildProps(variant: string | undefined): Record<string, unknown>;
+  }>;
 }
 
 /**
@@ -2512,6 +2532,153 @@ const instagramLinkStickerBinding: ClipKindBinding = {
 };
 
 /**
+ * `stranger-things-benguiat` (T-348) — second Cluster D preset; FIRST
+ * `titleSequence`-clipKind preset wired via `PRESET_ID_BINDINGS` (Pattern C
+ * override; T-350's `squidGameGeometricBinding` stays the clipKind-default
+ * arm) AND **first multi-clip-composition consumer in StageFlip parity-CLI
+ * history** (D-T348-1). Composes the parent `titleSequence` primitive
+ * (T-321) with four atmospheric overlays in z-order: `grain` (T-321a),
+ * `light-leak` (T-131b.2), `particles` (T-131d.1), `photographic-overlay`
+ * (T-321d). Lowered parity thresholds 36/0.92 (D-T348-10; mandatory film
+ * grain reduces compression precision per stub line 49). Cormorant
+ * Garamond Bold (OFL) is the rendered fallback for ITC Benguiat Bold
+ * (commercial-byo) per D-T348-9-a. ALL CAPS scaled-to-viewport
+ * "STRANGER THINGS" letterforms with red `#FF0000` Gaussian-blur glow on
+ * white-letter foreground = canonical neon-torch-through-canvas register.
+ */
+
+/** D-T348-8: titleSequence parent props (`'letterform-assemble'` style). */
+export const STRANGER_TITLE_SEQUENCE_PROPS = {
+  shots: [
+    {
+      id: 'main-title',
+      startMs: 0,
+      endMs: 50000, // 50s sequence per stub line 35; static at frame 480
+      kind: 'letterAnimation' as const,
+      content: { text: 'STRANGER THINGS', staggerMs: 200 },
+      transitionOut: 'cut' as const,
+    },
+  ],
+  style: 'letterform-assemble' as const,
+  font: {
+    // Cormorant Garamond Bold (OFL fallback; registered via T-307); ITC
+    // Benguiat is the preferred commercial-byo typeface but not bundled.
+    family: 'Cormorant Garamond, ITC Benguiat, Benguiat, serif',
+    weight: 700,
+    // Bundle default; the `'letterform-assemble'` branch ignores font.size
+    // for letterforms (scales letters to viewportHeight × letterformScale =
+    // 720 × 0.7 = 504 px). Provided for non-letter-animation fallback paths.
+    size: 96,
+  },
+  casing: 'uppercase' as const,
+  background: '#000000', // deep-black per stub line 23
+  // White letters BEFORE glow tints them; the red `#FF0000` Gaussian-blur
+  // glow on top produces the red-neon-through-canvas torch register.
+  // `highlightColor` deliberately omitted — primitive default `#FF0000`
+  // matches the equality-with-default branch routing through `foreground`
+  // (title-sequence.tsx:432).
+  foreground: '#FFFFFF',
+  position: { x: 640, y: 360, width: 1280, alignment: 'center' as const },
+  entrance: 'fade' as const,
+  glow: {
+    color: '#FF0000', // red neon torch (stub line 24)
+    blur: 8, // moderate; matches "deep, gradual" build per stub line 36
+  },
+  letterformScale: 0.7, // primitive default; explicit for clarity
+} as const;
+
+/** D-T348-4: grain overlay props (canonical Stranger Things-grade subtle grain). */
+export const STRANGER_GRAIN_PROPS = {
+  intensity: 0.15, // primitive default; explicit for parity-fixture clarity
+  cellSize: 1,
+  seed: 0,
+} as const;
+
+/** D-T348-5: light-leak overlay props (warm-orange family). */
+export const STRANGER_LIGHT_LEAK_PROPS = {
+  // color1 inherits primitive default '#ff6b35' (warm-orange); color2 and
+  // color3 overridden to warm-orange siblings (vs. defaults '#ffd700' gold
+  // / '#ff1493' pink) per stub line 26 "warm orange, intermittent".
+  color1: '#ff6b35',
+  color2: '#ff8c1a',
+  color3: '#ffa040',
+  intensity: 0.7, // primitive default; explicit
+  seed: 42, // primitive default; explicit
+} as const;
+
+/** D-T348-6: particles overlay props (atmospheric drifting dust). */
+export const STRANGER_PARTICLES_PROPS = {
+  style: 'snow' as const,
+  count: 30, // low for atmospheric subtlety (vs. primitive default 50)
+  color: '#ffffff', // pure white, no blue tints (vs. snow defaults)
+} as const;
+
+/** D-T348-7: photographic-overlay overlay props (subtle 80s analog warmth). */
+export const STRANGER_PHOTOGRAPHIC_OVERLAY_PROPS = {
+  mode: 'fade' as const,
+  intensity: 0.4, // subtle; full intensity 1.0 would obliterate red-neon-glow
+} as const;
+
+const strangerThingsBenguiatGrainOverlay = {
+  runtimeId: 'frame-runtime',
+  clipName: 'grain',
+  buildProps() {
+    return { ...STRANGER_GRAIN_PROPS };
+  },
+};
+
+const strangerThingsBenguiatLightLeakOverlay = {
+  runtimeId: 'frame-runtime',
+  clipName: 'light-leak',
+  buildProps() {
+    return { ...STRANGER_LIGHT_LEAK_PROPS };
+  },
+};
+
+const strangerThingsBenguiatParticlesOverlay = {
+  runtimeId: 'frame-runtime',
+  clipName: 'particles',
+  buildProps() {
+    return { ...STRANGER_PARTICLES_PROPS };
+  },
+};
+
+const strangerThingsBenguiatPhotographicOverlayOverlay = {
+  runtimeId: 'frame-runtime',
+  clipName: 'photographic-overlay',
+  buildProps() {
+    return { ...STRANGER_PHOTOGRAPHIC_OVERLAY_PROPS };
+  },
+};
+
+const strangerThingsBenguiatBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'titleSequence', // camelCase primitive kind (title-sequence.tsx:800)
+  buildProps() {
+    // Deep-clone nested arrays / objects so callers can mutate the returned
+    // props without aliasing the exported constant.
+    return {
+      ...STRANGER_TITLE_SEQUENCE_PROPS,
+      shots: STRANGER_TITLE_SEQUENCE_PROPS.shots.map((s) => ({
+        ...s,
+        content: { ...s.content },
+      })),
+      font: { ...STRANGER_TITLE_SEQUENCE_PROPS.font },
+      position: { ...STRANGER_TITLE_SEQUENCE_PROPS.position },
+      glow: { ...STRANGER_TITLE_SEQUENCE_PROPS.glow },
+    };
+  },
+  // D-T348-2: declaration order = z-order. titleSequence base (zIndex 0)
+  // → grain (1) → light-leak (2) → particles (3) → photographic-overlay (4).
+  overlays: [
+    strangerThingsBenguiatGrainOverlay,
+    strangerThingsBenguiatLightLeakOverlay,
+    strangerThingsBenguiatParticlesOverlay,
+    strangerThingsBenguiatPhotographicOverlayOverlay,
+  ],
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -2544,6 +2711,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'tiktok-follow-pulse': tiktokFollowPulseBinding, // T-370
   'coinbase-dvd-qr': coinbaseDvdQrBinding, // T-372
   'instagram-link-sticker': instagramLinkStickerBinding, // T-371 (Cluster G closer; 5/5)
+  'stranger-things-benguiat': strangerThingsBenguiatBinding, // T-348 (Cluster D 2/6; first multi-clip composition)
 };
 
 /**
@@ -2589,9 +2757,65 @@ export function buildPresetDocument(args: {
   props: Record<string, unknown>;
   variant?: string;
 }): RIRDocument {
-  const elementId = 'preset-clip-0';
   const variantSlug = args.variant !== undefined ? `-${args.variant}` : '';
   const documentId = `preset-${args.preset.frontmatter.id}${variantSlug}`;
+
+  // Shared transform / timing for every element (parent + overlays). Per
+  // T-348 D-T348-1 / D-T348-2: atmospheric overlays render at full canvas +
+  // full duration; the z-stack is purely declaration-order.
+  const sharedTransform = {
+    x: 0,
+    y: 0,
+    width: args.composition.width,
+    height: args.composition.height,
+    rotation: 0,
+    opacity: 1,
+  } as const;
+  const sharedTiming = {
+    startFrame: 0,
+    endFrame: args.composition.durationInFrames,
+    durationFrames: args.composition.durationInFrames,
+  } as const;
+
+  // Build the parent + (optional) overlay elements. Single-clip bindings
+  // (no `overlays`) yield a 1-element array byte-identical to the pre-T-348
+  // shape — backward compat for all 25 existing PRESET_ID_BINDINGS entries
+  // + the 10 clipKind-default arms.
+  const parentEntry = {
+    id: 'preset-clip-0',
+    runtimeId: args.binding.runtimeId,
+    clipName: args.binding.clipName,
+    params: args.props,
+  };
+  const overlayEntries = (args.binding.overlays ?? []).map((overlay, i) => ({
+    id: `preset-clip-${i + 1}`,
+    runtimeId: overlay.runtimeId,
+    clipName: overlay.clipName,
+    params: overlay.buildProps(args.variant),
+  }));
+  const allEntries = [parentEntry, ...overlayEntries];
+
+  const elements = allEntries.map((entry, zIndex) => ({
+    id: entry.id,
+    type: 'clip' as const,
+    transform: { ...sharedTransform },
+    timing: { ...sharedTiming },
+    zIndex,
+    visible: true,
+    locked: false,
+    stacking: 'auto' as const,
+    animations: [] as never[],
+    content: {
+      type: 'clip' as const,
+      runtime: entry.runtimeId,
+      clipName: entry.clipName,
+      params: entry.params,
+    },
+  }));
+  const stackingMap: Record<string, 'auto' | 'isolate'> = Object.fromEntries(
+    allEntries.map((e) => [e.id, 'auto' as const]),
+  );
+
   const doc: RIRDocument = {
     id: documentId,
     width: args.composition.width,
@@ -2599,37 +2823,8 @@ export function buildPresetDocument(args: {
     frameRate: args.composition.fps,
     durationFrames: args.composition.durationInFrames,
     mode: 'slide',
-    elements: [
-      {
-        id: elementId,
-        type: 'clip',
-        transform: {
-          x: 0,
-          y: 0,
-          width: args.composition.width,
-          height: args.composition.height,
-          rotation: 0,
-          opacity: 1,
-        },
-        timing: {
-          startFrame: 0,
-          endFrame: args.composition.durationInFrames,
-          durationFrames: args.composition.durationInFrames,
-        },
-        zIndex: 0,
-        visible: true,
-        locked: false,
-        stacking: 'auto',
-        animations: [],
-        content: {
-          type: 'clip',
-          runtime: args.binding.runtimeId,
-          clipName: args.binding.clipName,
-          params: args.props,
-        },
-      },
-    ],
-    stackingMap: { [elementId]: 'auto' },
+    elements,
+    stackingMap,
     fontRequirements: [],
     meta: {
       sourceDocId: `preset-source-${args.preset.frontmatter.id}${variantSlug}`,
