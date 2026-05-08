@@ -227,6 +227,27 @@ export const LIVE_RUNTIME_MANIFEST: ClipsCatalogPkg = {
         // multi-octave (T-321a-octaves), ramped intensity (T-321a-
         // ramp). First of five T-321 carve-outs.
         'grain',
+        // T-321d — photographic-overlay primitive (Cluster D last new-
+        // primitive carve-out from the T-321 roadmap; first
+        // 'photographic-overlay' kind consumer). Static film-grade
+        // tonal overlay rendered via SVG `<filter>` primitives
+        // (`<feColorMatrix>` / `<feComponentTransfer>`). Sealed
+        // `mode: 'sepia' | 'cross-process' | 'cinematic-lut' | 'fade'`
+        // flat enum with canonical pre-tuned color matrices/curves
+        // embedded as static constants; NO theme slots (per D-T321d-9
+        // — tonal canon, not brand canvas). NO `discriminatedUnion`
+        // — all 4 modes share identical prop surface. Optional
+        // `intensity` ∈ [0, 1] alpha-blends the filter onto the
+        // underlying via `<feMerge>` chain; optional `position` for
+        // partial-frame application. Static (no frame counter; no
+        // animation in v1). Deterministic across CDP per SVG 1.1
+        // §15.3; pins `color-interpolation-filters="sRGB"` on every
+        // filter element. Primary consumer T-351 true-detective-
+        // double-exposure; secondary T-348 stranger-things-benguiat.
+        // Last new-primitive carve-out from T-321 roadmap (T-321a
+        // grain shipped; T-321b lightLeak superseded by T-131b.2;
+        // T-321c particles superseded by T-131d.1).
+        'photographic-overlay',
       ],
     },
   ],

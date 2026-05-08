@@ -422,9 +422,9 @@ describe('<ScoreBug> tabularNums + theme defaults', () => {
 });
 
 describe('clip registration', () => {
-  it('registers as kind "score-bug" and is in ALL_BRIDGE_CLIPS at length 57', () => {
+  it('registers as kind "score-bug" and is in ALL_BRIDGE_CLIPS at length 58', () => {
     expect(scoreBugClip.kind).toBe('score-bug');
-    expect(ALL_BRIDGE_CLIPS).toHaveLength(57);
+    expect(ALL_BRIDGE_CLIPS).toHaveLength(58);
     expect(ALL_BRIDGE_CLIPS).toContain(scoreBugClip);
   });
 });
