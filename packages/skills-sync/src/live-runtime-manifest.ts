@@ -267,6 +267,33 @@ export const LIVE_RUNTIME_MANIFEST: ClipsCatalogPkg = {
         // 3 of 6 Cluster C presets: bbc-mark-allen-clouds, doppler-
         // dbz-standard, heat-map-cool-to-warm.
         'weatherMap',
+        // T-347b — stormTracker primitive (Cluster C second-of-two new
+        // primitives; first 'stormTracker' kind consumer). Single-style
+        // v1 (no discriminatedUnion — only consumer is nhc-cone-of-
+        // uncertainty). NHC 5-day cone-of-uncertainty register with
+        // mandatory beyond-cone-impact disclaimer (caller cannot
+        // suppress rendering — public-safety failure mode per cluster
+        // SKILL "non-negotiable" rule). Canonical NHC coastal-warning
+        // palette baked as static module constants
+        // (NHC_HURRICANE_WARNING_RED #DC143C,
+        // NHC_HURRICANE_WATCH_MAGENTA #FF00FF,
+        // NHC_TROPICAL_STORM_FIREBRICK #B22222,
+        // NHC_STORM_SURGE_PURPLE #B524F7) + NWS-mandated intensity-
+        // letter shorthand NHC_INTENSITY_LETTERS = ['D', 'S', 'H',
+        // 'M']. Cone polygon, base map, coastal-warning region paths
+        // consumer-supplied as SVG path data per the T-347a mapPaths[]
+        // precedent (primitive does NOT bundle storm-by-storm
+        // geometry). v1 ships single-frame static; multi-advisory
+        // animated time-lapse deferred to T-347b-advisory-cycle;
+        // LiveDataClip integration deferred to T-347b-live-data
+        // (Track A frontier per ADR-005); 2026 NHC inland-warnings
+        // update deferred to T-347b-2026-inland-warnings (would
+        // introduce style enum at that point). Theme slots:
+        // background → palette.background, foreground → palette.
+        // foreground (palettes themselves NOT theme-bound). Frame-
+        // deterministic. Unblocks 1 of 6 Cluster C presets:
+        // nhc-cone-of-uncertainty.
+        'stormTracker',
       ],
     },
   ],

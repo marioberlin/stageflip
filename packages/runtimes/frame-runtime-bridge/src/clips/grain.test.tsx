@@ -276,9 +276,9 @@ describe('<Grain> render', () => {
 });
 
 describe('clip registration', () => {
-  it('registers as kind "grain" and is in ALL_BRIDGE_CLIPS at length 59', () => {
+  it('registers as kind "grain" and is in ALL_BRIDGE_CLIPS at length 60', () => {
     expect(grainClip.kind).toBe('grain');
-    expect(ALL_BRIDGE_CLIPS).toHaveLength(59);
+    expect(ALL_BRIDGE_CLIPS).toHaveLength(60);
     expect(ALL_BRIDGE_CLIPS).toContain(grainClip);
   });
 
