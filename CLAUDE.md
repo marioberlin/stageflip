@@ -202,6 +202,7 @@ Before opening a PR:
 - [ ] PR template filled completely — no unchecked boxes.
 - [ ] Changeset included if publishable package touched.
 - [ ] Branch name `task/T-XXX-<slug>`.
+- [ ] **Structural-extension specs (per §13)**: end-to-end real-render verification documented in the task spec — not just unit-test coverage of the wired-up shape.
 
 ---
 
@@ -210,6 +211,42 @@ Before opening a PR:
 Be terse. Your outputs are read by other agents and by humans ratifying phases. No marketing language. No "I believe…" / "I think…". State facts, cite skills, ship code.
 
 If you catch yourself writing `// This comprehensively handles edge cases to ensure robust behavior` — delete it. The code either handles them (verified by tests) or doesn't (add more tests).
+
+---
+
+## 13. Structural-extension specs require end-to-end render verification (F-30)
+
+A **structural extension** is any spec that adds a NEW degree of freedom to the document model, the binding model, or a renderer pipeline. Examples:
+
+- New optional field on `ClipKindBinding` / `RIRElement` / `RIRDocument` (e.g. T-348's `overlays?` array).
+- New element type on the discriminated `RIRElement` union.
+- New stacking / compositing / blending mode in the host or renderer.
+- New top-level prop on a primitive that materially changes its render output (e.g. a `compose: 'overlay'` mode).
+- New runtime kind plumbed into `findClip(kind)`.
+
+For these, **unit-test coverage of the wired-up shape is necessary but NOT sufficient.** The Cluster D regression (`docs/handover-cluster-d-regression.md`) shipped T-348's `ClipKindBinding.overlays?` extension with passing unit tests verifying the overlays array threaded into `RIRDocument.elements` with strictly-increasing zIndex. Five preset PRs reused the mechanism. Parity-fixture-scoring CI passed because both expected and actual goldens were equally blank (PSNR `∞`, SSIM `1.0`). PO ratification 2026-05-08 caught the regression: 5 of 6 multi-clip presets rendered blank or near-blank.
+
+The unit tests verified the wiring; nobody verified the pixels.
+
+### What "end-to-end render verification" means
+
+For a structural-extension spec PR, the spec MUST document at least ONE of:
+
+1. **A real-render integration test** that drives the new structure through the renderer and asserts on observable output. Decoded PNG pixel buckets (per the T-348b non-blank gate) are an acceptable lower-bound assertion. Snapshot-comparison against a checked-in reference is stronger.
+2. **A reference preset / fixture** that exercises the new structure and is signed off via the normal parity-fixture flow before the structural-extension spec ships. The sign-off DOES count as render verification — but only after PO visual inspection, not after `parity (fixture scoring)` CI alone.
+3. **An explicit deferral note** in the spec acknowledging that pixel-level verification is gated on a downstream consumer task (with the consumer task ID listed). The structural-extension PR may merge in this case, but downstream consumer specs MUST treat their own first-render as the verification step — passing parity scoring alone is insufficient.
+
+When in doubt, write the integration test. Parity scoring on a never-visually-inspected golden does not constitute render verification; the comparison is identity-against-itself.
+
+### Reviewer responsibility
+
+Reviewers on a structural-extension PR look for the §13 checkbox in the PR template AND the cited evidence. If the box is checked but the evidence is unit-test-only, request changes.
+
+### Process backstop
+
+The T-348b `parityFixture-non-blank` CI gate (`scripts/check-preset-integrity.ts` invariant 15) catches the specific failure mode that motivated this rule: a signed golden that is byte-for-byte uniform / near-uniform. It's a backstop, not a substitute for §13. Future failure modes that aren't caught by non-blank-pixel assertions (e.g. correct-pixels-but-wrong-content, layout drift, color drift) will slip past the gate the same way the original regression slipped past parity scoring.
+
+§13 is the prevention; the CI gate is the recovery.
 
 ---
 
