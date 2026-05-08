@@ -29,6 +29,14 @@
 // `true-detective-double-exposure` (compass canon "photographic clip"
 // register); secondary T-348 `stranger-things-benguiat` (may layer
 // fade/cinematic-LUT atop existing grain + light-leak compositions).
+// T-348a: SVG container carries `mix-blend-mode: multiply` so the
+// pre-filter opaque-white rect — which transforms post-filter into a
+// tinted output — composites multiplicatively with content rendered
+// below in the z-stack rather than covering it. Solo-use against a
+// white canvas backdrop is byte-identical to pre-T-348a output
+// (white × tinted-white = tinted-white); multi-clip overlay-use tints
+// underlying content (covers Cluster D regression where the rect's
+// opacity was masking the parent titleSequence base layer).
 
 import { useVideoConfig } from '@stageflip/frame-runtime';
 import type { ClipDefinition } from '@stageflip/runtimes-contract';
@@ -253,6 +261,17 @@ export function PhotographicOverlay(props: PhotographicOverlayProps): ReactEleme
       </>
     ) : null;
 
+  // T-348a: composite over content rendered below in the z-stack via
+  // `mix-blend-mode: multiply`. The pre-filter rect is opaque white;
+  // post-filter it becomes a tonal output (sepia-cream / cinematic-LUT
+  // tint / cross-process tone / faded grey). Multiply preserves the
+  // solo-use register (white canvas backdrop × tinted-white = tinted-
+  // white, byte-identical to pre-T-348a output) AND tints underlying
+  // content in multi-clip composition (titleSequence base + atmospheric
+  // overlays below × tinted-white = tinted base content). Without this,
+  // the SVG's opaque rect covers everything below in the z-stack —
+  // T-348 / T-349 / T-351 / T-352 / T-353 regression mode (see
+  // `docs/handover-cluster-d-regression.md`).
   const style: CSSProperties = {
     position: 'absolute',
     left: region.x,
@@ -260,6 +279,7 @@ export function PhotographicOverlay(props: PhotographicOverlayProps): ReactEleme
     width: region.width,
     height: region.height,
     pointerEvents: 'none',
+    mixBlendMode: 'multiply',
   };
 
   return (

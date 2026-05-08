@@ -40,6 +40,12 @@ Do **not** invoke for social / short-form opens — those belong in cluster F or
 - `compose_segment_open(segment_name, tone, brand)` — picks shorter-form bumper from the cluster
 - `compose_end_credits(credits, style, brand)` — routes to a cluster-matched credits variation
 
+## Multi-clip composition (T-348 / T-348a)
+
+Five Cluster D presets — `stranger-things-benguiat`, `true-detective-double-exposure`, `succession-home-video`, `severance-surreal-3d`, `got-trajan-clockwork` — compose the parent `titleSequence` primitive with one or more atmospheric overlays (`grain`, `light-leak`, `particles`, `photographic-overlay`) via `ClipKindBinding.overlays?` (T-348 D-T348-1). Declaration order = z-order; the parent renders at zIndex 0 and overlays at 1, 2, 3, ... at full canvas + full duration. Sixth Cluster D preset `squid-game-geometric` is single-clip (zIndex 0 only).
+
+For overlay primitives that produce opaque rendering output, `mix-blend-mode` on the primitive's container is the compositing contract — the renderer does not synthesise blend modes per-element. T-348a wires this for `photographic-overlay` (`mix-blend-mode: multiply`); `grain` / `particles` already render transparent canvases; `light-leak` already declares `mix-blend-mode: screen`. Future overlay primitives whose renders are opaque (whole-canvas tints, gradient-backed regions) MUST declare a primitive-level `mix-blend-mode` or document why they don't need one — silent CI bypass on byte-identical-blank parity goldens caught this regression at PO ratification, not before.
+
 ## Cluster conventions (from the compass canon)
 
 - **Typography carries emotional weight.** This cluster's presets are all typographic-first; motion is secondary. The bespoke typeface signals the register (Benguiat = 80s nostalgia; Trajan = mythic; Engravers Gothic = dynastic authority). Fallbacks that collapse this signal make the preset feel like parody.
