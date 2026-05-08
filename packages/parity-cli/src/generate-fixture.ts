@@ -2994,6 +2994,192 @@ const successionHomeVideoBinding: ClipKindBinding = {
 };
 
 /**
+ * `severance-surreal-3d` (T-353) — fifth Cluster D preset; FOURTH
+ * `titleSequence`-clipKind preset wired via `PRESET_ID_BINDINGS` (Pattern C
+ * override; T-350's `squidGameGeometricBinding` stays the clipKind-default
+ * arm) AND **fourth multi-clip-composition consumer in StageFlip parity-CLI
+ * history** (D-T353-1; reuses T-348's `ClipKindBinding.overlays?` surface
+ * verbatim — no architectural extension). Composes the parent `titleSequence`
+ * primitive (T-321) with two atmospheric overlays in z-order: `grain`
+ * (T-321a) and `photographic-overlay` (T-321d). T-353 is the **SECOND
+ * end-to-end consumer of `mode: 'cinematic-lut'`** (T-351 was PRIMARY at
+ * 0.60 dominant; T-353 is at 0.4 moderate) AND the **SECOND end-to-end
+ * consumer of non-default grain intensity / FIRST below-default consumer**
+ * (T-348/T-351 used the canonical 0.15 default; T-352 raised to 0.30; T-353
+ * LOWERS to 0.10 — corporate-clean restrained register per stub line 23
+ * "sterile color palette"). Cinematic-LUT tonal grading at `intensity: 0.4`
+ * is MODERATE — visible but not dominating; preserves the sterile palette
+ * while subtly anchoring the corporate-Vignelli office mood. NO light-leak
+ * (would shift the register from "sterile corporate" toward "warm cinematic")
+ * NOR particles (no atmospheric drift in canon) per D-T353-2 (intentional
+ * 3-clip stack matching T-351 / T-352's shape with different mode + grain
+ * intensity + photographic-intensity). Tighter parity thresholds 36/0.92
+ * (D-T353-5; TIGHTER than T-351/T-352's 34/0.90 — T-353's lower-engagement
+ * register has more headroom: LOW grain 0.10 + MODERATE photographic-overlay
+ * 0.4 + sterile palette = uniform pixel statistics). Inter Display weight
+ * 500 (OFL fallback) is the rendered title typography per D-T353-10;
+ * bespoke Severance custom typeface (Helvetica + mid-century Vignelli) is
+ * proprietary-byo (consumer-wired). Single-shot `kind: 'titlePlate'`
+ * ALL-CAPS "SEVERANCE" title hold under `style: 'photographic-overlay'`
+ * (THIRD end-to-end consumer of this style register after T-351 + T-352).
+ * Live ThreeSceneClip integration deferred to T-353-live-3d follow-up per
+ * D-T353-1; **stub line 39 explicitly authorizes the static-fallback
+ * posture** — NOT a documented divergence, canon-allowed alternate path.
+ * v1 stays within the existing 5-kind sealed envelope.
+ */
+
+/** D-T353-6: titleSequence parent props (`'photographic-overlay'` style; "scaled large" title hold). */
+export const SEVERANCE_SURREAL_3D_TITLE_SEQUENCE_PROPS = {
+  shots: [
+    {
+      id: 'main-credit',
+      startMs: 0,
+      endMs: 60000, // 60s sequence per stub line 36
+      kind: 'titlePlate' as const,
+      // titlePlate content shape is `{ text }` (D-T353-6); show-title
+      // identity per stub line 31 ("Title: Bold, ALL CAPS, scaled large,
+      // very tight tracking").
+      content: { text: 'SEVERANCE' },
+      transitionOut: 'cut' as const,
+    },
+  ],
+  // T-321 line 566–578: only `titlePlate` + `creditsBlock` shots render
+  // under this style; defers everything else to a sister photographic clip.
+  // T-351 was the FIRST end-to-end consumer; T-352 was the SECOND; T-353
+  // is the THIRD.
+  style: 'photographic-overlay' as const,
+  font: {
+    // Inter Display weight 500 (OFL fallback; widely registered across
+    // StageFlip presets via T-336 / T-356 family). Bespoke Severance
+    // custom typeface (Helvetica + mid-century Vignelli) is proprietary-byo
+    // (consumer-wired) per D-T353-10; the family chain falls through to
+    // non-Display Inter if Display is missing, then to system fallbacks.
+    family: 'Inter Display, Inter, system-ui, -apple-system, sans-serif',
+    // Match stub fallbackFont.weight (500); aligns with the Helvetica-
+    // adjacent humanism per stub line 33 ("Fallback: Inter Display
+    // preserves the Helvetica-adjacent humanism").
+    weight: 500,
+    // "Scaled large" per stub line 31 — larger than T-351's 28 (credit
+    // hold) and T-352's 56 (show-logo). 64pt fits comfortably within
+    // the 1280-wide canvas at 0 letter-spacing.
+    size: 64,
+    // 0 = neutral / canonical baseline. Stub line 31 says "very tight
+    // tracking"; 0 is the conservative interpretation; -20 / -40 are
+    // documented as T-353-letterspacing-extreme follow-up. The very-
+    // tight register at 0 is anchored by Inter Display's already-
+    // condensed display proportions (vs. Inter UI's slightly-wider
+    // proportions).
+    letterSpacing: 0,
+  },
+  // ALL CAPS per stub line 31 — title register; credits at stub line 32
+  // are Regular, 24–30 pt, wide tracking — but v1's single-shot
+  // titlePlate is the title, NOT the credits register (D-T353-6).
+  casing: 'uppercase' as const,
+  // Deep desaturated-green-black under-canvas placeholder (R=26, G=31,
+  // B=26). The cinematic-LUT tonal grading at intensity 0.4 applies a
+  // teal-leaning cast on top, deepening the sterile-office mood. Stub
+  // line 23 declares "muted neutrals, desaturated greens" — the
+  // background anchors the desaturated-green half.
+  background: '#1A1F1A',
+  // Pale neutral / off-white (R=232, G=236, B=229). Under the cinematic-
+  // LUT at 0.4 intensity, '#E8ECE5' ages into a slightly-desaturated
+  // cool off-white that preserves legibility against the desaturated-
+  // green background. Stub line 23 — muted neutrals.
+  foreground: '#E8ECE5',
+  // highlightColor omitted (titlePlate doesn't use highlight under
+  // 'photographic-overlay' style; would be inert).
+  // Centered title placement on a 1280×720 canvas; y=360 places the
+  // baseline at canvas mid-height — the mid-century-Vignelli "scaled
+  // large" register canonically sits center-of-frame, NOT lower-third
+  // like T-351's credit hold. Wrapper renders at `left: x - width / 2`,
+  // so x=640 + width=1280 spans x=0..1280 (full canvas width).
+  position: { x: 640, y: 360, width: 1280, alignment: 'center' as const },
+  entrance: 'fade' as const,
+  // glow omitted — titlePlate under 'photographic-overlay' style does NOT
+  // exercise glow per the title-sequence renderTitlePlate path.
+  // letterformScale omitted — only used by 'letterform-assemble' style.
+  // transitionDurationMs omitted (default 300; single-shot — no transition).
+  // musicCue omitted (parity golden does not exercise music keyframes).
+} as const;
+
+/** D-T353-7: grain overlay props (LOW intensity 0.10 — corporate-clean restrained). */
+export const SEVERANCE_SURREAL_3D_GRAIN_PROPS = {
+  // LOW intensity — sub-default; opposite posture from T-352's HIGH 0.30
+  // VHS chatter and SLIGHTLY-BELOW T-348/T-351's canonical 0.15 default.
+  // The Severance canon is RESTRAINED — corporate / clean / hyper-realistic;
+  // 0.10 hints at the 3D-rendered surface micro-texture without competing
+  // with the typographic identity. **SECOND end-to-end consumer of
+  // non-default grain intensity / FIRST below-default consumer** (D-T353-7).
+  intensity: 0.1,
+  cellSize: 1,
+  seed: 0,
+} as const;
+
+/** D-T353-3: photographic-overlay overlay props (cinematic-lut @ 0.4 — MODERATE muted-desaturated office register). */
+export const SEVERANCE_SURREAL_3D_PHOTOGRAPHIC_OVERLAY_PROPS = {
+  // Closest sealed-enum match for Severance's "sterile color palette;
+  // muted neutrals, desaturated greens" register per stub line 23. The
+  // cinematic-LUT mode applies a per-channel SVG `<feComponentTransfer>`
+  // curve approximating teal-and-orange grading; at moderate intensity
+  // (0.4) the curve produces a flat, muted, slightly-desaturated wash
+  // that matches the canonical mid-century-Vignelli sterile-corporate
+  // office register. **SECOND end-to-end consumer of `mode: 'cinematic-lut'`**
+  // (T-351 was PRIMARY at 0.60 dominant; T-353 is SECONDARY at 0.4
+  // moderate).
+  mode: 'cinematic-lut' as const,
+  // MODERATE intensity — visible but not dominating. The Severance canon
+  // is RESTRAINED — typography + sterile palette IS the canonical
+  // identity; the photographic cast is a subtle mood-anchor, not a
+  // dominating tonal wash. LOWER than T-351's 0.60 (dominant) and T-352's
+  // 0.70 (very dominant); HIGHER than T-348's 0.40 (modest fade — not the
+  // sterile-corporate canon). Pushing intensity above 0.50 would tip
+  // toward T-351's dominant cinematic-LUT register; capping at 0.4
+  // preserves the typographic identity as the dominant visual (D-T353-3).
+  intensity: 0.4,
+  // position omitted (defaults to full-canvas at runtime).
+} as const;
+
+const severanceSurreal3dGrainOverlay = {
+  runtimeId: 'frame-runtime',
+  clipName: 'grain',
+  buildProps() {
+    return { ...SEVERANCE_SURREAL_3D_GRAIN_PROPS };
+  },
+};
+
+const severanceSurreal3dPhotographicOverlayOverlay = {
+  runtimeId: 'frame-runtime',
+  clipName: 'photographic-overlay',
+  buildProps() {
+    return { ...SEVERANCE_SURREAL_3D_PHOTOGRAPHIC_OVERLAY_PROPS };
+  },
+};
+
+const severanceSurreal3dBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'titleSequence', // camelCase primitive kind (title-sequence.tsx:800)
+  buildProps() {
+    // Deep-clone nested arrays / objects so callers can mutate the returned
+    // props without aliasing the exported constant.
+    return {
+      ...SEVERANCE_SURREAL_3D_TITLE_SEQUENCE_PROPS,
+      shots: SEVERANCE_SURREAL_3D_TITLE_SEQUENCE_PROPS.shots.map((s) => ({
+        ...s,
+        content: { ...s.content },
+      })),
+      font: { ...SEVERANCE_SURREAL_3D_TITLE_SEQUENCE_PROPS.font },
+      position: { ...SEVERANCE_SURREAL_3D_TITLE_SEQUENCE_PROPS.position },
+    };
+  },
+  // D-T353-2: declaration order = z-order. titleSequence base (zIndex 0)
+  // → grain LOW (1) → photographic-overlay cinematic-lut (2). NO light-leak
+  // / particles (intentional 3-clip stack — sterile / desaturated palette
+  // would conflict with warm-orange leaks; canon does not enumerate
+  // particle drift per stub line 23).
+  overlays: [severanceSurreal3dGrainOverlay, severanceSurreal3dPhotographicOverlayOverlay],
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -3029,6 +3215,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'stranger-things-benguiat': strangerThingsBenguiatBinding, // T-348 (Cluster D 2/6; first multi-clip composition)
   'true-detective-double-exposure': trueDetectiveDoubleExposureBinding, // T-351 (Cluster D 3/6; second multi-clip composition; PRIMARY consumer of T-321d photographic-overlay)
   'succession-home-video': successionHomeVideoBinding, // T-352 (Cluster D 4/6; third multi-clip composition; FIRST consumer of mode: 'sepia' AND non-default grain intensity 0.30)
+  'severance-surreal-3d': severanceSurreal3dBinding, // T-353 (Cluster D 5/6; fourth multi-clip composition; SECOND consumer of mode: 'cinematic-lut'; FIRST below-default grain intensity 0.10; live ThreeSceneClip integration deferred per stub-canon-explicit static-fallback allowance)
 };
 
 /**

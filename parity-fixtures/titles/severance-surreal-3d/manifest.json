@@ -1,0 +1,30 @@
+{
+  "name": "severance-surreal-3d",
+  "cluster": "titles",
+  "kind": "titleSequence",
+  "description": "Parity fixture for preset 'severance-surreal-3d' (cluster titles, kind titleSequence)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Severance custom (Helvetica + mid-century corporate identity)",
+      "license": "proprietary-byo"
+    },
+    "fallback": {
+      "family": "Inter Display",
+      "weight": 500,
+      "license": "ofl"
+    }
+  }
+}
