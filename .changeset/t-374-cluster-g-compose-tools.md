@@ -1,0 +1,9 @@
+---
+'@stageflip/engine': patch
+---
+
+T-374 — Add the `cluster-g-compose` engine handler bundle: 4 read-only composer tools (`compose_cta` / `compose_subscribe_prompt` / `compose_social_handle` / `compose_qr_bounce`) that bind a semantic Cluster G (CTAs / social) brief to a ratified preset id + opaque props payload. Tools declare `ToolContext` (no document reads, no patch sink); the caller mounts the chosen clip via a separate write-tier tool (`add_clip` / `add_element`).
+
+Dispatches across the 5 ratified Cluster G presets (T-369..T-373; ratified at T-371 closer 2026-05-07). `compose_cta` is the umbrella with sealed `intent` enum: `subscribe`/`follow` (require `platform: 'youtube' | 'tiktok'`) → `youtube-subscribe-bounce` / `tiktok-follow-pulse`; `link` (requires `platform: 'instagram'` + `url`) → `instagram-link-sticker`; `qr` (requires `qrMatrix`) → `coinbase-dvd-qr` (default `theme: 'unbranded'` per Coinbase canon); `social-handle` (requires `handles[]`) → `social-handle-lower-third`. Narrow tools `compose_subscribe_prompt` (sealed at YouTube + TikTok — Instagram intentionally excluded; route via `compose_cta(intent: 'link')`), `compose_social_handle` (single-target lower-third; defaults `repetition: 1` + `duration: 6` per cluster SKILL line 49), and `compose_qr_bounce` (single-target Coinbase QR; opaque pre-computed `qrMatrix`).
+
+Mixed-clipKind dispatch (5 clipKinds: `subscribeButton` / `followPrompt` / `linkSticker` / `qrBounce` / `lowerThird`). Zero `not_yet_implemented` reserved surfaces — every Cluster G preset is reachable from at least one `(tool, input gate)` pair. Fifth and final cluster-compose bundle, closing Phase 13's cluster-compose-tools sweep after T-340 (cluster-b) / T-368 (cluster-f) / T-331 (cluster-a) / T-361 (cluster-e). No clip / parity-cli / preset markdown / parity golden / sister cluster-compose bundle touched.

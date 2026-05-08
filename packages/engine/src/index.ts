@@ -166,3 +166,9 @@ export {
   CLUSTER_F_COMPOSE_TOOL_DEFINITIONS,
   registerClusterFComposeBundle,
 } from './handlers/cluster-f-compose/register.js';
+export {
+  CLUSTER_G_COMPOSE_BUNDLE_NAME,
+  CLUSTER_G_COMPOSE_HANDLERS,
+  CLUSTER_G_COMPOSE_TOOL_DEFINITIONS,
+  registerClusterGComposeBundle,
+} from './handlers/cluster-g-compose/register.js';
