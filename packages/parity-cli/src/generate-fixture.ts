@@ -2679,6 +2679,143 @@ const strangerThingsBenguiatBinding: ClipKindBinding = {
 };
 
 /**
+ * `true-detective-double-exposure` (T-351) — third Cluster D preset; SECOND
+ * `titleSequence`-clipKind preset wired via `PRESET_ID_BINDINGS` (Pattern C
+ * override; T-350's `squidGameGeometricBinding` stays the clipKind-default
+ * arm) AND **second multi-clip-composition consumer in StageFlip parity-CLI
+ * history** (D-T351-1; reuses T-348's `ClipKindBinding.overlays?` surface
+ * verbatim — no architectural extension). Composes the parent `titleSequence`
+ * primitive (T-321) with two atmospheric overlays in z-order: `grain`
+ * (T-321a) and `photographic-overlay` (T-321d). T-351 is the **PRIMARY
+ * consumer of the T-321d `photographic-overlay` primitive** — runs
+ * `mode: 'cinematic-lut'` at `intensity: 0.6` (DOMINATES the visual register
+ * per stub line 33 — "the photography is the foreground"). NO light-leak
+ * (would conflict with the muted earth-tone register) NOR particles (no
+ * atmospheric drift in this canon) per D-T351-2 (intentional 3-clip stack
+ * vs. T-348's 5-clip stack). Lowered parity thresholds 34/0.90 (D-T351-5;
+ * even lower than T-348's 36/0.92 — photographic source has high variance
+ * per stub line 49). Inter Regular 400 (OFL fallback) is the rendered
+ * deferential typography per D-T351-9-a; bespoke license-cleared sans-serif
+ * is consumer-wired. Single-shot `kind: 'titlePlate'` ALL-CAPS "CREATED BY
+ * NIC PIZZOLATTO" credit hold under `style: 'photographic-overlay'` (FIRST
+ * end-to-end consumer of the title-sequence's `'photographic-overlay'`
+ * style register per T-321 line 566–578 — only `titlePlate` + `creditsBlock`
+ * shots render under this style).
+ */
+
+/** D-T351-6: titleSequence parent props (`'photographic-overlay'` style). */
+export const TRUE_DETECTIVE_TITLE_SEQUENCE_PROPS = {
+  shots: [
+    {
+      id: 'main-credit',
+      startMs: 0,
+      endMs: 90000, // 90s sequence per stub line 38
+      kind: 'titlePlate' as const,
+      content: { text: 'CREATED BY NIC PIZZOLATTO' }, // titlePlate content shape is `{ text }` (D-T351-6)
+      transitionOut: 'cut' as const,
+    },
+  ],
+  // T-321 line 566–578: only `titlePlate` + `creditsBlock` shots render
+  // under this style; defers everything else to a sister photographic clip.
+  // T-351 is the FIRST end-to-end consumer of this style register.
+  style: 'photographic-overlay' as const,
+  font: {
+    // Inter Regular 400 (OFL fallback; registered via T-307); bespoke
+    // license-cleared sans-serif is consumer-wired (D-T351-9-a).
+    family: 'Inter, system-ui, -apple-system, sans-serif',
+    weight: 400, // Regular per stub line 30
+    size: 28, // 24–30 pt range per stub line 30; mid-range
+    letterSpacing: 40, // +30–50 tracking per stub line 32; mid-range (D-T351-6)
+  },
+  casing: 'uppercase' as const, // ALL CAPS per stub line 31 (D-T351-6)
+  // Deep-black under-canvas placeholder; the photographic-overlay tonal
+  // grading dominates visually (intensity 0.6) so the painted background
+  // is largely hidden. Stub does not specify; pick deep black for the
+  // unobtrusive base.
+  background: '#000000',
+  // Muted warm off-white — slightly desaturated bone color matching the
+  // True Detective palette. Pure '#FFFFFF' under the cinematic-LUT @ 0.6
+  // would still read as nearly-white; '#E8DCC4' ages naturally under the
+  // tonal cast.
+  foreground: '#E8DCC4',
+  // Lower-third positioning per typical credit hold; y=600 places the
+  // baseline ~120 px above the bottom edge on a 720-tall canvas; centered
+  // horizontally. Wrapper renders at `left: x - width / 2`, so x=640 +
+  // width=1280 spans x=0..1280 (full canvas width).
+  position: { x: 640, y: 600, width: 1280, alignment: 'center' as const },
+  entrance: 'fade' as const,
+  // glow omitted — titlePlate under 'photographic-overlay' style does NOT
+  // exercise glow.
+  // letterformScale omitted — only used by 'letterform-assemble' style.
+  // transitionDurationMs omitted (default 300; single-shot — no transition).
+  // musicCue omitted (parity golden does not exercise music keyframes).
+} as const;
+
+/** D-T351-7: grain overlay props (canonical subtle film grain via primitive defaults). */
+export const TRUE_DETECTIVE_GRAIN_PROPS = {
+  intensity: 0.15, // primitive default; explicit for parity-fixture clarity
+  cellSize: 1,
+  seed: 0,
+} as const;
+
+/** D-T351-3: photographic-overlay overlay props (cinematic-LUT @ 0.6 — DOMINATES the visual). */
+export const TRUE_DETECTIVE_PHOTOGRAPHIC_OVERLAY_PROPS = {
+  // Closest sealed-enum match for True Detective's "muted desaturated earth
+  // tones — oily yellows, sickly greens, industrial grays" register per stub
+  // line 23. The CINEMATIC_LUT_MATRIX (photographic-overlay.tsx:105–110) has
+  // teal-and-orange contrast bias matching True Detective's palette closely.
+  mode: 'cinematic-lut' as const,
+  // HIGH intensity — opposite posture from T-348's 0.4. Stub line 33: "the
+  // photography is the foreground"; pushing intensity to 0.6 makes the
+  // cinematic-LUT cast dominate the visual without overwhelming the
+  // unobtrusive 28-pt credit typography (D-T351-3).
+  intensity: 0.6,
+  // position omitted (defaults to full-canvas at runtime).
+} as const;
+
+const trueDetectiveDoubleExposureGrainOverlay = {
+  runtimeId: 'frame-runtime',
+  clipName: 'grain',
+  buildProps() {
+    return { ...TRUE_DETECTIVE_GRAIN_PROPS };
+  },
+};
+
+const trueDetectiveDoubleExposurePhotographicOverlayOverlay = {
+  runtimeId: 'frame-runtime',
+  clipName: 'photographic-overlay',
+  buildProps() {
+    return { ...TRUE_DETECTIVE_PHOTOGRAPHIC_OVERLAY_PROPS };
+  },
+};
+
+const trueDetectiveDoubleExposureBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'titleSequence', // camelCase primitive kind (title-sequence.tsx:800)
+  buildProps() {
+    // Deep-clone nested arrays / objects so callers can mutate the returned
+    // props without aliasing the exported constant.
+    return {
+      ...TRUE_DETECTIVE_TITLE_SEQUENCE_PROPS,
+      shots: TRUE_DETECTIVE_TITLE_SEQUENCE_PROPS.shots.map((s) => ({
+        ...s,
+        content: { ...s.content },
+      })),
+      font: { ...TRUE_DETECTIVE_TITLE_SEQUENCE_PROPS.font },
+      position: { ...TRUE_DETECTIVE_TITLE_SEQUENCE_PROPS.position },
+    };
+  },
+  // D-T351-2: declaration order = z-order. titleSequence base (zIndex 0)
+  // → grain (1) → photographic-overlay (2). NO light-leak / particles
+  // (intentional 3-clip stack — would conflict with the muted earth-tone
+  // register per stub line 23).
+  overlays: [
+    trueDetectiveDoubleExposureGrainOverlay,
+    trueDetectiveDoubleExposurePhotographicOverlayOverlay,
+  ],
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -2712,6 +2849,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'coinbase-dvd-qr': coinbaseDvdQrBinding, // T-372
   'instagram-link-sticker': instagramLinkStickerBinding, // T-371 (Cluster G closer; 5/5)
   'stranger-things-benguiat': strangerThingsBenguiatBinding, // T-348 (Cluster D 2/6; first multi-clip composition)
+  'true-detective-double-exposure': trueDetectiveDoubleExposureBinding, // T-351 (Cluster D 3/6; second multi-clip composition; PRIMARY consumer of T-321d photographic-overlay)
 };
 
 /**
