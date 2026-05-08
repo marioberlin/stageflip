@@ -1,0 +1,30 @@
+{
+  "name": "got-trajan-clockwork",
+  "cluster": "titles",
+  "kind": "titleSequence",
+  "description": "Parity fixture for preset 'got-trajan-clockwork' (cluster titles, kind titleSequence)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Trajan Pro",
+      "license": "commercial-byo"
+    },
+    "fallback": {
+      "family": "EB Garamond",
+      "weight": 700,
+      "license": "ofl"
+    }
+  }
+}

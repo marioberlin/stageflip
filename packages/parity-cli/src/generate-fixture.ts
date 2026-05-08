@@ -3180,6 +3180,206 @@ const severanceSurreal3dBinding: ClipKindBinding = {
 };
 
 /**
+ * `got-trajan-clockwork` (T-349) — sixth + final Cluster D preset; FOURTH
+ * `titleSequence`-clipKind preset wired via `PRESET_ID_BINDINGS` (Pattern C
+ * override; T-350's `squidGameGeometricBinding` stays the clipKind-default
+ * arm) AND **fifth multi-clip-composition consumer in StageFlip parity-CLI
+ * history** (D-T349-1; reuses T-348's `ClipKindBinding.overlays?` surface
+ * verbatim — no architectural extension). Composes the parent `titleSequence`
+ * primitive (T-321) with two atmospheric overlays in z-order: `grain`
+ * (T-321a) and `photographic-overlay` (T-321d). T-349 is the **SECOND
+ * end-to-end consumer of `mode: 'sepia'`** (T-352 was PRIMARY at 0.70
+ * dominant with HIGH grain 0.30; T-349 is SECONDARY at 0.65 dominant with
+ * canonical-default grain 0.15) — confirms the SEPIA_MATRIX path is stable
+ * across intensity values + grain levels. Sepia tonal grading at
+ * `intensity: 0.65` DOMINATES the visual to anchor the metallic-gold/brown
+ * register per stub line 24, but slightly LOWER than T-352's 0.70 to
+ * preserve more typographic legibility for the Roman-inscription register
+ * (the Trajan-fallback type is the anchor per stub line 33 "scaled large").
+ * NO light-leak (would over-saturate the metallic-gold register to muddy
+ * "burned-photograph") NOR particles (no atmospheric drift in canon; the
+ * only canonically-enumerated particle-like effect is sun-rays per stub
+ * line 30, which is deferred) per D-T349-2 (intentional 3-clip stack
+ * matching T-351 / T-352 / T-353's shape with different mode + intensity).
+ * Lowered parity thresholds 34/0.90 (D-T349-5; matches T-352/T-353's bar —
+ * 3D + golds variance pre-declared by stub line 52; the 0.02 SSIM / 2 dB
+ * PSNR relaxation from the stub's 36/0.92 absorbs sepia-matrix-multiplication
+ * drift on the metallic-yellow palette across CDP versions and aligns
+ * sister Cluster D presets at a uniform bar). EB Garamond weight 700 (OFL
+ * fallback) is the rendered title typography per D-T349-10; bespoke Trajan
+ * Pro is commercial-byo (consumer-wired). Single-shot `kind: 'titlePlate'`
+ * ALL-CAPS "GAME OF THRONES" title hold under `style: 'photographic-overlay'`
+ * (FIFTH end-to-end consumer of this style register after T-351 + T-352 +
+ * T-353). **Closes Cluster D 5/6 → 6/6 ELIGIBLE — the cluster-closure
+ * milestone.** Live ThreeSceneClip 3D integration deferred to T-349-live-3d
+ * follow-up per D-T349-1; **stub line 41 explicitly authorizes the
+ * static-fallback posture** — NOT a documented divergence, canon-allowed
+ * alternate path. v1 stays within the existing 5-kind sealed envelope.
+ */
+
+/** D-T349-6: titleSequence parent props (`'photographic-overlay'` style; "scaled large" Roman-inscription title hold). */
+export const GOT_TRAJAN_CLOCKWORK_TITLE_SEQUENCE_PROPS = {
+  shots: [
+    {
+      id: 'main-title',
+      startMs: 0,
+      endMs: 90000, // 90s sequence per stub line 38
+      kind: 'titlePlate' as const,
+      // titlePlate content shape is `{ text }` (per title-sequence.tsx:51
+      // `titlePlateContent`); show-title identity per stub line 33 ("Show
+      // title: Trajan Pro fallback, ALL CAPS, Roman inscription style,
+      // scaled large").
+      content: { text: 'GAME OF THRONES' },
+      transitionOut: 'cut' as const,
+    },
+  ],
+  // T-321 line 566–578: only `titlePlate` + `creditsBlock` shots render
+  // under this style; defers everything else to a sister photographic clip.
+  // T-351 was the FIRST end-to-end consumer; T-352 was the SECOND; T-353
+  // was the THIRD; T-349 is the FOURTH (counting consumer order, not
+  // cluster order — Cluster D fifth). The shot enum does NOT include any
+  // 3D-scene-bound kind; adding one is the deferred T-349-live-3d
+  // follow-up; v1 stays within the 5-kind sealed envelope.
+  style: 'photographic-overlay' as const,
+  font: {
+    // EB Garamond weight 700 (OFL fallback per stub fallbackFont).
+    // Bespoke Trajan Pro is commercial-byo (consumer-wired) per D-T349-10.
+    // The family chain falls through to platform Garamond → Times New
+    // Roman → system serif if EB Garamond is missing — system fallbacks at
+    // the tail are a safety net. EB Garamond shares Trajan's Roman serif
+    // heritage and preserves the signature long ascenders + sharp serifs
+    // per stub line 35.
+    family: 'EB Garamond, Garamond, "Times New Roman", system-ui, -apple-system, serif',
+    // Match stub fallbackFont.weight (700); aligns with the
+    // Roman-inscription register (heavy display weight; signature serif
+    // details preserved per stub line 35).
+    weight: 700,
+    // "Scaled large" per stub line 33 — larger than T-352's 56 (show-logo)
+    // and T-353's 64 (surreal title). 72pt fits comfortably within the
+    // 1280-wide canvas at 80 letter-spacing tracking.
+    size: 72,
+    // Modest tracking — Roman-inscription canonical envelope is ~50–100;
+    // 80 is the centroid (preserves the signature long ascenders + sharp
+    // serifs without breaking glyph proportions). Stub does NOT explicitly
+    // enumerate letter-spacing for the Trajan show-title (the wide-tracking
+    // register applies to dynastic-stationery clusters like Succession, NOT
+    // to monumental Roman-inscription registers like GOT). Higher tracking
+    // (200+) would push the Roman-inscription register toward
+    // wide-display-sans-serif — wrong canonical mood.
+    letterSpacing: 80,
+  },
+  // ALL CAPS per stub line 33 — show-title; Roman inscription register.
+  casing: 'uppercase' as const,
+  // Deep metallic-brown under-canvas placeholder (R=26, G=14, B=8). The
+  // sepia tonal grading + Clinker `#331C0E` palette pin dominate visually
+  // so the painted background is largely hidden; '#1A0E08' anchors the
+  // metallic-gold/brown register per stub line 24.
+  background: '#1A0E08',
+  // Baby Yellow palette pin per stub line 27 — canonical highlight color
+  // in the metallic palette; under the sepia matrix at 0.65 intensity,
+  // '#FFF190' (R=255, G=241, B=144) ages into the warm-metallic gold
+  // while preserving inscription legibility.
+  foreground: '#FFF190',
+  // highlightColor omitted (titlePlate doesn't use highlight under
+  // 'photographic-overlay' style; would be inert).
+  // Centered show-title placement on a 1280×720 canvas; y=360 places the
+  // baseline at canvas mid-height — the Roman-inscription "show title
+  // scaled large" register canonically sits center-of-frame, matching
+  // T-352 / T-353's center-of-frame posture. Wrapper renders at
+  // `left: x - width / 2`, so x=640 + width=1280 spans x=0..1280 (full
+  // canvas width).
+  position: { x: 640, y: 360, width: 1280, alignment: 'center' as const },
+  entrance: 'fade' as const,
+  // glow omitted — titlePlate under 'photographic-overlay' style does NOT
+  // exercise glow per the title-sequence renderTitlePlate path.
+  // letterformScale omitted — only used by 'letterform-assemble' style.
+  // transitionDurationMs omitted (default 300; single-shot — no transition).
+  // musicCue omitted (parity golden does not exercise music keyframes).
+} as const;
+
+/** D-T349-7: grain overlay props (canonical-default 0.15 — medieval-paper / engraved-page texture). */
+export const GOT_TRAJAN_CLOCKWORK_GRAIN_PROPS = {
+  // Canonical default — matches T-348/T-351/T-353; differs from T-352's
+  // elevated 0.30 VHS chatter. The Roman-inscription / engraved-page
+  // register canonically reads as subtle (medieval-paper texture); 0.15 is
+  // the centroid of the ~0.10–0.20 envelope. Lower (0.10) would not
+  // register the engraved-page texture; higher (0.20+) would obscure the
+  // Roman-inscription letterforms. Explicit (rather than empty payload)
+  // for clarity — makes the canonical-default-vs-elevated-VHS-chatter
+  // contrast explicit relative to T-352 (D-T349-7).
+  intensity: 0.15,
+  cellSize: 1,
+  seed: 0,
+} as const;
+
+/** D-T349-3: photographic-overlay overlay props (sepia @ 0.65 — DOMINATES the metallic-gold/brown register). */
+export const GOT_TRAJAN_CLOCKWORK_PHOTOGRAPHIC_OVERLAY_PROPS = {
+  // Closest sealed-enum match for GOT's "metallic golds and browns"
+  // palette per stub line 24. The SEPIA_MATRIX
+  // (photographic-overlay.tsx:88–98) is the canonical W3C-style sepia
+  // transform — collapses RGB to a warm-yellow gradient with explicit
+  // per-channel scaling (`[0.393 0.769 0.189; 0.349 0.686 0.168;
+  // 0.272 0.534 0.131]`). **SECOND end-to-end consumer of `mode: 'sepia'`**
+  // in StageFlip parity-CLI history (T-352 was PRIMARY at 0.70 dominant
+  // with HIGH grain 0.30; T-349 is SECONDARY at 0.65 dominant with
+  // canonical-default grain 0.15) — confirms the mode is stable across
+  // intensity values + grain levels.
+  mode: 'sepia' as const,
+  // DOMINANT intensity — the metallic-gold/brown palette IS the canonical
+  // mood signal per stub line 24. LOWER than T-352's 0.70 (preserves more
+  // typographic legibility for the Roman-inscription register; the
+  // Trajan-fallback type is the anchor per stub line 33 "scaled large");
+  // HIGHER than T-351's 0.60 (cinematic-LUT cast); HIGHER than T-348's
+  // 0.40 (modest fade cast). Pushing intensity above 0.75 would
+  // obliterate the Roman-inscription letterforms under the sepia cast;
+  // capping at 0.65 preserves typographic legibility while anchoring the
+  // metallic mood register (D-T349-3).
+  intensity: 0.65,
+  // position omitted (defaults to full-canvas at runtime).
+} as const;
+
+const gotTrajanClockworkGrainOverlay = {
+  runtimeId: 'frame-runtime',
+  clipName: 'grain',
+  buildProps() {
+    return { ...GOT_TRAJAN_CLOCKWORK_GRAIN_PROPS };
+  },
+};
+
+const gotTrajanClockworkPhotographicOverlayOverlay = {
+  runtimeId: 'frame-runtime',
+  clipName: 'photographic-overlay',
+  buildProps() {
+    return { ...GOT_TRAJAN_CLOCKWORK_PHOTOGRAPHIC_OVERLAY_PROPS };
+  },
+};
+
+const gotTrajanClockworkBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'titleSequence', // camelCase primitive kind (title-sequence.tsx:800)
+  buildProps() {
+    // Deep-clone nested arrays / objects so callers can mutate the returned
+    // props without aliasing the exported constant.
+    return {
+      ...GOT_TRAJAN_CLOCKWORK_TITLE_SEQUENCE_PROPS,
+      shots: GOT_TRAJAN_CLOCKWORK_TITLE_SEQUENCE_PROPS.shots.map((s) => ({
+        ...s,
+        content: { ...s.content },
+      })),
+      font: { ...GOT_TRAJAN_CLOCKWORK_TITLE_SEQUENCE_PROPS.font },
+      position: { ...GOT_TRAJAN_CLOCKWORK_TITLE_SEQUENCE_PROPS.position },
+    };
+  },
+  // D-T349-2: declaration order = z-order. titleSequence base (zIndex 0)
+  // → grain canonical-default (1) → photographic-overlay sepia (2). NO
+  // light-leak / particles (intentional 3-clip stack — would over-saturate
+  // the metallic-gold register to muddy "burned-photograph" if warm-orange
+  // leaks were added; canon does not enumerate particle drift — sun-rays
+  // is deferred per "out of scope").
+  overlays: [gotTrajanClockworkGrainOverlay, gotTrajanClockworkPhotographicOverlayOverlay],
+};
+
+/**
  * Per-preset binding overrides (T-360 D-T360-2). Keyed by preset id so
  * multiple presets can share a `clipKind` while parameterizing the same
  * runtime clip differently. Lookups in {@link DEFAULT_CLIP_KIND_RESOLVER}
@@ -3216,6 +3416,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'true-detective-double-exposure': trueDetectiveDoubleExposureBinding, // T-351 (Cluster D 3/6; second multi-clip composition; PRIMARY consumer of T-321d photographic-overlay)
   'succession-home-video': successionHomeVideoBinding, // T-352 (Cluster D 4/6; third multi-clip composition; FIRST consumer of mode: 'sepia' AND non-default grain intensity 0.30)
   'severance-surreal-3d': severanceSurreal3dBinding, // T-353 (Cluster D 5/6; fourth multi-clip composition; SECOND consumer of mode: 'cinematic-lut'; FIRST below-default grain intensity 0.10; live ThreeSceneClip integration deferred per stub-canon-explicit static-fallback allowance)
+  'got-trajan-clockwork': gotTrajanClockworkBinding, // T-349 (Cluster D 6/6 — CLOSES Cluster D ELIGIBLE; fifth multi-clip composition; SECOND consumer of mode: 'sepia' confirms stable; canonical-default grain 0.15; live ThreeSceneClip integration deferred per stub-canon-explicit static-fallback allowance — stub line 41)
 };
 
 /**
