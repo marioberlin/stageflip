@@ -314,9 +314,9 @@ describe('<QRCodeBounce> render', () => {
 });
 
 describe('clip registration', () => {
-  it('registers as kind "qr-code-bounce" and is in ALL_BRIDGE_CLIPS at length 61', () => {
+  it('registers as kind "qr-code-bounce" and is in ALL_BRIDGE_CLIPS at length 62', () => {
     expect(qrCodeBounceClip.kind).toBe('qr-code-bounce');
-    expect(ALL_BRIDGE_CLIPS).toHaveLength(61);
+    expect(ALL_BRIDGE_CLIPS).toHaveLength(62);
     expect(ALL_BRIDGE_CLIPS).toContain(qrCodeBounceClip);
   });
 

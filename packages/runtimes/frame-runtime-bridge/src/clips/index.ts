@@ -695,6 +695,32 @@ export {
   weatherStar4000PanelClip,
   weatherStar4000PanelPropsSchema,
 } from './weather-star-panel.js';
+// T-347h — imrStaticFallback primitive (Cluster C 6/6 — CLOSES
+// Cluster C ELIGIBLE; dedicated primitive for the TWC IMR static-
+// fallback register; live ThreeSceneClip IMR rendering deferred to
+// T-347h-three-scene Track A frontier per ADR-005). Single-style
+// v1; static-fallback canon explicit per stub line 41. Canonical
+// palettes (NOT theme-able): IMR_STORM_GRAYS (3-stop backdrop),
+// IMR_DANGER_REDS (severity callout), IMR_DATA_FOREGROUND_WHITE.
+// Closed-form deterministic SVG noise particle overlay (xxhash32-
+// style integer hash mixer). Bound to twc-immersive-mixed-reality
+// preset via PRESET_ID_BINDINGS (preset clipKind: fullScreen stays
+// unchanged; binding overrides clipName to 'imrStaticFallback' per
+// T-328 / T-339 / T-347g precedent).
+export {
+  IMR_DANGER_REDS,
+  IMR_DATA_FOREGROUND_WHITE,
+  IMR_STORM_GRAYS,
+  ImrStaticFallback,
+  type ImrDataRow,
+  type ImrScenario,
+  type ImrSeverity,
+  type ImrStaticFallbackProps,
+  generateParticles,
+  hashSeed,
+  imrStaticFallbackClip,
+  imrStaticFallbackPropsSchema,
+} from './imr-static-fallback.js';
 
 // T-347a — weatherMap primitive (Cluster C first-of-two new primitives;
 // first 'weatherMap' kind consumer). Sealed three-style sealed-bundle
@@ -789,6 +815,7 @@ import { grainClip } from './grain.js';
 import { hookMomentClip } from './hook-moment.js';
 import { hrDashboardClip } from './hr-dashboard.js';
 import { imageGalleryClip } from './image-gallery.js';
+import { imrStaticFallbackClip } from './imr-static-fallback.js';
 import { kineticTextClip } from './kinetic-text.js';
 import { kpiGridClip } from './kpi-grid.js';
 import { lightLeakClip } from './light-leak.js';
@@ -1180,4 +1207,42 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // city panel transitions with hard-cut sequencing per stub line
   // 40). 60 → 61 clips.
   weatherStar4000PanelClip,
+  // T-347h — imrStaticFallback primitive (Cluster C 6/6 — CLOSES
+  // Cluster C ELIGIBLE; dedicated primitive for the TWC IMR
+  // (Immersive Mixed Reality) static-fallback register because the
+  // live ThreeSceneClip IMR rendering — Unreal Engine + Zero
+  // Density Reality Engine + Mo-Sys StarTracker per stub line 34 —
+  // is a Track A frontier feature deferred to T-347h-three-scene
+  // per ADR-005). Single-style v1 (no discriminatedUnion); static-
+  // fallback canon EXPLICIT per stub line 41 ("fall back to a high-
+  // quality pre-composited video if frontier is not enabled") —
+  // same posture as T-353 severance-surreal-3d's stub-canon-
+  // explicit static-fallback allowance for ThreeSceneClip
+  // deferral. Canonical palettes (NOT theme-able):
+  // IMR_STORM_GRAYS (3-stop deep-storm / mid-storm / light-overcast
+  // backdrop gradient #1A1F26 / #2C3441 / #4A5566), IMR_DANGER_REDS
+  // (#CC0000 severity callout primary + #FF3333 glow-edge per stub
+  // line 26), IMR_DATA_FOREGROUND_WHITE (#FFFFFF data labels per
+  // stub line 30). Closed-form deterministic SVG noise particle
+  // overlay seeded by xxhash32-style 32-bit integer hash mixer
+  // (mirrors grain primitive's deterministic-noise pattern). v1
+  // NOT physics-driven (per stub line 36 the canon is
+  // "physics-modeled" but that requires ThreeSceneClip — explicit
+  // deferral to T-347h-physics-particles). Severity HUD card
+  // bottom-third with white 48px UPPERCASE label + 2px black text-
+  // stroke (per stub line 29) + danger-red side-band; data-label
+  // strip top-right. Sealed `scenario: 'severe' | 'calm'` enum (v1
+  // ships 'severe' canon; 'calm' deferred for parity sign-off to
+  // T-347h-calm). Theme slots: background → palette.background,
+  // foreground → palette.foreground. Bound to twc-immersive-mixed-
+  // reality preset via PRESET_ID_BINDINGS (preset clipKind:
+  // fullScreen stays unchanged; binding overrides clipName to
+  // 'imrStaticFallback' per T-328 / T-339 / T-347g precedent). v1
+  // carve-outs: T-347h-three-scene (live IMR rendering; Track A
+  // frontier per ADR-005), T-347h-camera-sweep (multi-frame
+  // cinematic camera sweep 12-20s per stub line 37), T-347h-
+  // physics-particles (physics-driven motion from real / simulated
+  // weather telemetry per stub line 36), T-347h-calm (optional
+  // 'calm' scenario parity register). 60 → 61 clips.
+  imrStaticFallbackClip,
 ];

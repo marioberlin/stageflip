@@ -76,6 +76,7 @@ present — per-clip source headers.
 - `hook-moment`
 - `hr-dashboard`
 - `image-gallery`
+- `imrStaticFallback`
 - `kinetic-text`
 - `kpi-grid`
 - `light-leak`

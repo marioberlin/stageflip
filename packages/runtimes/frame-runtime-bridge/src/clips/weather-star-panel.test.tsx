@@ -456,7 +456,7 @@ describe('weatherStar4000PanelClip definition (T-347g)', () => {
   });
 
   it('ALL_BRIDGE_CLIPS includes weatherStar4000PanelClip and is length 61 (60 → 61)', () => {
-    expect(ALL_BRIDGE_CLIPS).toHaveLength(61);
+    expect(ALL_BRIDGE_CLIPS).toHaveLength(62);
     expect(ALL_BRIDGE_CLIPS).toContain(weatherStar4000PanelClip);
   });
 });
