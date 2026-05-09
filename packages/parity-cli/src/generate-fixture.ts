@@ -1501,6 +1501,134 @@ const uefaStarballRefractionBinding: ClipKindBinding = {
   },
 };
 
+/**
+ * `bbc-mark-allen-clouds` (T-347c) — first `weatherMap`-clipKind preset; wired
+ * via `DEFAULT_CLIP_KIND_RESOLVER` (Pattern C — first preset for a clipKind
+ * goes through the clipKind-default arm; later weatherMap consumers
+ * T-347d / T-347e wire via `PRESET_ID_BINDINGS`). Mark Allen 1975 BBC
+ * symbol set + temperature discs from canonical 6-step blue→red palette
+ * `MARK_ALLEN_TEMPERATURE_DISCS`. v1 ships flat 2D — 3D rotating globe
+ * deferred to T-347a-3d-globe (Track A frontier; ThreeSceneClip per
+ * ADR-005). Single-frame static at frame 60 (mid-zoom-in to UK per stub
+ * line 47); multi-frame globe rotation + camera swoop deferred to
+ * T-347a-loop-cycle. PSNR ≥ 38 / SSIM ≥ 0.95 cluster-norm thresholds
+ * per D-T347c-6.
+ *
+ * **Geometry sized to 1280×720 default canvas**. Rough UK + Europe
+ * silhouette polygons; not pixel-accurate cartography — the primitive's
+ * job is to render the canon, not bake atlas data. Real consumers
+ * supply higher-fidelity geometry; this binding's polygons are
+ * adequate-fidelity for parity-fixture verification.
+ */
+
+/** D-T347c-3: 4 temperature-disc regions across UK cities. */
+export const BBC_MARK_ALLEN_CLOUDS_REGIONS = [
+  {
+    id: 'london',
+    name: 'London',
+    dataValue: '12°C',
+    screenPosition: { x: 700, y: 480 },
+    paletteIndex: 3, // mid-yellow band → mild
+  },
+  {
+    id: 'edinburgh',
+    name: 'Edinburgh',
+    dataValue: '8°C',
+    screenPosition: { x: 580, y: 240 },
+    paletteIndex: 2, // green band → cool
+  },
+  {
+    id: 'cardiff',
+    name: 'Cardiff',
+    dataValue: '10°C',
+    screenPosition: { x: 540, y: 460 },
+    paletteIndex: 2, // green band
+  },
+  {
+    id: 'belfast',
+    name: 'Belfast',
+    dataValue: '9°C',
+    screenPosition: { x: 420, y: 340 },
+    paletteIndex: 2, // green band
+  },
+] as const;
+
+/** D-T347c-4: 6 Mark-Allen canonical icons distributed across UK + N Atlantic. */
+export const BBC_MARK_ALLEN_CLOUDS_SYMBOLS = [
+  { kind: 'cloud' as const, position: { x: 500, y: 200 }, scale: 1.4 },
+  { kind: 'cloud' as const, position: { x: 700, y: 320 }, scale: 1.1 },
+  { kind: 'sun' as const, position: { x: 800, y: 540 }, scale: 1.2 },
+  { kind: 'raindrop' as const, position: { x: 400, y: 250 }, scale: 1.0 },
+  { kind: 'raindrop' as const, position: { x: 480, y: 180 }, scale: 0.9 },
+  { kind: 'snow' as const, position: { x: 550, y: 160 }, scale: 1.1 },
+] as const;
+
+/**
+ * D-T347c-2: synthetic UK + Europe coastal outlines sized to 1280×720.
+ * Three SVG path polygons — Europe continent (rough), UK + Ireland
+ * silhouette (centered, prominent), North Sea / English Channel water
+ * gap (slight darker fill).
+ */
+export const BBC_MARK_ALLEN_CLOUDS_MAP_PATHS = [
+  {
+    // Europe continent — rough Iberian / French / German / Scandinavian sweep.
+    id: 'europe',
+    d: 'M 760,200 L 920,180 L 1080,260 L 1180,400 L 1180,640 L 920,680 L 800,640 L 760,520 L 740,400 L 720,300 Z',
+    fill: '#3F4F5F',
+  },
+  {
+    // UK + Ireland silhouette — the British register's geographic anchor.
+    id: 'uk-ireland',
+    d: 'M 380,200 L 470,140 L 580,160 L 620,240 L 640,360 L 660,460 L 720,500 L 740,540 L 700,580 L 580,600 L 480,540 L 440,460 L 420,360 L 400,260 Z M 320,300 L 380,280 L 410,360 L 380,420 L 330,400 Z',
+    fill: '#4F5F6F',
+  },
+  {
+    // North Sea / English Channel water gap (slight darker fill).
+    id: 'water',
+    d: 'M 660,200 L 760,200 L 760,520 L 720,500 L 660,460 Z',
+    fill: '#2F3F4F',
+  },
+] as const;
+
+/** D-T347c (Pattern C clipKind-default arm) — first weatherMap consumer binding. */
+const bbcMarkAllenCloudsBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'weatherMap',
+  buildProps() {
+    return {
+      style: 'mark-allen-clouds' as const,
+      regions: BBC_MARK_ALLEN_CLOUDS_REGIONS.map((r) => ({
+        id: r.id,
+        name: r.name,
+        dataValue: r.dataValue,
+        screenPosition: { ...r.screenPosition },
+        paletteIndex: r.paletteIndex,
+      })),
+      symbols: BBC_MARK_ALLEN_CLOUDS_SYMBOLS.map((s) => ({
+        kind: s.kind,
+        position: { ...s.position },
+        scale: s.scale,
+      })),
+      mapPaths: BBC_MARK_ALLEN_CLOUDS_MAP_PATHS.map((p) => ({
+        id: p.id,
+        d: p.d,
+        fill: p.fill,
+      })),
+      // BBC Reith Sans is `proprietary-byo` per the preset frontmatter;
+      // Source Sans 3 OFL is the rendered fallback per D-T347c-5 / stub
+      // line 30 ("Bold, 22-28pt"). Mid-range size 24pt; primitive default
+      // for the 'mark-allen-clouds' style is 22pt.
+      font: {
+        family: 'BBC Reith Sans, Source Sans 3, system-ui, -apple-system, sans-serif',
+        weight: 700,
+        size: 24,
+      },
+      // Optional legend — top-right per BBC GEL canon (8-point grid).
+      legend: { enabled: true, position: 'top-right' as const },
+    };
+  },
+};
+
 const squidGameGeometricBinding: ClipKindBinding = {
   runtimeId: 'frame-runtime',
   clipName: 'titleSequence',
@@ -3445,6 +3573,7 @@ export const DEFAULT_CLIP_KIND_RESOLVER: ClipKindResolver = (clipKind, presetId)
   if (clipKind === 'titleSequence') return squidGameGeometricBinding;
   if (clipKind === 'lowerThird') return cnnClassicBinding;
   if (clipKind === 'breakingBanner') return cnnBreakingBinding;
+  if (clipKind === 'weatherMap') return bbcMarkAllenCloudsBinding;
   return undefined;
 };
 

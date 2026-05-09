@@ -3,7 +3,7 @@ id: bbc-mark-allen-clouds
 cluster: weather
 clipKind: weatherMap
 source: docs/compass_artifact.md#bbc-weather
-status: stub
+status: substantive
 preferredFont:
   family: BBC Reith Sans
   license: proprietary-byo
@@ -13,7 +13,7 @@ fallbackFont:
   license: ofl
 permissions: []
 signOff:
-  parityFixture: pending-user-review
+  parityFixture: 'signed:2026-05-08'
   typeDesign: na
 ---
 
