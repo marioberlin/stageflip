@@ -3,7 +3,7 @@ id: olympic-swim-lane-track
 cluster: ar
 clipKind: arOverlay
 source: docs/compass_artifact.md#olympic-swimming-lane-tracker
-status: stub
+status: substantive
 preferredFont:
   family: Games-specific (Paris 2024 etc.)
   license: proprietary-byo
@@ -11,9 +11,10 @@ fallbackFont:
   family: Atkinson Hyperlegible
   weight: 600
   license: ofl
-permissions: [network]
+permissions:
+  - network
 signOff:
-  parityFixture: pending-user-review
+  parityFixture: 'signed:2026-05-10'
   typeDesign: na
 ---
 
