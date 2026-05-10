@@ -722,6 +722,38 @@ export {
   imrStaticFallbackPropsSchema,
 } from './imr-static-fallback.js';
 
+// T-375a — arOverlay primitive (Cluster H first-of-six PR sequence;
+// shared primitive that all 4 Cluster H presets bind to via
+// `clipKind: arOverlay`). Single-style v1 (no `discriminatedUnion` —
+// the 4 presets share one prop surface; per-sport canon supplied as
+// caller-side staticFallback content + (when live) author-defined
+// ThreeSceneClip setupRef). Mirrors T-347g weatherStar4000Panel /
+// T-347h imrStaticFallback single-object-schema precedent.
+// **v1 ships static-fallback rendering ONLY** — live-mount via
+// ThreeSceneClip is GATED on Track A finale (T-397+ not yet merged);
+// downstream task T-375a-live-mount wires the integration once T-397+
+// lands. Live-mount API surface (`setupRef`, `permissions`) DECLARED
+// on schema for forward compatibility but ignored at v1 render.
+// **No canonical palettes baked** — AR overlays composite OVER
+// existing video / sport context; per-sport color canon (Sky Sports
+// navy + PL purple, Hawk-Eye green offside lines, Olympic gold/red
+// WR-line flash, NBA orange) lives in per-preset binding. Theme
+// slots: backgroundColor → palette.background, foregroundColor →
+// palette.foreground, accentColor → palette.accent. Frame-
+// deterministic. Per CLAUDE.md §13 acceptable-evidence option 3,
+// pixel verification deferred to PR2 (T-375 sky-sports-ar-formations).
+// 62 → 63 clips.
+export {
+  ArOverlay,
+  type ArOverlayDisplayTier,
+  type ArOverlayPermission,
+  type ArOverlayProps,
+  type ArOverlaySetupRef,
+  type ArOverlayStaticFallback,
+  arOverlayClip,
+  arOverlayPropsSchema,
+} from './ar-overlay.js';
+
 // T-347a — weatherMap primitive (Cluster C first-of-two new primitives;
 // first 'weatherMap' kind consumer). Sealed three-style sealed-bundle
 // compositor: 'mark-allen-clouds' / 'doppler-radar' / 'heat-map'. Single
@@ -794,6 +826,7 @@ export {
 
 import { animatedMapClip } from './animated-map.js';
 import { animatedValueClip } from './animated-value.js';
+import { arOverlayClip } from './ar-overlay.js';
 import { audioVisualizerReactiveClip } from './audio-visualizer-reactive.js';
 import { audioVisualizerClip } from './audio-visualizer.js';
 import { beatSyncedTextClip } from './beat-synced-text.js';
@@ -1245,4 +1278,32 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // weather telemetry per stub line 36), T-347h-calm (optional
   // 'calm' scenario parity register). 60 → 61 clips.
   imrStaticFallbackClip,
+  // T-375a — arOverlay primitive (Cluster H first-of-six PR sequence;
+  // shared primitive that all 4 Cluster H presets bind to via
+  // `clipKind: arOverlay`). Single-style v1 (no `discriminatedUnion` —
+  // the 4 presets share one prop surface; per-sport canon supplied as
+  // caller-side staticFallback content + (when live) author-defined
+  // ThreeSceneClip setupRef). Mirrors T-347g weatherStar4000Panel /
+  // T-347h imrStaticFallback single-object-schema precedent.
+  // **v1 ships static-fallback rendering ONLY** — live-mount via
+  // ThreeSceneClip is GATED on Track A finale (T-397+ not yet
+  // merged); downstream task T-375a-live-mount wires the integration
+  // once T-397+ lands. Live-mount API surface (`setupRef`,
+  // `permissions`) DECLARED on schema for forward compatibility but
+  // ignored at v1 render. **No canonical palettes baked** — AR
+  // overlays composite OVER existing video / sport context; per-
+  // sport color canon (Sky Sports navy + PL purple, Hawk-Eye green
+  // offside lines, Olympic gold/red WR-line flash, NBA orange) lives
+  // in per-preset binding. Theme slots: backgroundColor →
+  // palette.background, foregroundColor → palette.foreground,
+  // accentColor → palette.accent. Frame-deterministic. v1 carve-
+  // outs: T-375a-live-mount (wire ThreeSceneClip mount path post-
+  // T-397), T-375a-camera-tracking (Zero Density / Stype / Omega
+  // Vionardo / SMT ISO Track 2.0 input), T-375a-display-tier-adapt
+  // (auto-reduce complexity for displayTier === 'mobile'), T-375a-
+  // poster-image (image-asset poster surface; v1 ships structured 2D
+  // placeholder only). Per CLAUDE.md §13 acceptable-evidence option 3,
+  // pixel verification deferred to PR2 (T-375 sky-sports-ar-
+  // formations). 62 → 63 clips.
+  arOverlayClip,
 ];
