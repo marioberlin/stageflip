@@ -3,7 +3,7 @@ id: hawkeye-var-3d-skeletal
 cluster: ar
 clipKind: arOverlay
 source: docs/compass_artifact.md#var-graphics
-status: stub
+status: substantive
 preferredFont:
   family: Premier Sans / Champions
   license: proprietary-byo
@@ -13,7 +13,7 @@ fallbackFont:
   license: ofl
 permissions: []
 signOff:
-  parityFixture: pending-user-review
+  parityFixture: 'signed:2026-05-10'
   typeDesign: na
 ---
 
