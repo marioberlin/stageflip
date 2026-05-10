@@ -109,6 +109,12 @@ export const CANONICAL_BUNDLES: readonly ToolBundle[] = [
     tools: [],
   },
   {
+    name: 'cluster-c-compose',
+    description:
+      'Cluster C (Weather) composer tools — preset-binding factories for weather alerts / forecast maps / storm tracks / temperature maps across the 6 ratified Cluster C presets (T-347).',
+    tools: [],
+  },
+  {
     name: 'cluster-e-compose',
     description:
       'Cluster E (Data) composer tools — preset-binding factories for live-data / market-ticker / election-board / big-number / stat-callout briefs across the 6 ratified Cluster E presets (T-361).',
