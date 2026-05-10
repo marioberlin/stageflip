@@ -1,0 +1,30 @@
+{
+  "name": "heat-map-cool-to-warm",
+  "cluster": "weather",
+  "kind": "weatherMap",
+  "description": "Parity fixture for preset 'heat-map-cool-to-warm' (cluster weather, kind weatherMap)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Open Sans",
+      "license": "ofl"
+    },
+    "fallback": {
+      "family": "Open Sans",
+      "weight": 600,
+      "license": "ofl"
+    }
+  }
+}

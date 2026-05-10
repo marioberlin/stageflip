@@ -1,0 +1,5 @@
+{
+  "minPsnr": 40,
+  "minSsim": 0.97,
+  "maxFailingFrames": 0
+}
