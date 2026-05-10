@@ -1,0 +1,30 @@
+{
+  "name": "olympic-swim-lane-track",
+  "cluster": "ar",
+  "kind": "arOverlay",
+  "description": "Parity fixture for preset 'olympic-swim-lane-track' (cluster ar, kind arOverlay)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Games-specific (Paris 2024 etc.)",
+      "license": "proprietary-byo"
+    },
+    "fallback": {
+      "family": "Atkinson Hyperlegible",
+      "weight": 600,
+      "license": "ofl"
+    }
+  }
+}
