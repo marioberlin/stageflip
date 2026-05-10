@@ -332,6 +332,25 @@ export const LIVE_RUNTIME_MANIFEST: ClipsCatalogPkg = {
         // PRESET_ID_BINDINGS (preset clipKind: fullScreen stays;
         // binding overrides clipName to 'imrStaticFallback').
         'imrStaticFallback',
+        // T-375a — arOverlay primitive (Cluster H first-of-six PR
+        // sequence; shared primitive that all 4 Cluster H presets
+        // bind to via `clipKind: arOverlay`). Single-style v1 (no
+        // `discriminatedUnion` — the 4 presets share one prop
+        // surface; per-sport canon supplied as caller-side
+        // staticFallback content + (when live) author-defined
+        // ThreeSceneClip setupRef). v1 ships static-fallback
+        // rendering ONLY — live-mount via ThreeSceneClip is GATED
+        // on Track A finale (T-397+ not yet merged). Live-mount
+        // API surface (`setupRef`, `permissions`) DECLARED on
+        // schema for forward compatibility but ignored at v1
+        // render. NO canonical palettes baked at primitive level
+        // (per-sport color canon lives in per-preset binding).
+        // Theme slots: backgroundColor → palette.background,
+        // foregroundColor → palette.foreground, accentColor →
+        // palette.accent. Frame-deterministic. Per CLAUDE.md §13
+        // acceptable-evidence option 3, pixel verification
+        // deferred to PR2 (T-375 sky-sports-ar-formations).
+        'arOverlay',
       ],
     },
   ],
