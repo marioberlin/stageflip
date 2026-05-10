@@ -315,6 +315,23 @@ export const LIVE_RUNTIME_MANIFEST: ClipsCatalogPkg = {
         // stays unchanged; binding overrides clipName to
         // 'weatherStar4000Panel' per T-328 / T-339 precedent).
         'weatherStar4000Panel',
+        // T-347h — imrStaticFallback primitive (Cluster C 6/6 —
+        // CLOSES Cluster C ELIGIBLE; dedicated primitive for the
+        // TWC IMR static-fallback register; live ThreeSceneClip
+        // IMR rendering deferred to T-347h-three-scene Track A
+        // frontier per ADR-005). Single-style v1; static-fallback
+        // canon explicit per stub line 41 (same posture as T-353
+        // severance-surreal-3d). Canonical palettes IMR_STORM_GRAYS
+        // (3-stop backdrop), IMR_DANGER_REDS (severity callout),
+        // IMR_DATA_FOREGROUND_WHITE NOT theme-bound. Closed-form
+        // deterministic SVG noise particle overlay (xxhash32-style
+        // integer hash mixer; v1 NOT physics-driven). Severity HUD
+        // card bottom-third with 2px-stroked white callout +
+        // danger-red side-band; data-label strip top-right. Bound
+        // to twc-immersive-mixed-reality preset via
+        // PRESET_ID_BINDINGS (preset clipKind: fullScreen stays;
+        // binding overrides clipName to 'imrStaticFallback').
+        'imrStaticFallback',
       ],
     },
   ],

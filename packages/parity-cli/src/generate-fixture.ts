@@ -2150,6 +2150,50 @@ const twcRetrocast8bitBinding: ClipKindBinding = {
   },
 };
 
+/**
+ * `twc-immersive-mixed-reality` (T-347h) — sixth + final Cluster C
+ * preset; CLOSES Cluster C to 6/6 ELIGIBLE once shipped (alongside
+ * T-347c/d/e/f/g). Wired via `PRESET_ID_BINDINGS` override (Pattern C —
+ * preset's `clipKind: fullScreen` STAYS UNCHANGED; binding overrides
+ * `clipName` to the NEW `imrStaticFallback` primitive per the T-328 /
+ * T-339 / T-347g precedent).
+ *
+ * The TWC IMR (Immersive Mixed Reality) canon is a Track A frontier
+ * feature: live 3D rendering via `ThreeSceneClip` (Unreal Engine + Zero
+ * Density Reality Engine + Mo-Sys StarTracker per stub line 34). The
+ * stub-canon-explicit static-fallback allowance (line 41) authorizes a
+ * v1 static-only register — same posture as T-353 severance-surreal-3d.
+ *
+ * **Single-frame static** at frame 60 (mid-camera-sweep / settled
+ * register per stub line 47). PSNR ≥ 36 / SSIM ≥ 0.93 (3D scene
+ * compositing has higher variance per stub).
+ */
+const twcImmersiveMixedRealityBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'imrStaticFallback',
+  buildProps() {
+    return {
+      scenario: 'severe' as const,
+      severity: {
+        label: 'Tornado Warning',
+        location: 'Atlanta Metro',
+        timestamp: 'Issued 4:12 PM EDT',
+      },
+      data: [
+        { label: 'WIND', value: '155 MPH' },
+        { label: 'PRESSURE', value: '948 MB' },
+        { label: 'TEMP', value: '76 °F' },
+        { label: 'GUST', value: '180 MPH' },
+      ],
+      particleDensity: 0.6,
+      font: {
+        family: "'Inter Tight', system-ui, -apple-system, sans-serif",
+        weight: 700,
+      },
+    };
+  },
+};
+
 const squidGameGeometricBinding: ClipKindBinding = {
   runtimeId: 'frame-runtime',
   clipName: 'titleSequence',
@@ -4069,6 +4113,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'doppler-dbz-standard': dopplerDbzStandardBinding, // T-347d (Cluster C 2/6; second weatherMap consumer; first 'doppler-radar' style branch; verifies §13 (F-30) doppler-radar branch end-to-end)
   'heat-map-cool-to-warm': heatMapCoolToWarmBinding, // T-347e (Cluster C 3/6; third + final weatherMap consumer; verifies §13 (F-30) heat-map branch end-to-end; closes all three weatherMap §13 obligations once T-347c + T-347d also land)
   'twc-retrocast-8bit': twcRetrocast8bitBinding, // T-347g (Cluster C 5/6; preset clipKind: fullScreen stays; binding overrides clipName to the new weatherStar4000Panel primitive per T-328 / T-339 precedent. Pixel-perfect register; PSNR >= 44 / SSIM >= 0.99 tight thresholds)
+  'twc-immersive-mixed-reality': twcImmersiveMixedRealityBinding, // T-347h (Cluster C 6/6 — CLOSES Cluster C ELIGIBLE; preset clipKind: fullScreen stays; binding overrides clipName to the new imrStaticFallback primitive. Static-fallback register; live ThreeSceneClip IMR rendering deferred to T-347h-three-scene Track A frontier per ADR-005)
 };
 
 /**

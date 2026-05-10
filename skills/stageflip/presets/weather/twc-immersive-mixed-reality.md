@@ -3,7 +3,7 @@ id: twc-immersive-mixed-reality
 cluster: weather
 clipKind: fullScreen
 source: docs/compass_artifact.md#the-weather-channel
-status: stub
+status: substantive
 preferredFont:
   family: TWC custom modernized (Trollbäck+ system)
   license: proprietary-byo
@@ -13,7 +13,7 @@ fallbackFont:
   license: ofl
 permissions: []
 signOff:
-  parityFixture: pending-user-review
+  parityFixture: 'signed:2026-05-08'
   typeDesign: na
 ---
 
