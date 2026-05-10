@@ -2420,6 +2420,173 @@ const hawkeyeVarSkeletalBinding: ClipKindBinding = {
   },
 };
 
+/**
+ * `olympic-swim-lane-track` (T-377) — third `arOverlay`-clipKind preset;
+ * wired via `PRESET_ID_BINDINGS` override (Pattern C — third-preset-for-
+ * clipKind via override; the `arOverlay` clipKind-default arm in
+ * `DEFAULT_CLIP_KIND_RESOLVER` STAYS bound to `skySportsArFormationsBinding`
+ * from T-375 / PR #461 / commit `a5614b56`; the sibling override
+ * `hawkeyeVarSkeletalBinding` from T-376 / PR #462 / commit `54a93ac1`
+ * also stays unchanged). Brings Cluster H (AR & environmental overlays)
+ * from 2/4 → 3/4 ELIGIBLE.
+ *
+ * **NOT a §13 (F-30) verifier.** PR #461 (T-375 sky-sports-ar-formations
+ * as first downstream consumer) discharged the §13 obligation for the
+ * `arOverlay` clipKind structural extension introduced in T-375a (PR #460).
+ * This PR adds a new preset-binding entry; no new clipKind / element type /
+ * compositing mode. The `permissions: ['network']` declaration is a
+ * binding-payload-level value on a pre-existing schema field — `'network'`
+ * is one of the four pre-existing values on T-375a's `permissionEnum`
+ * (`packages/runtimes/frame-runtime-bridge/src/clips/ar-overlay.tsx`
+ * line 118: `z.enum(['camera-tracking', 'live-data', 'network', 'audio'])`).
+ *
+ * **v1 ships static-fallback rendering ONLY** per D-T375a-2: the primitive's
+ * `setupRef` API surface is reserved on the schema for forward compatibility
+ * but the v1 dispatch ignores `setupRef` at render time and always renders
+ * the static-fallback poster. Live-mount via `ThreeSceneClip` (Olympic swim
+ * AR lane graphics tracked to camera motion) + `LiveDataClip` (Omega
+ * Vionardo timing-feed integration with .01s touch-pad precision + WR-line
+ * draw-in + record gold/red flash on touch) lands with T-377-live-mount
+ * post-T-397 Track A finale (not yet merged).
+ *
+ * **First Cluster H preset to declare `permissions: ['network']`** (D-T377-N).
+ * Sibling sky-sports-ar-formations + hawkeye-var-3d-skeletal both declare
+ * `permissions: ['camera-tracking']` (camera-side source data); olympic-swim
+ * is fundamentally network-bound (touch-pad timing data arrives over the
+ * Omega network; without the timing feed, the canonical .01s precision
+ * register collapses to a 2D scoreboard fallback per stub line 45).
+ *
+ * **Visual differentiation from sibling Cluster H presets:**
+ * - sky-sports: navy backdrop (`#0A1128`) + Premier League purple accent
+ *   border (`#38003C`) + `'Sky Sports Sans', 'Inter'` font stack — register:
+ *   pitch-anchored formation lineup.
+ * - hawkeye-var: PL purple backdrop (`#34003A`) + decision-green accent
+ *   border (`#00FC8A`) + `'Premier Sans', 'Champions', 'Space Grotesk'`
+ *   font stack — register: VAR offside-decision moment, dramatic suspense
+ *   beat.
+ * - olympic-swim: pool-blue backdrop (`#0E3B6E`) + Olympic-gold accent
+ *   border (`#D4AF37`) + `'Paris 2024', 'Atkinson Hyperlegible'` font stack
+ *   — register: lane-anchored timing graphics on a pool surface, world-
+ *   record-line dramatic moment per stub line 26 ("the dramatic
+ *   differentiator — preserve it").
+ *
+ * All three presets ship the SAME primitive (`arOverlay`) but render
+ * visually distinct cards — broadcaster brand canon lives in the per-preset
+ * binding, not the primitive (per D-T375a-3).
+ *
+ * **Single-frame static** at frame 60 for cluster-norm consistency with
+ * sibling sky-sports + hawkeye-var presets. PSNR ≥ 34 / SSIM ≥ 0.91 per
+ * stub line 51 — looser than the cluster-norm 38/0.95 because the stub
+ * authorises that variance for "live AR + camera motion has high variance";
+ * the v1 static-fallback render is byte-deterministic so the looser
+ * thresholds carry no risk and reserve headroom for the post-T-397
+ * live-mount path's expected variance (Omega timing-feed data is
+ * asynchronous; touch-pad flash + WR-line draw-in introduce sub-frame
+ * timing variance in the live render path).
+ */
+
+/**
+ * D-T377-2: sealed canonical Olympic swim lane-track palette. Brand canon
+ * is preset-specific (NOT primitive-specific per D-T375a-3) — the primitive
+ * composites OVER existing video / sport context and intentionally does
+ * NOT bake palettes; per-preset color canon (Olympic gold + record-red
+ * here; Sky Sports navy in sibling sky-sports-ar-formations binding;
+ * PL purple decision-green in sibling hawkeye-var-3d-skeletal binding;
+ * NBA orange in pending T-378 binding) lives in the per-preset binding.
+ * `touchFlash` is exported for future live-mount consumers; v1 static-
+ * fallback doesn't surface it on the rendered card.
+ */
+export const OLYMPIC_SWIM_LANE_TRACK_PALETTE = Object.freeze({
+  /** Pool blue background — canonical Olympic pool water register. The
+   * AR overlay composites OVER live pool footage; the static-fallback
+   * card uses this color to evoke the rendered moment. */
+  poolBlue: '#0E3B6E',
+  /** Olympic gold — world-record / Olympic-record line per stub line 26
+   * ("Virtual world-record / Olympic-record line: red / gold"). Doubles
+   * as the WR-flash peak color per stub line 40 ("World / Olympic record:
+   * flash gold + red, 600 ms peak") + Olympic ring gold canon. */
+  olympicGold: '#D4AF37',
+  /** Record-line red — paired with gold in the dramatic flash per stub
+   * line 26 / 40. The most electrifying broadcast moment per stub line 47
+   * ("Records: gold / red flash on world records ... the most electrifying
+   * broadcast moment per compass. Don't soften."). */
+  recordRed: '#E63946',
+  /** Foreground white — lane numbers, athlete names, tabular timing per
+   * stub typography lines 31-34. */
+  foreground: '#FFFFFF',
+  /** Touch-pad flash — the 250 ms touch flash per stub line 39. Reserved
+   * for live-mount path (T-377-live-mount post-T-397; not surfaced in v1
+   * static-fallback). */
+  touchFlash: '#FFE74C',
+} as const);
+
+const olympicSwimLaneTrackBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'arOverlay',
+  buildProps() {
+    return {
+      staticFallback: {
+        // Centered-card label per D-T375a-5: ALL CAPS Bold 48px (primitive-
+        // governed font-size). "OLYMPIC SWIM — LANE TRACK" matches the
+        // preset stub's lane-anchored AR overlay register per stub title
+        // and lines 22-26 (lane graphics + virtual record line).
+        label: 'OLYMPIC SWIM — LANE TRACK',
+        // Optional sublabel — Regular 22px at 70% opacity per D-T375a-5.
+        // "OMEGA VIONARDO TIMING · WR-LINE" surfaces the timing-feed +
+        // world-record-line attribution per stub references line 55
+        // ("Omega Vionardo + SMT ISO Track 2.0") and stub line 26
+        // (the WR-line is the "dramatic differentiator").
+        sublabel: 'OMEGA VIONARDO TIMING · WR-LINE',
+        // Pool-blue backdrop evokes the pool water register the AR
+        // overlay composites onto. Different from sibling sky-sports' navy
+        // (#0A1128) and hawkeye-var's PL purple (#34003A) — each preset's
+        // backdrop signals its broadcast register at a glance.
+        backgroundColor: OLYMPIC_SWIM_LANE_TRACK_PALETTE.poolBlue,
+        // Foreground white for banner text + tabular timing precision
+        // (stub line 32 "Times: Bold, 24-30 pt, tabular").
+        foregroundColor: OLYMPIC_SWIM_LANE_TRACK_PALETTE.foreground,
+        // Olympic-gold 1px accent border per D-T375a-5; signals the
+        // world-record / Olympic-record register per stub line 26 + 40.
+        // NOT pool-blue (the backdrop) and NOT sibling presets' purples
+        // — gold-on-pool-blue is the canonical Olympic broadcast register
+        // for record-pace overlays.
+        accentColor: OLYMPIC_SWIM_LANE_TRACK_PALETTE.olympicGold,
+        // Default true — explicit for clarity. The bottom-right
+        // "AR · STATIC FALLBACK" 14px monospace badge at 50% opacity
+        // signals to the operator that the live-mount path is gated.
+        showLiveMountIndicator: true,
+      },
+      // Paris 2024 (Games-specific) is `proprietary-byo` per the preset
+      // frontmatter lines 8-10; Atkinson Hyperlegible OFL is the rendered
+      // fallback per frontmatter lines 11-13. The Atkinson Hyperlegible
+      // tabular figures + high-contrast register match the timing-precision
+      // canon per stub line 32 ("Times: Bold, 24-30 pt, tabular — to .01
+      // second precision (Omega touch-pad standard)"). The primitive's
+      // centered-card label renders at fixed 48px (D-T375a-5); this `font`
+      // declaration governs the family stack only.
+      font: {
+        family: "'Paris 2024', 'Atkinson Hyperlegible', system-ui, -apple-system, sans-serif",
+        weight: 700,
+      },
+      // D-T377-N: declared per stub frontmatter line 14 (`permissions:
+      // [network]`) + stub line 45 ("Requires camera-tracking + timing-data
+      // feed"). FIRST Cluster H preset to declare 'network' — sibling
+      // sky-sports + hawkeye-var both declare 'camera-tracking'. Olympic
+      // swim is fundamentally network-bound (touch-pad timing data arrives
+      // over the Omega network via LiveDataClip; without the timing feed,
+      // the canonical .01s precision register collapses to a 2D scoreboard
+      // fallback per stub line 45). NOT exercised in v1 (primitive ignores
+      // `permissions` at render time per D-T375a-2). Forward-compat for
+      // the post-T-397 live-mount path's `LiveDataClip` integration with
+      // the Omega Vionardo timing feed.
+      permissions: ['network' as const],
+      // setupRef intentionally OMITTED in v1 — live-mount via
+      // ThreeSceneClip (T-384) + LiveDataClip lands with T-377-live-mount
+      // post-T-397 Track A finale.
+    };
+  },
+};
+
 const squidGameGeometricBinding: ClipKindBinding = {
   runtimeId: 'frame-runtime',
   clipName: 'titleSequence',
@@ -4341,6 +4508,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'twc-retrocast-8bit': twcRetrocast8bitBinding, // T-347g (Cluster C 5/6; preset clipKind: fullScreen stays; binding overrides clipName to the new weatherStar4000Panel primitive per T-328 / T-339 precedent. Pixel-perfect register; PSNR >= 44 / SSIM >= 0.99 tight thresholds)
   'twc-immersive-mixed-reality': twcImmersiveMixedRealityBinding, // T-347h (Cluster C 6/6 — CLOSES Cluster C ELIGIBLE; preset clipKind: fullScreen stays; binding overrides clipName to the new imrStaticFallback primitive. Static-fallback register; live ThreeSceneClip IMR rendering deferred to T-347h-three-scene Track A frontier per ADR-005)
   'hawkeye-var-3d-skeletal': hawkeyeVarSkeletalBinding, // T-376 (Cluster H 2/4; second arOverlay consumer via PRESET_ID_BINDINGS override — Pattern C second-preset-for-clipKind; arOverlay clipKind-default arm stays bound to skySportsArFormationsBinding from T-375. NOT a §13 verifier — reuses arOverlay clipKind whose structural-extension verification was discharged by PR #461)
+  'olympic-swim-lane-track': olympicSwimLaneTrackBinding, // T-377 (Cluster H 3/4; third arOverlay consumer via PRESET_ID_BINDINGS override — Pattern C third-preset-for-clipKind; arOverlay clipKind-default arm stays bound to skySportsArFormationsBinding from T-375; sibling override hawkeyeVarSkeletalBinding from T-376 also stays unchanged. FIRST Cluster H preset to declare permissions: ['network'] for forward-compat with LiveDataClip + Omega Vionardo timing-feed post-T-397 Track A finale. NOT a §13 verifier — reuses arOverlay clipKind whose structural-extension verification was discharged by PR #461)
 };
 
 /**
