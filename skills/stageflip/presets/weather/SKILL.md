@@ -40,6 +40,10 @@ Do **not** invoke for general-purpose data visualization — that's Cluster E.
 - `compose_storm_track(storm, path, brand)` — picks stormTracker preset (NHC cone canonical)
 - `compose_temperature_map(regions, unit, brand)` — heat-map preset
 
+### Implementation
+
+The four composer tools above ship in the `cluster-c-compose` engine handler bundle (T-347). See [`skills/stageflip/tools/cluster-c-compose/SKILL.md`](../../tools/cluster-c-compose/SKILL.md) for the full Zod input/output schemas and per-tool dispatch tables. Tools are read-only (`ToolContext`); the caller mounts the chosen clip via a separate write-tier tool.
+
 ## Cluster conventions (from the compass canon)
 
 - **Color palettes are standard, not brand.** The Doppler dBZ progression (blue → green → yellow → orange → red → magenta) and the temperature gradient (purple → blue → green → yellow → red → maroon) are public-interest standards. Do not brand them; audiences have decades of literacy.

@@ -1,0 +1,9 @@
+---
+'@stageflip/engine': patch
+---
+
+T-347 — Add the `cluster-c-compose` engine handler bundle: 4 read-only composer tools (`compose_weather_alert` / `compose_forecast_map` / `compose_storm_track` / `compose_temperature_map`) that bind a semantic Cluster C (Weather) brief to a ratified preset id + opaque props payload. Tools declare `ToolContext` (no document reads, no patch sink); the caller mounts the chosen clip via a separate write-tier tool (`add_clip` / `add_element`).
+
+Dispatches across the 6 ratified Cluster C presets (T-347c..T-347h): `compose_weather_alert` routes (NHC × hurricane / tropical-storm × warning) → `nhc-cone-of-uncertainty` and (TWC × severe-thunderstorm / tornado × watch | warning) → `twc-immersive-mixed-reality` (static-fallback IMR primitive); `compose_forecast_map` routes BBC → `bbc-mark-allen-clouds`, Doppler / NEXRAD / NWS → `doppler-dbz-standard`, TWC + register=retrocast → `twc-retrocast-8bit`, TWC + register=radar (short-range) → `doppler-dbz-standard`, TWC multi-day → `twc-immersive-mixed-reality`; `compose_storm_track` routes brand ∈ {nhc, noaa} → `nhc-cone-of-uncertainty`; `compose_temperature_map` routes brand ∈ {meriam, esri, nws-meriam} → `heat-map-cool-to-warm`. All 6 Cluster C preset ids are reachable from at least one (tool, input gate) pair.
+
+Per cluster SKILL invariants: (1) color palettes (Doppler dBZ progression, Meriam temperature gradient) are public-interest STANDARDS — composer does NOT accept palette overrides; (2) NHC cone disclaimer 'Impacts extend beyond the cone' is enforced by the `stormTracker` primitive (default text), so the composer is composer-transparent — when caller omits `disclaimerText`, the output `props` does NOT include the key, and the primitive default flows through unchanged. Closes the cluster-compose surface for Cluster C (6/6 ratified as of #456). No clip / parity-cli / preset markdown / parity golden touched.
