@@ -33,6 +33,7 @@ import {
   registerClipAnimationBundle,
   registerClusterAComposeBundle,
   registerClusterBComposeBundle,
+  registerClusterCComposeBundle,
   registerClusterEComposeBundle,
   registerClusterFComposeBundle,
   registerClusterGComposeBundle,
@@ -116,6 +117,7 @@ function populate(registry: BundleRegistry, router: ToolRouter<ExecutorContext>)
   registerArrangeVariantsBundle(registry, router);
   registerClusterAComposeBundle(registry, router);
   registerClusterBComposeBundle(registry, router);
+  registerClusterCComposeBundle(registry, router);
   registerClusterEComposeBundle(registry, router);
   registerClusterFComposeBundle(registry, router);
   registerClusterGComposeBundle(registry, router);
