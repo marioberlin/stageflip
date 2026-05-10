@@ -1,0 +1,30 @@
+{
+  "name": "sky-sports-ar-formations",
+  "cluster": "ar",
+  "kind": "arOverlay",
+  "description": "Parity fixture for preset 'sky-sports-ar-formations' (cluster ar, kind arOverlay)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Sky Sports Sans",
+      "license": "proprietary-byo"
+    },
+    "fallback": {
+      "family": "Inter",
+      "weight": 600,
+      "license": "ofl"
+    }
+  }
+}

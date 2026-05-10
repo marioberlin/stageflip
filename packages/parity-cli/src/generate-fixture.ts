@@ -2194,6 +2194,100 @@ const twcImmersiveMixedRealityBinding: ClipKindBinding = {
   },
 };
 
+/**
+ * `sky-sports-ar-formations` (T-375) — first `arOverlay`-clipKind preset;
+ * wired via `DEFAULT_CLIP_KIND_RESOLVER` (Pattern C — first preset for a
+ * clipKind goes through the clipKind-default arm; later Cluster H
+ * consumers T-376 hawkeye-var-3d-skeletal / T-377 olympic-swim-lane-track
+ * / T-378 nba-ar-replay wire via `PRESET_ID_BINDINGS`).
+ *
+ * **§13 verifier** for the `arOverlay` clipKind structural extension
+ * introduced in T-375a (PR #460). T-375a explicitly deferred pixel
+ * verification to this preset PR per CLAUDE.md §13 acceptable-evidence
+ * option 3 — this binding's parity-golden + PO ratification IS the
+ * end-to-end render verification for the new clipKind.
+ *
+ * **v1 ships static-fallback rendering ONLY** per D-T375a-2: the
+ * primitive's `setupRef` API surface is reserved on the schema for
+ * forward compatibility, but the v1 dispatch ignores `setupRef` at
+ * render time and always renders the static-fallback poster. Live-mount
+ * via `ThreeSceneClip` (T-384) lands with T-375-live-mount post-T-397
+ * Track A finale (not yet merged).
+ *
+ * **Single-frame static** at frame 60 (canonical "settled" register
+ * matching the cluster norm). PSNR ≥ 36 / SSIM ≥ 0.93 per stub line 48
+ * — slightly looser than the cluster-norm 38/0.95 because the stub
+ * authorises that variance for "live AR composited frames"; the v1
+ * static-fallback render is byte-deterministic so the looser thresholds
+ * carry no risk and reserve headroom for the post-T-397 live-mount
+ * path's expected variance.
+ */
+
+/**
+ * D-T375-2: sealed canonical Sky Sports AR formations palette. Brand
+ * canon is preset-specific (NOT primitive-specific per D-T375a-3) — the
+ * primitive composites OVER existing video / sport context and intentionally
+ * does NOT bake palettes; per-sport color canon (Sky Sports navy + PL
+ * purple here; Hawk-Eye green offside lines / Olympic gold-red WR-line
+ * flash / NBA orange in sibling Cluster H bindings) lives in the
+ * per-preset binding.
+ */
+export const SKY_SPORTS_AR_FORMATIONS_PALETTE = Object.freeze({
+  /** Sky Sports navy — primary fill of marker badges per stub line 26. */
+  skyNavy: '#0A1128',
+  /** Premier League purple — sport-specific accent per stub line 27. */
+  premierPurple: '#38003C',
+  /** Foreground white — player numbers / labels per stub typography. */
+  foreground: '#FFFFFF',
+} as const);
+
+const skySportsArFormationsBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'arOverlay',
+  buildProps() {
+    return {
+      staticFallback: {
+        // Centered-card label per D-T375a-5: ALL CAPS Bold 48px (primitive-
+        // governed font-size). "AR FORMATION OVERLAY" matches the preset
+        // stub's pitch-anchored AR formation register.
+        label: 'AR FORMATION OVERLAY',
+        // Optional sublabel — Regular 22px at 70% opacity per D-T375a-5.
+        // "4-3-3 LINEUP" matches stub line 36 ("Formation lines (4-3-3,
+        // 4-4-2, etc.)").
+        sublabel: '4-3-3 LINEUP',
+        // Sky Sports navy backdrop per stub line 26.
+        backgroundColor: SKY_SPORTS_AR_FORMATIONS_PALETTE.skyNavy,
+        // Foreground white for labels (player numbers / typography).
+        foregroundColor: SKY_SPORTS_AR_FORMATIONS_PALETTE.foreground,
+        // Premier League purple — 1px accent border per D-T375a-5; signals
+        // broadcaster brand color (the Sky Sports + PL pair is the
+        // canonical Premier League broadcast register per stub line 27).
+        accentColor: SKY_SPORTS_AR_FORMATIONS_PALETTE.premierPurple,
+        // Default true — explicit for clarity. The bottom-right
+        // "AR · STATIC FALLBACK" 14px monospace badge at 50% opacity
+        // signals to the operator that the live-mount path is gated.
+        showLiveMountIndicator: true,
+      },
+      // Sky Sports Sans is `proprietary-byo` per the preset frontmatter;
+      // Inter OFL is the rendered fallback per stub line 31 ("Sky Sports
+      // Sans fallback (Inter), Bold, 16-22 pt"). The primitive's centered-
+      // card label renders at fixed 48px (D-T375a-5); this `font` declaration
+      // governs the family stack only.
+      font: {
+        family: "'Sky Sports Sans', 'Inter', system-ui, -apple-system, sans-serif",
+        weight: 700,
+      },
+      // D-T375-5: declared (Sky Sports AR requires Zero Density / Stype
+      // tracking per stub line 42 + cluster SKILL line 42) but NOT exercised
+      // in v1 (primitive ignores `permissions` at render time per D-T375a-2).
+      // Forward-compat for the post-T-397 live-mount path.
+      permissions: ['camera-tracking' as const],
+      // setupRef intentionally OMITTED in v1 — live-mount via ThreeSceneClip
+      // (T-384) lands with T-375-live-mount post-T-397 Track A finale.
+    };
+  },
+};
+
 const squidGameGeometricBinding: ClipKindBinding = {
   runtimeId: 'frame-runtime',
   clipName: 'titleSequence',
@@ -4122,7 +4216,11 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
  * standings-table` (T-357), `caption → caption` (T-362), `fullScreen →
  * magic-wall-panel` (T-355), `lyrics → lyrics` (T-367), `titleSequence →
  * titleSequence` (T-350), `lowerThird → lower-third` (T-323),
- * `breakingBanner → breaking-banner` (T-324), with per-preset overrides for
+ * `breakingBanner → breaking-banner` (T-324), `weatherMap → weatherMap`
+ * (T-347c), `stormTracker → stormTracker` (T-347f), `arOverlay → arOverlay`
+ * (T-375 — first Cluster H consumer; §13 verifier for the arOverlay
+ * structural extension introduced in T-375a PR #460), with per-preset
+ * overrides for
  * multi-preset-per-clipKind cases (T-360 D-T360-2). Per-preset entries take
  * precedence; absent an override, the resolver falls back to the
  * clipKind-only mapping.
@@ -4144,6 +4242,7 @@ export const DEFAULT_CLIP_KIND_RESOLVER: ClipKindResolver = (clipKind, presetId)
   if (clipKind === 'breakingBanner') return cnnBreakingBinding;
   if (clipKind === 'weatherMap') return bbcMarkAllenCloudsBinding;
   if (clipKind === 'stormTracker') return nhcConeOfUncertaintyBinding;
+  if (clipKind === 'arOverlay') return skySportsArFormationsBinding;
   return undefined;
 };
 
