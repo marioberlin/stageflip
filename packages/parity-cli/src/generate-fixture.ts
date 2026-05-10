@@ -2288,6 +2288,138 @@ const skySportsArFormationsBinding: ClipKindBinding = {
   },
 };
 
+/**
+ * `hawkeye-var-3d-skeletal` (T-376) — second `arOverlay`-clipKind preset;
+ * wired via `PRESET_ID_BINDINGS` override (Pattern C — second-preset-for-
+ * clipKind via override; the `arOverlay` clipKind-default arm in
+ * `DEFAULT_CLIP_KIND_RESOLVER` STAYS bound to `skySportsArFormationsBinding`
+ * from T-375 / PR #461 / commit `a5614b56`). Brings Cluster H (AR &
+ * environmental overlays) from 1/4 → 2/4 ELIGIBLE.
+ *
+ * **NOT a §13 (F-30) verifier.** PR #461 (T-375 sky-sports-ar-formations
+ * as first downstream consumer) discharged the §13 obligation for the
+ * `arOverlay` clipKind structural extension introduced in T-375a (PR #460).
+ * This PR adds a new preset-binding entry; no new clipKind / element type /
+ * compositing mode.
+ *
+ * **v1 ships static-fallback rendering ONLY** per D-T375a-2: the primitive's
+ * `setupRef` API surface is reserved on the schema for forward compatibility
+ * but the v1 dispatch ignores `setupRef` at render time and always renders
+ * the static-fallback poster. Live-mount via `ThreeSceneClip` (Hawk-Eye
+ * limb-tracking 3D wireframe overlay; Three.js scene with skeletal mesh +
+ * animated offside lines on freeze-frame) lands with T-376-live-mount post-
+ * T-397 Track A finale (not yet merged).
+ *
+ * **Visual differentiation from sibling sky-sports-ar-formations preset:**
+ * - sky-sports: navy backdrop (`#0A1128`) + Premier League purple accent
+ *   border (`#38003C`) + `'Sky Sports Sans', 'Inter'` font stack — register:
+ *   pitch-anchored formation lineup.
+ * - hawkeye-var: PL purple backdrop (`#34003A`) + decision-green accent
+ *   border (`#00FC8A`) + `'Premier Sans', 'Champions', 'Space Grotesk'`
+ *   font stack — register: VAR offside-decision moment, dramatic suspense
+ *   beat per stub line 48 ("Most emotionally charged overlay in football").
+ *
+ * Both presets ship the SAME primitive (`arOverlay`) but render visually
+ * distinct cards — broadcaster brand canon lives in the per-preset binding,
+ * not the primitive (per D-T375a-3).
+ *
+ * **Single-frame static** at frame 60 for cluster-norm consistency with
+ * sibling sky-sports preset. PSNR ≥ 36 / SSIM ≥ 0.93 per stub line 52 —
+ * slightly looser than the cluster-norm 38/0.95 because the stub authorises
+ * that variance for "3D overlay variance"; the v1 static-fallback render is
+ * byte-deterministic so the looser thresholds carry no risk and reserve
+ * headroom for the post-T-397 live-mount path's expected variance.
+ */
+
+/**
+ * D-T376-2: sealed canonical Hawk-Eye / VAR palette. Brand canon is preset-
+ * specific (NOT primitive-specific per D-T375a-3) — the primitive composites
+ * OVER existing video / sport context and intentionally does NOT bake
+ * palettes; per-preset color canon (PL purple decision backdrop here;
+ * Sky Sports navy in sibling sky-sports-ar-formations binding; Olympic
+ * gold-red WR-line flash / NBA orange in pending T-377 / T-378 bindings)
+ * lives in the per-preset binding. The two offside-line colors are exported
+ * for future live-mount consumers; v1 static-fallback doesn't surface them
+ * on the rendered card.
+ */
+export const HAWKEYE_VAR_SKELETAL_PALETTE = Object.freeze({
+  /** PL purple background per stub line 30 — VAR-decision moment register
+   * (intentionally differentiates from sibling sky-sports-ar-formations
+   * preset's Sky Sports navy formation-lineup register). */
+  premierLeaguePurple: '#34003A',
+  /** Green accent per stub line 30 — "white text + green accents" decision-
+   * moment trim. Doubles as decision-confirmed flash color (T-376-decision-
+   * variant deferral). */
+  decisionGreen: '#00FC8A',
+  /** Foreground white — banner text + player labels per stub typography. */
+  foreground: '#FFFFFF',
+  /** Attacker offside-line red/orange per stub line 26 — reserved for
+   * live-mount path (T-376-live-mount post-T-397; not surfaced in v1
+   * static-fallback). */
+  attackerLine: '#FF6B35',
+  /** Last-defender offside-line blue/green per stub line 27 — reserved
+   * for live-mount path (T-376-live-mount post-T-397; not surfaced in
+   * v1 static-fallback). */
+  defenderLine: '#00B5D8',
+} as const);
+
+const hawkeyeVarSkeletalBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'arOverlay',
+  buildProps() {
+    return {
+      staticFallback: {
+        // Centered-card label per D-T375a-5: ALL CAPS Bold 48px (primitive-
+        // governed font-size). "VAR — CHECKING OFFSIDE" matches the preset
+        // stub's pre-decision suspense register per stub line 29 ("VAR —
+        // CHECKING [GOAL/PENALTY/OFFSIDE]"). Offside is the canonical
+        // Hawk-Eye 3D-skeletal-tracking use case (other VAR cases fall
+        // back to 2D-line variant per stub line 46).
+        label: 'VAR — CHECKING OFFSIDE',
+        // Optional sublabel — Regular 22px at 70% opacity per D-T375a-5.
+        // "HAWK-EYE 3D SKELETAL TRACKING" surfaces the limb-tracking
+        // attribution per stub title + line 24 ("3D wireframe / skeletal
+        // model overlaid on each player ... Hawk-Eye limb-tracking source").
+        sublabel: 'HAWK-EYE 3D SKELETAL TRACKING',
+        // PL purple backdrop per stub line 30. Different from sibling sky-
+        // sports preset's #0A1128 navy — the VAR decision-moment register is
+        // chromatically distinct from the formation-lineup register.
+        backgroundColor: HAWKEYE_VAR_SKELETAL_PALETTE.premierLeaguePurple,
+        // Foreground white for banner text + player labels (stub line 30
+        // "white text").
+        foregroundColor: HAWKEYE_VAR_SKELETAL_PALETTE.foreground,
+        // Decision-green 1px accent border per D-T375a-5; signals VAR
+        // decision-moment register. NOT PL purple (the backdrop) and NOT
+        // sky-sports' brand-purple — the green-on-purple combo is the
+        // canonical Hawk-Eye / VAR decision-moment register per stub line 30.
+        accentColor: HAWKEYE_VAR_SKELETAL_PALETTE.decisionGreen,
+        // Default true — explicit for clarity. The bottom-right
+        // "AR · STATIC FALLBACK" 14px monospace badge at 50% opacity
+        // signals to the operator that the live-mount path is gated.
+        showLiveMountIndicator: true,
+      },
+      // Premier Sans + Champions are `proprietary-byo` per the preset
+      // frontmatter; Space Grotesk OFL is the rendered fallback per stub
+      // line 33 ("'VAR — CHECKING ...' banner: Premier Sans / Champions
+      // fallback, Bold, 28-34 pt, ALL CAPS"). The primitive's centered-card
+      // label renders at fixed 48px (D-T375a-5); this `font` declaration
+      // governs the family stack only.
+      font: {
+        family:
+          "'Premier Sans', 'Champions', 'Space Grotesk', system-ui, -apple-system, sans-serif",
+        weight: 700,
+      },
+      // D-T376-5: declared (Hawk-Eye limb-tracking requires source data per
+      // stub line 46 + cluster SKILL line 42) but NOT exercised in v1
+      // (primitive ignores `permissions` at render time per D-T375a-2).
+      // Forward-compat for the post-T-397 live-mount path.
+      permissions: ['camera-tracking' as const],
+      // setupRef intentionally OMITTED in v1 — live-mount via ThreeSceneClip
+      // (T-384) lands with T-376-live-mount post-T-397 Track A finale.
+    };
+  },
+};
+
 const squidGameGeometricBinding: ClipKindBinding = {
   runtimeId: 'frame-runtime',
   clipName: 'titleSequence',
@@ -4208,6 +4340,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'heat-map-cool-to-warm': heatMapCoolToWarmBinding, // T-347e (Cluster C 3/6; third + final weatherMap consumer; verifies §13 (F-30) heat-map branch end-to-end; closes all three weatherMap §13 obligations once T-347c + T-347d also land)
   'twc-retrocast-8bit': twcRetrocast8bitBinding, // T-347g (Cluster C 5/6; preset clipKind: fullScreen stays; binding overrides clipName to the new weatherStar4000Panel primitive per T-328 / T-339 precedent. Pixel-perfect register; PSNR >= 44 / SSIM >= 0.99 tight thresholds)
   'twc-immersive-mixed-reality': twcImmersiveMixedRealityBinding, // T-347h (Cluster C 6/6 — CLOSES Cluster C ELIGIBLE; preset clipKind: fullScreen stays; binding overrides clipName to the new imrStaticFallback primitive. Static-fallback register; live ThreeSceneClip IMR rendering deferred to T-347h-three-scene Track A frontier per ADR-005)
+  'hawkeye-var-3d-skeletal': hawkeyeVarSkeletalBinding, // T-376 (Cluster H 2/4; second arOverlay consumer via PRESET_ID_BINDINGS override — Pattern C second-preset-for-clipKind; arOverlay clipKind-default arm stays bound to skySportsArFormationsBinding from T-375. NOT a §13 verifier — reuses arOverlay clipKind whose structural-extension verification was discharged by PR #461)
 };
 
 /**
