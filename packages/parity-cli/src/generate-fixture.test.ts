@@ -52,6 +52,7 @@ import {
   SEVERANCE_SURREAL_3D_GRAIN_PROPS,
   SEVERANCE_SURREAL_3D_PHOTOGRAPHIC_OVERLAY_PROPS,
   SEVERANCE_SURREAL_3D_TITLE_SEQUENCE_PROPS,
+  SKY_SPORTS_AR_FORMATIONS_PALETTE,
   SOCIAL_HANDLE_LOWER_THIRD_PROPS,
   SQUID_GAME_GEOMETRIC_SHOTS,
   STRANGER_GRAIN_PROPS,
@@ -4987,6 +4988,125 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(binding?.overlays).toHaveLength(2);
     expect(binding?.overlays?.[0]?.clipName).toBe('grain');
     expect(binding?.overlays?.[1]?.clipName).toBe('photographic-overlay');
+  });
+
+  // T-375 — first `arOverlay`-clipKind preset (`sky-sports-ar-formations`),
+  // wired as the `arOverlay` clipKind-default (Pattern C — first preset for
+  // a clipKind takes the clipKind-default slot, NOT a `PRESET_ID_BINDINGS`
+  // override). First Cluster H preset to ship; first preset to bind the
+  // `ArOverlay` primitive (T-375a, PR #460) end-to-end. **§13 verifier**
+  // for the arOverlay clipKind structural extension introduced in T-375a
+  // (PR #460 deferred pixel verification per CLAUDE.md §13 option 3).
+
+  it('resolves arOverlay to arOverlay on the frame-runtime (T-375 D-T375-1)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('arOverlay');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('arOverlay');
+  });
+
+  it('falls through to skySportsArFormationsBinding for sky-sports-ar-formations (T-375 AC #2)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('arOverlay', 'sky-sports-ar-formations');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('arOverlay');
+  });
+
+  it('falls through to skySportsArFormationsBinding for unknown arOverlay presetIds (T-375 AC #2)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('arOverlay', 'unknown-ar-preset');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('arOverlay');
+  });
+
+  it('exports SKY_SPORTS_AR_FORMATIONS_PALETTE with sealed brand constants (T-375 AC #1 / D-T375-2)', () => {
+    expect(SKY_SPORTS_AR_FORMATIONS_PALETTE.skyNavy).toBe('#0A1128');
+    expect(SKY_SPORTS_AR_FORMATIONS_PALETTE.premierPurple).toBe('#38003C');
+    expect(SKY_SPORTS_AR_FORMATIONS_PALETTE.foreground).toBe('#FFFFFF');
+    expect(Object.isFrozen(SKY_SPORTS_AR_FORMATIONS_PALETTE)).toBe(true);
+  });
+
+  it('builds arOverlay props with the sky-sports-ar-formations canonical static-fallback snapshot (T-375 AC #2 / D-T375-3)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('arOverlay');
+    if (!binding) throw new Error('test setup');
+    const props = binding.buildProps(undefined);
+    const staticFallback = props.staticFallback as {
+      label: string;
+      sublabel?: string;
+      backgroundColor?: string;
+      foregroundColor?: string;
+      accentColor?: string;
+      showLiveMountIndicator?: boolean;
+    };
+    expect(staticFallback.label).toBe('AR FORMATION OVERLAY');
+    expect(staticFallback.sublabel).toBe('4-3-3 LINEUP');
+    expect(staticFallback.backgroundColor).toBe(SKY_SPORTS_AR_FORMATIONS_PALETTE.skyNavy);
+    expect(staticFallback.foregroundColor).toBe(SKY_SPORTS_AR_FORMATIONS_PALETTE.foreground);
+    expect(staticFallback.accentColor).toBe(SKY_SPORTS_AR_FORMATIONS_PALETTE.premierPurple);
+    expect(staticFallback.showLiveMountIndicator).toBe(true);
+    const font = props.font as { family: string; weight: number };
+    expect(font.weight).toBe(700);
+    expect(font.family).toContain('Sky Sports Sans');
+    expect(font.family).toContain('Inter');
+    // permissions: ['camera-tracking'] declared (forward-compat); v1 ignores it per D-T375a-2.
+    expect(props.permissions).toEqual(['camera-tracking']);
+    // setupRef NOT supplied in v1 — live-mount lands with T-375-live-mount post-T-397.
+    expect(props.setupRef).toBeUndefined();
+    // Pattern C — no PRESET_ID_BINDINGS entry (first preset for arOverlay clipKind takes the clipKind-default slot).
+    expect(PRESET_ID_BINDINGS['sky-sports-ar-formations']).toBeUndefined();
+  });
+
+  it('routes sky-sports-ar-formations through the renderer-side clipKind-default (T-375 AC #5 round-trip; §13 verifier shape)', async () => {
+    const renderSpy = vi
+      .fn<(doc: unknown, frame: number) => Promise<Uint8Array>>()
+      .mockResolvedValue(new Uint8Array([0]));
+    const renderer = createGenerateFixtureRenderer({
+      resolver: DEFAULT_CLIP_KIND_RESOLVER,
+      render: renderSpy as unknown as Parameters<typeof createGenerateFixtureRenderer>[0]['render'],
+    });
+    await renderer.render({
+      preset: presetWith('arOverlay', 'sky-sports-ar-formations', 'ar'),
+      composition: COMPOSITION,
+      frame: 60,
+    });
+    const [doc] = renderSpy.mock.calls[0] ?? [];
+    const parsed = rirDocumentSchema.parse(doc);
+    const element = parsed.elements[0];
+    if (!element || element.content.type !== 'clip') throw new Error('expected clip element');
+    expect(element.content.clipName).toBe('arOverlay');
+    const params = element.content.params as {
+      staticFallback: { label: string; backgroundColor: string };
+    };
+    expect(params.staticFallback.label).toBe('AR FORMATION OVERLAY');
+    expect(params.staticFallback.backgroundColor).toBe('#0A1128');
+  });
+
+  // T-375 backward compat — every prior cluster's clipKind-default + per-
+  // preset overrides must still resolve correctly after the arOverlay
+  // clipKind-default lands.
+
+  it('clipKind-default for titleSequence STILL returns squidGameGeometric after T-375 lands (T-375 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('titleSequence');
+    expect(binding?.clipName).toBe('titleSequence');
+    const props = binding?.buildProps(undefined) as { style: string };
+    expect(props.style).toBe('palette-jump-cut');
+  });
+
+  it('falls through to lyricsBinding for karaoke-progressive-wipe after T-375 lands (T-375 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('lyrics', 'karaoke-progressive-wipe');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('lyrics');
+  });
+
+  it('routes big-number-stat-impact via PRESET_ID_BINDINGS after T-375 lands (T-375 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('bigNumber', 'big-number-stat-impact');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('animated-value');
+    expect(PRESET_ID_BINDINGS['big-number-stat-impact']).toBeDefined();
+  });
+
+  it('still returns undefined for unknown clipKinds after T-375 lands', () => {
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind')).toBeUndefined();
+    expect(DEFAULT_CLIP_KIND_RESOLVER('mysteryKind', 'sky-sports-ar-formations')).toBeUndefined();
   });
 });
 
