@@ -2089,6 +2089,67 @@ const heatMapCoolToWarmBinding: ClipKindBinding = {
   },
 };
 
+/**
+ * `twc-retrocast-8bit` (T-347g) — fifth Cluster C preset; wired via
+ * `PRESET_ID_BINDINGS` override (Pattern C — preset's `clipKind:
+ * fullScreen` STAYS UNCHANGED; binding overrides `clipName` to the
+ * NEW `weatherStar4000Panel` primitive per the T-328 msnbc-big-board
+ * / T-339 uefa-starball-refraction precedent).
+ *
+ * The existing `magic-wall-panel` primitive (which serves the
+ * fullScreen clipKind via DEFAULT_CLIP_KIND_RESOLVER) does NOT fit
+ * the WeatherStar 4000 register (period-authentic L-bar sidebar +
+ * 8-bit pixel font + pixel-precision rendering). T-347g introduces
+ * a dedicated primitive `weatherStar4000Panel` and binds the preset
+ * to it.
+ *
+ * **Single-frame static** at frame 60 (canonical "settled" register
+ * per stub line 50). Multi-frame ticker animation deferred to
+ * T-347g-ticker-cycle (v1 single-frame static suffices because the
+ * ticker uses `frameOffset` to pin its position).
+ *
+ * **Tight thresholds**: PSNR ≥ 44 / SSIM ≥ 0.99 — pixel-perfect
+ * register has very low variance per stub line 51.
+ */
+const twcRetrocast8bitBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'weatherStar4000Panel',
+  buildProps() {
+    return {
+      header: { city: 'Atlanta', condition: 'Partly Cloudy' },
+      temperature: { value: 78, unit: 'F' as const, foreground: 'gold' as const },
+      metadata: [
+        { label: 'HUMIDITY', value: '64%' },
+        { label: 'WIND', value: 'ENE 12 MPH' },
+        { label: 'PRESSURE', value: '30.05 IN' },
+        { label: 'DEW POINT', value: '64°F' },
+      ],
+      ticker: {
+        items: [
+          'BIRMINGHAM 76°F',
+          'CHARLESTON 80°F',
+          'CHARLOTTE 74°F',
+          'COLUMBIA 79°F',
+          'JACKSONVILLE 82°F',
+          'NASHVILLE 71°F',
+          'NEW ORLEANS 84°F',
+          'TAMPA 86°F',
+        ],
+        scrollSpeedPxPerFrame: 2 as const,
+        frameOffset: 60, // pins mid-scroll for parity register
+      },
+      showLBar: true,
+      showCrtScanlines: true,
+      // Press Start 2P fallback per stub line 31 + 8-bit pixel font
+      // canon. Press Start 2P is OFL (Google Fonts).
+      font: {
+        family: "'Press Start 2P', 'VT323', 'Courier New', monospace",
+        size: 96,
+      },
+    };
+  },
+};
+
 const squidGameGeometricBinding: ClipKindBinding = {
   runtimeId: 'frame-runtime',
   clipName: 'titleSequence',
@@ -4007,6 +4068,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'got-trajan-clockwork': gotTrajanClockworkBinding, // T-349 (Cluster D 6/6 — CLOSES Cluster D ELIGIBLE; fifth multi-clip composition; SECOND consumer of mode: 'sepia' confirms stable; canonical-default grain 0.15; live ThreeSceneClip integration deferred per stub-canon-explicit static-fallback allowance — stub line 41)
   'doppler-dbz-standard': dopplerDbzStandardBinding, // T-347d (Cluster C 2/6; second weatherMap consumer; first 'doppler-radar' style branch; verifies §13 (F-30) doppler-radar branch end-to-end)
   'heat-map-cool-to-warm': heatMapCoolToWarmBinding, // T-347e (Cluster C 3/6; third + final weatherMap consumer; verifies §13 (F-30) heat-map branch end-to-end; closes all three weatherMap §13 obligations once T-347c + T-347d also land)
+  'twc-retrocast-8bit': twcRetrocast8bitBinding, // T-347g (Cluster C 5/6; preset clipKind: fullScreen stays; binding overrides clipName to the new weatherStar4000Panel primitive per T-328 / T-339 precedent. Pixel-perfect register; PSNR >= 44 / SSIM >= 0.99 tight thresholds)
 };
 
 /**

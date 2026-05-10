@@ -294,6 +294,27 @@ export const LIVE_RUNTIME_MANIFEST: ClipsCatalogPkg = {
         // deterministic. Unblocks 1 of 6 Cluster C presets:
         // nhc-cone-of-uncertainty.
         'stormTracker',
+        // T-347g — weatherStar4000Panel primitive (Cluster C 5/6;
+        // dedicated primitive for the WeatherStar 4000 / 5000 era
+        // register because the existing magic-wall-panel — which
+        // serves the fullScreen clipKind via DEFAULT_CLIP_KIND_RESOLVER
+        // — does NOT fit the period-authentic L-bar + 8-bit pixel-
+        // precision register). Single-style v1 (no
+        // discriminatedUnion); pixel-precision non-negotiable
+        // (image-rendering: pixelated, 8-px-step font sizing, no
+        // anti-aliasing softeners); closed-form integer ticker
+        // scroll (deterministic; no useEffect). Canonical palettes
+        // WEATHER_STAR_BLUE_GRADIENT (#000066 → #000099),
+        // WEATHER_STAR_ORANGE_GOLD (#FF9900 / #DAA520),
+        // WEATHER_STAR_FOREGROUND_WHITE_GOLD (#FFFFFF / #DAA520) NOT
+        // theme-bound (TWC RetroCast first-class register canon per
+        // cluster SKILL "Retrocast register is nostalgia, not
+        // throwaway"). Theme slots: background → palette.background,
+        // foreground → palette.foreground. Bound to twc-retrocast-8bit
+        // preset via PRESET_ID_BINDINGS (preset clipKind: fullScreen
+        // stays unchanged; binding overrides clipName to
+        // 'weatherStar4000Panel' per T-328 / T-339 precedent).
+        'weatherStar4000Panel',
       ],
     },
   ],
