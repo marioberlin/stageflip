@@ -1776,6 +1776,184 @@ const nhcConeOfUncertaintyBinding: ClipKindBinding = {
   },
 };
 
+/**
+ * `doppler-dbz-standard` (T-347d) — second `weatherMap`-clipKind preset; wired
+ * via `PRESET_ID_BINDINGS` override (Pattern C — the clipKind-default arm
+ * is taken by T-347c `bbcMarkAllenCloudsBinding`). NEXRAD reflectivity
+ * dBZ palette (universal `DOPPLER_DBZ_REFLECTIVITY` 7-step canon — do
+ * NOT rebrand per cluster SKILL "Color palettes are standard, not
+ * brand"). v1 ships single-frame static at frame 60 (loop restart per
+ * stub line 50); multi-frame radar loop cycling deferred to T-347a-
+ * loop-cycle. PSNR ≥ 40 / SSIM ≥ 0.97 tighter thresholds (radar pixels
+ * are deterministic per stub line 50). `productMode: 'reflectivity'`
+ * register; the `'velocity'` alternative (bright-green inbound +
+ * bright-red outbound mesocyclone signature per stub line 28) defers
+ * to T-347d-velocity follow-up.
+ *
+ * **Geometry sized to 1280×720 default canvas**. Synthetic radar-coverage
+ * rectangle + 8 dBZ-reading regions positioned across the image —
+ * adequate-fidelity for parity-fixture verification. Real NEXRAD consumers
+ * wire live radar-tile data via T-347a-loop-cycle / T-347b-live-data
+ * (LiveDataClip integration; Track A frontier per ADR-005).
+ */
+
+/** D-T347d-4: 8 dBZ-region overlays (varying intensity readings across radar image). */
+export const DOPPLER_DBZ_STANDARD_REGIONS = [
+  {
+    id: 'severe-cell-1',
+    name: 'Severe cell',
+    dataValue: '60 dBZ',
+    screenPosition: { x: 580, y: 280 },
+  },
+  {
+    id: 'heavy-rain-1',
+    name: 'Heavy rain',
+    dataValue: '50 dBZ',
+    screenPosition: { x: 700, y: 340 },
+  },
+  {
+    id: 'moderate-rain-1',
+    name: 'Moderate',
+    dataValue: '40 dBZ',
+    screenPosition: { x: 460, y: 360 },
+  },
+  {
+    id: 'moderate-rain-2',
+    name: 'Moderate',
+    dataValue: '35 dBZ',
+    screenPosition: { x: 760, y: 460 },
+  },
+  {
+    id: 'light-rain-1',
+    name: 'Light rain',
+    dataValue: '25 dBZ',
+    screenPosition: { x: 380, y: 460 },
+  },
+  {
+    id: 'light-rain-2',
+    name: 'Light rain',
+    dataValue: '20 dBZ',
+    screenPosition: { x: 880, y: 280 },
+  },
+  {
+    id: 'drizzle-1',
+    name: 'Drizzle',
+    dataValue: '15 dBZ',
+    screenPosition: { x: 320, y: 240 },
+  },
+  {
+    id: 'tracker-loc',
+    name: 'Atlanta GA',
+    dataValue: '— 18:00 EDT',
+    screenPosition: { x: 640, y: 640 },
+  },
+] as const;
+
+/**
+ * D-T347d-4: nested polygon overlays in the canonical NEXRAD reflectivity
+ * palette, sized to 1280×720. Outer rings carry the lower-dBZ colors
+ * (`#00BFFF` light blue) and inner cores carry the higher-dBZ colors
+ * (`#FF0000` red, `#FF00FF` magenta hail-core). Layered in stacking
+ * order — outer first, inner last — so each subsequent polygon
+ * overdraws the prior. Mirrors the NEXRAD reflectivity rendering canon
+ * across NWS / weather.com / TWC reproductions.
+ *
+ * Palette anchor (per `DOPPLER_DBZ_REFLECTIVITY` 7-step canonical):
+ *   `#00BFFF` light blue (5-15 dBZ — light precipitation / drizzle)
+ *   `#00FF00` bright green (20-25 dBZ — moderate light rain)
+ *   `#009900` dark green (30-35 dBZ — moderate-to-heavy)
+ *   `#FFFF00` yellow (40-45 dBZ — heavy rain)
+ *   `#FFA500` orange (50 dBZ — very heavy)
+ *   `#FF0000` red (55-60 dBZ — severe / hail-bearing)
+ *   `#FF00FF` magenta (65+ dBZ — hail core / extreme)
+ */
+export const DOPPLER_DBZ_STANDARD_MAP_PATHS = [
+  // Radar coverage area — black base; the dBZ palette polygons overlay on top.
+  {
+    id: 'radar-coverage',
+    d: 'M 0,0 L 1280,0 L 1280,720 L 0,720 Z',
+    fill: '#0A0A0A',
+  },
+  // Outermost: drizzle / light precipitation (light blue) — broad coverage.
+  {
+    id: 'dbz-15',
+    d: 'M 240,200 L 480,160 L 720,180 L 920,220 L 1020,300 L 1000,420 L 920,520 L 760,560 L 540,560 L 360,520 L 260,420 L 220,300 Z',
+    fill: '#00BFFF',
+  },
+  // Light-moderate rain (bright green).
+  {
+    id: 'dbz-25',
+    d: 'M 320,240 L 520,200 L 720,220 L 880,260 L 940,340 L 920,440 L 820,500 L 660,520 L 480,500 L 360,460 L 300,380 L 290,300 Z',
+    fill: '#00FF00',
+  },
+  // Moderate-heavy (dark green).
+  {
+    id: 'dbz-35',
+    d: 'M 380,280 L 540,240 L 700,260 L 840,300 L 880,380 L 860,460 L 760,500 L 620,500 L 480,480 L 400,440 L 360,380 Z',
+    fill: '#009900',
+  },
+  // Heavy rain (yellow).
+  {
+    id: 'dbz-45',
+    d: 'M 440,300 L 580,280 L 700,300 L 800,340 L 820,400 L 800,460 L 720,480 L 600,480 L 500,460 L 440,420 L 420,360 Z',
+    fill: '#FFFF00',
+  },
+  // Very heavy (orange).
+  {
+    id: 'dbz-50',
+    d: 'M 480,320 L 600,300 L 700,320 L 760,360 L 780,400 L 760,440 L 680,460 L 580,460 L 500,440 L 470,400 L 470,360 Z',
+    fill: '#FFA500',
+  },
+  // Severe / hail-bearing (red) — the supercell core.
+  {
+    id: 'dbz-60',
+    d: 'M 540,340 L 620,330 L 690,350 L 730,380 L 720,420 L 660,440 L 580,440 L 530,420 L 520,380 Z',
+    fill: '#FF0000',
+  },
+  // Hail core (magenta) — innermost, smallest polygon.
+  {
+    id: 'dbz-65',
+    d: 'M 580,360 L 640,355 L 680,375 L 680,400 L 640,415 L 590,410 L 575,385 Z',
+    fill: '#FF00FF',
+  },
+] as const;
+
+const dopplerDbzStandardBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'weatherMap',
+  buildProps() {
+    return {
+      style: 'doppler-radar' as const,
+      productMode: 'reflectivity' as const,
+      // D-T347d-3: pin sweep beam at quarter-turn (3 o'clock); single-
+      // frame static (multi-frame loop deferred to T-347a-loop-cycle).
+      loopFrameIndex: 0,
+      sweepBeamPhase: 0.25,
+      regions: DOPPLER_DBZ_STANDARD_REGIONS.map((r) => ({
+        id: r.id,
+        name: r.name,
+        dataValue: r.dataValue,
+        screenPosition: { ...r.screenPosition },
+      })),
+      mapPaths: DOPPLER_DBZ_STANDARD_MAP_PATHS.map((p) => ({
+        id: p.id,
+        d: p.d,
+        fill: p.fill,
+      })),
+      // Open Sans Regular per stub line 32 "14-16pt"; mid-range size 14.
+      // OFL — no `proprietary-byo` here (Open Sans is the canonical
+      // license-cleared sans-serif used across NWS / NEXRAD reproductions).
+      font: {
+        family: 'Open Sans, system-ui, -apple-system, sans-serif',
+        weight: 400,
+        size: 14,
+      },
+      // Top-left legend showing 7-step NEXRAD dBZ palette swatches.
+      legend: { enabled: true, position: 'top-left' as const },
+    };
+  },
+};
+
 const squidGameGeometricBinding: ClipKindBinding = {
   runtimeId: 'frame-runtime',
   clipName: 'titleSequence',
@@ -3692,6 +3870,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'succession-home-video': successionHomeVideoBinding, // T-352 (Cluster D 4/6; third multi-clip composition; FIRST consumer of mode: 'sepia' AND non-default grain intensity 0.30)
   'severance-surreal-3d': severanceSurreal3dBinding, // T-353 (Cluster D 5/6; fourth multi-clip composition; SECOND consumer of mode: 'cinematic-lut'; FIRST below-default grain intensity 0.10; live ThreeSceneClip integration deferred per stub-canon-explicit static-fallback allowance)
   'got-trajan-clockwork': gotTrajanClockworkBinding, // T-349 (Cluster D 6/6 — CLOSES Cluster D ELIGIBLE; fifth multi-clip composition; SECOND consumer of mode: 'sepia' confirms stable; canonical-default grain 0.15; live ThreeSceneClip integration deferred per stub-canon-explicit static-fallback allowance — stub line 41)
+  'doppler-dbz-standard': dopplerDbzStandardBinding, // T-347d (Cluster C 2/6; second weatherMap consumer; first 'doppler-radar' style branch; verifies §13 (F-30) doppler-radar branch end-to-end)
 };
 
 /**
