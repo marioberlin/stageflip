@@ -1,0 +1,30 @@
+{
+  "name": "nhc-cone-of-uncertainty",
+  "cluster": "weather",
+  "kind": "stormTracker",
+  "description": "Parity fixture for preset 'nhc-cone-of-uncertainty' (cluster weather, kind stormTracker)",
+  "composition": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [
+    60
+  ],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "fonts": {
+    "preferred": {
+      "family": "Open Sans",
+      "license": "ofl"
+    },
+    "fallback": {
+      "family": "Open Sans",
+      "weight": 600,
+      "license": "ofl"
+    }
+  }
+}
