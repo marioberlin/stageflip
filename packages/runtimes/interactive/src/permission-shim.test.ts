@@ -5,6 +5,12 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { makeInteractiveClip } from './contract-tests/fixtures.js';
+import {
+  createTenantFlagCache,
+  type TenantFlagPopulator,
+  type TenantFlagTarget,
+  type TenantFlagValue,
+} from './host/tenant-flag-cache.js';
 import type { PermissionBrowserApi } from './permission-shim.js';
 import { PermissionShim } from './permission-shim.js';
 
@@ -200,5 +206,148 @@ describe('PermissionShim', () => {
     // acceptable for this test; we just want the call not to crash the
     // process.
     expect(typeof result.granted).toBe('boolean');
+  });
+});
+
+// T-411c — tenant-flag matrix integration. Covers every (setting, target)
+// cell of T-411 D-T411-4 plus the cache-miss default-deny path, the
+// telemetry shape, and the back-compat path (no `tenantFlagGate` option).
+
+function makePopulator(value: TenantFlagValue | null): TenantFlagPopulator {
+  return vi.fn(async () => value);
+}
+
+const MATRIX_CELLS: ReadonlyArray<{
+  setting: TenantFlagValue;
+  target: TenantFlagTarget;
+  expected: 'live-mount' | 'static-fallback-only';
+}> = [
+  { setting: 'disabled', target: 'html', expected: 'static-fallback-only' },
+  { setting: 'disabled', target: 'browser-live-preview', expected: 'static-fallback-only' },
+  { setting: 'disabled', target: 'on-device-display', expected: 'static-fallback-only' },
+  { setting: 'preview', target: 'html', expected: 'live-mount' },
+  { setting: 'preview', target: 'browser-live-preview', expected: 'live-mount' },
+  { setting: 'preview', target: 'on-device-display', expected: 'static-fallback-only' },
+  { setting: 'ga', target: 'html', expected: 'live-mount' },
+  { setting: 'ga', target: 'browser-live-preview', expected: 'live-mount' },
+  { setting: 'ga', target: 'on-device-display', expected: 'live-mount' },
+];
+
+describe('PermissionShim — T-411c tenant-flag matrix', () => {
+  for (const { setting, target, expected } of MATRIX_CELLS) {
+    it(`AC #16 — matrix cell (${setting} × ${target}) routes to ${expected}`, async () => {
+      const cache = createTenantFlagCache({ populator: makePopulator(setting) });
+      await cache.populate('tenant-a');
+      const stream: MediaStream = {
+        getTracks: () => [{ stop: vi.fn() } as unknown as MediaStreamTrack],
+      } as unknown as MediaStream;
+      const getUserMedia = vi.fn().mockResolvedValue(stream);
+      const shim = new PermissionShim({ browser: makeBrowser(getUserMedia) });
+      const clip = makeInteractiveClip({ permissions: ['mic'] });
+      const result = await shim.mount(clip, {
+        tenantFlagGate: { cache, tenantId: 'tenant-a', target },
+      });
+      if (expected === 'live-mount') {
+        expect(result.granted).toBe(true);
+      } else {
+        expect(result.granted).toBe(false);
+        if (!result.granted) {
+          expect(result.reason).toBe('tenant-flag-denied');
+        }
+      }
+    });
+  }
+
+  it('AC #13 — cache miss is treated as disabled (default-deny per T-411 D-T411-5)', async () => {
+    const cache = createTenantFlagCache({ populator: makePopulator('ga') });
+    // Deliberately skip populate('tenant-x').
+    const getUserMedia = vi.fn();
+    const shim = new PermissionShim({ browser: makeBrowser(getUserMedia) });
+    const result = await shim.mount(makeInteractiveClip({ permissions: ['mic'] }), {
+      tenantFlagGate: { cache, tenantId: 'tenant-x', target: 'html' },
+    });
+    expect(result.granted).toBe(false);
+    if (!result.granted) {
+      expect(result.reason).toBe('tenant-flag-denied');
+    }
+    // Critical: getUserMedia must NOT have been called — the tenant-flag
+    // gate runs as step 0, BEFORE the family-policy gate and BEFORE any
+    // permission prompt.
+    expect(getUserMedia).not.toHaveBeenCalled();
+  });
+
+  it('AC #12 — telemetry includes flagValue + tenantId + target on flag deny', async () => {
+    const cache = createTenantFlagCache({ populator: makePopulator('disabled') });
+    await cache.populate('tenant-a');
+    const emitTelemetry = vi.fn();
+    const shim = new PermissionShim({ emitTelemetry });
+    await shim.mount(makeInteractiveClip({ permissions: ['mic'] }), {
+      tenantFlagGate: { cache, tenantId: 'tenant-a', target: 'html' },
+    });
+    expect(emitTelemetry).toHaveBeenCalledWith('permission-denied-tenant-flag', {
+      family: 'shader',
+      tenantId: 'tenant-a',
+      target: 'html',
+      flagValue: 'disabled',
+    });
+  });
+
+  it('AC #12 — telemetry carries flagValue: cache-miss when readSync returns undefined', async () => {
+    const cache = createTenantFlagCache({ populator: makePopulator('ga') });
+    const emitTelemetry = vi.fn();
+    const shim = new PermissionShim({ emitTelemetry });
+    await shim.mount(makeInteractiveClip({ permissions: ['mic'] }), {
+      tenantFlagGate: { cache, tenantId: 'tenant-x', target: 'on-device-display' },
+    });
+    expect(emitTelemetry).toHaveBeenCalledWith('permission-denied-tenant-flag', {
+      family: 'shader',
+      tenantId: 'tenant-x',
+      target: 'on-device-display',
+      flagValue: 'cache-miss',
+    });
+  });
+
+  it('AC #11 — tenant-flag deny short-circuits BEFORE the family-policy gate', async () => {
+    const cache = createTenantFlagCache({ populator: makePopulator('disabled') });
+    await cache.populate('tenant-a');
+    // canMount returns true — but the tenant-flag gate runs first and
+    // denies. We assert that canMount was NOT consulted on the deny path.
+    const canMount = vi.fn().mockReturnValue(true);
+    const shim = new PermissionShim({ tenantPolicy: { canMount } });
+    const result = await shim.mount(makeInteractiveClip({ permissions: ['mic'] }), {
+      tenantFlagGate: { cache, tenantId: 'tenant-a', target: 'html' },
+    });
+    expect(result.granted).toBe(false);
+    if (!result.granted) {
+      expect(result.reason).toBe('tenant-flag-denied');
+    }
+    expect(canMount).not.toHaveBeenCalled();
+  });
+
+  it('AC #11 — when tenant-flag passes, family-policy gate still runs', async () => {
+    const cache = createTenantFlagCache({ populator: makePopulator('preview') });
+    await cache.populate('tenant-a');
+    const canMount = vi.fn().mockReturnValue(false);
+    const shim = new PermissionShim({ tenantPolicy: { canMount } });
+    const result = await shim.mount(makeInteractiveClip({ permissions: ['mic'] }), {
+      tenantFlagGate: { cache, tenantId: 'tenant-a', target: 'html' },
+    });
+    expect(result.granted).toBe(false);
+    if (!result.granted) {
+      expect(result.reason).toBe('tenant-denied');
+    }
+    expect(canMount).toHaveBeenCalledWith('shader');
+  });
+
+  it('AC #18 — back-compat: shim with no tenantFlagGate option behaves identically to the T-306 baseline', async () => {
+    const stream: MediaStream = {
+      getTracks: () => [{ stop: vi.fn() } as unknown as MediaStreamTrack],
+    } as unknown as MediaStream;
+    const getUserMedia = vi.fn().mockResolvedValue(stream);
+    const shim = new PermissionShim({ browser: makeBrowser(getUserMedia) });
+    const result = await shim.mount(makeInteractiveClip({ permissions: ['mic'] }));
+    // Permissive default tenant policy + granted mic → granted.
+    expect(result.granted).toBe(true);
+    expect(getUserMedia).toHaveBeenCalledWith({ audio: true });
   });
 });
