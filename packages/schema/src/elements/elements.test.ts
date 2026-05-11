@@ -272,10 +272,76 @@ describe('mediaProvenanceSchema (T-421 / ADR-008 §D2)', () => {
   });
 
   it('accepts every MEDIA_PROVENANCE_KINDS literal', () => {
-    expect(MEDIA_PROVENANCE_KINDS).toHaveLength(7);
+    // Bumped from 7 to 8 in T-438 to add 'asset-gen-pending' (the
+    // optimistic-placeholder variant; ADR-008 §D2 follow-up).
+    expect(MEDIA_PROVENANCE_KINDS).toHaveLength(8);
     for (const kind of MEDIA_PROVENANCE_KINDS) {
       expect(mediaProvenanceSchema.parse({ kind }).kind).toBe(kind);
     }
+  });
+
+  it('T-438: includes asset-gen-pending in the tuple', () => {
+    expect(MEDIA_PROVENANCE_KINDS).toContain('asset-gen-pending');
+  });
+
+  it('T-438: parses pending variant with placeholderId + estimatedCompletionAt', () => {
+    const parsed = mediaProvenanceSchema.parse({
+      kind: 'asset-gen-pending',
+      placeholderId: 'ph-abc-123',
+      estimatedCompletionAt: '2026-05-11T00:00:30.000Z',
+      provider: 'tts-kokoro',
+      cacheKey: 'a'.repeat(64),
+    });
+    expect(parsed.kind).toBe('asset-gen-pending');
+    expect(parsed.placeholderId).toBe('ph-abc-123');
+    expect(parsed.estimatedCompletionAt).toBe('2026-05-11T00:00:30.000Z');
+    expect(parsed.provider).toBe('tts-kokoro');
+  });
+
+  it('T-438: pending variant round-trips byte-equal', () => {
+    const original = {
+      kind: 'asset-gen-pending' as const,
+      placeholderId: 'ph-uuid',
+      estimatedCompletionAt: '2026-05-11T00:01:00.000Z',
+      provider: 'video-seedance',
+      model: 'seedance-v1',
+      cacheKey: 'b'.repeat(64),
+    };
+    const once = mediaProvenanceSchema.parse(original);
+    const twice = mediaProvenanceSchema.parse(JSON.parse(JSON.stringify(once)));
+    expect(twice).toEqual(once);
+  });
+
+  it('T-438: rejects unknown field on pending variant (strict)', () => {
+    expect(() =>
+      mediaProvenanceSchema.parse({
+        kind: 'asset-gen-pending',
+        placeholderId: 'p',
+        futureField: 'x',
+      }),
+    ).toThrow();
+  });
+
+  it('T-438: pending variant works without optional fields', () => {
+    const parsed = mediaProvenanceSchema.parse({ kind: 'asset-gen-pending' });
+    expect(parsed.kind).toBe('asset-gen-pending');
+    expect(parsed.placeholderId).toBeUndefined();
+    expect(parsed.estimatedCompletionAt).toBeUndefined();
+  });
+
+  it('T-438: rejects malformed estimatedCompletionAt (must be ISO 8601 datetime)', () => {
+    expect(() =>
+      mediaProvenanceSchema.parse({
+        kind: 'asset-gen-pending',
+        estimatedCompletionAt: '2026-05-11',
+      }),
+    ).toThrow();
+  });
+
+  it('T-438: rejects empty-string placeholderId (must be ≥1 char)', () => {
+    expect(() =>
+      mediaProvenanceSchema.parse({ kind: 'asset-gen-pending', placeholderId: '' }),
+    ).toThrow();
   });
 
   it('rejects an unknown kind', () => {
@@ -410,5 +476,25 @@ describe('audio/image/video elements carry optional provenance (T-421)', () => {
     });
     if (el.type !== 'audio') throw new Error('type');
     expect(el.provenance?.provider).toBe('tts-kokoro');
+  });
+
+  it('T-438: accepts pending provenance kind on audio/image/video', () => {
+    for (const [schema, base] of [
+      [audioElementSchema, { type: 'audio' as const, src: 'asset:a1' as const }],
+      [imageElementSchema, { type: 'image' as const, src: 'asset:i1' as const }],
+      [videoElementSchema, { type: 'video' as const, src: 'asset:v1' as const }],
+    ] as const) {
+      const parsed = schema.parse({
+        ...BASE,
+        ...base,
+        provenance: {
+          kind: 'asset-gen-pending',
+          placeholderId: 'ph-x',
+          estimatedCompletionAt: '2026-05-11T00:00:30.000Z',
+        },
+      } as unknown) as { provenance?: MediaProvenance };
+      expect(parsed.provenance?.kind).toBe('asset-gen-pending');
+      expect(parsed.provenance?.placeholderId).toBe('ph-x');
+    }
   });
 });

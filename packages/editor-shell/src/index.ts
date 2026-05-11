@@ -205,6 +205,14 @@ export {
   AspectRatioPreview,
 } from './aspect-ratio/components';
 
+// T-438 — optimistic asset-generation placeholder visual + hook.
+export {
+  AssetGenPlaceholder,
+  type AssetGenPlaceholderEntry,
+  type AssetGenPlaceholderProps,
+  useAssetGenPlaceholders,
+} from './elements/asset-gen-placeholder';
+
 // T-201 — multi-size banner preview grid (StageFlip.Display).
 export {
   type BannerSize,

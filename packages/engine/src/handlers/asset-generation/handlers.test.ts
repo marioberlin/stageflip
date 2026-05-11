@@ -15,6 +15,8 @@ import {
   type AssetGenerationContext,
   type ExecuteAdapterCallInput,
   type ExecuteAdapterCallResult,
+  type PlaceholderDispatchInput,
+  type PlaceholderResolver,
 } from './handlers.js';
 
 function collectingSink(): PatchSink & { drain(): JsonPatchOp[] } {
@@ -104,6 +106,9 @@ function makeCtx(opts: {
   gate?: LicenseGate;
   tenant?: TenantContext;
   executeAdapterCall?: (input: ExecuteAdapterCallInput) => Promise<ExecuteAdapterCallResult>;
+  placeholderResolver?: PlaceholderResolver;
+  randomUuid?: () => string;
+  nowMs?: () => number;
 }): AssetGenerationContext & { patchSink: ReturnType<typeof collectingSink> } {
   return {
     document: opts.document ?? makeDoc(),
@@ -114,6 +119,11 @@ function makeCtx(opts: {
     ...(opts.executeAdapterCall !== undefined
       ? { executeAdapterCall: opts.executeAdapterCall }
       : {}),
+    ...(opts.placeholderResolver !== undefined
+      ? { placeholderResolver: opts.placeholderResolver }
+      : {}),
+    ...(opts.randomUuid !== undefined ? { randomUuid: opts.randomUuid } : {}),
+    ...(opts.nowMs !== undefined ? { nowMs: opts.nowMs } : {}),
   };
 }
 
@@ -515,5 +525,242 @@ describe('barrel + invariants', () => {
     // elementId differs because element ids are doc-position-derived and the
     // factory builds a fresh empty doc each time, so both produce 'el-1'.
     expect(a.provenance.cacheKey).toBe(b.provenance.cacheKey);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T-438 — optimistic-placeholder path
+// ---------------------------------------------------------------------------
+
+function fakeResolver(): PlaceholderResolver & {
+  calls: PlaceholderDispatchInput[];
+  resolveNext: () => void;
+} {
+  const calls: PlaceholderDispatchInput[] = [];
+  let resolveDeferred: (() => void) | null = null;
+  const deferred = new Promise<void>((res) => {
+    resolveDeferred = res;
+  });
+  return {
+    calls,
+    resolveNext: () => {
+      if (resolveDeferred) resolveDeferred();
+    },
+    dispatch: async (input) => {
+      calls.push(input);
+      // Block until the test releases — verifies the handler does NOT await.
+      await deferred;
+    },
+  };
+}
+
+describe('generate_asset — T-438 optimistic placeholder path', () => {
+  it('returns asset_generation_unavailable when placeholderResolver seam absent', async () => {
+    const ctx = makeCtx({
+      registry: fakeRegistryWithTtsAdapter(),
+      gate: allowAllGate,
+      tenant: tenantContext,
+      // No placeholderResolver wired.
+    });
+    const r = (await find('generate_asset').handle(
+      { ...validInput, optimistic: true },
+      ctx as MutationContext,
+    )) as { ok: false; reason: string; detail?: string };
+    expect(r.ok).toBe(false);
+    expect(r.reason).toBe('asset_generation_unavailable');
+    expect(r.detail).toContain('placeholderResolver');
+  });
+
+  it('returns placeholder shape immediately and emits an asset-gen-pending element', async () => {
+    const resolver = fakeResolver();
+    const ctx = makeCtx({
+      registry: fakeRegistryWithTtsAdapter(),
+      gate: allowAllGate,
+      tenant: tenantContext,
+      placeholderResolver: resolver,
+      randomUuid: () => 'deadbeef-1234-5678-9abc-def012345678',
+      nowMs: () => Date.parse('2026-05-11T00:00:00.000Z'),
+    });
+    const r = (await find('generate_asset').handle(
+      { ...validInput, optimistic: true },
+      ctx as MutationContext,
+    )) as {
+      ok: true;
+      kind: 'placeholder';
+      slideId: string;
+      elementId: string;
+      placeholderId: string;
+      modality: string;
+      cacheKey: string;
+      estimatedCompletionAt?: string;
+    };
+    expect(r.ok).toBe(true);
+    expect(r.kind).toBe('placeholder');
+    expect(r.slideId).toBe('slide-1');
+    expect(r.elementId).toMatch(/^el-\d+$/);
+    expect(r.placeholderId).toBe('ph-deadbeef-1234-5678-9abc-def012345678');
+    expect(r.modality).toBe('tts');
+    expect(r.cacheKey).toMatch(/^tts\/[0-9a-f]{64}$/);
+    // Falls back to per-modality default (tts: 5s).
+    expect(r.estimatedCompletionAt).toBe('2026-05-11T00:00:05.000Z');
+
+    // Patch-sink saw one `add` op with pending provenance.
+    const ops = ctx.patchSink.drain();
+    expect(ops).toHaveLength(1);
+    const op = ops[0];
+    expect(op?.op).toBe('add');
+    expect(op?.path).toBe('/content/slides/0/elements/-');
+    const value = op?.value as Record<string, unknown>;
+    const provenance = value.provenance as Record<string, unknown>;
+    expect(provenance.kind).toBe('asset-gen-pending');
+    expect(provenance.placeholderId).toBe('ph-deadbeef-1234-5678-9abc-def012345678');
+    expect(provenance.cacheKey).toBe(r.cacheKey);
+    expect(provenance.provider).toBe('tts-fake');
+    expect(provenance.estimatedCompletionAt).toBe('2026-05-11T00:00:05.000Z');
+  });
+
+  it('invokes placeholderResolver.dispatch with the licensed adapter list and cacheKey', async () => {
+    const resolver = fakeResolver();
+    const ctx = makeCtx({
+      registry: fakeRegistryWithTtsAdapter(),
+      gate: allowAllGate,
+      tenant: tenantContext,
+      placeholderResolver: resolver,
+    });
+    const r = (await find('generate_asset').handle(
+      { ...validInput, optimistic: true },
+      ctx as MutationContext,
+    )) as { ok: true; cacheKey: string; placeholderId: string };
+
+    // The dispatch ran in the background — give the microtask queue a turn.
+    await Promise.resolve();
+    expect(resolver.calls).toHaveLength(1);
+    const call = resolver.calls[0];
+    if (!call) throw new Error('expected dispatch call');
+    expect(call.placeholderId).toBe(r.placeholderId);
+    expect(call.cacheKey).toBe(r.cacheKey);
+    expect(call.modality).toBe('tts');
+    expect(call.licensed).toHaveLength(1);
+    expect(call.licensed[0]?.id).toBe('tts-fake');
+    expect(call.target.slideId).toBe('slide-1');
+    expect(call.target.elementType).toBe('audio');
+    expect(call.target.src).toBe('asset:tts-output-1');
+
+    // Now release the dispatch so the test doesn't leak an open promise.
+    resolver.resolveNext();
+  });
+
+  it('does NOT await the placeholderResolver.dispatch continuation', async () => {
+    // The fake resolver's dispatch awaits a deferred that we never release;
+    // if the handler awaited it, this `handle` call would hang. The
+    // assertion is implicit: the call resolves.
+    const resolver = fakeResolver();
+    const ctx = makeCtx({
+      registry: fakeRegistryWithTtsAdapter(),
+      gate: allowAllGate,
+      tenant: tenantContext,
+      placeholderResolver: resolver,
+    });
+    const start = Date.now();
+    const r = (await find('generate_asset').handle(
+      { ...validInput, optimistic: true },
+      ctx as MutationContext,
+    )) as { ok: true; kind: 'placeholder' };
+    const elapsed = Date.now() - start;
+    expect(r.ok).toBe(true);
+    expect(r.kind).toBe('placeholder');
+    expect(elapsed).toBeLessThan(500); // sanity check: not blocked on dispatch
+    resolver.resolveNext();
+  });
+
+  it('seam-dispatch failures do not raise unhandled rejections on the handler', async () => {
+    // A resolver that throws synchronously inside dispatch.
+    const rejecting: PlaceholderResolver = {
+      dispatch: () => Promise.reject(new Error('boom')),
+    };
+    const ctx = makeCtx({
+      registry: fakeRegistryWithTtsAdapter(),
+      gate: allowAllGate,
+      tenant: tenantContext,
+      placeholderResolver: rejecting,
+    });
+    const r = (await find('generate_asset').handle(
+      { ...validInput, optimistic: true },
+      ctx as MutationContext,
+    )) as { ok: true; kind: 'placeholder' };
+    expect(r.ok).toBe(true);
+    expect(r.kind).toBe('placeholder');
+    // Give the rejection a turn — should be swallowed by the .catch.
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+
+  it('estimatedCompletionAt derived from adapter latencyMs.p95 when present', async () => {
+    const r0 = new AdapterRegistry();
+    r0.register({
+      id: 'tts-slow',
+      modality: { kind: 'tts' },
+      capability: {},
+      license: { kind: 'apache-2.0' },
+      sandbox: { kind: 'in-process' },
+      latencyMs: { p50: 1_000, p95: 7_500 },
+    });
+    const resolver = fakeResolver();
+    const ctx = makeCtx({
+      registry: r0,
+      gate: allowAllGate,
+      tenant: tenantContext,
+      placeholderResolver: resolver,
+      nowMs: () => Date.parse('2026-05-11T00:00:00.000Z'),
+    });
+    const r = (await find('generate_asset').handle(
+      { ...validInput, optimistic: true },
+      ctx as MutationContext,
+    )) as { ok: true; estimatedCompletionAt?: string };
+    // 7500ms from epoch base.
+    expect(r.estimatedCompletionAt).toBe('2026-05-11T00:00:07.500Z');
+    resolver.resolveNext();
+  });
+
+  it('back-compat: omitting optimistic runs the synchronous path identically', async () => {
+    const recorded: Array<{ adapterId: string }> = [];
+    const resolver = fakeResolver(); // wired but should NOT be used
+    const ctx = makeCtx({
+      registry: fakeRegistryWithTtsAdapter(),
+      gate: allowAllGate,
+      tenant: tenantContext,
+      placeholderResolver: resolver,
+      executeAdapterCall: async (input) => {
+        recorded.push({ adapterId: input.adapter.id });
+        return { ok: true };
+      },
+    });
+    const r = (await find('generate_asset').handle(validInput, ctx as MutationContext)) as {
+      ok: true;
+      kind?: string;
+      provenance: { kind: string };
+    };
+    expect(r.ok).toBe(true);
+    expect(r.kind).toBeUndefined(); // sync path doesn't return `kind`
+    expect(r.provenance.kind).toBe('tts'); // not 'asset-gen-pending'
+    expect(recorded).toHaveLength(1);
+    // Resolver was wired but NOT called.
+    expect(resolver.calls).toHaveLength(0);
+  });
+
+  it('placeholder slideId is the input.target.slideId; mounts on the right slide', async () => {
+    const resolver = fakeResolver();
+    const ctx = makeCtx({
+      registry: fakeRegistryWithTtsAdapter(),
+      gate: allowAllGate,
+      tenant: tenantContext,
+      placeholderResolver: resolver,
+    });
+    const r = (await find('generate_asset').handle(
+      { ...validInput, optimistic: true },
+      ctx as MutationContext,
+    )) as { ok: true; slideId: string };
+    expect(r.slideId).toBe('slide-1');
+    resolver.resolveNext();
   });
 });
