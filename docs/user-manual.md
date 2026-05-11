@@ -332,6 +332,22 @@ Beyond cluster-compose tools, StageFlip ships a small set of **semantic-layout**
 
 `arrange_reveal` is the newest addition; see `docs/tasks/T-407.md`.
 
+### 5.3 Asset-generation tools (Phase 14)
+
+The `asset-generation` handler bundle (T-423) exposes the Provider Seam (ADR-007) for agent use. Three tools cover the day-to-day asset-gen surface:
+
+| Tool | Outcome |
+|---|---|
+| `generate_asset` | Generate an audio / image / video / 3D / music / SFX asset via a routed adapter; returns the cached asset URL, `MediaProvenance`, `costIncurred`, and `budgetRemaining` |
+| `list_asset_providers` | Enumerate the adapters the tenant is permitted to use, filtered by license posture and per-modality capability |
+| `query_asset_cache` | Look up cached assets by content-addressed `cacheKey` (ADR-008 §D1) |
+
+Full enumeration is auto-generated under `skills/stageflip/tools/asset-generation/SKILL.md`. Adapter catalogue (per-vendor capability / license / cost / latency) is auto-generated under `skills/stageflip/reference/asset-providers/SKILL.md`.
+
+### 5.4 Streaming agent events (T-442)
+
+Agent execution streams `ExecutorEvent`s over SSE / `ReadableStream`. Long-running generations (asset-gen, multi-step planning) emit incremental progress, partial outputs, and tool-call boundaries. The editor and CLI both subscribe to the stream for progressive UI; see `skills/stageflip/concepts/streaming-agent-events/SKILL.md`.
+
 ---
 
 ## 6. Common Workflows
@@ -371,6 +387,12 @@ $ stageflip bulk-render coffee-ad prospects.csv --out-dir=./renders
 ### 6.3 Collaborative editing
 
 Open the web editor. Share the document URL. Other users with access see each other's cursors and selections in real time. Undo works per user; conflicts resolve via CRDT (Yjs).
+
+### 6.4 Async asset generation with optimistic placeholders (T-438)
+
+Image / video / 3D / music generation can take seconds-to-minutes. The agent returns a **placeholder element** immediately — a lightweight stand-in (typed mediaKind, dimensions, transient `cacheKey`) — so the document model is editable while the adapter runs. When generation completes, the SSE stream emits a swap event and the placeholder progressively upgrades to the real asset.
+
+The placeholder respects layout, transitions, and parity; rendering the document with a still-pending placeholder is safe (the placeholder ships its own deterministic render path). See `skills/stageflip/concepts/optimistic-placeholders/SKILL.md`.
 
 ---
 
@@ -413,6 +435,18 @@ Every preset × export-target combination is verified by the `Gate - preset × e
 
 A preset that ships a parity fixture inconsistent with the router is rejected at PR time, not at user-render time.
 
+### 8.3 Provenance-aware exports (Phase 14)
+
+Every Phase 14 AI-generated asset carries a `MediaProvenance` payload (ADR-008 §D2). Exporters surface this provenance per format so downstream platforms can comply with FTC AI-content disclosure rules and the EU AI Act:
+
+| Exporter | Marker | Task |
+|---|---|---|
+| Display IAB HTML5 ZIP | Auto-marks AI-generated frames per FTC + EU AI Act; embeds `data-ai-content` attribute on affected elements | T-439 |
+| Video MP4 / MOV / WebM | Opt-in watermark + `ai-content.json` sidecar bundled with the export ZIP | T-440 |
+| PPTX | `<a:extLst>` extension under each AI-generated picture / video; preserved through round-trip | T-441 |
+
+The PPTX extension survives PowerPoint round-trip; the video sidecar is a sibling file (the MP4 itself remains a vanilla container). Display exports always carry the marker. Video and PPTX provenance can be toggled per export profile.
+
 ---
 
 ## 9. Troubleshooting
@@ -444,7 +478,7 @@ A preset that ships a parity fixture inconsistent with the router is rejected at
 
 ### 10.1 GA-readiness audit (`pnpm check-ga-readiness`, T-410)
 
-For maintainers and self-hosters: `pnpm check-ga-readiness` walks the repo, verifies a 24-criterion checklist spanning cluster ratification, CI gates, documentation, frontier runtime, enterprise admin, and Phase 13 closeout, and emits `docs/ga-readiness-report.md` with PASS / FAIL / WARN per criterion.
+For maintainers and self-hosters: `pnpm check-ga-readiness` walks the repo, verifies a 35-criterion checklist (8 categories) spanning cluster ratification, CI gates, documentation, frontier runtime, enterprise admin, Phase 13 closeout, and **Phase 14 — AI asset generation** (Category 8, added by T-447). It emits `docs/ga-readiness-report.md` with PASS / FAIL / WARN per criterion.
 
 This is a **manual phase-boundary audit**, not a CI gate. Run it at phase boundaries to surface the GA punch list. Exit code is 0 when all criteria are PASS / WARN / N/A; non-zero when any criterion FAILs.
 
@@ -465,6 +499,87 @@ Published at https://stageflip.com/roadmap. Highlights:
 - **Near term**: Blender bake runtime (photoreal 3D); Three.js editor preview parity
 - **Mid term**: Unreal Movie Render Queue runtime; advanced variable bindings (live data); real-time cursors in the Video timeline
 - **Long term**: On-device render previews (WebGPU); enterprise SSO/SCIM; custom runtime SDK for third-party extensions
+
+---
+
+## 13. Phase 14 — AI Asset Generation
+
+StageFlip ships first-class AI asset generation across five modalities (audio / image / video / 3D / music+SFX) behind a vendor-neutral seam. The model: agents describe what they need; the platform routes to a per-tenant-permitted adapter; results are cached, license-classified, and provenance-stamped.
+
+### 13.1 Provider Seam (ADR-007) + Asset Generation Contract (ADR-008)
+
+Two architectural decisions frame the Phase 14 surface:
+
+- **ADR-007 — Provider Seam Pattern.** A single orchestration layer (`@stageflip/adapters-core`: `AdapterRegistry` + `CapabilityParser` + `LicenseGate` + `FallbackChainExecutor`) sits between agent tools and every vendor adapter. The seam is reused across LLM, asset-gen, and future modalities.
+- **ADR-008 — Asset Generation Contract.** Five canonical modality contracts (audio / image / video / 3D / music) and seven source-grounded provider interfaces. `MediaProvenance` is non-optional on every generated element. `AssetCache` uses content-addressed cache keys (§D1) so re-generation with identical inputs is free.
+
+Both ADRs live at `docs/decisions/ADR-007-provider-seam-pattern.md` and `docs/decisions/ADR-008-asset-generation.md`.
+
+### 13.2 Reference adapters
+
+Nine reference adapters land in Phase 14 β. All ship in `stub mode v1` (deterministic local fixtures); production wire-up is per-tenant.
+
+| Adapter | Modality | License posture | Capability highlights |
+|---|---|---|---|
+| `@stageflip/tts-kokoro` | TTS | Apache 2.0 | Word-timestamp output (T-436 captions bypass) |
+| `@stageflip/tts-fish-speech` | TTS | Apache 2.0 | Voice cloning (consent-gated) |
+| `@stageflip/3d-tripo` | 3D | Proprietary-byo | Quad topology + auto-rigging (character) |
+| `@stageflip/3d-meshy` | 3D | Proprietary-byo | Triangle topology (props + environment) |
+| `@stageflip/video-seedance` | Video | Proprietary-byo | 15s 1080p + native audio + lip-sync (via fal API) |
+| `@stageflip/video-runway` | Video | Proprietary-byo | Runway Gen-4 production-tier (no audio) |
+| `@stageflip/music-acestep` | Music | MIT | 5-minute track in <10s |
+| `@stageflip/music-yue` | Music | Apache 2.0 (attribution req.) | Monetizable output |
+| `@stageflip/sfx-stable-audio` | SFX | Apache 2.0 | Short-form Stable Audio Open |
+
+Full catalogue (cost / latency / per-modality capabilities) is auto-generated under `skills/stageflip/reference/asset-providers/SKILL.md`.
+
+### 13.3 Cost budget (T-443)
+
+Every `generate_asset` tool result returns:
+
+- `costIncurred` — the cents spent on this call by the chosen adapter.
+- `budgetRemaining` — the tenant's remaining monthly AI-generation budget.
+
+When the cheapest viable adapter would exceed the remaining budget, the agent re-routes to a cheaper provider in the fallback chain. Per-tenant cost ledger lives in `TenantCostTrackerStore`. See `skills/stageflip/concepts/cost-budget/SKILL.md`.
+
+### 13.4 Adapter sandbox model (T-444)
+
+Each adapter declares a `sandbox.kind` in its `AdapterDescriptor`. The platform routes the adapter invocation through a matching `SandboxRunner`:
+
+| `sandbox.kind` | Runner | Use |
+|---|---|---|
+| `none` | Direct invocation | First-party adapters with no third-party code |
+| `process` | OS-process boundary | Local binaries (e.g. on-device models) |
+| `container` | OCI container | Bundled vendor binaries |
+| `network-isolated` | Container + egress allowlist | Vendor APIs with constrained outbound surface |
+
+Per-tenant credentials never leave `TenantAdapterCredentialsStore`; the runner injects them at invocation boundary only. Every adapter call emits an audit event consumed by the security audit (§13.6). See `skills/stageflip/concepts/adapter-sandbox/SKILL.md`.
+
+### 13.5 Usage telemetry (T-445)
+
+Every adapter call emits an `AdapterUsageEvent` (modality / adapter / tenant / outcome / latency / tokens-or-units / cost). The default emitter is in-memory; production deploys swap in a queue-backed emitter.
+
+Admins query aggregated usage via the `query_usage_telemetry` tool, grouped by adapter, modality, tenant, and time-bucket. See `skills/stageflip/concepts/usage-telemetry/SKILL.md`.
+
+### 13.6 Data-flow security audit (T-446)
+
+Every adapter ships a `SecurityManifest` declaring data-out classification, retention, transit policy, and residency. The `check-data-flow-security` CI gate fails the build when a manifest is missing, drifted, or violates the per-modality whitelist. The inaugural audit report (T-446) covers all 9 reference adapters.
+
+This gate runs on every PR touching `packages/adapters-*/**`. See `skills/stageflip/concepts/data-flow-security/SKILL.md`.
+
+### 13.7 Cross-cutting integrations (Phase 14 γ)
+
+Phase 14 asset adapters feed Phase 13 runtimes via these integrations:
+
+| Integration | Path | Task |
+|---|---|---|
+| **TTS → captions** | `@stageflip/tts-kokoro` / `@stageflip/tts-fish-speech` emit word-timestamps that bypass Whisper for captions cluster F | T-436 |
+| **3D → ThreeSceneClip** | `@stageflip/3d-tripo` / `@stageflip/3d-meshy` produce GLB consumed by the Three.js scene clip via `cacheKey` | T-437 |
+| **Provenance → exporters** | Display / video / PPTX exporters surface `MediaProvenance` per §8.3 | T-439 / T-440 / T-441 |
+
+### 13.8 Tenant settings — frontier enablement (T-411)
+
+The Phase 14 γ / Phase 13 hinge: tenants opt in to frontier (Three / shader / Blender) runtimes via a per-tenant flag in `TenantSettings`. The flag also gates live-mount of Cluster H AR overlays. See `skills/stageflip/concepts/tenant-settings/SKILL.md`.
 
 ---
 
