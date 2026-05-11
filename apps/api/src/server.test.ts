@@ -67,3 +67,28 @@ describe('createApp — auth flow', () => {
     expect(body.jwt.split('.')).toHaveLength(3);
   });
 });
+
+describe('createApp — T-411b tenant-settings mount', () => {
+  it('GET /v1/tenant-settings/:tenantId is mounted behind auth (401 unauthenticated)', async () => {
+    const res = await buildApp().request('/v1/tenant-settings/tenant-a');
+    expect(res.status).toBe(401);
+  });
+
+  it('GET /v1/tenant-settings/:tenantId synthesises default-deny on absent row', async () => {
+    const token = await issueMcpSessionJwt({
+      secret: SECRET,
+      claims: { sub: 'alice', org: 'tenant-a', role: 'admin', allowedBundles: [] },
+      ttlSeconds: 60,
+    });
+    const res = await buildApp().request('/v1/tenant-settings/tenant-a', {
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      tenantId: string;
+      features: { interactive: string };
+    };
+    expect(body.tenantId).toBe('tenant-a');
+    expect(body.features.interactive).toBe('disabled');
+  });
+});

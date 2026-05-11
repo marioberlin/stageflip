@@ -40,3 +40,15 @@ export {
   type PrincipalLookup,
   type PrincipalResolution,
 } from './routes/mcp-session.js';
+
+// T-411b — TenantSettings API surface (procedures + authorization predicate).
+export {
+  createTenantSettingsRoute,
+  type TenantSettingsRouteDeps,
+} from './routes/tenant-settings.js';
+export {
+  canSetInteractive,
+  type AuthorizationActor,
+  type AuthorizationDecision,
+  type InteractiveValue,
+} from './auth/can-set-interactive.js';
