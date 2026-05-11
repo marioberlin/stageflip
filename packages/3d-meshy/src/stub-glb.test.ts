@@ -6,11 +6,11 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { generateStubGlbDataUri as generateMeshyStub } from './stub-glb.js';
 // Cross-package import for the "visually distinct" sanity check —
 // Meshy's stub MUST byte-differ from Tripo's unrigged cube stub so diff
 // readers can tell adapter outputs apart.
 import { generateStubGlbDataUri as generateTripoStub } from '../../3d-tripo/src/stub-glb.js';
+import { generateStubGlbDataUri as generateMeshyStub } from './stub-glb.js';
 
 const GLB_MAGIC = 0x46546c67; // "glTF"
 const JSON_CHUNK_TYPE = 0x4e4f534a; // "JSON"
