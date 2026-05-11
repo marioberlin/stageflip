@@ -43,6 +43,7 @@ import {
   MRBEAST_CANONICAL_WORDS,
   MSNBC_BIG_BOARD_PARTY_COLORS,
   MSNBC_BIG_BOARD_REGIONS,
+  NBA_AR_REPLAY_PALETTE,
   NBC_SNF_PROPS,
   NETFLIX_CANONICAL_WORDS,
   NETFLIX_DOC_LT_PROPS,
@@ -2423,7 +2424,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['premier-league-field-of-play']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands (T-333 added the 12th; T-338 the 17th; T-332 the 18th).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(36);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(37);
   });
 
   it('binding deep-clones nested object literals so callers can mutate freely (T-333)', () => {
@@ -2572,7 +2573,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['fox-nfl-no-chrome']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(36);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(37);
   });
 
   it('fox-nfl-no-chrome binding deep-clones nested object literals so callers can mutate freely (T-334)', () => {
@@ -2713,7 +2714,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['nbc-snf-possession-illuminated']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(36);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(37);
   });
 
   it('nbc-snf-possession-illuminated binding deep-clones nested object literals so callers can mutate freely (T-335)', () => {
@@ -2857,7 +2858,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.clipName).toBe('news-ticker-bar');
     expect(PRESET_ID_BINDINGS['espn-bottomline-flipper']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(36);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(37);
   });
 
   it('espn-bottomline-flipper binding deep-clones the entries array so callers can mutate freely (T-339a)', () => {
@@ -3030,7 +3031,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['wimbledon-green-purple']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(36);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(37);
   });
 
   it('wimbledon-green-purple binding deep-clones nested objects + players tuple + sets arrays (T-337)', () => {
@@ -3195,7 +3196,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['masters-red-under-par']?.clipName).toBe('standings-table');
     expect(PRESET_ID_BINDINGS['masters-red-under-par']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(36);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(37);
   });
 
   it('masters-red-under-par binding deep-clones rows + columns + values arrays (T-338)', () => {
@@ -3355,7 +3356,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['f1-timing-tower']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['f1-timing-tower']?.runtimeId).toBe('frame-runtime');
     // Eighteen overrides total after T-332 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(36);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(37);
   });
 
   it('f1-timing-tower binding deep-clones nested objects + rows + sectorColors arrays (T-332)', () => {
@@ -3492,7 +3493,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['cricket-scorebug']?.clipName).toBe('score-bug');
     expect(PRESET_ID_BINDINGS['cricket-scorebug']?.runtimeId).toBe('frame-runtime');
     // Nineteen overrides total after T-336 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(36);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(37);
   });
 
   it('cricket-scorebug binding deep-clones nested objects + batsmen array (T-336 AC #9)', () => {
@@ -3661,7 +3662,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['uefa-starball-refraction']?.clipName).toBe('magic-wall-panel');
     expect(PRESET_ID_BINDINGS['uefa-starball-refraction']?.runtimeId).toBe('frame-runtime');
     // Twenty overrides total after T-339 lands.
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(36);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(37);
   });
 
   it('uefa-starball-refraction binding deep-clones regions array per call (T-339 AC #11)', () => {
@@ -3756,7 +3757,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['youtube-subscribe-bounce']?.clipName).toBe('subscribe-button');
     expect(PRESET_ID_BINDINGS['youtube-subscribe-bounce']?.runtimeId).toBe('frame-runtime');
     // Twenty-one overrides total after T-369 lands (20 prior + youtube-subscribe-bounce).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(36);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(37);
   });
 
   it('youtube-subscribe-bounce binding deep-clones the position object so callers can mutate freely (T-369 AC #13)', () => {
@@ -3877,7 +3878,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['social-handle-lower-third']?.clipName).toBe('lower-third');
     expect(PRESET_ID_BINDINGS['social-handle-lower-third']?.runtimeId).toBe('frame-runtime');
     // Twenty-two overrides total after T-373 lands (21 prior + social-handle-lower-third).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(36);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(37);
   });
 
   it('lowerThird clipKind-default arm STILL returns cnnClassicBinding after T-373 lands (T-373 AC #17)', () => {
@@ -3970,7 +3971,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['tiktok-follow-pulse']?.clipName).toBe('follow-prompt');
     expect(PRESET_ID_BINDINGS['tiktok-follow-pulse']?.runtimeId).toBe('frame-runtime');
     // Twenty-three overrides total after T-370 lands (22 prior + tiktok-follow-pulse).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(36);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(37);
   });
 
   it('tiktok-follow-pulse binding deep-clones the position object so callers can mutate freely (T-370 AC #13)', () => {
@@ -4102,7 +4103,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['coinbase-dvd-qr']?.runtimeId).toBe('frame-runtime');
     // Thirty overrides total after T-349 lands (29 post-T-353 + got-trajan-clockwork;
     // the post-T-372 count was 24 — assertion updated for T-348 / T-351 / T-352 / T-353 / T-349 forward compat).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(36);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(37);
   });
 
   it('coinbase-dvd-qr binding deep-clones the bounce config so callers can mutate freely (T-372 AC #13)', () => {
@@ -4223,7 +4224,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['instagram-link-sticker']?.runtimeId).toBe('frame-runtime');
     // Twenty-seven overrides total after T-351 lands (the post-T-371 count was 25;
     // assertion updated for T-348 + T-351 forward compat).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(36);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(37);
   });
 
   it('instagram-link-sticker binding deep-clones the position object so callers can mutate freely (T-371 AC #13)', () => {
@@ -4367,7 +4368,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['stranger-things-benguiat']?.runtimeId).toBe('frame-runtime');
     expect(PRESET_ID_BINDINGS['stranger-things-benguiat']?.overlays).toHaveLength(4);
     // Twenty-seven overrides total after T-351 lands (26 post-T-348 + true-detective-double-exposure).
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(36);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(37);
   });
 
   it('stranger-things-benguiat binding deep-clones nested arrays/objects so callers can mutate freely (T-348 AC #17)', () => {
@@ -4534,7 +4535,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['true-detective-double-exposure']?.clipName).toBe('titleSequence');
     expect(PRESET_ID_BINDINGS['true-detective-double-exposure']?.runtimeId).toBe('frame-runtime');
     expect(PRESET_ID_BINDINGS['true-detective-double-exposure']?.overlays).toHaveLength(2);
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(36);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(37);
   });
 
   it('true-detective-double-exposure binding deep-clones nested arrays/objects so callers can mutate freely (T-351 AC #18)', () => {
@@ -4654,7 +4655,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['succession-home-video']?.clipName).toBe('titleSequence');
     expect(PRESET_ID_BINDINGS['succession-home-video']?.runtimeId).toBe('frame-runtime');
     expect(PRESET_ID_BINDINGS['succession-home-video']?.overlays).toHaveLength(2);
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(36);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(37);
   });
 
   it('succession-home-video binding deep-clones nested arrays/objects so callers can mutate freely (T-352 AC #18)', () => {
@@ -4784,7 +4785,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['severance-surreal-3d']?.clipName).toBe('titleSequence');
     expect(PRESET_ID_BINDINGS['severance-surreal-3d']?.runtimeId).toBe('frame-runtime');
     expect(PRESET_ID_BINDINGS['severance-surreal-3d']?.overlays).toHaveLength(2);
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(36);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(37);
   });
 
   it('severance-surreal-3d binding deep-clones nested arrays/objects so callers can mutate freely (T-353 AC #18)', () => {
@@ -4922,7 +4923,7 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
     expect(PRESET_ID_BINDINGS['got-trajan-clockwork']?.clipName).toBe('titleSequence');
     expect(PRESET_ID_BINDINGS['got-trajan-clockwork']?.runtimeId).toBe('frame-runtime');
     expect(PRESET_ID_BINDINGS['got-trajan-clockwork']?.overlays).toHaveLength(2);
-    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(36);
+    expect(Object.keys(PRESET_ID_BINDINGS)).toHaveLength(37);
   });
 
   it('got-trajan-clockwork binding deep-clones nested arrays/objects so callers can mutate freely (T-349 AC #18)', () => {
@@ -5365,6 +5366,163 @@ describe('DEFAULT_CLIP_KIND_RESOLVER', () => {
   });
 
   it('clipKind-default for titleSequence STILL returns squidGameGeometric after T-377 lands (T-377 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('titleSequence');
+    expect(binding?.clipName).toBe('titleSequence');
+  });
+
+  // T-378 — fourth + FINAL `arOverlay`-clipKind preset (`nba-ar-replay`),
+  // wired via PRESET_ID_BINDINGS override (Pattern C — fourth-preset-for-
+  // clipKind via override; the arOverlay clipKind-default arm STAYS bound
+  // to skySportsArFormationsBinding from T-375; the sibling overrides
+  // hawkeyeVarSkeletalBinding from T-376 + olympicSwimLaneTrackBinding
+  // from T-377 also stay unchanged). CLOSES Cluster H to 4/4 ELIGIBLE.
+  // NOT a §13 (F-30) verifier — reuses arOverlay clipKind whose
+  // structural-extension verification was discharged by PR #461 (T-375).
+  // Reverts to permissions: ['camera-tracking'] like sky-sports + hawkeye-var
+  // (court-anchored AR overlay requires camera tracking per stub line 42;
+  // contrasts olympic-swim's ['network'] timing-feed register).
+
+  it('routes nba-ar-replay via PRESET_ID_BINDINGS override (T-378 D-T378-1; Pattern C fourth-preset-for-clipKind / cluster closer)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('arOverlay', 'nba-ar-replay');
+    expect(binding).toBeDefined();
+    expect(binding?.runtimeId).toBe('frame-runtime');
+    expect(binding?.clipName).toBe('arOverlay');
+    expect(PRESET_ID_BINDINGS['nba-ar-replay']).toBeDefined();
+    expect(PRESET_ID_BINDINGS['nba-ar-replay']).toBe(binding);
+  });
+
+  it('arOverlay clipKind-default STILL returns sky-sports for non-overridden presetIds after T-378 lands (T-378 AC #5; resolver arm unchanged)', () => {
+    const skyBinding = DEFAULT_CLIP_KIND_RESOLVER('arOverlay');
+    const unknownBinding = DEFAULT_CLIP_KIND_RESOLVER('arOverlay', 'unknown-ar-preset');
+    const skyByName = DEFAULT_CLIP_KIND_RESOLVER('arOverlay', 'sky-sports-ar-formations');
+    expect(skyBinding).toBeDefined();
+    expect(unknownBinding).toBeDefined();
+    expect(skyByName).toBeDefined();
+    expect(skyBinding).toBe(unknownBinding);
+    expect(skyBinding).toBe(skyByName);
+    const nbaBinding = DEFAULT_CLIP_KIND_RESOLVER('arOverlay', 'nba-ar-replay');
+    const olympicBinding = DEFAULT_CLIP_KIND_RESOLVER('arOverlay', 'olympic-swim-lane-track');
+    const hawkeyeBinding = DEFAULT_CLIP_KIND_RESOLVER('arOverlay', 'hawkeye-var-3d-skeletal');
+    expect(nbaBinding).not.toBe(skyBinding);
+    expect(nbaBinding).not.toBe(olympicBinding);
+    expect(nbaBinding).not.toBe(hawkeyeBinding);
+  });
+
+  it('exports NBA_AR_REPLAY_PALETTE with sealed brand constants (T-378 AC #1 / D-T378-2)', () => {
+    expect(NBA_AR_REPLAY_PALETTE.hardwoodWarm).toBe('#C68E54');
+    expect(NBA_AR_REPLAY_PALETTE.nbaRed).toBe('#C9082A');
+    expect(NBA_AR_REPLAY_PALETTE.basketballOrange).toBe('#EE6730');
+    expect(NBA_AR_REPLAY_PALETTE.nbaBlue).toBe('#17408B');
+    expect(NBA_AR_REPLAY_PALETTE.foreground).toBe('#FFFFFF');
+    expect(Object.isFrozen(NBA_AR_REPLAY_PALETTE)).toBe(true);
+  });
+
+  it('builds arOverlay props with the nba-ar-replay canonical static-fallback snapshot (T-378 AC #2 / D-T378-3; D-T378-5 permissions: [camera-tracking])', () => {
+    const binding = PRESET_ID_BINDINGS['nba-ar-replay'];
+    if (!binding) throw new Error('test setup');
+    const props = binding.buildProps(undefined);
+    const staticFallback = props.staticFallback as {
+      label: string;
+      sublabel?: string;
+      backgroundColor?: string;
+      foregroundColor?: string;
+      accentColor?: string;
+      showLiveMountIndicator?: boolean;
+    };
+    expect(staticFallback.label).toBe('NBA — AR REPLAY');
+    expect(staticFallback.sublabel).toBe('COURT TRAJECTORY · SHOT ARC');
+    expect(staticFallback.backgroundColor).toBe(NBA_AR_REPLAY_PALETTE.hardwoodWarm);
+    expect(staticFallback.foregroundColor).toBe(NBA_AR_REPLAY_PALETTE.foreground);
+    expect(staticFallback.accentColor).toBe(NBA_AR_REPLAY_PALETTE.nbaRed);
+    expect(staticFallback.showLiveMountIndicator).toBe(true);
+    const font = props.font as { family: string; weight: number };
+    expect(font.weight).toBe(700);
+    expect(font.family).toContain('NBA Brand');
+    expect(font.family).toContain('Inter');
+    // T-378 D-T378-5: permissions: ['camera-tracking'] declared per stub line
+    // 42 (court-anchored AR overlay requires camera tracking). Contrasts
+    // sibling olympic-swim's ['network'] timing-feed register; aligns with
+    // sky-sports + hawkeye-var camera-side declarations. v1 ignores per
+    // D-T375a-2.
+    expect(props.permissions).toEqual(['camera-tracking']);
+    // setupRef NOT supplied in v1 — live-mount lands with T-378-live-mount post-T-397.
+    expect(props.setupRef).toBeUndefined();
+  });
+
+  it('routes nba-ar-replay end-to-end through the renderer-side PRESET_ID_BINDINGS override (T-378 AC #6 / #18 round-trip; verifies permissions: [camera-tracking] flows through)', async () => {
+    const renderSpy = vi
+      .fn<(doc: unknown, frame: number) => Promise<Uint8Array>>()
+      .mockResolvedValue(new Uint8Array([0]));
+    const renderer = createGenerateFixtureRenderer({
+      resolver: DEFAULT_CLIP_KIND_RESOLVER,
+      render: renderSpy as unknown as Parameters<typeof createGenerateFixtureRenderer>[0]['render'],
+    });
+    await renderer.render({
+      preset: presetWith('arOverlay', 'nba-ar-replay', 'ar'),
+      composition: COMPOSITION,
+      frame: 60,
+    });
+    const [doc] = renderSpy.mock.calls[0] ?? [];
+    const parsed = rirDocumentSchema.parse(doc);
+    const element = parsed.elements[0];
+    if (!element || element.content.type !== 'clip') throw new Error('expected clip element');
+    expect(element.content.clipName).toBe('arOverlay');
+    const params = element.content.params as {
+      staticFallback: { label: string; backgroundColor: string; accentColor: string };
+      permissions: string[];
+    };
+    expect(params.staticFallback.label).toBe('NBA — AR REPLAY');
+    expect(params.staticFallback.backgroundColor).toBe('#C68E54');
+    expect(params.staticFallback.accentColor).toBe('#C9082A');
+    // T-378 AC #18 — permissions: ['camera-tracking'] survives RIRDocument schema validation.
+    expect(params.permissions).toEqual(['camera-tracking']);
+  });
+
+  // T-378 backward compat — T-375's resolver arm + T-376's per-preset
+  // override + T-377's per-preset override + every prior cluster's
+  // clipKind-default + per-preset overrides must still resolve correctly
+  // after the nba PRESET_ID_BINDINGS entry lands.
+
+  it('falls through to skySportsArFormationsBinding for sky-sports-ar-formations after T-378 lands (T-378 backward compat)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('arOverlay', 'sky-sports-ar-formations');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('arOverlay');
+    const props = binding?.buildProps(undefined) as {
+      staticFallback: { label: string };
+    };
+    expect(props.staticFallback.label).toBe('AR FORMATION OVERLAY');
+  });
+
+  it('hawkeye-var-3d-skeletal STILL routes via PRESET_ID_BINDINGS override after T-378 lands (T-378 backward compat; T-376 entry preserved)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('arOverlay', 'hawkeye-var-3d-skeletal');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('arOverlay');
+    const props = binding?.buildProps(undefined) as {
+      staticFallback: { label: string; backgroundColor: string };
+      permissions: string[];
+    };
+    expect(props.staticFallback.label).toBe('VAR — CHECKING OFFSIDE');
+    expect(props.staticFallback.backgroundColor).toBe(
+      HAWKEYE_VAR_SKELETAL_PALETTE.premierLeaguePurple,
+    );
+    expect(props.permissions).toEqual(['camera-tracking']);
+  });
+
+  it('olympic-swim-lane-track STILL routes via PRESET_ID_BINDINGS override after T-378 lands (T-378 backward compat; T-377 entry preserved; permissions: [network] preserved)', () => {
+    const binding = DEFAULT_CLIP_KIND_RESOLVER('arOverlay', 'olympic-swim-lane-track');
+    expect(binding).toBeDefined();
+    expect(binding?.clipName).toBe('arOverlay');
+    const props = binding?.buildProps(undefined) as {
+      staticFallback: { label: string; backgroundColor: string };
+      permissions: string[];
+    };
+    expect(props.staticFallback.label).toBe('OLYMPIC SWIM — LANE TRACK');
+    expect(props.staticFallback.backgroundColor).toBe(OLYMPIC_SWIM_LANE_TRACK_PALETTE.poolBlue);
+    // olympic-swim is the only Cluster H preset declaring 'network'; nba reverts to camera-tracking.
+    expect(props.permissions).toEqual(['network']);
+  });
+
+  it('clipKind-default for titleSequence STILL returns squidGameGeometric after T-378 lands (T-378 backward compat)', () => {
     const binding = DEFAULT_CLIP_KIND_RESOLVER('titleSequence');
     expect(binding?.clipName).toBe('titleSequence');
   });
