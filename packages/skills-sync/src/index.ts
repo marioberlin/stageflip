@@ -40,4 +40,9 @@ export {
   type CliCommandFlag,
   type CliReferencePkg,
 } from './cli-reference-gen.js';
+export {
+  generateAssetProvidersSkill,
+  type AssetProvidersAdapterRow,
+  type AssetProvidersPkg,
+} from './asset-providers-gen.js';
 export { LIVE_RUNTIME_MANIFEST } from './live-runtime-manifest.js';

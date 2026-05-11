@@ -4,15 +4,14 @@
 import type { AdapterDescriptor } from '@stageflip/adapters-core';
 import { describe, expect, it } from 'vitest';
 
-import {
-  generateAssetProvidersSkill,
-  type AssetProvidersPkg,
-} from './asset-providers-gen.js';
+import { type AssetProvidersPkg, generateAssetProvidersSkill } from './asset-providers-gen.js';
 
-function makeDescriptor(overrides: Partial<AdapterDescriptor> & {
-  id: string;
-  modality: AdapterDescriptor['modality'];
-}): AdapterDescriptor {
+function makeDescriptor(
+  overrides: Partial<AdapterDescriptor> & {
+    id: string;
+    modality: AdapterDescriptor['modality'];
+  },
+): AdapterDescriptor {
   const base: AdapterDescriptor = {
     id: overrides.id,
     modality: overrides.modality,
@@ -109,7 +108,7 @@ describe('generateAssetProvidersSkill — populated state', () => {
     modality: { kind: 'slide-deck-gen' },
     capability: { maxSlides: 30 },
     license: { kind: 'proprietary-vendored' },
-    costPerCall: { usd: 0.30 },
+    costPerCall: { usd: 0.3 },
     latencyMs: { p50: 60_000, p95: 240_000 },
     requiresResearchProvider: 'notebooklm-grounded',
     sourceGrounded: true,

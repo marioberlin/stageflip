@@ -1550,6 +1550,9 @@ importers:
 
   packages/skills-sync:
     dependencies:
+      '@stageflip/adapters-core':
+        specifier: workspace:^
+        version: link:../adapters-core
       '@stageflip/schema':
         specifier: workspace:^
         version: link:../schema
