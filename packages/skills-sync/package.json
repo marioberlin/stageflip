@@ -23,6 +23,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@stageflip/adapters-core": "workspace:^",
     "@stageflip/schema": "workspace:^",
     "@stageflip/skills-core": "workspace:^",
     "@stageflip/validation": "workspace:^",

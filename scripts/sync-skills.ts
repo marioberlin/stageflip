@@ -36,9 +36,12 @@ import {
   registerVideoModeBundle,
 } from '../packages/engine/src/index.js';
 import * as schema from '../packages/schema/src/index.js';
+import { AdapterRegistry } from '../packages/adapters-core/src/index.js';
+import type { AdapterDescriptor } from '../packages/adapters-core/src/index.js';
 import {
   LIVE_RUNTIME_MANIFEST,
   type ToolsIndexPkg,
+  generateAssetProvidersSkill,
   generateClipsCatalogSkill,
   generateCliReferenceSkill,
   generateRuntimesIndexSkill,
@@ -100,6 +103,20 @@ function toolsIndexPkg(registry: BundleRegistry): ToolsIndexPkg {
   return { bundles };
 }
 
+/**
+ * Build the asset-provider registry snapshot consumed by the
+ * `reference/asset-providers` generator (T-424). The registry is
+ * created empty here; reference adapters T-426..T-434 will register
+ * themselves at this site as they land. With zero adapters today the
+ * generator emits the empty-state SKILL.
+ */
+function buildAssetProvidersPkg(): { adapters: readonly AdapterDescriptor[] } {
+  const registry = new AdapterRegistry();
+  // T-426..T-434 land each reference adapter here, e.g.:
+  //   registry.register(ttsKokoroDescriptor);
+  return { adapters: registry.list() };
+}
+
 function buildJobs(): SyncJob[] {
   const bundleRegistry = buildPopulatedBundleRegistry();
   const runtimesIndex = {
@@ -140,6 +157,11 @@ function buildJobs(): SyncJob[] {
       name: 'reference/cli',
       target: resolve('skills/stageflip/reference/cli/SKILL.md'),
       generate: () => generateCliReferenceSkill(commandRegistryAsCliReferencePkg()),
+    },
+    {
+      name: 'reference/asset-providers',
+      target: resolve('skills/stageflip/reference/asset-providers/SKILL.md'),
+      generate: () => generateAssetProvidersSkill(buildAssetProvidersPkg()),
     },
   ];
 }
