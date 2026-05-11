@@ -160,8 +160,7 @@ describe('Document — research backward-compat (T-421 / ADR-008 §D3)', () => {
   });
 
   it('rejects a research entry missing sessionId', () => {
-    const incomplete = { ...SAMPLE_RESEARCH } as Partial<typeof SAMPLE_RESEARCH>;
-    delete incomplete.sessionId;
+    const { sessionId: _omitted, ...incomplete } = SAMPLE_RESEARCH;
     expect(() => documentSchema.parse(baseDoc({ research: incomplete }))).toThrow();
   });
 });
