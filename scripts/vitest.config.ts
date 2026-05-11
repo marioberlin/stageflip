@@ -22,6 +22,7 @@ export default defineConfig({
         'invoke-type-design-consultant.ts',
         'generate-preset-parity-fixture.ts',
         'check-cluster-eligibility.ts',
+        'check-asset-licenses.ts',
       ],
       exclude: ['*.test.ts', '*.config.ts'],
       thresholds: {
@@ -70,6 +71,13 @@ export default defineConfig({
           functions: 85,
           statements: 85,
           branches: 85,
+        },
+        // T-422 AC 3 — check-asset-licenses coverage floor.
+        'check-asset-licenses.ts': {
+          lines: 85,
+          functions: 85,
+          statements: 85,
+          branches: 75,
         },
       },
     },

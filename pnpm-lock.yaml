@@ -1659,6 +1659,9 @@ importers:
 
   scripts:
     dependencies:
+      '@stageflip/adapters-core':
+        specifier: workspace:*
+        version: link:../packages/adapters-core
       '@stageflip/cdp-host-bundle':
         specifier: workspace:*
         version: link:../packages/cdp-host-bundle
