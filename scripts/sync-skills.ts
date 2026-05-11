@@ -38,6 +38,7 @@ import {
 import * as schema from '../packages/schema/src/index.js';
 import { AdapterRegistry } from '../packages/adapters-core/src/index.js';
 import type { AdapterDescriptor } from '../packages/adapters-core/src/index.js';
+import { meshyDescriptor } from '../packages/3d-meshy/src/index.js';
 import { tripoDescriptor } from '../packages/3d-tripo/src/index.js';
 import { fishSpeechDescriptor } from '../packages/tts-fish-speech/src/index.js';
 import { kokoroDescriptor } from '../packages/tts-kokoro/src/index.js';
@@ -121,10 +122,15 @@ function buildAssetProvidersPkg(): { adapters: readonly AdapterDescriptor[] } {
   // T-428 — third reference adapter (Tripo3D characters, proprietary-byo;
   // first 3D adapter; first proprietary-byo posture — exercises tenant-
   // BYO-credentials path per ADR-008 §D13 line 657).
-  // T-429..T-434 add the remaining six reference adapters here.
+  // T-429 — fourth reference adapter (Meshy props + environment,
+  // proprietary-byo; second 3D adapter; triangle-soup topology +
+  // supportsAutoRigging: false — exercises the no-rig branch of
+  // ADR-008 §D6).
+  // T-430..T-434 add the remaining five reference adapters here.
   registry.register(kokoroDescriptor);
   registry.register(fishSpeechDescriptor);
   registry.register(tripoDescriptor);
+  registry.register(meshyDescriptor);
   return { adapters: registry.list() };
 }
 
