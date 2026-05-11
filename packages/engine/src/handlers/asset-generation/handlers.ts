@@ -277,6 +277,15 @@ export interface AssetGenerationContext extends MutationContext {
    * and we don't want to grow its surface for an orthogonal concern.
    */
   readonly tenantId?: string;
+  /**
+   * T-445 — usage-telemetry read seam. Required for
+   * `query_usage_telemetry`. When unwired, the tool returns
+   * `{ ok: false, reason: 'usage_telemetry_unavailable' }`. Structural
+   * type lines up with `@stageflip/usage-telemetry`'s
+   * `UsageTelemetryReader`; hosts can pass an
+   * `InMemoryUsageTelemetryEmitter` directly.
+   */
+  readonly usageTelemetryReader?: UsageTelemetryReaderLike;
 }
 
 // ---------------------------------------------------------------------------
@@ -298,6 +307,32 @@ export interface CostTrackerStoreLike {
     readonly recordedAt: string;
   }): Promise<void>;
   getPeriodTotal(tenantId: string, periodStart: string, periodEnd: string): Promise<number>;
+}
+
+/**
+ * T-445 — structural mirror of `@stageflip/usage-telemetry`'s
+ * `AdapterUsageEvent`. Declared inline so the engine package does NOT
+ * take a runtime dep on `@stageflip/usage-telemetry`.
+ */
+export interface AdapterUsageEventLike {
+  readonly tenantId: string;
+  readonly adapterId: string;
+  readonly modality: string;
+  readonly selectedReason: 'capability-router' | 'explicit';
+  readonly latencyMs: number;
+  readonly costAmount: number;
+  readonly costCurrency: string;
+  readonly outcome: 'success' | 'failed' | 'killed';
+  readonly timestamp: string;
+}
+
+/**
+ * T-445 — structural mirror of `@stageflip/usage-telemetry`'s
+ * `UsageTelemetryReader`. Returns events for a single tenant in
+ * emission order.
+ */
+export interface UsageTelemetryReaderLike {
+  eventsForTenant(tenantId: string): readonly AdapterUsageEventLike[];
 }
 
 /**
@@ -1181,6 +1216,224 @@ const queryCostBudget: ToolHandler<QueryCostBudgetInput, QueryCostBudgetOutput, 
 };
 
 // ---------------------------------------------------------------------------
+// 5 — query_usage_telemetry (T-445)
+// ---------------------------------------------------------------------------
+
+const USAGE_SELECTED_REASONS_LOCAL = ['capability-router', 'explicit'] as const;
+const USAGE_OUTCOMES_LOCAL = ['success', 'failed', 'killed'] as const;
+
+/** Default window — 7 days, matches the spec's documented default. */
+const DEFAULT_USAGE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+const queryUsageTelemetryInput = z
+  .object({
+    adapterId: z
+      .string()
+      .min(1)
+      .max(200)
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'adapterId must be kebab-case')
+      .optional(),
+    modality: z.enum(ADAPTER_MODALITY_KINDS).optional(),
+    sinceTimestamp: z.string().datetime().optional(),
+    untilTimestamp: z.string().datetime().optional(),
+  })
+  .strict();
+type QueryUsageTelemetryInput = z.infer<typeof queryUsageTelemetryInput>;
+
+const usageRollupSchema = z
+  .object({
+    tenantId: z.string(),
+    adapterId: z.string(),
+    modality: z.string(),
+    count: z.number().int().nonnegative(),
+    successCount: z.number().int().nonnegative(),
+    failedCount: z.number().int().nonnegative(),
+    killedCount: z.number().int().nonnegative(),
+    p50LatencyMs: z.number().nonnegative().finite(),
+    p95LatencyMs: z.number().nonnegative().finite(),
+    totalCostAmount: z.number().nonnegative().finite(),
+    costCurrency: z.string().regex(/^[A-Z]{3}$/),
+  })
+  .strict();
+
+const queryUsageTelemetryOutput = z.discriminatedUnion('ok', [
+  z
+    .object({
+      ok: z.literal(true),
+      rollups: z.array(usageRollupSchema),
+      sinceTimestamp: z.string().datetime(),
+      untilTimestamp: z.string().datetime(),
+    })
+    .strict(),
+  z
+    .object({
+      ok: z.literal(false),
+      reason: z.enum(['usage_telemetry_unavailable']),
+      detail: z.string().optional(),
+    })
+    .strict(),
+]);
+type QueryUsageTelemetryOutput = z.infer<typeof queryUsageTelemetryOutput>;
+
+interface InternalUsageRollup {
+  tenantId: string;
+  adapterId: string;
+  modality: string;
+  count: number;
+  successCount: number;
+  failedCount: number;
+  killedCount: number;
+  p50LatencyMs: number;
+  p95LatencyMs: number;
+  totalCostAmount: number;
+  costCurrency: string;
+}
+
+/**
+ * Inline aggregation — does not import from `@stageflip/usage-telemetry`
+ * to keep this handler self-contained (`@stageflip/engine` would
+ * otherwise pull the telemetry package as a runtime dep). The shape +
+ * algorithm mirror `aggregateUsage()` exactly; any drift is caught by
+ * `pnpm check-skill-drift` against the concept SKILL.
+ */
+function aggregateUsageInline(
+  events: readonly AdapterUsageEventLike[],
+  filter: {
+    tenantId: string;
+    adapterId?: string;
+    modality?: string;
+    sinceTimestamp: string;
+    untilTimestamp: string;
+  },
+): readonly InternalUsageRollup[] {
+  const filtered: AdapterUsageEventLike[] = [];
+  for (const e of events) {
+    if (e.tenantId !== filter.tenantId) continue;
+    if (filter.adapterId !== undefined && e.adapterId !== filter.adapterId) continue;
+    if (filter.modality !== undefined && e.modality !== filter.modality) continue;
+    if (e.timestamp < filter.sinceTimestamp) continue;
+    if (e.timestamp >= filter.untilTimestamp) continue;
+    filtered.push(e);
+  }
+  if (filtered.length === 0) return [];
+  filtered.sort((a, b) => (a.timestamp < b.timestamp ? -1 : a.timestamp > b.timestamp ? 1 : 0));
+
+  const buckets = new Map<string, AdapterUsageEventLike[]>();
+  for (const e of filtered) {
+    const key = `${e.adapterId}::${e.modality}`;
+    const existing = buckets.get(key);
+    if (existing === undefined) buckets.set(key, [e]);
+    else existing.push(e);
+  }
+
+  const rollups: InternalUsageRollup[] = [];
+  for (const [, bucket] of buckets) {
+    rollups.push(rollupBucket(filter.tenantId, bucket));
+  }
+  return rollups;
+}
+
+function rollupBucket(
+  tenantId: string,
+  events: readonly AdapterUsageEventLike[],
+): InternalUsageRollup {
+  const first = events[0] as AdapterUsageEventLike;
+  const currency = first.costCurrency;
+  let totalCost = 0;
+  let successCount = 0;
+  let failedCount = 0;
+  let killedCount = 0;
+  const latencies: number[] = [];
+  for (const e of events) {
+    if (e.costCurrency !== currency) {
+      throw new Error(
+        `query_usage_telemetry: bucket (${tenantId}, ${first.adapterId}, ${first.modality}) mixes currencies '${currency}' and '${e.costCurrency}'`,
+      );
+    }
+    totalCost += e.costAmount;
+    latencies.push(e.latencyMs);
+    if (e.outcome === 'success') successCount += 1;
+    else if (e.outcome === 'failed') failedCount += 1;
+    else killedCount += 1;
+  }
+  latencies.sort((a, b) => a - b);
+  return {
+    tenantId,
+    adapterId: first.adapterId,
+    modality: first.modality,
+    count: events.length,
+    successCount,
+    failedCount,
+    killedCount,
+    p50LatencyMs: nearestRankPercentile(latencies, 50),
+    p95LatencyMs: nearestRankPercentile(latencies, 95),
+    totalCostAmount: totalCost,
+    costCurrency: first.costCurrency,
+  };
+}
+
+function nearestRankPercentile(sortedAsc: readonly number[], p: number): number {
+  const n = sortedAsc.length;
+  if (n === 0) return 0;
+  const rank = Math.ceil((p / 100) * n) - 1;
+  const idx = rank < 0 ? 0 : rank >= n ? n - 1 : rank;
+  return sortedAsc[idx] as number;
+}
+
+/** Validate that the discriminator strings on usage events match the local enums. */
+void USAGE_SELECTED_REASONS_LOCAL;
+void USAGE_OUTCOMES_LOCAL;
+
+/**
+ * `query_usage_telemetry` — return per-tenant usage rollups (count /
+ * outcome breakdown / p50+p95 latency / total cost) for the calling
+ * tenant, optionally filtered by `adapterId` / `modality`. Default
+ * window: trailing 7 days from the host clock (or a fixed window when
+ * the host wires `nowMs`).
+ *
+ * Read-only (no patch ops). Soft-seam: requires
+ * `usageTelemetryReader` + `tenantId`. Returns
+ * `{ ok: false, reason: 'usage_telemetry_unavailable' }` when unwired.
+ */
+const queryUsageTelemetry: ToolHandler<
+  QueryUsageTelemetryInput,
+  QueryUsageTelemetryOutput,
+  MutationContext
+> = {
+  name: 'query_usage_telemetry',
+  bundle: ASSET_GENERATION_BUNDLE_NAME,
+  description:
+    "Return per-tenant adapter usage rollups WITHOUT making an adapter call. Use this to decide whether the agent is hitting a misbehaving adapter (high `failedCount` / `killedCount`), to find the cheapest adapter that consistently succeeds (`totalCostAmount` + `successCount`), or to track latency trends (p50 / p95). Read-only (no patch ops). Optional `adapterId` (kebab-case) / `modality` filters; optional `sinceTimestamp` / `untilTimestamp` (ISO-8601) window. When `untilTimestamp` is omitted, the host clock supplies the upper bound. When `sinceTimestamp` is omitted, the lower bound is 7 days prior. Returns `{ ok: true, rollups: [{ adapterId, modality, count, successCount, failedCount, killedCount, p50LatencyMs, p95LatencyMs, totalCostAmount, costCurrency }], sinceTimestamp, untilTimestamp }`. Each rollup is one (adapterId, modality) bucket; the empty list IS the answer when no events match. Soft seam: requires `usageTelemetryReader` + `tenantId` on the asset-generation context. When unwired, returns `{ ok: false, reason: 'usage_telemetry_unavailable' }` (back-compat: dev hosts without telemetry continue to function).",
+  inputSchema: queryUsageTelemetryInput,
+  outputSchema: queryUsageTelemetryOutput,
+  handle: (input, ctx) => {
+    const seam = getAssetSeam(ctx);
+    if (seam.usageTelemetryReader === undefined || seam.tenantId === undefined) {
+      return {
+        ok: false,
+        reason: 'usage_telemetry_unavailable',
+        detail:
+          'query_usage_telemetry requires usageTelemetryReader + tenantId on the AssetGenerationContext. The executor has not wired them.',
+      };
+    }
+    const nowMs = (seam.nowMs ?? defaultNowMs)();
+    const untilTimestamp = input.untilTimestamp ?? new Date(nowMs).toISOString();
+    const untilMs = new Date(untilTimestamp).getTime();
+    const sinceTimestamp =
+      input.sinceTimestamp ?? new Date(untilMs - DEFAULT_USAGE_WINDOW_MS).toISOString();
+    const events = seam.usageTelemetryReader.eventsForTenant(seam.tenantId);
+    const rollups = aggregateUsageInline(events, {
+      tenantId: seam.tenantId,
+      ...(input.adapterId !== undefined ? { adapterId: input.adapterId } : {}),
+      ...(input.modality !== undefined ? { modality: input.modality } : {}),
+      sinceTimestamp,
+      untilTimestamp,
+    });
+    return { ok: true, rollups: [...rollups], sinceTimestamp, untilTimestamp };
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Barrel — handlers + LLM tool definitions
 // ---------------------------------------------------------------------------
 
@@ -1190,6 +1443,7 @@ export const ASSET_GENERATION_HANDLERS: readonly ToolHandler<unknown, unknown, M
     listAdapters,
     getAdapterCapabilities,
     queryCostBudget,
+    queryUsageTelemetry,
   ] as unknown as readonly ToolHandler<unknown, unknown, MutationContext>[];
 
 const transformObject = {
@@ -1259,6 +1513,21 @@ export const ASSET_GENERATION_TOOL_DEFINITIONS: readonly LLMToolDefinition[] = [
       required: [],
       additionalProperties: false,
       properties: {},
+    },
+  },
+  {
+    name: 'query_usage_telemetry',
+    description: queryUsageTelemetry.description,
+    input_schema: {
+      type: 'object',
+      required: [],
+      additionalProperties: false,
+      properties: {
+        adapterId: { type: 'string', minLength: 1, maxLength: 200 },
+        modality: { type: 'string', enum: [...ADAPTER_MODALITY_KINDS] },
+        sinceTimestamp: { type: 'string' },
+        untilTimestamp: { type: 'string' },
+      },
     },
   },
 ];

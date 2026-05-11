@@ -35,6 +35,7 @@
 // boundary by design.
 
 import type { SandboxInvocation, SandboxRunner } from './types.js';
+import { maybeMakeUsageEmitContext } from './usage-emit.js';
 
 /**
  * Minimal interface for a stdio-attached child process. This is the
@@ -196,6 +197,10 @@ export class SidecarSandboxRunner implements SandboxRunner {
 
     auditEmitter.emit({ kind: 'start', ...baseEvent });
 
+    // T-445 — capture clock for usage telemetry (no-op when seam absent).
+    const usageCtx = maybeMakeUsageEmitContext(invocation);
+    const startMs = usageCtx !== undefined ? usageCtx.clock() : 0;
+
     const child = this.spawnSidecar(runtime);
 
     let cancelCpuTimer: (() => void) | undefined;
@@ -304,6 +309,9 @@ export class SidecarSandboxRunner implements SandboxRunner {
       });
 
       auditEmitter.emit({ kind: 'complete', ...baseEvent });
+      if (usageCtx !== undefined) {
+        usageCtx.emit('success', startMs, usageCtx.clock());
+      }
       return result;
     } catch (cause) {
       if (cause instanceof ResourceLimitKill) {
@@ -313,9 +321,15 @@ export class SidecarSandboxRunner implements SandboxRunner {
           sandboxKind: 'sidecar',
           dimension: cause.dimension,
         });
+        if (usageCtx !== undefined) {
+          usageCtx.emit('killed', startMs, usageCtx.clock());
+        }
       } else {
         const errorMessage = cause instanceof Error ? cause.message : String(cause);
         auditEmitter.emit({ kind: 'failed', ...baseEvent, errorMessage });
+        if (usageCtx !== undefined) {
+          usageCtx.emit('failed', startMs, usageCtx.clock());
+        }
       }
       throw cause;
     } finally {

@@ -12,6 +12,7 @@ import { describe, expect, it } from 'vitest';
 import type { JsonPatchOp, MutationContext, PatchSink } from '../../router/types.js';
 import {
   ASSET_GENERATION_HANDLERS,
+  type AdapterUsageEventLike,
   type AssetGenerationContext,
   type CostTrackerStoreLike,
   type ExecuteAdapterCallInput,
@@ -19,6 +20,7 @@ import {
   type PlaceholderDispatchInput,
   type PlaceholderResolver,
   type TenantSettingsStoreLike,
+  type UsageTelemetryReaderLike,
 } from './handlers.js';
 
 function collectingSink(): PatchSink & { drain(): JsonPatchOp[] } {
@@ -114,6 +116,7 @@ function makeCtx(opts: {
   costTrackerStore?: CostTrackerStoreLike;
   tenantSettingsStore?: TenantSettingsStoreLike;
   tenantId?: string;
+  usageTelemetryReader?: UsageTelemetryReaderLike;
 }): AssetGenerationContext & { patchSink: ReturnType<typeof collectingSink> } {
   return {
     document: opts.document ?? makeDoc(),
@@ -134,6 +137,9 @@ function makeCtx(opts: {
       ? { tenantSettingsStore: opts.tenantSettingsStore }
       : {}),
     ...(opts.tenantId !== undefined ? { tenantId: opts.tenantId } : {}),
+    ...(opts.usageTelemetryReader !== undefined
+      ? { usageTelemetryReader: opts.usageTelemetryReader }
+      : {}),
   };
 }
 
@@ -503,9 +509,9 @@ describe('get_adapter_capabilities', () => {
 });
 
 describe('barrel + invariants', () => {
-  it('handlers array length is 4', () => {
-    // T-443 — bundle grew from 3 tools to 4 (added `query_cost_budget`).
-    expect(ASSET_GENERATION_HANDLERS.length).toBe(4);
+  it('handlers array length is 5', () => {
+    // T-423: 3 tools; T-443: +query_cost_budget (4); T-445: +query_usage_telemetry (5).
+    expect(ASSET_GENERATION_HANDLERS.length).toBe(5);
   });
 
   it('every handler declares bundle === "asset-generation"', () => {
@@ -1167,5 +1173,193 @@ describe('query_cost_budget — T-443', () => {
     });
     await find('query_cost_budget').handle({}, ctx as MutationContext);
     expect(ctx.patchSink.drain()).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// query_usage_telemetry — T-445
+// ---------------------------------------------------------------------------
+
+function makeUsageEvent(over: Partial<AdapterUsageEventLike> = {}): AdapterUsageEventLike {
+  return {
+    tenantId: 'tenant-1',
+    adapterId: 'kokoro-tts',
+    modality: 'tts',
+    selectedReason: 'capability-router',
+    latencyMs: 200,
+    costAmount: 0,
+    costCurrency: 'USD',
+    outcome: 'success',
+    timestamp: '2026-05-11T12:00:00.000Z',
+    ...over,
+  };
+}
+
+function fakeUsageReader(events: readonly AdapterUsageEventLike[]): UsageTelemetryReaderLike {
+  return {
+    eventsForTenant(tenantId: string) {
+      return events.filter((e) => e.tenantId === tenantId);
+    },
+  };
+}
+
+describe('query_usage_telemetry — T-445', () => {
+  it('returns usage_telemetry_unavailable when reader seam absent', async () => {
+    const ctx = makeCtx({ tenantId: 'tenant-1' });
+    const r = (await find('query_usage_telemetry').handle({}, ctx as MutationContext)) as {
+      ok: false;
+      reason: string;
+    };
+    expect(r.ok).toBe(false);
+    expect(r.reason).toBe('usage_telemetry_unavailable');
+  });
+
+  it('returns usage_telemetry_unavailable when tenantId absent', async () => {
+    const ctx = makeCtx({
+      usageTelemetryReader: fakeUsageReader([]),
+    });
+    const r = (await find('query_usage_telemetry').handle({}, ctx as MutationContext)) as {
+      ok: false;
+      reason: string;
+    };
+    expect(r.ok).toBe(false);
+    expect(r.reason).toBe('usage_telemetry_unavailable');
+  });
+
+  it('returns empty rollups when no events', async () => {
+    const ctx = makeCtx({
+      usageTelemetryReader: fakeUsageReader([]),
+      tenantId: 'tenant-1',
+      nowMs: () => new Date('2026-05-11T12:00:00.000Z').getTime(),
+    });
+    const r = (await find('query_usage_telemetry').handle({}, ctx as MutationContext)) as {
+      ok: true;
+      rollups: unknown[];
+      sinceTimestamp: string;
+      untilTimestamp: string;
+    };
+    expect(r.ok).toBe(true);
+    expect(r.rollups).toEqual([]);
+    expect(r.untilTimestamp).toBe('2026-05-11T12:00:00.000Z');
+    // 7 days back from until.
+    expect(r.sinceTimestamp).toBe('2026-05-04T12:00:00.000Z');
+  });
+
+  it('rolls up events into per-(adapterId, modality) buckets', async () => {
+    const events = [
+      makeUsageEvent({ latencyMs: 100, costAmount: 0.01 }),
+      makeUsageEvent({ latencyMs: 200, costAmount: 0.02, outcome: 'failed' }),
+      makeUsageEvent({ adapterId: 'fish-speech', latencyMs: 300 }),
+    ];
+    const ctx = makeCtx({
+      usageTelemetryReader: fakeUsageReader(events),
+      tenantId: 'tenant-1',
+      nowMs: () => new Date('2026-05-11T23:00:00.000Z').getTime(),
+    });
+    const r = (await find('query_usage_telemetry').handle({}, ctx as MutationContext)) as {
+      ok: true;
+      rollups: Array<{
+        adapterId: string;
+        count: number;
+        successCount: number;
+        failedCount: number;
+        totalCostAmount: number;
+      }>;
+    };
+    expect(r.ok).toBe(true);
+    expect(r.rollups.length).toBe(2);
+    const byId = new Map(r.rollups.map((x) => [x.adapterId, x]));
+    expect(byId.get('kokoro-tts')?.count).toBe(2);
+    expect(byId.get('kokoro-tts')?.successCount).toBe(1);
+    expect(byId.get('kokoro-tts')?.failedCount).toBe(1);
+    expect(byId.get('kokoro-tts')?.totalCostAmount).toBeCloseTo(0.03, 10);
+    expect(byId.get('fish-speech')?.count).toBe(1);
+  });
+
+  it('filters by adapterId', async () => {
+    const events = [
+      makeUsageEvent({ adapterId: 'kokoro-tts' }),
+      makeUsageEvent({ adapterId: 'fish-speech' }),
+    ];
+    const ctx = makeCtx({
+      usageTelemetryReader: fakeUsageReader(events),
+      tenantId: 'tenant-1',
+      nowMs: () => new Date('2026-05-11T23:00:00.000Z').getTime(),
+    });
+    const r = (await find('query_usage_telemetry').handle(
+      { adapterId: 'kokoro-tts' },
+      ctx as MutationContext,
+    )) as { ok: true; rollups: Array<{ adapterId: string }> };
+    expect(r.rollups.length).toBe(1);
+    expect(r.rollups[0]?.adapterId).toBe('kokoro-tts');
+  });
+
+  it("isolates tenants — reader only returns the calling tenant's events", async () => {
+    const events = [
+      makeUsageEvent({ tenantId: 'tenant-1', costAmount: 0.01 }),
+      makeUsageEvent({ tenantId: 'tenant-2', costAmount: 99 }),
+    ];
+    const ctx = makeCtx({
+      usageTelemetryReader: fakeUsageReader(events),
+      tenantId: 'tenant-1',
+      nowMs: () => new Date('2026-05-11T23:00:00.000Z').getTime(),
+    });
+    const r = (await find('query_usage_telemetry').handle({}, ctx as MutationContext)) as {
+      ok: true;
+      rollups: Array<{ totalCostAmount: number }>;
+    };
+    expect(r.rollups.length).toBe(1);
+    expect(r.rollups[0]?.totalCostAmount).toBe(0.01);
+  });
+
+  it('respects explicit since/until timestamps', async () => {
+    const events = [
+      makeUsageEvent({ timestamp: '2026-05-01T00:00:00.000Z' }), // out
+      makeUsageEvent({ timestamp: '2026-05-05T00:00:00.000Z' }), // in
+      makeUsageEvent({ timestamp: '2026-05-10T00:00:00.000Z' }), // out (exclusive end)
+    ];
+    const ctx = makeCtx({
+      usageTelemetryReader: fakeUsageReader(events),
+      tenantId: 'tenant-1',
+    });
+    const r = (await find('query_usage_telemetry').handle(
+      {
+        sinceTimestamp: '2026-05-04T00:00:00.000Z',
+        untilTimestamp: '2026-05-10T00:00:00.000Z',
+      },
+      ctx as MutationContext,
+    )) as { ok: true; rollups: Array<{ count: number }> };
+    expect(r.rollups[0]?.count).toBe(1);
+  });
+
+  it('emits no patch ops (pure read)', async () => {
+    const ctx = makeCtx({
+      usageTelemetryReader: fakeUsageReader([makeUsageEvent()]),
+      tenantId: 'tenant-1',
+      nowMs: () => new Date('2026-05-11T23:00:00.000Z').getTime(),
+    });
+    await find('query_usage_telemetry').handle({}, ctx as MutationContext);
+    expect(ctx.patchSink.drain()).toEqual([]);
+  });
+
+  it('all three outcome counts surface separately', async () => {
+    const events = [
+      makeUsageEvent({ outcome: 'success' }),
+      makeUsageEvent({ outcome: 'success' }),
+      makeUsageEvent({ outcome: 'failed' }),
+      makeUsageEvent({ outcome: 'killed' }),
+    ];
+    const ctx = makeCtx({
+      usageTelemetryReader: fakeUsageReader(events),
+      tenantId: 'tenant-1',
+      nowMs: () => new Date('2026-05-11T23:00:00.000Z').getTime(),
+    });
+    const r = (await find('query_usage_telemetry').handle({}, ctx as MutationContext)) as {
+      ok: true;
+      rollups: Array<{ successCount: number; failedCount: number; killedCount: number }>;
+    };
+    expect(r.rollups[0]?.successCount).toBe(2);
+    expect(r.rollups[0]?.failedCount).toBe(1);
+    expect(r.rollups[0]?.killedCount).toBe(1);
   });
 });

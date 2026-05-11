@@ -8,7 +8,23 @@ import type { AdapterDescriptor } from '@stageflip/adapters-core';
 
 import { InMemoryAuditEmitter } from './audit-emitter.js';
 import { RemoteServiceConfigError, RemoteServiceSandboxRunner } from './remote-service-runner.js';
-import type { SandboxInvocation } from './types.js';
+import type { AdapterUsageEventLike, SandboxInvocation } from './types.js';
+
+class CapturingUsageEmitter {
+  readonly events: AdapterUsageEventLike[] = [];
+  emit(event: AdapterUsageEventLike): void {
+    this.events.push(event);
+  }
+}
+
+function makeClock(initialMs: number, stepMs: number): () => number {
+  let t = initialMs;
+  return () => {
+    const v = t;
+    t += stepMs;
+    return v;
+  };
+}
 
 const descriptor: AdapterDescriptor = {
   id: 'fake-remote',
@@ -111,6 +127,58 @@ describe('RemoteServiceSandboxRunner', () => {
     );
     const evs = emitter.events();
     expect(evs.map((e) => e.kind)).toEqual(['start', 'failed']);
+  });
+
+  // ---- T-445 — usage telemetry ----
+
+  it('emits success usage event when seam is wired', async () => {
+    const usageEmitter = new CapturingUsageEmitter();
+    const clock = makeClock(5_000, 120);
+    const runner = new RemoteServiceSandboxRunner(
+      async () => 'ok',
+      () => 'https://api.fake',
+    );
+    await runner.run(makeInvocation({ usageEmitter, clock, selectedReason: 'capability-router' }));
+    expect(usageEmitter.events.length).toBe(1);
+    expect(usageEmitter.events[0]).toMatchObject({
+      adapterId: 'fake-remote',
+      modality: 'video-gen',
+      selectedReason: 'capability-router',
+      latencyMs: 120,
+      outcome: 'success',
+    });
+  });
+
+  it('emits failed usage event on HTTPS error', async () => {
+    const usageEmitter = new CapturingUsageEmitter();
+    const clock = makeClock(0, 5);
+    const runner = new RemoteServiceSandboxRunner(
+      async () => {
+        throw new Error('502');
+      },
+      () => 'https://api.fake',
+    );
+    await expect(
+      runner.run(makeInvocation({ usageEmitter, clock, selectedReason: 'explicit' })),
+    ).rejects.toThrow('502');
+    expect(usageEmitter.events.length).toBe(1);
+    expect(usageEmitter.events[0]).toMatchObject({
+      selectedReason: 'explicit',
+      outcome: 'failed',
+      latencyMs: 5,
+    });
+  });
+
+  it('does NOT emit usage when usageEmitter seam absent', async () => {
+    const clock = makeClock(0, 1);
+    const runner = new RemoteServiceSandboxRunner(
+      async () => 'ok',
+      () => 'https://api.fake',
+    );
+    // Just clock + reason without emitter — no panic, just no emission.
+    await runner.run(makeInvocation({ clock, selectedReason: 'capability-router' }));
+    // Reach end with no error.
+    expect(true).toBe(true);
   });
 
   it('rejects descriptors whose sandbox.kind is not remote-service', async () => {
