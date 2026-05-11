@@ -327,8 +327,9 @@ describe('arrange_reveal', () => {
   it('picks fresh reveal-N ids when the element already carries reveal-* animations', async () => {
     const d = doc(['x']);
     const slide = (d.content as { slides: { elements: { animations: unknown[] }[] }[] }).slides[0];
-    if (slide) {
-      slide.elements[0]!.animations = [{ id: 'reveal-3', timing: {}, animation: { kind: 'fade' } }];
+    const firstEl = slide?.elements[0];
+    if (firstEl) {
+      firstEl.animations = [{ id: 'reveal-3', timing: {}, animation: { kind: 'fade' } }];
     }
     const c = ctx(d);
     const r = await find('arrange_reveal').handle({ slideId: 'slide-1', revealOrder: ['x'] }, c);

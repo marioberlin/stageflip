@@ -61,11 +61,24 @@ Reshape one element to a centered hero box. `widthRatio` / `heightRatio` are fra
 - `widthRatio` (`number`) _(optional)_
 - `heightRatio` (`number`) _(optional)_
 
+### `arrange_reveal`
+
+Append a staggered enter-animation sequence to caller-supplied element ids on a slide. Canonical use case: headline → body → media reveal at deck open. Caller passes `revealOrder` (an ordered list of element ids — the 0th reveals first); the tool emits one animation-add JSON-Patch per element. Frame-native input (the canonical schema has no ms surface on slide content): defaults at 30fps are 9-frame stagger (≈300 ms) + 14-frame enter (≈450 ms) + `fade` + `ease-out`. Override `enterAnimationKind` to `slide-up` / `slide-down` / `slide-left` / `slide-right` / `scale`. Refuses with `duplicate_element_id` if `revealOrder` carries duplicates (checked first); then `wrong_mode` / `slide_not_found` / `element_not_found` per the bundle's standard locator. Animation ids are auto-generated as `reveal-N` (collision-safe against pre-existing `reveal-*` animations). Does NOT touch `transform`, content, or any field other than `animations`.
+
+- `slideId` (`string`)
+- `revealOrder` (`array`)
+- `initialDelayFrames` (`integer`) _(optional)_
+- `staggerFrames` (`integer`) _(optional)_
+- `enterDurationFrames` (`integer`) _(optional)_
+- `enterAnimationKind` (`string`) _(optional)_ — enum: `fade` / `slide-up` / `slide-down` / `slide-left` / `slide-right` / `scale`
+- `enterEasing` (`string`) _(optional)_ — enum: `linear` / `ease` / `ease-in` / `ease-out` / `ease-in-out`
+- `autoplay` (`boolean`) _(optional)_
+
 
 ## Invariants
 
 - Every handler declares `bundle: 'semantic-layout'`.
-- Tool count 4 (I-9 cap is 30).
+- Tool count 5 (I-9 cap is 30).
 - Tool names + descriptions above mirror what the LLM sees at plan +
   execution time, produced by the router's `LLMToolDefinition[]`.
 

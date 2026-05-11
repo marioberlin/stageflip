@@ -1,0 +1,9 @@
+---
+'@stageflip/engine': patch
+---
+
+T-407 — Add `arrange_reveal` as the 5th tool inside the existing `semantic-layout` handler bundle (alongside `apply_title_body_layout` / `apply_two_column_layout` / `apply_kpi_strip_layout` / `apply_centered_hero_layout`). Takes a slide id plus an ordered list of caller-supplied element ids (`revealOrder`) and appends a staggered enter-animation sequence — the 0th id reveals first, the 1st reveals second, etc. Canonical use case: headline → body → media reveal at deck open.
+
+Frame-native input (the canonical schema is frame-native; there is no fps surface on slide content): defaults at 30fps are 9-frame stagger (≈300 ms) + 14-frame enter (≈450 ms) + `fade` + `ease-out`. Override `enterAnimationKind` to `slide-up` / `slide-down` / `slide-left` / `slide-right` / `scale`. Refuses with `duplicate_element_id` (checked first), then routes through the existing `locateSlide` helper for `wrong_mode` / `slide_not_found` / `element_not_found`. Animation ids are auto-generated as `reveal-N` (collision-safe against pre-existing `reveal-*` animations on the same element via the `nextAnimationId` scan strategy borrowed from `clip-animation/handlers.ts`). Emits one JSON-Patch `add` op per element on `.../animations/-`; does NOT touch `transform`, content, or any field other than `animations`.
+
+NOT a new bundle. NOT a structural extension per `CLAUDE.md` §13. Bundle name stays `'semantic-layout'`; the canonical registry's bundle count stays at 24; no orchestrator wiring change; no `OWNER_TASK_MAP` edit (the `'semantic-layout'` entry already exists from T-168). The new tool flows through the existing `mergeTools` registration automatically. The auto-generated `skills/stageflip/tools/semantic-layout/SKILL.md` gains a fifth `### \`arrange_reveal\`` section + bumps the invariant "Tool count 4" → "5".
