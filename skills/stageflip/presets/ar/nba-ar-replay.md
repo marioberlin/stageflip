@@ -3,7 +3,7 @@ id: nba-ar-replay
 cluster: ar
 clipKind: arOverlay
 source: docs/compass_artifact.md#part-7-and-part-8-ar-and-environmental
-status: stub
+status: substantive
 preferredFont:
   family: NBA brand (custom)
   license: proprietary-byo
@@ -13,7 +13,7 @@ fallbackFont:
   license: ofl
 permissions: []
 signOff:
-  parityFixture: pending-user-review
+  parityFixture: 'signed:2026-05-11'
   typeDesign: na
 ---
 
