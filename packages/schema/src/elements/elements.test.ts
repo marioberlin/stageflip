@@ -8,6 +8,8 @@ import { describe, expect, it } from 'vitest';
 import {
   ELEMENT_TYPES,
   type Element,
+  MEDIA_PROVENANCE_KINDS,
+  type MediaProvenance,
   audioElementSchema,
   chartElementSchema,
   clipElementSchema,
@@ -16,8 +18,10 @@ import {
   embedElementSchema,
   groupElementSchema,
   imageElementSchema,
+  mediaProvenanceSchema,
   shapeElementSchema,
   tableElementSchema,
+  tenantVoiceConsentRefSchema,
   textElementSchema,
   videoElementSchema,
 } from './index.js';
@@ -237,5 +241,174 @@ describe('elementSchema (discriminated union)', () => {
     // Bumped from 12 to 13 in T-305 to add 'interactive-clip' (ADR-003 §D2).
     expect(ELEMENT_TYPES).toHaveLength(13);
     expect(new Set(ELEMENT_TYPES).size).toBe(13);
+  });
+});
+
+/* ----------------------- T-421 — MediaProvenance ----------------------- */
+
+const FULL_PROVENANCE: MediaProvenance = {
+  kind: 'tts',
+  provider: 'tts-kokoro',
+  model: 'kokoro-82m',
+  prompt: 'Hello world',
+  cacheKey: 'a'.repeat(64),
+  seed: 42,
+  voiceProvider: 'kokoro',
+  voiceId: 'af-bella',
+  clonedFromConsent: {
+    tenantId: 'tenant-1',
+    consentId: 'consent-1',
+    grantedAt: '2026-05-11T00:00:00.000Z',
+  },
+  researchSessionId: 'rs-abc',
+  sourceIds: ['src-1', 'src-2'],
+};
+
+describe('mediaProvenanceSchema (T-421 / ADR-008 §D2)', () => {
+  it('parses the minimal {kind: imported} shape', () => {
+    const parsed = mediaProvenanceSchema.parse({ kind: 'imported' });
+    expect(parsed.kind).toBe('imported');
+    expect(parsed.provider).toBeUndefined();
+  });
+
+  it('accepts every MEDIA_PROVENANCE_KINDS literal', () => {
+    expect(MEDIA_PROVENANCE_KINDS).toHaveLength(7);
+    for (const kind of MEDIA_PROVENANCE_KINDS) {
+      expect(mediaProvenanceSchema.parse({ kind }).kind).toBe(kind);
+    }
+  });
+
+  it('rejects an unknown kind', () => {
+    expect(() => mediaProvenanceSchema.parse({ kind: 'magic' })).toThrow();
+  });
+
+  it('rejects an unknown field (strict)', () => {
+    expect(() => mediaProvenanceSchema.parse({ kind: 'tts', futureField: 'x' })).toThrow();
+  });
+
+  it('parses the maximally-populated shape and round-trips byte-equal', () => {
+    const once = mediaProvenanceSchema.parse(FULL_PROVENANCE);
+    const twice = mediaProvenanceSchema.parse(JSON.parse(JSON.stringify(once)));
+    expect(twice).toEqual(once);
+    expect(twice.cacheKey).toHaveLength(64);
+    expect(twice.sourceIds).toEqual(['src-1', 'src-2']);
+  });
+
+  it('accepts seed as number or string (per cache-key recipe)', () => {
+    expect(mediaProvenanceSchema.parse({ kind: 'tts', seed: 7 }).seed).toBe(7);
+    expect(mediaProvenanceSchema.parse({ kind: 'tts', seed: 'deadbeef' }).seed).toBe('deadbeef');
+  });
+
+  it('rejects empty-string seed (must be ≥1 char if string)', () => {
+    expect(() => mediaProvenanceSchema.parse({ kind: 'tts', seed: '' })).toThrow();
+  });
+});
+
+describe('tenantVoiceConsentRefSchema (T-421 / ADR-008 §D2 / §D4)', () => {
+  it('requires all three fields', () => {
+    const ok = tenantVoiceConsentRefSchema.parse({
+      tenantId: 't1',
+      consentId: 'c1',
+      grantedAt: '2026-05-11T00:00:00.000Z',
+    });
+    expect(ok.tenantId).toBe('t1');
+
+    expect(() => tenantVoiceConsentRefSchema.parse({ tenantId: 't1', consentId: 'c1' })).toThrow();
+    expect(() =>
+      tenantVoiceConsentRefSchema.parse({ consentId: 'c1', grantedAt: '2026-05-11T00:00:00.000Z' }),
+    ).toThrow();
+  });
+
+  it('rejects a malformed grantedAt (must be ISO 8601 datetime)', () => {
+    expect(() =>
+      tenantVoiceConsentRefSchema.parse({
+        tenantId: 't1',
+        consentId: 'c1',
+        grantedAt: '2026-05-11',
+      }),
+    ).toThrow();
+  });
+});
+
+describe('audio/image/video elements carry optional provenance (T-421)', () => {
+  it('audio: parses without provenance (back-compat)', () => {
+    const parsed = audioElementSchema.parse({ ...BASE, type: 'audio', src: 'asset:a1' });
+    expect(parsed.provenance).toBeUndefined();
+  });
+
+  it('audio: parses with full provenance and round-trips', () => {
+    const original = {
+      ...BASE,
+      type: 'audio' as const,
+      src: 'asset:a1' as const,
+      provenance: FULL_PROVENANCE,
+    };
+    const once = audioElementSchema.parse(original);
+    const twice = audioElementSchema.parse(JSON.parse(JSON.stringify(once)));
+    expect(twice).toEqual(once);
+    expect(twice.provenance?.voiceId).toBe('af-bella');
+  });
+
+  it('image: parses without provenance (back-compat)', () => {
+    const parsed = imageElementSchema.parse({ ...BASE, type: 'image', src: 'asset:i1' });
+    expect(parsed.provenance).toBeUndefined();
+  });
+
+  it('image: parses with full provenance and round-trips', () => {
+    const original = {
+      ...BASE,
+      type: 'image' as const,
+      src: 'asset:i1' as const,
+      provenance: { ...FULL_PROVENANCE, kind: 'image-gen' as const },
+    };
+    const once = imageElementSchema.parse(original);
+    const twice = imageElementSchema.parse(JSON.parse(JSON.stringify(once)));
+    expect(twice).toEqual(once);
+    expect(twice.provenance?.kind).toBe('image-gen');
+  });
+
+  it('video: parses without provenance (back-compat)', () => {
+    const parsed = videoElementSchema.parse({ ...BASE, type: 'video', src: 'asset:v1' });
+    expect(parsed.provenance).toBeUndefined();
+  });
+
+  it('video: parses with full provenance and round-trips', () => {
+    const original = {
+      ...BASE,
+      type: 'video' as const,
+      src: 'asset:v1' as const,
+      provenance: { ...FULL_PROVENANCE, kind: 'video-gen' as const },
+    };
+    const once = videoElementSchema.parse(original);
+    const twice = videoElementSchema.parse(JSON.parse(JSON.stringify(once)));
+    expect(twice).toEqual(once);
+    expect(twice.provenance?.kind).toBe('video-gen');
+  });
+
+  it('rejects provenance with an unknown field on each media element (strict)', () => {
+    for (const [schema, base] of [
+      [audioElementSchema, { type: 'audio', src: 'asset:a1' }],
+      [imageElementSchema, { type: 'image', src: 'asset:i1' }],
+      [videoElementSchema, { type: 'video', src: 'asset:v1' }],
+    ] as const) {
+      expect(() =>
+        schema.parse({
+          ...BASE,
+          ...base,
+          provenance: { kind: 'tts', futureField: 'x' },
+        } as unknown),
+      ).toThrow();
+    }
+  });
+
+  it('elementSchema (discriminated union) accepts provenance on media branches', () => {
+    const el = elementSchema.parse({
+      ...BASE,
+      type: 'audio',
+      src: 'asset:a1',
+      provenance: { kind: 'tts', provider: 'tts-kokoro' },
+    });
+    if (el.type !== 'audio') throw new Error('type');
+    expect(el.provenance?.provider).toBe('tts-kokoro');
   });
 });

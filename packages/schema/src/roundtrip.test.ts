@@ -21,6 +21,8 @@ import {
   easingSchema,
   embedElementSchema,
   imageElementSchema,
+  mediaProvenanceSchema,
+  researchSessionRefSchema,
   shapeElementSchema,
   tableElementSchema,
   textElementSchema,
@@ -543,5 +545,110 @@ describe('round-trip: T-251 deck-level templates + per-element inheritsFrom', ()
     });
     if (doc.content.mode !== 'slide') throw new Error('mode');
     expect(doc.content.slides[0]?.layoutId).toBeUndefined();
+  });
+});
+
+/* ------------------- T-421 — provenance + research --------------------- */
+
+const provenanceKindArb = fc.constantFrom(
+  'tts',
+  'video-gen',
+  'music-gen',
+  'sfx',
+  'three-d',
+  'image-gen',
+  'imported',
+);
+
+const provenanceArb = fc.record(
+  {
+    kind: provenanceKindArb,
+    provider: fc.option(fc.string({ minLength: 1, maxLength: 32 }), { nil: undefined }),
+    model: fc.option(fc.string({ minLength: 1, maxLength: 32 }), { nil: undefined }),
+    prompt: fc.option(fc.string({ maxLength: 200 }), { nil: undefined }),
+    cacheKey: fc.option(fc.stringMatching(/^[0-9a-f]{64}$/) as fc.Arbitrary<string>, {
+      nil: undefined,
+    }),
+    seed: fc.option(
+      fc.oneof(fc.integer({ min: 0, max: 1_000_000 }), fc.string({ minLength: 1, maxLength: 16 })),
+      { nil: undefined },
+    ),
+    voiceProvider: fc.option(fc.string({ minLength: 1, maxLength: 32 }), { nil: undefined }),
+    voiceId: fc.option(fc.string({ minLength: 1, maxLength: 32 }), { nil: undefined }),
+    researchSessionId: fc.option(fc.string({ minLength: 1, maxLength: 32 }), { nil: undefined }),
+    sourceIds: fc.option(fc.array(fc.string({ minLength: 1, maxLength: 16 }), { maxLength: 5 }), {
+      nil: undefined,
+    }),
+  },
+  // Drop undefined keys so JSON round-trip doesn't introduce key drift on
+  // explicitly-undefined properties (JSON.stringify drops them already, but
+  // we want the parsed shape to deep-equal pre-serialize too).
+  { requiredKeys: ['kind'] },
+);
+
+const researchSourceKindArb = fc.constantFrom(
+  'pdf',
+  'doc',
+  'slides',
+  'audio',
+  'video',
+  'web',
+  'text',
+);
+
+const researchSourceArb = fc.record({
+  name: fc.string({ minLength: 1, maxLength: 32 }),
+  kind: researchSourceKindArb,
+  providerSourceId: fc.string({ minLength: 1, maxLength: 32 }),
+  lastModified: fc.constant('2026-05-11T00:00:00.000Z'),
+  contentHash: fc.stringMatching(/^[0-9a-f]{64}$/) as fc.Arbitrary<string>,
+});
+
+const researchSessionRefArb = fc.record({
+  provider: fc.string({ minLength: 1, maxLength: 32 }),
+  sessionId: fc.string({ minLength: 1, maxLength: 32 }),
+  sources: fc.array(researchSourceArb, { maxLength: 4 }),
+  createdAt: fc.constant('2026-05-11T00:00:00.000Z'),
+});
+
+describe('round-trip: T-421 MediaProvenance + ResearchSessionRef', () => {
+  it('every MediaProvenance variant round-trips', () => {
+    fc.assert(
+      fc.property(provenanceArb, (p) => {
+        const once = mediaProvenanceSchema.parse(p);
+        const twice = roundTrip(mediaProvenanceSchema, once);
+        expect(twice).toEqual(once);
+      }),
+      { numRuns: 75 },
+    );
+  });
+
+  it('every ResearchSessionRef variant round-trips', () => {
+    fc.assert(
+      fc.property(researchSessionRefArb, (r) => {
+        const once = researchSessionRefSchema.parse(r);
+        const twice = roundTrip(researchSessionRefSchema, once);
+        expect(twice).toEqual(once);
+      }),
+      { numRuns: 50 },
+    );
+  });
+
+  it('audio/image/video elements round-trip with provenance attached', () => {
+    const arbs = [
+      [audioElementSchema, audioArb] as const,
+      [imageElementSchema, imageArb] as const,
+      [videoElementSchema, videoArb] as const,
+    ];
+    for (const [schema, baseArb] of arbs) {
+      fc.assert(
+        fc.property(baseArb, provenanceArb, (base, prov) => {
+          const once = schema.parse({ ...base, provenance: prov });
+          const twice = roundTrip(schema, once);
+          expect(twice).toEqual(once);
+        }),
+        { numRuns: 30 },
+      );
+    }
   });
 });
