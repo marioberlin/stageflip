@@ -130,6 +130,7 @@ export * from './clip.js';
 export * from './code.js';
 export * from './embed.js';
 export * from './image.js';
+export * from './media-provenance.js';
 export * from './shape.js';
 export * from './table.js';
 export * from './text.js';

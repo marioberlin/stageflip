@@ -4,6 +4,7 @@
 import { z } from 'zod';
 import { assetRefSchema } from '../primitives.js';
 import { elementBaseSchema } from './base.js';
+import { mediaProvenanceSchema } from './media-provenance.js';
 import { trimWindowSchema } from './video.js';
 
 /** Mix metadata. Kept minimal here; richer EQ/compression arrives with T-087. */
@@ -24,6 +25,14 @@ export const audioElementSchema = elementBaseSchema
       trim: trimWindowSchema.optional(),
       mix: audioMixSchema.optional(),
       loop: z.boolean().default(false),
+      /**
+       * Asset-generation provenance per ADR-008 §D2 (T-421). Optional —
+       * hand-authored / imported audio carries none. When the audio was
+       * produced by a TTS / sfx / music-gen adapter, this slot records
+       * the pipeline kind, provider, model, prompt, cache key, seed,
+       * voice metadata, and (for cloned voices) the consent reference.
+       */
+      provenance: mediaProvenanceSchema.optional(),
     }),
   )
   .strict();

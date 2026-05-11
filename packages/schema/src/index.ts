@@ -14,6 +14,7 @@ export type { CompareToPlaceholderResult } from './inheritance.js';
 export * from './migrations/index.js';
 export * from './presets/index.js';
 export * from './primitives.js';
+export * from './research-session.js';
 export * from './templates.js';
 export * from './theme.js';
 export * from './timing.js';

@@ -61,6 +61,7 @@ a deterministic table-of-shapes for quick lookup.
 | `layouts` | array<object> (default) | — |
 | `content` | discriminated-union(mode) | ✓ |
 | `variantSlots` | record<string, object>? | — |
+| `research` | object? | — |
 
 ## DocumentMeta
 
@@ -166,6 +167,7 @@ a deterministic table-of-shapes for quick lookup.
 | `src` | string | ✓ |
 | `alt` | string? | — |
 | `fit` | enum(contain \| cover \| fill \| none \| scale-down) (default) | — |
+| `provenance` | object? | — |
 
 ## VideoElement
 
@@ -187,6 +189,7 @@ a deterministic table-of-shapes for quick lookup.
 | `muted` | boolean (default) | — |
 | `loop` | boolean (default) | — |
 | `playbackRate` | number (default) | — |
+| `provenance` | object? | — |
 
 ## AudioElement
 
@@ -207,6 +210,7 @@ a deterministic table-of-shapes for quick lookup.
 | `trim` | object (refined)? | — |
 | `mix` | object? | — |
 | `loop` | boolean (default) | — |
+| `provenance` | object? | — |
 
 ## ShapeElement
 
