@@ -6,8 +6,13 @@
 // When the key is missing the route returns 503 `not_configured` — a
 // distinct failure mode the UI can surface differently from the old
 // 501 "not wired yet" message.
+//
+// T-442: when `?stream=true` is set, the response is `text/event-stream`
+// driven by streamAgent — each ExecutorEvent is emitted as it occurs
+// instead of buffering the full run.
 
-import { OrchestratorNotConfigured, runAgent } from '@stageflip/app-agent';
+import { toReadableStream } from '@stageflip/agent';
+import { OrchestratorNotConfigured, runAgent, streamAgent } from '@stageflip/app-agent';
 import { documentSchema } from '@stageflip/schema';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -31,7 +36,29 @@ const executeRequestSchema = z
   })
   .strict();
 
-export async function POST(req: Request): Promise<NextResponse> {
+function buildRunRequest(
+  data: z.infer<typeof executeRequestSchema>,
+): Parameters<typeof runAgent>[0] {
+  const request: Parameters<typeof runAgent>[0] = {
+    prompt: data.prompt,
+    document: data.document,
+  };
+  if (data.selection !== undefined) {
+    request.selection = {
+      elementIds: data.selection.elementIds,
+      ...(data.selection.slideId !== undefined ? { slideId: data.selection.slideId } : {}),
+    };
+  }
+  if (data.plannerModel !== undefined) request.plannerModel = data.plannerModel;
+  if (data.executorModel !== undefined) request.executorModel = data.executorModel;
+  if (data.validatorModel !== undefined) request.validatorModel = data.validatorModel;
+  return request;
+}
+
+export async function POST(req: Request): Promise<Response> {
+  const url = new URL(req.url);
+  const isStreaming = url.searchParams.get('stream') === 'true';
+
   let body: unknown;
   try {
     body = await req.json();
@@ -59,26 +86,62 @@ export async function POST(req: Request): Promise<NextResponse> {
     );
   }
 
-  try {
-    // `exactOptionalPropertyTypes` forbids passing `undefined` at callsites
-    // where the field is optional. Zod's `.optional()` surfaces the field
-    // as `T | undefined` in the parsed type, so we reconstruct the request
-    // with only defined properties.
-    const data = parsed.data;
-    const request: Parameters<typeof runAgent>[0] = {
-      prompt: data.prompt,
-      document: data.document,
-    };
-    if (data.selection !== undefined) {
-      request.selection = {
-        elementIds: data.selection.elementIds,
-        ...(data.selection.slideId !== undefined ? { slideId: data.selection.slideId } : {}),
-      };
+  if (isStreaming) {
+    // T-442 — SSE branch. We have to enter the streamAgent generator
+    // far enough to surface OrchestratorNotConfigured BEFORE we open
+    // the response body, so the client still gets a 503 in that case.
+    // streamAgent only calls buildProviderFromEnv() inside the
+    // generator, so we kick the iterator once and tee the first event
+    // back into the stream wrapper.
+    const request = buildRunRequest(parsed.data);
+    try {
+      const iter = streamAgent(request, { signal: req.signal });
+      const iterator = iter[Symbol.asyncIterator]();
+      const first = await iterator.next();
+      // Re-wrap the iterator so toReadableStream sees the first value
+      // plus the remainder.
+      async function* prepended() {
+        if (!first.done) yield first.value;
+        while (true) {
+          const next = await iterator.next();
+          if (next.done) return;
+          yield next.value;
+        }
+      }
+      const body = toReadableStream(prepended(), { signal: req.signal });
+      return new Response(body, {
+        status: 200,
+        headers: {
+          'content-type': 'text/event-stream; charset=utf-8',
+          'cache-control': 'no-store',
+          connection: 'keep-alive',
+          // Disable nginx/vercel reverse-proxy buffering so frames
+          // reach the client as they're produced.
+          'x-accel-buffering': 'no',
+        },
+      });
+    } catch (err) {
+      if (err instanceof OrchestratorNotConfigured) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: 'not_configured',
+            message: 'Agent orchestrator is not configured. Set ANTHROPIC_API_KEY and retry.',
+            reason: err.reason,
+          },
+          { status: 503 },
+        );
+      }
+      const message = err instanceof Error ? err.message : 'unknown error';
+      return NextResponse.json(
+        { ok: false, error: 'orchestrator_failed', message },
+        { status: 500 },
+      );
     }
-    if (data.plannerModel !== undefined) request.plannerModel = data.plannerModel;
-    if (data.executorModel !== undefined) request.executorModel = data.executorModel;
-    if (data.validatorModel !== undefined) request.validatorModel = data.validatorModel;
-    const result = await runAgent(request);
+  }
+
+  try {
+    const result = await runAgent(buildRunRequest(parsed.data));
     return NextResponse.json(
       {
         ok: true,
