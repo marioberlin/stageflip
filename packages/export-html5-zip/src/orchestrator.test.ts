@@ -312,7 +312,10 @@ describe('exportHtml5Zip (multi-size)', () => {
     const input = baseInput({
       aiElements: [
         { elementId: 'el-imported', provenance: { kind: 'imported' } },
-        { elementId: 'el-tts', provenance: { kind: 'tts', provider: 'tts-kokoro', model: 'kokoro-82m' } },
+        {
+          elementId: 'el-tts',
+          provenance: { kind: 'tts', provider: 'tts-kokoro', model: 'kokoro-82m' },
+        },
       ],
     });
     const result = await exportHtml5ZipForSize(MPU, input, baseOpts());

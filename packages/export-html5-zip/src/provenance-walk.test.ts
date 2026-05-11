@@ -82,8 +82,14 @@ describe('extractAiDisclosures', () => {
   it('preserves input order across multiple AI elements', () => {
     const inputs: readonly AiElementInput[] = [
       { elementId: 'b', provenance: ttsProvenance() },
-      { elementId: 'a', provenance: { kind: 'image-gen', provider: 'image-flux', model: 'flux-1' } },
-      { elementId: 'c', provenance: { kind: 'video-gen', provider: 'video-seedance', model: 'seedance-1' } },
+      {
+        elementId: 'a',
+        provenance: { kind: 'image-gen', provider: 'image-flux', model: 'flux-1' },
+      },
+      {
+        elementId: 'c',
+        provenance: { kind: 'video-gen', provider: 'video-seedance', model: 'seedance-1' },
+      },
     ];
     const out = extractAiDisclosures(inputs, { badgeEnabled: true });
     expect(out.elements.map((e) => e.elementId)).toEqual(['b', 'a', 'c']);
