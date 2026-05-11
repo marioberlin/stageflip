@@ -5,6 +5,7 @@
 import { z } from 'zod';
 import { assetRefSchema } from '../primitives.js';
 import { elementBaseSchema } from './base.js';
+import { mediaProvenanceSchema } from './media-provenance.js';
 
 /** A trim window in milliseconds into the source media. */
 export const trimWindowSchema = z
@@ -24,6 +25,14 @@ export const videoElementSchema = elementBaseSchema
       muted: z.boolean().default(false),
       loop: z.boolean().default(false),
       playbackRate: z.number().positive().default(1),
+      /**
+       * Asset-generation provenance per ADR-008 §D2 (T-421). Optional —
+       * hand-authored / imported video carries none. Video-gen adapters
+       * populate this slot with pipeline kind, provider, model, prompt,
+       * cache key, seed, and (when source-grounded) the research
+       * session id + per-source citation ids.
+       */
+      provenance: mediaProvenanceSchema.optional(),
     }),
   )
   .strict();
