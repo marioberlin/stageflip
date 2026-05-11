@@ -6,6 +6,7 @@
 import { z } from 'zod';
 import { layoutDescriptorSchema, slotDefinitionSchema } from './components.js';
 import { contentSchema } from './content/index.js';
+import { researchSessionRefSchema } from './research-session.js';
 import { slideLayoutSchema, slideMasterSchema } from './templates.js';
 import { themeSchema } from './theme.js';
 import { variantSlotsSchema } from './variants/variant-slots.js';
@@ -77,6 +78,16 @@ export const documentSchema = z
      * the author-chosen slot name; the value is the element / path pointer.
      */
     variantSlots: variantSlotsSchema.optional(),
+    /**
+     * Research-session binding (T-421 / ADR-008 §D3). Optional; absent on
+     * ungrounded documents. When set, asset-gen calls fired against this
+     * document inherit the session id (per ADR-008 §D7 routing). A
+     * document may be grounded later by populating this field via the
+     * `ground_existing_project` AI tool; ungrounded by clearing it.
+     * Existing assets keep their `provenance.researchSessionId` audit
+     * trail in either direction.
+     */
+    research: researchSessionRefSchema.optional(),
   })
   .strict();
 export type Document = z.infer<typeof documentSchema>;
