@@ -3,7 +3,7 @@ title: Captions
 id: skills/stageflip/concepts/captions
 tier: concept
 status: substantive
-last_updated: 2026-04-24
+last_updated: 2026-05-11
 owner_task: T-184
 related:
   - skills/stageflip/modes/stageflip-video/SKILL.md
@@ -85,8 +85,93 @@ const result = await transcribeAndPack({
 
 The cache key is `sha256(audio-bytes || language-hint)`. Re-running with the same inputs hits the cache and skips the provider entirely.
 
+## TTS bypass path (T-436)
+
+When the audio came from a known TTS adapter that already emits per-word
+timestamps, the captions pipeline can **skip Whisper entirely** — the
+adapter's own `TtsResult.wordTimestamps` flows straight into `packWords()`.
+This eliminates the ~$0.006/min Whisper cost on AI-generated narration
+(~30 % of the captions cost line on TTS-bearing decks).
+
+### Whitelist
+
+Initial trusted TTS adapter ids (T-436):
+
+```
+['kokoro', 'fish-speech']
+```
+
+Whitelist membership is the host-side trust signal. An adapter declaring
+`TtsCapabilityDescriptor.emitsWordTimestamps: true` is **not** automatically
+trusted — pair every whitelist addition with a SKILL update. The whitelist
+is a static `as const` array in `packages/captions/src/tts-bypass.ts`;
+add a third entry by editing the literal and the test in
+`tts-bypass.test.ts` that asserts the whitelist length.
+
+### Eligibility
+
+The bypass fires when ALL hold:
+
+- `provenance.kind === 'tts'`
+- `provenance.provider` is on `TTS_BYPASS_WHITELIST`
+- `wordTimestamps` is a non-empty array
+- every entry has a non-empty `word`, `startS >= 0`, and `endS > startS`
+
+Any failure silently falls through to the standard Whisper-backed
+`transcribeAndPack()` call — the bypass never throws on data-shape
+mismatch. This keeps live-recorded, imported, or generated-without-
+timestamps audio behaving exactly as before.
+
+### Result
+
+The bypass uses `transcribeAndPackWithTtsBypass()` which returns
+`CaptionPipelineResultWithBypass` — a superset of `CaptionPipelineResult`
+that adds:
+
+- `viaTtsBypass?: true` — set only when bypass fired
+- `ttsBypassProvider?: 'kokoro' | 'fish-speech'` — the trusted provider
+
+Consumers inspect these to render "Auto-generated from TTS provider X"
+UX or to expose a "Re-run via Whisper" override. The `CaptionSegment`
+schema itself is unchanged — provenance metadata lives on the wrapper.
+
+### Determinism
+
+Seconds → milliseconds conversion uses `Math.floor(seconds * 1000)`
+(not `round`), so repeated calls with the same upstream `wordTimestamps`
+produce byte-identical `CaptionSegment[]`. The bypass path does not touch
+the SHA-256 transcript cache — the cache key is content-addressed to the
+audio bytes; bypass output is already a deterministic function of the
+upstream `TtsResult.wordTimestamps`, so caching adds no dedupe leverage.
+
+### Usage
+
+```ts
+import { transcribeAndPackWithTtsBypass } from '@stageflip/captions';
+
+const result = await transcribeAndPackWithTtsBypass({
+  source: audioBytes,
+  language: 'en',
+  pack: { maxCharsPerLine: 40, maxLines: 2 },
+  provider: createOpenAIWhisperProvider({ apiKey: process.env.OPENAI_API_KEY }),
+  tts: {
+    provenance: { kind: 'tts', provider: 'kokoro' },
+    wordTimestamps: ttsResult.wordTimestamps, // straight off the TtsResult
+  },
+});
+
+if (result.viaTtsBypass) {
+  // Whisper was not called; segments came from Kokoro/Fish Speech.
+}
+```
+
+The `tts` argument is optional: omitting it makes the wrapper behave
+identically to plain `transcribeAndPack()`.
+
 ## Related
 
 - Mode: `modes/stageflip-video/SKILL.md`
-- Task: T-184 (impl), T-185 (aspect bounce)
+- Task: T-184 (impl), T-185 (aspect bounce), T-436 (TTS bypass)
+- TTS adapters: T-426 (Kokoro), T-427 (Fish Speech)
+- Provenance schema: T-421 (`MediaProvenance`)
 - Whisper SDK: pinned in `docs/dependencies.md`
