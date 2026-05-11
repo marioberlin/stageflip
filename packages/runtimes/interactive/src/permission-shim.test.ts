@@ -6,10 +6,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { makeInteractiveClip } from './contract-tests/fixtures.js';
 import {
-  createTenantFlagCache,
   type TenantFlagPopulator,
   type TenantFlagTarget,
   type TenantFlagValue,
+  createTenantFlagCache,
 } from './host/tenant-flag-cache.js';
 import type { PermissionBrowserApi } from './permission-shim.js';
 import { PermissionShim } from './permission-shim.js';

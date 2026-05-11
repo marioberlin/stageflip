@@ -8,11 +8,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
-  createTenantFlagCache,
   TENANT_FLAG_GATING_MATRIX,
   type TenantFlagPopulator,
   type TenantFlagTarget,
   type TenantFlagValue,
+  createTenantFlagCache,
 } from './tenant-flag-cache.js';
 
 const ALL_TARGETS: ReadonlyArray<TenantFlagTarget> = [
