@@ -1,10 +1,12 @@
 // scripts/check-ga-readiness.ts
-// Phase δ Lock-in audit (T-410) — programmatic GA-readiness checklist pass.
+// Phase δ Lock-in audit (T-410 + T-447) — programmatic GA-readiness
+// checklist pass.
 //
 // Walks the system, verifies a defined checklist of criteria spanning
 // cluster ratification, CI gates, documentation, frontier runtime,
-// enterprise admin, and Phase 13 closeout, and emits a markdown report
-// enumerating PASS / FAIL / WARN / N/A for every criterion.
+// enterprise admin, Phase 13 closeout, and (T-447) Phase 14 GA
+// readiness, and emits a markdown report enumerating
+// PASS / FAIL / WARN / N/A for every criterion.
 //
 // The output is a GAP LIST the orchestrator uses as the GA punch list.
 // T-410 is NOT a CI gate — it is a manual audit invoked at phase
@@ -124,6 +126,68 @@ const PHASE_13_CLOSEOUT_TASKS = ['T-407', 'T-408', 'T-409', 'T-410', 'T-411', 'T
 /** ADR ids enumerated under `docs/decisions/`. */
 const EXPECTED_ADRS = ['ADR-001', 'ADR-002', 'ADR-003', 'ADR-004', 'ADR-005', 'ADR-006'] as const;
 
+// ---------- Category 8 — Phase 14 GA readiness constants (T-447) ----------
+
+/**
+ * The 9 reference adapter ids T-435 covers. Same constant as
+ * `packages/adapter-regression/src/canonical-input.ts ADAPTER_IDS`.
+ * The audit holds an independent copy to avoid importing a workspace
+ * package at script-evaluation time.
+ */
+const PHASE_14_ADAPTER_IDS = [
+  'kokoro',
+  'fish-speech',
+  'tripo',
+  'meshy',
+  'seedance',
+  'runway',
+  'ace-step',
+  'yue',
+  'stable-audio-open',
+] as const;
+
+/** Adapter id → `packages/<dir>/` directory name. */
+const ADAPTER_PACKAGE_DIR: Readonly<Record<(typeof PHASE_14_ADAPTER_IDS)[number], string>> = {
+  kokoro: 'tts-kokoro',
+  'fish-speech': 'tts-fish-speech',
+  tripo: '3d-tripo',
+  meshy: '3d-meshy',
+  seedance: 'video-seedance',
+  runway: 'video-runway',
+  'ace-step': 'music-acestep',
+  yue: 'music-yue',
+  'stable-audio-open': 'sfx-stable-audio',
+};
+
+/**
+ * Phase 14 ADRs that must be `Accepted` to clear the GA gate.
+ * 8.1 verifies both.
+ */
+const PHASE_14_ADRS = ['ADR-007', 'ADR-008'] as const;
+
+/**
+ * Phase 14 CI gates wired into `.github/workflows/ci.yml`. Each tuple is
+ * `(script-name, file-name, ci-step-name)`. Mirrors `EXPECTED_CHECK_GATES`
+ * shape but covers the P14-specific gates verified by 8.5 / 8.6 / 8.9.
+ */
+const PHASE_14_CHECK_GATES = [
+  {
+    script: 'check-asset-licenses',
+    file: 'check-asset-licenses.ts',
+    ciStep: 'Gate - check-asset-licenses',
+  },
+  {
+    script: 'check-adapter-regression',
+    file: 'check-adapter-regression.ts',
+    ciStep: 'Gate - check-adapter-regression',
+  },
+  {
+    script: 'check-data-flow-security',
+    file: 'check-data-flow-security.ts',
+    ciStep: 'Gate - check-data-flow-security',
+  },
+] as const;
+
 // ---------- types ----------
 
 /** Per-criterion outcome. */
@@ -142,7 +206,7 @@ export interface CriterionResult {
 
 /** A category groups a set of criteria. */
 export interface CategoryResult {
-  /** Category number (1-7). */
+  /** Category number (1-8). */
   number: number;
   /** Title, e.g. "Cluster ratification". */
   title: string;
@@ -760,6 +824,296 @@ export function runCategory7(): CategoryResult {
   return { number: 7, title: 'Memory + workflow conventions', criteria };
 }
 
+/**
+ * Category 8 — Phase 14 GA readiness (T-447).
+ *
+ * 11 criteria covering ADR ratification, the 9 reference adapters
+ * + their security manifests, the AdapterRegistry wire-up, the three
+ * Phase 14 CI gates, the sandbox + telemetry packages, and the P14
+ * documentation / closeout deliverables. Surfaces the Phase 14 GA
+ * punch list the Orchestrator uses at the phase boundary.
+ */
+export function runCategory8(opts: CheckOpts): CategoryResult {
+  const criteria: CriterionResult[] = [];
+
+  // ---------- 8.1 — ADR-007 + ADR-008 ratified ----------
+  const decisionsDir = join(opts.repoRoot, 'docs/decisions');
+  const adrStatuses: Array<{ adr: string; status: 'PASS' | 'FAIL' | 'MISSING'; note: string }> = [];
+  for (const adr of PHASE_14_ADRS) {
+    const matches = existsSync(decisionsDir)
+      ? readdirSync(decisionsDir).filter((f) => f.startsWith(`${adr}-`) && f.endsWith('.md'))
+      : [];
+    if (matches.length === 0) {
+      adrStatuses.push({ adr, status: 'MISSING', note: 'file missing' });
+      continue;
+    }
+    const adrPath = join(decisionsDir, matches[0] as string);
+    const body = readFileSync(adrPath, 'utf8');
+    if (/\*\*Status\*\*:\s*\*\*Accepted\*\*/i.test(body) || /Status:\s*Accepted/i.test(body)) {
+      adrStatuses.push({ adr, status: 'PASS', note: 'Accepted' });
+    } else {
+      // Extract the actual status if present.
+      const m = body.match(/\*\*Status\*\*:\s*\*\*([^*]+)\*\*/i) ?? body.match(/Status:\s*(\S+)/i);
+      const actual = m?.[1] ?? 'unknown';
+      adrStatuses.push({ adr, status: 'FAIL', note: actual });
+    }
+  }
+  const adrFails = adrStatuses.filter((a) => a.status !== 'PASS');
+  criteria.push({
+    id: '8.1',
+    description: 'ADR-007 (provider seam) + ADR-008 (asset generation) ratified (Accepted)',
+    status: adrFails.length === 0 ? 'PASS' : 'FAIL',
+    note:
+      adrFails.length === 0
+        ? 'both Phase 14 α ADRs ratified'
+        : adrFails.map((a) => `${a.adr}: ${a.note}`).join('; '),
+  });
+
+  // ---------- 8.2 — All 9 reference adapter packages present ----------
+  const missingAdapter: string[] = [];
+  for (const id of PHASE_14_ADAPTER_IDS) {
+    const dir = ADAPTER_PACKAGE_DIR[id];
+    const pkgJson = join(opts.repoRoot, 'packages', dir, 'package.json');
+    if (!existsSync(pkgJson)) {
+      missingAdapter.push(`${id} (${dir})`);
+      continue;
+    }
+    try {
+      const parsed = JSON.parse(readFileSync(pkgJson, 'utf8')) as { name?: string };
+      if (parsed.name !== `@stageflip/${dir}`) {
+        missingAdapter.push(`${id} (wrong name: ${parsed.name ?? 'unset'})`);
+      }
+    } catch {
+      missingAdapter.push(`${id} (package.json unparseable)`);
+    }
+  }
+  criteria.push({
+    id: '8.2',
+    description: 'All 9 reference adapter packages present (T-426..T-434)',
+    status: missingAdapter.length === 0 ? 'PASS' : 'FAIL',
+    note:
+      missingAdapter.length === 0
+        ? `9/9 adapters present: ${PHASE_14_ADAPTER_IDS.join(', ')}`
+        : `missing or misconfigured: ${missingAdapter.join('; ')}`,
+  });
+
+  // ---------- 8.3 — All 9 adapters have security.json sidecar ----------
+  const missingManifest: string[] = [];
+  for (const id of PHASE_14_ADAPTER_IDS) {
+    const dir = ADAPTER_PACKAGE_DIR[id];
+    if (!existsSync(join(opts.repoRoot, 'packages', dir, 'security.json'))) {
+      missingManifest.push(`${id} (${dir})`);
+    }
+  }
+  criteria.push({
+    id: '8.3',
+    description: 'All 9 adapters have SecurityManifest sidecar (T-446)',
+    status: missingManifest.length === 0 ? 'PASS' : 'FAIL',
+    note:
+      missingManifest.length === 0
+        ? '9/9 security.json sidecars present'
+        : `missing: ${missingManifest.join('; ')}`,
+  });
+
+  // ---------- 8.4 — AdapterRegistry wire-up covers all 9 adapters ----------
+  const canonInputPath = join(opts.repoRoot, 'packages/adapter-regression/src/canonical-input.ts');
+  if (existsSync(canonInputPath)) {
+    const src = readFileSync(canonInputPath, 'utf8');
+    const missingId: string[] = [];
+    for (const id of PHASE_14_ADAPTER_IDS) {
+      // ADAPTER_IDS literal includes 'id' as a single-quoted entry.
+      if (!src.includes(`'${id}'`)) missingId.push(id);
+    }
+    criteria.push({
+      id: '8.4',
+      description:
+        'AdapterRegistry (T-435 ADAPTER_IDS) covers all 9 reference adapters (T-426..T-434)',
+      status: missingId.length === 0 ? 'PASS' : 'FAIL',
+      note:
+        missingId.length === 0
+          ? '9/9 adapter ids in ADAPTER_IDS'
+          : `missing: ${missingId.join(', ')}`,
+    });
+  } else {
+    criteria.push({
+      id: '8.4',
+      description:
+        'AdapterRegistry (T-435 ADAPTER_IDS) covers all 9 reference adapters (T-426..T-434)',
+      status: 'FAIL',
+      note: `canonical-input.ts missing: ${canonInputPath}`,
+    });
+  }
+
+  // ---------- helper: Phase 14 gate check (8.5 / 8.6 / 8.9) ----------
+  function checkGateWiring(
+    id: string,
+    description: string,
+    gate: (typeof PHASE_14_CHECK_GATES)[number],
+  ): CriterionResult {
+    const missing: string[] = [];
+
+    // package.json script entry
+    const pkgJsonPath = join(opts.repoRoot, 'package.json');
+    let hasScript = false;
+    if (existsSync(pkgJsonPath)) {
+      try {
+        const parsed = JSON.parse(readFileSync(pkgJsonPath, 'utf8')) as {
+          scripts?: Record<string, string>;
+        };
+        hasScript = gate.script in (parsed.scripts ?? {});
+      } catch {
+        hasScript = false;
+      }
+    }
+    if (!hasScript) missing.push(`package.json script '${gate.script}'`);
+
+    // scripts/<file>
+    if (!existsSync(join(opts.repoRoot, 'scripts', gate.file))) {
+      missing.push(`scripts/${gate.file}`);
+    }
+
+    // ci.yml step
+    const ciPath = join(opts.repoRoot, '.github/workflows/ci.yml');
+    let hasCi = false;
+    if (existsSync(ciPath)) {
+      hasCi = readFileSync(ciPath, 'utf8').includes(gate.ciStep);
+    }
+    if (!hasCi) missing.push(`ci.yml step '${gate.ciStep}'`);
+
+    return {
+      id,
+      description,
+      status: missing.length === 0 ? 'PASS' : 'FAIL',
+      note:
+        missing.length === 0
+          ? `${gate.script}: script + file + ci.yml step all present`
+          : `missing: ${missing.join('; ')}`,
+    };
+  }
+
+  // ---------- 8.5 — check-asset-licenses (T-422) ----------
+  criteria.push(
+    checkGateWiring(
+      '8.5',
+      'T-422 check-asset-licenses gate present (script + file + ci.yml wiring)',
+      PHASE_14_CHECK_GATES[0],
+    ),
+  );
+
+  // ---------- 8.6 — check-adapter-regression (T-435) ----------
+  criteria.push(
+    checkGateWiring(
+      '8.6',
+      'T-435 check-adapter-regression gate present (script + file + ci.yml wiring)',
+      PHASE_14_CHECK_GATES[1],
+    ),
+  );
+
+  // ---------- 8.7 — @stageflip/adapter-sandbox present (T-444) ----------
+  const sandboxPkg = join(opts.repoRoot, 'packages/adapter-sandbox/package.json');
+  let sandboxStatus: CriterionStatus = 'FAIL';
+  let sandboxNote = `packages/adapter-sandbox/package.json missing`;
+  if (existsSync(sandboxPkg)) {
+    try {
+      const parsed = JSON.parse(readFileSync(sandboxPkg, 'utf8')) as { name?: string };
+      if (parsed.name === '@stageflip/adapter-sandbox') {
+        sandboxStatus = 'PASS';
+        sandboxNote = '@stageflip/adapter-sandbox present';
+      } else {
+        sandboxNote = `wrong package name: ${parsed.name ?? 'unset'}`;
+      }
+    } catch (err) {
+      sandboxNote = `package.json unparseable: ${err instanceof Error ? err.message : String(err)}`;
+    }
+  }
+  criteria.push({
+    id: '8.7',
+    description: 'T-444 @stageflip/adapter-sandbox package on main',
+    status: sandboxStatus,
+    note: sandboxNote,
+  });
+
+  // ---------- 8.8 — @stageflip/usage-telemetry + query_usage_telemetry tool (T-445) ----------
+  const telemetryPkg = join(opts.repoRoot, 'packages/usage-telemetry/package.json');
+  const handlersPath = join(
+    opts.repoRoot,
+    'packages/engine/src/handlers/asset-generation/handlers.ts',
+  );
+  const missingTelemetry: string[] = [];
+  let telemetryNameOk = false;
+  if (existsSync(telemetryPkg)) {
+    try {
+      const parsed = JSON.parse(readFileSync(telemetryPkg, 'utf8')) as { name?: string };
+      telemetryNameOk = parsed.name === '@stageflip/usage-telemetry';
+    } catch {
+      telemetryNameOk = false;
+    }
+  }
+  if (!telemetryNameOk) {
+    missingTelemetry.push('@stageflip/usage-telemetry package');
+  }
+  let hasQueryTool = false;
+  if (existsSync(handlersPath)) {
+    hasQueryTool = readFileSync(handlersPath, 'utf8').includes('query_usage_telemetry');
+  }
+  if (!hasQueryTool) {
+    missingTelemetry.push('query_usage_telemetry tool in engine handlers');
+  }
+  criteria.push({
+    id: '8.8',
+    description:
+      'T-445 @stageflip/usage-telemetry + query_usage_telemetry tool registered in engine',
+    status: missingTelemetry.length === 0 ? 'PASS' : 'FAIL',
+    note:
+      missingTelemetry.length === 0
+        ? 'package + tool both present'
+        : `missing: ${missingTelemetry.join('; ')}`,
+  });
+
+  // ---------- 8.9 — check-data-flow-security (T-446) ----------
+  criteria.push(
+    checkGateWiring(
+      '8.9',
+      'T-446 check-data-flow-security gate present (script + file + ci.yml wiring)',
+      PHASE_14_CHECK_GATES[2],
+    ),
+  );
+
+  // ---------- 8.10 — T-448 documentation pass spec ----------
+  const t448Path = join(opts.repoRoot, 'docs/tasks/T-448.md');
+  criteria.push({
+    id: '8.10',
+    description: 'T-448 Phase 14 documentation pass spec present',
+    status: existsSync(t448Path) ? 'PASS' : 'WARN',
+    note: existsSync(t448Path)
+      ? 'T-448 spec doc present; merge status not verified by this audit'
+      : 'T-448 spec doc not yet drafted (downstream of T-447; auto-WARN — does not block GA gate)',
+  });
+
+  // ---------- 8.11 — T-449 Phase 14 closeout handover ----------
+  const t449Path = join(opts.repoRoot, 'docs/tasks/T-449.md');
+  const handoverPath = join(opts.repoRoot, 'docs/handover-phase14-complete.md');
+  const t449Present = existsSync(t449Path);
+  const handoverPresent = existsSync(handoverPath);
+  if (t449Present && handoverPresent) {
+    criteria.push({
+      id: '8.11',
+      description: 'T-449 Phase 14 closeout handover (lands at P15 start per memory)',
+      status: 'PASS',
+      note: 'T-449 spec + docs/handover-phase14-complete.md both present',
+    });
+  } else {
+    criteria.push({
+      id: '8.11',
+      description: 'T-449 Phase 14 closeout handover (lands at P15 start per memory)',
+      status: 'WARN',
+      note: `auto-WARN per feedback_phase_closeout_timing.md — phase-N closeout writes at phase-N+1 start (T-449: ${t449Present ? 'present' : 'missing'}; handover: ${handoverPresent ? 'present' : 'missing'})`,
+    });
+  }
+
+  return { number: 8, title: 'Phase 14 GA readiness', criteria };
+}
+
 // ---------- top-level orchestration ----------
 
 export interface RunOpts extends CheckOpts {
@@ -779,6 +1133,7 @@ export function runAudit(opts: RunOpts): AuditReport {
       runCategory5(opts),
       runCategory6(opts),
       runCategory7(),
+      runCategory8(opts),
     ],
   };
 }
@@ -955,7 +1310,7 @@ export function usage(): string {
     'Usage: pnpm check-ga-readiness [--repo-root=<path>] [--presets-root=<path>]',
     '                               [--report-out=<path>] [--no-write] [--help]',
     '',
-    'Walks a defined GA-readiness checklist (7 categories) and emits a markdown',
+    'Walks a defined GA-readiness checklist (8 categories) and emits a markdown',
     'report enumerating PASS / FAIL / WARN / N/A for every criterion.',
     'Exit 0 when no FAIL criteria; exit 1 when at least one criterion FAILs.',
     'WARN does NOT affect exit code.',
