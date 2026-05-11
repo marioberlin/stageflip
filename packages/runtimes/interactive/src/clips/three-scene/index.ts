@@ -24,8 +24,21 @@ interactiveClipRegistry.register('three-scene', threeSceneClipFactory);
 // component name in `componentRef.module` is `ThreeSceneClip`, an alias
 // for the host that the runtime mounts internally.
 export {
+  ASSET_GEN_SETUP_PROPS_KEY,
+  THREE_D_BYPASS_WHITELIST,
+  resolveAssetGenGlb,
+  type AssetCacheLookup,
+  type AssetGenGlbFail,
+  type AssetGenGlbFailureReason,
+  type AssetGenGlbOk,
+  type AssetGenGlbResult,
+  type AssetGenSeedSrc,
+  type ThreeDBypassWhitelistedProvider,
+} from './asset-gen-consumer.js';
+export {
   ThreeSceneClipFactoryBuilder,
   threeSceneClipFactory,
+  type AssetGenResolver,
   type ThreeSceneClipFactoryOptions,
   type ThreeSceneMountFailureReason,
 } from './factory.js';

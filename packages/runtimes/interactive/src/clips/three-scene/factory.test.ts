@@ -357,4 +357,100 @@ describe('threeSceneClipFactory (T-384)', () => {
     expect(() => handle.updateProps({ width: -10 } as Record<string, unknown>)).not.toThrow();
     handle.dispose();
   });
+
+  // ---------------------------------------------------------------------
+  // T-437 — asset-gen resolver hook
+  // ---------------------------------------------------------------------
+
+  it('T-437 — assetGenResolver merges ok result under setupProps.__assetGen', async () => {
+    const state = freshSceneState();
+    const sampleBytes = new Uint8Array([0x67, 0x6c, 0x54, 0x46]);
+    const factory = ThreeSceneClipFactoryBuilder.build({
+      importer: async () => ({ MySetup: makeFakeSetup(state) }),
+      assetGenResolver: async (seedSrc) => {
+        expect(seedSrc.kind).toBe('asset-gen');
+        expect(seedSrc.cacheKey).toBe('three-d/abc123');
+        expect(seedSrc.provider).toBe('tripo');
+        return { ok: true, bytes: sampleBytes, provider: 'tripo' };
+      },
+    });
+    const fs = new RecordModeFrameSource();
+    const ctx = makeContext({
+      frameSource: fs,
+      setupProps: {
+        seedSrc: { kind: 'asset-gen', cacheKey: 'three-d/abc123', provider: 'tripo' },
+      },
+    });
+    const handle = await factory(ctx);
+    expect(state.setupCalled).toBe(1);
+    const merged = state.lastProps as Record<string, unknown> | undefined;
+    expect(merged).toBeDefined();
+    const ag = merged?.__assetGen as { ok: true; bytes: Uint8Array; provider: string } | undefined;
+    expect(ag?.ok).toBe(true);
+    expect(ag?.bytes).toBe(sampleBytes);
+    expect(ag?.provider).toBe('tripo');
+    handle.dispose();
+  });
+
+  it('T-437 — assetGenResolver merges failure result under setupProps.__assetGen', async () => {
+    const state = freshSceneState();
+    const factory = ThreeSceneClipFactoryBuilder.build({
+      importer: async () => ({ MySetup: makeFakeSetup(state) }),
+      assetGenResolver: async () => ({ ok: false, reason: 'cache-miss' }),
+    });
+    const fs = new RecordModeFrameSource();
+    const ctx = makeContext({
+      frameSource: fs,
+      setupProps: {
+        seedSrc: { kind: 'asset-gen', cacheKey: 'three-d/abc123', provider: 'tripo' },
+      },
+    });
+    const handle = await factory(ctx);
+    const merged = state.lastProps as Record<string, unknown> | undefined;
+    const ag = merged?.__assetGen as { ok: false; reason: string } | undefined;
+    expect(ag?.ok).toBe(false);
+    expect(ag?.reason).toBe('cache-miss');
+    handle.dispose();
+  });
+
+  it('T-437 — no assetGenResolver option → setupProps is byte-identical to T-384 default', async () => {
+    const state = freshSceneState();
+    const factory = ThreeSceneClipFactoryBuilder.build({
+      importer: async () => ({ MySetup: makeFakeSetup(state) }),
+    });
+    const fs = new RecordModeFrameSource();
+    const ctx = makeContext({
+      frameSource: fs,
+      setupProps: {
+        seedSrc: { kind: 'asset-gen', cacheKey: 'three-d/abc123', provider: 'tripo' },
+      },
+    });
+    const handle = await factory(ctx);
+    const merged = state.lastProps as Record<string, unknown> | undefined;
+    expect(merged?.__assetGen).toBeUndefined();
+    // The original seedSrc is preserved as schema-opaque setupProps content.
+    expect(merged?.seedSrc).toEqual({
+      kind: 'asset-gen',
+      cacheKey: 'three-d/abc123',
+      provider: 'tripo',
+    });
+    handle.dispose();
+  });
+
+  it('T-437 — assetGenResolver is NOT invoked when setupProps.seedSrc is absent', async () => {
+    const state = freshSceneState();
+    const resolver = vi.fn(async () => ({ ok: true, bytes: new Uint8Array(4), provider: 'tripo' }));
+    const factory = ThreeSceneClipFactoryBuilder.build({
+      importer: async () => ({ MySetup: makeFakeSetup(state) }),
+      // Cast: production callers pass the typed AssetGenResolver — this
+      // test uses a structurally-compatible stub for invocation-count
+      // assertions.
+      assetGenResolver: resolver as never,
+    });
+    const fs = new RecordModeFrameSource();
+    const ctx = makeContext({ frameSource: fs });
+    const handle = await factory(ctx);
+    expect(resolver).not.toHaveBeenCalled();
+    handle.dispose();
+  });
 });
