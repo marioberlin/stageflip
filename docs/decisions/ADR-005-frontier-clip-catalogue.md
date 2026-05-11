@@ -76,7 +76,7 @@ The interactive tier ships **disabled by default** for all tenants. Enablement i
 1. **Preview enablement** — tenant admin toggles `features.interactive` in admin settings. Flag-on permits authoring and preview of frontier clips in HTML / browser live-preview targets. Does not permit on-device display player execution.
 2. **GA enablement** — requires completed security review sign-off recorded on this ADR's ratification block. Flag-on unlocks the full export matrix including on-device display player.
 
-Feature-flag plumbing: `@stageflip/profiles-display` and the admin surface gain a `features.interactive: 'disabled' | 'preview' | 'ga'` field. The interactive runtime tier reads this at mount time and refuses mounts that exceed the tenant's posture.
+Feature-flag plumbing: `@stageflip/profiles-display` and the admin surface gain a `features.interactive: 'disabled' | 'preview' | 'ga'` field. The interactive runtime tier reads this at mount time and refuses mounts that exceed the tenant's posture. Implementation reference: `docs/tasks/T-411.md` (storage / API / authorization / permission-shim integration).
 
 ### D4. Three deployment targets, all in v1
 
