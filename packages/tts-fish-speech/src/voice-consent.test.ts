@@ -18,7 +18,9 @@ import { VoiceConsentRequiredError, assertVoiceConsentIfNeeded } from './voice-c
  * `assertActive` for any triple in `granted`; throws otherwise. Other
  * methods throw on use — the provider only calls `assertActive`.
  */
-function makeStore(granted: readonly { tenantId: string; voiceId: string }[]): TenantVoiceConsentStore {
+function makeStore(
+  granted: readonly { tenantId: string; voiceId: string }[],
+): TenantVoiceConsentStore {
   const set = new Set(granted.map((g) => `${g.tenantId}|${g.voiceId}`));
   return {
     async get(): Promise<TenantVoiceConsentRow | undefined> {

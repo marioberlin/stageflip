@@ -38,7 +38,7 @@ describe('fishSpeechDescriptor — adapter descriptor envelope', () => {
     expect(fishSpeechDescriptor.id).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
   });
 
-  it('declares costPerCall.usd === 0 (Apache 2.0 model — deployment cost is the tenant\'s)', () => {
+  it("declares costPerCall.usd === 0 (Apache 2.0 model — deployment cost is the tenant's)", () => {
     expect(fishSpeechDescriptor.costPerCall?.usd).toBe(0);
   });
 

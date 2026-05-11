@@ -14,11 +14,8 @@ import type {
 } from '@stageflip/asset-gen-contract';
 
 import { fishSpeechDescriptor } from './descriptor.js';
-import {
-  FishSpeechTtsProvider,
-  NotYetImplementedError,
-  VoiceConsentRequiredError,
-} from './provider.js';
+import { FishSpeechTtsProvider, NotYetImplementedError } from './provider.js';
+import { VoiceConsentRequiredError } from './voice-consent.js';
 
 const baseCall: TtsCall = {
   tenantId: 'tenant-1',
@@ -28,7 +25,9 @@ const baseCall: TtsCall = {
   sampleRate: 22050,
 };
 
-function makeStore(granted: readonly { tenantId: string; voiceId: string }[]): TenantVoiceConsentStore {
+function makeStore(
+  granted: readonly { tenantId: string; voiceId: string }[],
+): TenantVoiceConsentStore {
   const set = new Set(granted.map((g) => `${g.tenantId}|${g.voiceId}`));
   return {
     async get(): Promise<TenantVoiceConsentRow | undefined> {
@@ -253,9 +252,9 @@ describe('FishSpeechTtsProvider.synthesize — production mode', () => {
 
   it('throws VoiceConsentRequiredError before NotYetImplementedError for cloned voices (consent supersedes mode)', async () => {
     const p = new FishSpeechTtsProvider({ mode: 'production' }); // no store
-    await expect(
-      p.synthesize({ ...baseCall, voiceId: 'cloned-voice-X' }),
-    ).rejects.toBeInstanceOf(VoiceConsentRequiredError);
+    await expect(p.synthesize({ ...baseCall, voiceId: 'cloned-voice-X' })).rejects.toBeInstanceOf(
+      VoiceConsentRequiredError,
+    );
   });
 });
 
