@@ -11,6 +11,8 @@
     "check-preset-integrity.test.ts",
     "check-determinism.ts",
     "check-determinism.test.ts",
+    "check-export-parity.ts",
+    "check-export-parity.test.ts",
     "generate-preset-parity-fixture.ts",
     "generate-preset-parity-fixture.test.ts",
     "generate-preset-parity-fixture-prod.ts"
