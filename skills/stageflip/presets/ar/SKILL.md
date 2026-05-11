@@ -37,6 +37,10 @@ Do **not** invoke for generic 3D overlays that aren't camera-tracked or environm
 - `compose_var_skeletal(freeze_frame, player_tracking, brand)` — Hawk-Eye register, used with `compose_var_call` from cluster B
 - `compose_swim_lane_track(lane_count, record_time, brand)` — Olympic register
 
+## Implementation
+
+The three composer tools above are implemented in the `cluster-h-compose` engine handler bundle (T-379). For the executable Zod schemas + per-(sport, brand) dispatch tables + error-reason vocabularies see [`skills/stageflip/tools/cluster-h-compose/SKILL.md`](../../tools/cluster-h-compose/SKILL.md). v1 routes through static-fallback rendering; live-mount via `ThreeSceneClip` is gated on Track A T-397+.
+
 ## Cluster conventions (from the compass canon)
 
 - **AR requires camera-tracking input.** Every preset in this cluster takes a `cameraTrack` input — either from a live tracking feed or a pre-baked take. Without it, fall back to a static composite from cluster B.

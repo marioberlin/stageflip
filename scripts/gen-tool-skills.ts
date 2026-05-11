@@ -28,6 +28,7 @@ import {
   registerClusterEComposeBundle,
   registerClusterFComposeBundle,
   registerClusterGComposeBundle,
+  registerClusterHComposeBundle,
   registerReadBundle,
   registerCreateMutateBundle,
   registerTimingBundle,
@@ -73,6 +74,7 @@ const OWNER_TASK_MAP: Record<string, string> = {
   'cluster-e-compose': 'T-361',
   'cluster-f-compose': 'T-368',
   'cluster-g-compose': 'T-374',
+  'cluster-h-compose': 'T-379',
 };
 
 function populateRegistry() {
@@ -103,6 +105,7 @@ function populateRegistry() {
   registerClusterEComposeBundle(registry, router);
   registerClusterFComposeBundle(registry, router);
   registerClusterGComposeBundle(registry, router);
+  registerClusterHComposeBundle(registry, router);
   return registry;
 }
 
