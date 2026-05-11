@@ -51,11 +51,15 @@ Look up a single AdapterDescriptor by `(modality, adapterId)` via the AdapterReg
 - `modality` (`string`) — enum: `tts` / `video-gen` / `music-gen` / `sfx` / `three-d` / `slide-deck-gen` / `mind-map-gen` / `table-gen` / `quiz-gen` / `flashcard-gen` / `report-gen` / `infographic-gen` / `research-session` / `audience-backend` / `bundle`
 - `adapterId` (`string`)
 
+### `query_cost_budget`
+
+Return the current tenant's AI-generation cost-budget posture (`{ monthlyAmount, currency, periodEndAt, used, remaining, exhausted }`) WITHOUT making an adapter call. Use this BEFORE invoking generate_asset when the agent has previously seen `budgetExhausted: true` or `budgetRemaining` running low — the planner can switch to `rankingPreference: 'cheapest'` (T-425) or defer the call altogether. Read-only (no patch ops). No input. Returns `{ ok: true, budget }` when both soft seams (costTrackerStore + tenantSettingsStore) are wired AND the tenant has an `aiBudget` configured; `{ ok: false, reason: 'no_budget_configured' }` when seams are wired but `aiBudget` is absent (the tenant has no enforced budget); `{ ok: false, reason: 'cost_budget_unavailable' }` when the host has not wired the seams.
+
 
 ## Invariants
 
 - Every handler declares `bundle: 'asset-generation'`.
-- Tool count 3 (I-9 cap is 30).
+- Tool count 4 (I-9 cap is 30).
 - Tool names + descriptions above mirror what the LLM sees at plan +
   execution time, produced by the router's `LLMToolDefinition[]`.
 

@@ -25,8 +25,24 @@ export { InMemoryStorageAdapter } from './in-memory.js';
 // T-411a — TenantSettings storage facet (per-tenant frontier-enablement
 // settings; the storage layer for the toggle from
 // docs/decisions/ADR-005-frontier-clip-catalogue.md §D3).
-export { tenantSettingsSchema, type TenantSettings } from './tenant-settings.js';
+// T-443 — extended with optional `aiBudget` field; see
+// skills/stageflip/concepts/cost-budget/SKILL.md.
+export {
+  aiBudgetSchema,
+  tenantSettingsSchema,
+  type AiBudget,
+  type TenantSettings,
+} from './tenant-settings.js';
 export {
   InMemoryTenantSettingsStore,
   type TenantSettingsStore,
 } from './tenant-settings-store.js';
+
+// T-443 — TenantCostTrackerStore storage facet (per-tenant accumulator
+// of AI-generation cost records; pairs with `aiBudget` on
+// `TenantSettings` to surface `costBudget` envelopes on tool results).
+export {
+  InMemoryTenantCostTrackerStore,
+  type CostRecord,
+  type TenantCostTrackerStore,
+} from './tenant-cost-tracker-store.js';

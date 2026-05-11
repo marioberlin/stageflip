@@ -13,6 +13,25 @@
 import { z } from 'zod';
 
 /**
+ * T-443 — Per-tenant AI-generation budget. Single-currency per tenant;
+ * the in-memory `TenantCostTrackerStore` does NOT cross-convert.
+ * `currency` is ISO-4217 alpha-3 (e.g., `'USD'`, `'EUR'`); regex enforces.
+ * `periodEnd` is the ISO-datetime upper bound of the current budget
+ * period (exclusive — see `TenantCostTrackerStore.getPeriodTotal`).
+ * `monthlyAmount` may be `0` (config-exhausted tenant) but never
+ * negative.
+ */
+export const aiBudgetSchema = z
+  .object({
+    monthlyAmount: z.number().nonnegative().finite(),
+    currency: z.string().regex(/^[A-Z]{3}$/, 'currency must be ISO-4217 alpha-3'),
+    periodEnd: z.string().datetime(),
+  })
+  .strict();
+
+export type AiBudget = z.infer<typeof aiBudgetSchema>;
+
+/**
  * Per-tenant frontier-enablement settings.
  *
  * `features.interactive` posture:
@@ -23,6 +42,9 @@ import { z } from 'zod';
  *   - `'preview'`   — html / browser-live-preview targets may live-mount;
  *                     on-device-display targets stay on staticFallback.
  *   - `'ga'`        — all targets may live-mount.
+ *
+ * `aiBudget` (T-443) is optional — absent means "no enforced budget";
+ * `costBudget` envelopes on tool results are omitted in that case.
  *
  * Both the outer object and the nested `features` object are `.strict()` so
  * unknown keys at either level are rejected at parse time.
@@ -35,6 +57,7 @@ export const tenantSettingsSchema = z
         interactive: z.enum(['disabled', 'preview', 'ga']),
       })
       .strict(),
+    aiBudget: aiBudgetSchema.optional(),
     updatedAt: z.string().datetime(),
     updatedBy: z.string().min(1),
   })

@@ -242,6 +242,103 @@ export interface AssetGenerationContext extends MutationContext {
    * code, so the determinism rules do not apply.
    */
   readonly nowMs?: () => number;
+  /**
+   * T-443 — cost-tracker soft seam. When wired alongside
+   * `tenantSettingsStore`, `generate_asset` records the chosen
+   * adapter's `costPerCall.usd` on success AND surfaces a
+   * `costBudget` envelope on the tool result. When unwired, the
+   * envelope is omitted (back-compat: existing call sites see the
+   * original shape).
+   *
+   * The structural typing matches
+   * `@stageflip/storage`'s `TenantCostTrackerStore` so hosts can
+   * pass `new InMemoryTenantCostTrackerStore()` directly without
+   * an adapter layer. Engine declares an inline structural type to
+   * avoid an `@stageflip/storage` runtime dep.
+   */
+  readonly costTrackerStore?: CostTrackerStoreLike;
+  /**
+   * T-443 — tenant-settings soft seam. Read for `aiBudget`. When
+   * unwired or when the tenant has no `aiBudget` configured, the
+   * `costBudget` envelope on `generate_asset` results is omitted
+   * (and `query_cost_budget` returns `no_budget_configured`).
+   */
+  readonly tenantSettingsStore?: TenantSettingsStoreLike;
+  /**
+   * T-443 — tenant identifier used to scope cost-tracker /
+   * tenant-settings reads. Required for the `costBudget` envelope on
+   * `generate_asset` and for `query_cost_budget`; absent when the
+   * host has not wired multi-tenant semantics (in which case the
+   * cost-budget surface is skipped — back-compat with single-tenant
+   * dev hosts).
+   *
+   * Lives on `AssetGenerationContext` rather than `TenantContext`
+   * because `TenantContext` is license-gate-scoped (per ADR-007 §D11)
+   * and we don't want to grow its surface for an orthogonal concern.
+   */
+  readonly tenantId?: string;
+}
+
+// ---------------------------------------------------------------------------
+// T-443 — cost-budget soft-seam types (structural; mirrors @stageflip/storage)
+// ---------------------------------------------------------------------------
+
+/**
+ * T-443 — structural cost-tracker contract the engine accepts. Mirrors
+ * `@stageflip/storage`'s `TenantCostTrackerStore` exactly so hosts can
+ * pass an `InMemoryTenantCostTrackerStore` directly. Declared inline
+ * to avoid pulling `@stageflip/storage` as an engine runtime dep.
+ */
+export interface CostTrackerStoreLike {
+  recordCost(record: {
+    readonly tenantId: string;
+    readonly adapterId: string;
+    readonly amount: number;
+    readonly currency: string;
+    readonly recordedAt: string;
+  }): Promise<void>;
+  getPeriodTotal(tenantId: string, periodStart: string, periodEnd: string): Promise<number>;
+}
+
+/**
+ * T-443 — structural tenant-settings contract the engine reads from.
+ * Subset of `@stageflip/storage`'s `TenantSettingsStore` — engine only
+ * needs `getTenantSettings`. Settings carry an optional `aiBudget`
+ * shape `{ monthlyAmount, currency, periodEnd }`.
+ */
+export interface TenantSettingsStoreLike {
+  getTenantSettings(tenantId: string): Promise<{
+    readonly aiBudget?: {
+      readonly monthlyAmount: number;
+      readonly currency: string;
+      readonly periodEnd: string;
+    };
+  } | null>;
+}
+
+/**
+ * T-443 — `costBudget` envelope on `generate_asset` results. Optional;
+ * omitted when EITHER cost-tracker or tenant-settings seams are
+ * unwired, OR when the tenant has no `aiBudget` configured.
+ *
+ * `costIncurred.amount` is the chosen adapter's
+ * `costPerCall.usd ?? 0` (free adapters default to 0). When the
+ * tenant has an `aiBudget`, `budgetRemaining` carries the remaining
+ * funds and `periodEndAt`; `budgetExhausted` is `true` when
+ * `remaining <= 0`.
+ */
+export interface CostBudgetEnvelope {
+  readonly costIncurred: {
+    readonly adapterId: string;
+    readonly amount: number;
+    readonly currency: string;
+  };
+  readonly budgetRemaining?: {
+    readonly amount: number;
+    readonly currency: string;
+    readonly periodEndAt: string;
+  };
+  readonly budgetExhausted: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -304,6 +401,28 @@ const adapterErrorSchema = z
   })
   .strict();
 
+/** T-443 — `costBudget` envelope schema (Zod). Optional in the output. */
+const costBudgetEnvelopeSchema = z
+  .object({
+    costIncurred: z
+      .object({
+        adapterId: z.string(),
+        amount: z.number().nonnegative().finite(),
+        currency: z.string().regex(/^[A-Z]{3}$/),
+      })
+      .strict(),
+    budgetRemaining: z
+      .object({
+        amount: z.number().finite(),
+        currency: z.string().regex(/^[A-Z]{3}$/),
+        periodEndAt: z.string().datetime(),
+      })
+      .strict()
+      .optional(),
+    budgetExhausted: z.boolean(),
+  })
+  .strict();
+
 const generateAssetSuccessSyncSchema = z
   .object({
     ok: z.literal(true),
@@ -311,6 +430,9 @@ const generateAssetSuccessSyncSchema = z
     elementId: z.string(),
     cacheKey: z.string(),
     provenance: mediaProvenanceSchema,
+    // T-443 — populated when both cost-tracker + tenant-settings seams
+    // are wired AND the tenant has an `aiBudget`; omitted otherwise.
+    costBudget: costBudgetEnvelopeSchema.optional(),
   })
   .strict();
 
@@ -680,15 +802,98 @@ const generateAsset: ToolHandler<GenerateAssetInput, GenerateAssetOutput, Mutati
       await seam.assetCacheStore.set(cacheKey, { assetUri: input.target.src });
     }
 
+    // 9 — T-443 — cost-budget surfacing. Records cost AND computes the
+    // `costBudget` envelope when BOTH soft seams are wired. Adapter
+    // selection is already done; we use `execResult.adapter`.
+    // `tenantContextLocal` is unused for the cost-budget pathway (we
+    // scope by `seam.tenantId`) — but is referenced here so the
+    // ts-lint exhaustiveness check stays happy and so future
+    // licensePosture-aware budget logic has an obvious hook.
+    void tenantContextLocal;
+    const costBudget = await maybeRecordAndBuildCostBudget(
+      seam,
+      execResult.adapter,
+      seam.nowMs ?? defaultNowMs,
+    );
+
     return {
       ok: true,
       slideId: input.target.slideId,
       elementId,
       cacheKey,
       provenance,
+      ...(costBudget !== undefined ? { costBudget } : {}),
     };
   },
 };
+
+/**
+ * T-443 — record the chosen adapter's cost AND build the `costBudget`
+ * envelope to surface on the tool result. Returns `undefined` when
+ * EITHER soft seam is unwired (back-compat: the original generate_asset
+ * shape is unchanged when seams are absent).
+ *
+ * Records cost ONLY when `costTrackerStore` is wired. Builds the
+ * `budgetRemaining` half ONLY when `tenantSettingsStore` is wired AND
+ * the tenant has an `aiBudget` configured (otherwise the half is
+ * omitted; `costIncurred` + `budgetExhausted: false` are still
+ * reported).
+ *
+ * Recorded amount is `adapter.costPerCall.usd ?? 0` — free adapters
+ * (apache-2.0 TTS / music / sfx) record a zero-amount line item for
+ * audit completeness; budget math is unaffected.
+ */
+async function maybeRecordAndBuildCostBudget(
+  seam: AssetGenerationContext,
+  adapter: AdapterDescriptor,
+  nowMs: () => number,
+): Promise<CostBudgetEnvelope | undefined> {
+  if (seam.costTrackerStore === undefined) return undefined;
+  const tenantId = seam.tenantId;
+  if (tenantId === undefined) return undefined;
+  const amount = adapter.costPerCall?.usd ?? 0;
+  const recordedAt = new Date(nowMs()).toISOString();
+  await seam.costTrackerStore.recordCost({
+    tenantId,
+    adapterId: adapter.id,
+    amount,
+    currency: 'USD',
+    recordedAt,
+  });
+
+  const costIncurred = { adapterId: adapter.id, amount, currency: 'USD' };
+  // Need tenant-settings + aiBudget to compute the remaining half.
+  if (seam.tenantSettingsStore === undefined) {
+    return { costIncurred, budgetExhausted: false };
+  }
+  const settings = await seam.tenantSettingsStore.getTenantSettings(tenantId);
+  const aiBudget = settings?.aiBudget;
+  if (aiBudget === undefined) {
+    return { costIncurred, budgetExhausted: false };
+  }
+  // periodStart = periodEnd minus 30 days (rolling 30-day window).
+  // v1 simplification — real "month boundaries" land in a downstream
+  // task; the in-memory tracker only ever has the current period of
+  // recorded data so a 30-day-back window suffices.
+  const periodStart = new Date(
+    new Date(aiBudget.periodEnd).getTime() - 30 * 24 * 60 * 60 * 1000,
+  ).toISOString();
+  const used = await seam.costTrackerStore.getPeriodTotal(
+    tenantId,
+    periodStart,
+    aiBudget.periodEnd,
+  );
+  const remaining = aiBudget.monthlyAmount - used;
+  return {
+    costIncurred,
+    budgetRemaining: {
+      amount: remaining,
+      currency: aiBudget.currency,
+      periodEndAt: aiBudget.periodEnd,
+    },
+    budgetExhausted: remaining <= 0,
+  };
+}
 
 /** NFC-trim-collapse-lowercase normalize — mirrors `@stageflip/asset-cache`'s `normalizePrompt`. */
 function normalizePromptForProvenance(prompt: string): string {
@@ -880,15 +1085,112 @@ const getAdapterCapabilities: ToolHandler<
 };
 
 // ---------------------------------------------------------------------------
+// 4 — query_cost_budget (T-443)
+// ---------------------------------------------------------------------------
+
+const queryCostBudgetInput = z.object({}).strict();
+type QueryCostBudgetInput = z.infer<typeof queryCostBudgetInput>;
+
+const queryCostBudgetOutput = z.discriminatedUnion('ok', [
+  z
+    .object({
+      ok: z.literal(true),
+      budget: z
+        .object({
+          monthlyAmount: z.number().nonnegative().finite(),
+          currency: z.string().regex(/^[A-Z]{3}$/),
+          periodEndAt: z.string().datetime(),
+          used: z.number().nonnegative().finite(),
+          remaining: z.number().finite(),
+          exhausted: z.boolean(),
+        })
+        .strict(),
+    })
+    .strict(),
+  z
+    .object({
+      ok: z.literal(false),
+      reason: z.enum(['cost_budget_unavailable', 'no_budget_configured']),
+      detail: z.string().optional(),
+    })
+    .strict(),
+]);
+type QueryCostBudgetOutput = z.infer<typeof queryCostBudgetOutput>;
+
+/**
+ * `query_cost_budget` — return the tenant's current AI-generation
+ * budget posture WITHOUT triggering an adapter call. The agent uses
+ * this to decide whether to invoke `generate_asset` with
+ * `rankingPreference: 'cheapest'` (T-425) or to defer the
+ * generation altogether.
+ *
+ * Read soft-seam: requires `costTrackerStore` + `tenantSettingsStore`
+ * + `tenantId`. When any required seam is absent, returns
+ * `{ ok: false, reason: 'cost_budget_unavailable' }`. When seams are
+ * present but the tenant has no `aiBudget`, returns
+ * `{ ok: false, reason: 'no_budget_configured' }` (typed: NOT an
+ * error; the agent can proceed without budget enforcement).
+ */
+const queryCostBudget: ToolHandler<QueryCostBudgetInput, QueryCostBudgetOutput, MutationContext> = {
+  name: 'query_cost_budget',
+  bundle: ASSET_GENERATION_BUNDLE_NAME,
+  description:
+    "Return the current tenant's AI-generation cost-budget posture (`{ monthlyAmount, currency, periodEndAt, used, remaining, exhausted }`) WITHOUT making an adapter call. Use this BEFORE invoking generate_asset when the agent has previously seen `budgetExhausted: true` or `budgetRemaining` running low — the planner can switch to `rankingPreference: 'cheapest'` (T-425) or defer the call altogether. Read-only (no patch ops). No input. Returns `{ ok: true, budget }` when both soft seams (costTrackerStore + tenantSettingsStore) are wired AND the tenant has an `aiBudget` configured; `{ ok: false, reason: 'no_budget_configured' }` when seams are wired but `aiBudget` is absent (the tenant has no enforced budget); `{ ok: false, reason: 'cost_budget_unavailable' }` when the host has not wired the seams.",
+  inputSchema: queryCostBudgetInput,
+  outputSchema: queryCostBudgetOutput,
+  handle: async (_input, ctx) => {
+    const seam = getAssetSeam(ctx);
+    if (
+      seam.costTrackerStore === undefined ||
+      seam.tenantSettingsStore === undefined ||
+      seam.tenantId === undefined
+    ) {
+      return {
+        ok: false,
+        reason: 'cost_budget_unavailable',
+        detail:
+          'query_cost_budget requires costTrackerStore + tenantSettingsStore + tenantId on the AssetGenerationContext. The executor has not wired them.',
+      };
+    }
+    const settings = await seam.tenantSettingsStore.getTenantSettings(seam.tenantId);
+    const aiBudget = settings?.aiBudget;
+    if (aiBudget === undefined) {
+      return { ok: false, reason: 'no_budget_configured' };
+    }
+    const periodStart = new Date(
+      new Date(aiBudget.periodEnd).getTime() - 30 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    const used = await seam.costTrackerStore.getPeriodTotal(
+      seam.tenantId,
+      periodStart,
+      aiBudget.periodEnd,
+    );
+    const remaining = aiBudget.monthlyAmount - used;
+    return {
+      ok: true,
+      budget: {
+        monthlyAmount: aiBudget.monthlyAmount,
+        currency: aiBudget.currency,
+        periodEndAt: aiBudget.periodEnd,
+        used,
+        remaining,
+        exhausted: remaining <= 0,
+      },
+    };
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Barrel — handlers + LLM tool definitions
 // ---------------------------------------------------------------------------
 
 export const ASSET_GENERATION_HANDLERS: readonly ToolHandler<unknown, unknown, MutationContext>[] =
-  [generateAsset, listAdapters, getAdapterCapabilities] as unknown as readonly ToolHandler<
-    unknown,
-    unknown,
-    MutationContext
-  >[];
+  [
+    generateAsset,
+    listAdapters,
+    getAdapterCapabilities,
+    queryCostBudget,
+  ] as unknown as readonly ToolHandler<unknown, unknown, MutationContext>[];
 
 const transformObject = {
   type: 'object' as const,
@@ -947,6 +1249,16 @@ export const ASSET_GENERATION_TOOL_DEFINITIONS: readonly LLMToolDefinition[] = [
         modality: { type: 'string', enum: [...ADAPTER_MODALITY_KINDS] },
         adapterId: { type: 'string', minLength: 1, maxLength: 200 },
       },
+    },
+  },
+  {
+    name: 'query_cost_budget',
+    description: queryCostBudget.description,
+    input_schema: {
+      type: 'object',
+      required: [],
+      additionalProperties: false,
+      properties: {},
     },
   },
 ];
