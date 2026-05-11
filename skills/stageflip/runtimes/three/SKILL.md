@@ -262,6 +262,109 @@ The factory emits via `MountContext.emitTelemetry`:
 - `three-scene-clip.mount.failure` — attrs: `family`, `reason: 'setup-throw' | 'setupRef-resolve' | 'invalid-props'`.
 - `three-scene-clip.dispose` — attrs: `family`.
 
+## Asset-gen GLB mount path (T-437)
+
+When a 3D adapter (Tripo, Meshy) generates a GLB asset, `ThreeSceneClip`
+can mount the cached bytes by resolving the adapter's `cacheKey`
+against `@stageflip/asset-cache` (T-420). This is the 3D-modality
+analog of T-436's TTS→captions bypass: a **pure addition**, gated by
+an optional `ThreeSceneClipFactoryOptions.assetGenResolver` hook;
+existing mount paths are byte-for-byte unchanged when the option is
+absent.
+
+### Whitelist
+
+Initial trusted 3D adapter ids (T-437):
+
+```
+['tripo', 'meshy']
+```
+
+Whitelist membership is the host-side trust signal. An adapter
+declaring `ThreeDCapabilityDescriptor.outputFormats: ['glb']` is **not**
+automatically trusted — pair every whitelist addition with a SKILL
+update. The whitelist is a static `as const` array in
+`packages/runtimes/interactive/src/clips/three-scene/asset-gen-consumer.ts`;
+add a third entry by editing the literal and the test in
+`asset-gen-consumer.test.ts` that asserts the whitelist length.
+
+### Eligibility
+
+`resolveAssetGenGlb(seedSrc, lookup)` returns `{ ok: true, bytes,
+provider }` when ALL hold:
+
+- `seedSrc.kind === 'asset-gen'`
+- `seedSrc.provider` is on `THREE_D_BYPASS_WHITELIST`
+- `seedSrc.cacheKey` is a non-empty string
+- `lookup(cacheKey)` resolves to a non-empty `Uint8Array`
+
+Any failure returns a structured `{ ok: false, reason }` value — the
+resolver never throws. Reasons: `'kind-mismatch'`,
+`'provider-missing'`, `'provider-not-whitelisted'`,
+`'cacheKey-missing'`, `'cache-miss'`, `'cache-empty'`. The cache
+lookup is invoked AT MOST ONCE per call and ONLY after every
+structural check passes.
+
+### Factory wiring
+
+Hosts that want to mount generated GLB content build the factory with
+the `assetGenResolver` option:
+
+```ts
+import { InMemoryAssetCacheStore } from '@stageflip/asset-cache';
+import {
+  ThreeSceneClipFactoryBuilder,
+  resolveAssetGenGlb,
+} from '@stageflip/runtimes-interactive/clips/three-scene';
+
+const store = new InMemoryAssetCacheStore<Uint8Array>();
+const factory = ThreeSceneClipFactoryBuilder.build({
+  assetGenResolver: (seedSrc) =>
+    resolveAssetGenGlb(seedSrc, (key) => store.get(key)),
+});
+```
+
+Authors place the `seedSrc` descriptor inside `setupProps`:
+
+```ts
+liveMount.props.setupProps = {
+  seedSrc: {
+    kind: 'asset-gen',
+    cacheKey: 'three-d/abc123...',
+    provider: 'tripo',
+  },
+  // …other author props
+};
+```
+
+Inside the `ThreeClipSetup<P>` callback, authors read the resolved
+bytes off the reserved `__assetGen` key:
+
+```ts
+import { ASSET_GEN_SETUP_PROPS_KEY } from '@stageflip/runtimes-interactive/clips/three-scene';
+
+const setup: ThreeClipSetup<MyProps> = ({ container, props }) => {
+  const ag = (props as Record<string, unknown>)[ASSET_GEN_SETUP_PROPS_KEY];
+  if (ag && (ag as { ok: true }).ok) {
+    const bytes = (ag as { bytes: Uint8Array }).bytes;
+    // mount via GLTFLoader.parse(bytes.buffer, '', onLoad, onError);
+  } else {
+    // fall back to a placeholder mesh
+  }
+  // …
+};
+```
+
+### Pixel verification
+
+T-437 ships unit-test coverage of the resolver + the factory hook —
+sufficient per CLAUDE.md §13 because the schema is NOT extended. The
+end-to-end pixel-level mount verification (GLTFLoader →
+WebGLRenderer → parity golden) is gated on Track A T-397+ which wires
+the renderer-cdp 3D pipeline. Static-fallback rendering on the
+asset-gen mount path uses a placeholder mesh; no parity golden is
+gated by this task.
+
 ## Related
 
 - Contract types + registry: `runtimes/contract/SKILL.md`
@@ -269,4 +372,5 @@ The factory emits via `MountContext.emitTelemetry`:
 - Parity fixture seed:
   `packages/testing/fixtures/three-three-product-reveal.json`
 - Frontier-tier sibling: `runtimes/shader/SKILL.md` §"Frontier-tier ShaderClip"
-- Owning tasks: T-066 (initial), T-067 (fixture), T-068 (this doc), T-384 (frontier-tier wrap).
+- Owning tasks: T-066 (initial), T-067 (fixture), T-068 (this doc),
+  T-384 (frontier-tier wrap), T-437 (asset-gen GLB mount path).
