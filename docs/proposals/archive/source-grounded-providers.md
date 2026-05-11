@@ -1,28 +1,32 @@
 ---
 title: Source-grounded providers — extension to Provider Seam (ADR-007) + Asset Generation (ADR-008)
-id: docs/proposals/source-grounded-providers
-status: partially folded — see §"Folded-into" below
+id: docs/proposals/archive/source-grounded-providers
+status: archived — fully folded into ADR-007 (T-415) + ADR-008 (T-416)
 authors: orchestrator
 created: 2026-04-26
 last_updated: 2026-05-11
 target_adrs:
   - ADR-007 (T-415, shipped 2026-05-11 at docs/decisions/ADR-007-provider-seam-pattern.md)
-  - ADR-008 (T-416, not yet written)
+  - ADR-008 (T-416, shipped 2026-05-11 at docs/decisions/ADR-008-asset-generation.md)
 folds_into: Phase 14 α (T-415 / T-416 / T-417 / T-418 / T-419 / T-421)
 related: ADR-003 (interactive runtime tier), ADR-005 (frontier clip catalogue)
+archived_at: 2026-05-11
+archive_pr: T-416
 ---
 
-# Source-grounded providers
+# Source-grounded providers (ARCHIVED)
 
-> **Folded-into status (2026-05-11)**:
-> - **ADR-007 (T-415)** — **DONE** (shipped this PR). Sections 2.1 (`AdapterDescriptor` capability flags), 2.2 (`ResearchSessionProvider` meta-interface), 2.4 (7 per-modality provider classes — preserved as ADR-008 downstream consumer scope), and design decisions D1–D9 are absorbed into `docs/decisions/ADR-007-provider-seam-pattern.md` §D1, §D5, §D6, §D7, §D8 verbatim. The renumber from "ADR-006" to "ADR-007" was forced by the existing `docs/decisions/ADR-006-collab-crdt-transport.md` (T-260 / Phase 12) — see plan v1.26 changelog.
-> - **ADR-008 (T-416)** — pending. Sections 2.2 (`ResearchSessionProvider` interface details), 2.3 (`Document.research?` + `MediaProvenance.{researchSessionId, sourceIds}` schema additions), 2.4 (per-modality provider interface bodies), and §5 loss-flag inventory still need to fold into ADR-008 + T-419 (`@stageflip/asset-gen-contract`) when T-416 dispatches.
+> **ARCHIVED 2026-05-11 (T-416 / plan v1.27)**: This proposal is **fully folded** into ADR-007 (Provider Seam Pattern, meta) and ADR-008 (Asset Generation contract). It is preserved here for historical reference. **All new work consults the ADRs**, not this document.
 >
-> **Disposition**: per §10 of this proposal, archive once **fully** absorbed. ADR-007 absorption is **partial**: this proposal stays in place until T-416 lands ADR-008 with the schema additions + per-modality interface bodies + loss-flag inventory. After both ADRs ship, move to `docs/proposals/archive/source-grounded-providers.md`.
+> **Folded-into status — final**:
+> - **ADR-007 (T-415)** — Sections 2.1 (`AdapterDescriptor` capability flags), 2.2 (`ResearchSessionProvider` meta-interface shape), 2.4 (7 per-modality provider class enumeration), and design decisions D1–D9 absorbed into `docs/decisions/ADR-007-provider-seam-pattern.md` §D1, §D5, §D6, §D7, §D8. Shipped 2026-05-11 via PR #478.
+> - **ADR-008 (T-416)** — Sections 2.2 (`ResearchSessionProvider` interface body), 2.3 (`Document.research?` + `MediaProvenance.{researchSessionId, sourceIds}` schema additions), 2.4 (per-modality provider interface bodies), and §5 (4 `LF-RESEARCH-*` LossFlagCodes; D9 demoted the 5th to a UI toast) absorbed into `docs/decisions/ADR-008-asset-generation.md` §D2, §D3, §D7, §D9, §D11. Shipped 2026-05-11 (this archive move is part of the T-416 PR).
 >
-> **Status — proposal**: this document drafts an extension to ADR-007 (Provider Seam Pattern) and ADR-008 (Asset Generation) **before either ADR is written**. When T-415 and T-416 dispatch (Phase 14 α hard gate), the Implementer should fold these extensions into both ADRs as integral concepts, not as a separate ADR.
+> **Disposition (final)**: archived in this PR per §10 of this proposal. Authoritative source for the source-grounded design is now **ADR-007 + ADR-008**.
 >
-> **Why a proposal vs. a separate ADR**: the source-grounded concept is foundational enough that bolting it on as a separate later-numbered ADR after ADR-007/008 land would force ADR-007/008 to be rewritten. Better to land it as a first-class concept on day one.
+> **Status — proposal (historical)**: this document drafted an extension to ADR-007 (Provider Seam Pattern) and ADR-008 (Asset Generation) before either ADR was written. T-415 and T-416 dispatched at the Phase 14 α hard gate; the Implementers folded these extensions into both ADRs as integral concepts, not as a separate ADR.
+>
+> **Why a proposal vs. a separate ADR (historical)**: the source-grounded concept was foundational enough that bolting it on as a separate later-numbered ADR after ADR-007/008 landed would have forced ADR-007/008 to be rewritten. Landing it as a first-class concept on day one was the chosen path.
 
 ## 1. The unlock
 
@@ -367,11 +371,11 @@ When T-415 (ADR-006) and T-416 (ADR-007) dispatch, fold this proposal in:
 
 When T-415 / T-416 dispatch:
 1. Implementer reads this proposal and folds Sections 2.1 (capability descriptor flags) + 2.2 (`ResearchSessionProvider` meta-interface shape) + 2.4 (7 per-modality provider class enumeration) + design decisions D1–D9 into ADR-007 (capability descriptor + linkage + meta-interface). **STATUS — DONE** in T-415's PR (`docs/decisions/ADR-007-provider-seam-pattern.md` §D1, §D5, §D6, §D7, §D8).
-2. Section 2.3 (schema additions: `Document.research?`, `MediaProvenance.{researchSessionId, sourceIds}`) + Section 2.4 (per-modality provider interface bodies) into ADR-008 (provider interfaces + provenance). **STATUS — pending T-416**.
-3. Section 5 (loss-flag inventory — 4 codes after D9 demoted reconnect to UI toast) lands in `@stageflip/loss-flags` as part of the relevant Phase 14 task. **STATUS — pending T-416 / T-419**.
-4. Section 4 (plugin manifest) becomes part of the plugin-contribution skill (`skills/stageflip/concepts/plugins/SKILL.md`, if not already covered). Cross-referenced in ADR-007 §D12. **STATUS — referenced in ADR-007; full skill rollout pending Phase 16 plugin work**.
+2. Section 2.3 (schema additions: `Document.research?`, `MediaProvenance.{researchSessionId, sourceIds}`) + Section 2.4 (per-modality provider interface bodies) into ADR-008 (provider interfaces + provenance). **STATUS — DONE** in T-416's PR (`docs/decisions/ADR-008-asset-generation.md` §D2, §D3, §D9).
+3. Section 5 (loss-flag inventory — 4 codes after D9 demoted reconnect to UI toast) lands in `@stageflip/loss-flags` as part of the relevant Phase 14 task. **STATUS — SPEC'd** in `docs/decisions/ADR-008-asset-generation.md` §D11; codes land in `@stageflip/loss-flags` via T-419 (`@stageflip/asset-gen-contract`).
+4. Section 4 (plugin manifest) becomes part of the plugin-contribution skill (`skills/stageflip/concepts/plugins/SKILL.md`, if not already covered). Cross-referenced in ADR-007 §D12 and ADR-008 §D12. **STATUS — referenced in both ADRs; full skill rollout pending Phase 16 plugin work**.
 5. Section 7 Phase A goes into the Phase 14 α task list; Phase B/C land as Phase 16 tasks once Phase 14 α merges.
-6. This proposal file moves to `docs/proposals/archive/source-grounded-providers.md` (or deleted) once **fully** absorbed — i.e. after BOTH T-415 (ADR-007, done 2026-05-11) AND T-416 (ADR-008, pending) ship.
+6. This proposal file moves to `docs/proposals/archive/source-grounded-providers.md` once **fully** absorbed — i.e. after BOTH T-415 (ADR-007, done 2026-05-11) AND T-416 (ADR-008, done 2026-05-11) ship. **STATUS — DONE** — archived in T-416's PR (this commit).
 
 ## 11. Decisions ratified by Orchestrator
 
