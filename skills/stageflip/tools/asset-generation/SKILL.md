@@ -55,11 +55,20 @@ Look up a single AdapterDescriptor by `(modality, adapterId)` via the AdapterReg
 
 Return the current tenant's AI-generation cost-budget posture (`{ monthlyAmount, currency, periodEndAt, used, remaining, exhausted }`) WITHOUT making an adapter call. Use this BEFORE invoking generate_asset when the agent has previously seen `budgetExhausted: true` or `budgetRemaining` running low — the planner can switch to `rankingPreference: 'cheapest'` (T-425) or defer the call altogether. Read-only (no patch ops). No input. Returns `{ ok: true, budget }` when both soft seams (costTrackerStore + tenantSettingsStore) are wired AND the tenant has an `aiBudget` configured; `{ ok: false, reason: 'no_budget_configured' }` when seams are wired but `aiBudget` is absent (the tenant has no enforced budget); `{ ok: false, reason: 'cost_budget_unavailable' }` when the host has not wired the seams.
 
+### `query_usage_telemetry`
+
+Return per-tenant adapter usage rollups WITHOUT making an adapter call. Use this to decide whether the agent is hitting a misbehaving adapter (high `failedCount` / `killedCount`), to find the cheapest adapter that consistently succeeds (`totalCostAmount` + `successCount`), or to track latency trends (p50 / p95). Read-only (no patch ops). Optional `adapterId` (kebab-case) / `modality` filters; optional `sinceTimestamp` / `untilTimestamp` (ISO-8601) window. When `untilTimestamp` is omitted, the host clock supplies the upper bound. When `sinceTimestamp` is omitted, the lower bound is 7 days prior. Returns `{ ok: true, rollups: [{ adapterId, modality, count, successCount, failedCount, killedCount, p50LatencyMs, p95LatencyMs, totalCostAmount, costCurrency }], sinceTimestamp, untilTimestamp }`. Each rollup is one (adapterId, modality) bucket; the empty list IS the answer when no events match. Soft seam: requires `usageTelemetryReader` + `tenantId` on the asset-generation context. When unwired, returns `{ ok: false, reason: 'usage_telemetry_unavailable' }` (back-compat: dev hosts without telemetry continue to function).
+
+- `adapterId` (`string`) _(optional)_
+- `modality` (`string`) _(optional)_ — enum: `tts` / `video-gen` / `music-gen` / `sfx` / `three-d` / `slide-deck-gen` / `mind-map-gen` / `table-gen` / `quiz-gen` / `flashcard-gen` / `report-gen` / `infographic-gen` / `research-session` / `audience-backend` / `bundle`
+- `sinceTimestamp` (`string`) _(optional)_
+- `untilTimestamp` (`string`) _(optional)_
+
 
 ## Invariants
 
 - Every handler declares `bundle: 'asset-generation'`.
-- Tool count 4 (I-9 cap is 30).
+- Tool count 5 (I-9 cap is 30).
 - Tool names + descriptions above mirror what the LLM sees at plan +
   execution time, produced by the router's `LLMToolDefinition[]`.
 

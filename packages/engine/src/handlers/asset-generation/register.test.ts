@@ -21,8 +21,8 @@ describe('registerAssetGenerationBundle', () => {
     registerAssetGenerationBundle(registry, router);
     const tools = registry.get(ASSET_GENERATION_BUNDLE_NAME)?.tools ?? [];
     expect(tools.map((t) => t.name)).toEqual(ASSET_GENERATION_TOOL_DEFINITIONS.map((t) => t.name));
-    // T-443 — bundle grew from 3 tools to 4 (added `query_cost_budget`).
-    expect(tools.length).toBe(4);
+    // T-423: 3 tools; T-443: +query_cost_budget (4); T-445: +query_usage_telemetry (5).
+    expect(tools.length).toBe(5);
   });
 
   it('registers every handler on the router', () => {
