@@ -20,3 +20,15 @@ export type {
   RegionRouter,
   RegionRouterOptions,
 } from './region-router.js';
+
+// T-411a — TenantSettings Firestore facet (per-tenant frontier-enablement
+// settings; see docs/tasks/T-411.md / T-411a.md).
+export { createFirebaseTenantSettingsStore } from './tenant-settings.js';
+export type {
+  FirebaseTenantSettingsStoreOptions,
+  FirestoreCollectionRefLike,
+  FirestoreDocRefLike,
+  FirestoreDocSnapshotLike,
+  FirestoreQuerySnapshotLike,
+  FirestoreTenantSettingsLike,
+} from './tenant-settings.js';

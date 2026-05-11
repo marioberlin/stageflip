@@ -37,3 +37,10 @@ export {
   mapPgError,
   type PgErrorLike,
 } from './errors.js';
+
+// T-411a — TenantSettings storage facet (per-tenant frontier-enablement
+// settings; see docs/tasks/T-411.md / T-411a.md).
+export {
+  PostgresTenantSettingsStore,
+  type PostgresTenantSettingsStoreOptions,
+} from './tenant-settings.js';
