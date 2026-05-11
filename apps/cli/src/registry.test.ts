@@ -58,6 +58,16 @@ describe('CLI_COMMAND_REGISTRY', () => {
     expect(shipped).toContain('export');
     expect(shipped).toContain('plugin install');
   });
+
+  it('T-411b — tenant set-interactive is registered as shipped with --tenant + --value flags', () => {
+    const entry = CLI_COMMAND_REGISTRY.commands.find((c) => c.name === 'tenant set-interactive');
+    expect(entry).toBeDefined();
+    expect(entry?.status).toBe('shipped');
+    const flagNames = entry?.flags.map((f) => f.name) ?? [];
+    expect(flagNames).toContain('--tenant');
+    expect(flagNames).toContain('--value');
+    expect(flagNames).toContain('--dry-run');
+  });
 });
 
 describe('commandRegistryAsCliReferencePkg — T-226 bridge', () => {

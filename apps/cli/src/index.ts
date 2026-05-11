@@ -12,6 +12,13 @@ export { runDoctor } from './commands/doctor.js';
 export { runPluginInstall } from './commands/plugin-install.js';
 export { runRender } from './commands/render.js';
 export { createStubRunner } from './commands/stubs.js';
+export {
+  createTenantCommands,
+  type TenantCommandDeps,
+  type TenantHttpClient,
+  type TenantHttpRequest,
+  type TenantHttpResponse,
+} from './commands/tenant.js';
 export type {
   CliCommand,
   CliCommandRegistry,
