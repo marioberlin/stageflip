@@ -26,6 +26,7 @@
   "dependencies": {
     "@stageflip/auth-schema": "workspace:^",
     "@stageflip/import-pptx": "workspace:^",
+    "@stageflip/storage": "workspace:^",
     "firebase-admin": "13.0.1"
   },
   "devDependencies": {
