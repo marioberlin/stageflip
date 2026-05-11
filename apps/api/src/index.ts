@@ -52,3 +52,43 @@ export {
   type AuthorizationDecision,
   type InteractiveValue,
 } from './auth/can-set-interactive.js';
+
+// T-453 — Audience-backend service surface. REST routes
+// (open / close / state / join) + WebSocket multiplexer + rate-limit
+// primitives + loss-flag emitter.
+export {
+  DEFAULT_AUDIENCE_FEATURE_SETTINGS,
+  createAudienceSessionsRoute,
+  type AudienceSessionsRouteDeps,
+} from './routes/audience-sessions.js';
+export {
+  ReconnectBudget,
+  authenticateHandshake,
+  buildSnapshotFrame,
+  createAudienceWebSocketServer,
+  dispatchAudienceMessage,
+  type AdminCommandFrame,
+  type AudienceWebSocketServer,
+  type AudienceWebSocketServerDeps,
+  type DispatchDeps,
+  type ErrorFrame,
+  type HandshakeDeps,
+  type HandshakeOutcome,
+  type ServerInboundFrame,
+  type ServerOutboundFrame,
+  type SnapshotFrame,
+  type VoteFrame,
+  type WsPrincipal,
+} from './routes/audience-ws.js';
+export {
+  TenantRateLimiter,
+  TokenBucketRateLimiter,
+  VoterRateLimiter,
+  type RateLimitDecision,
+  type TokenBucketConfig,
+} from './routes/audience-rate-limit.js';
+export {
+  emitAudienceLossFlag,
+  type AudienceLossFlagInput,
+  type ServerAudienceLossFlagCode,
+} from './routes/audience-loss-flags.js';

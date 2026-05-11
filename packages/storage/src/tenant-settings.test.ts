@@ -198,4 +198,100 @@ describe('tenantSettingsSchema', () => {
       ).toThrow();
     });
   });
+
+  // T-453 — features.audience sub-namespace.
+  describe('features.audience (T-453)', () => {
+    const validAudience = {
+      enabled: true,
+      motionNativeEnabled: false,
+      maxIngestRateHz: 100,
+      maxConcurrentVotersPerSession: 1000,
+      retentionDays: 90,
+    };
+
+    it('round-trips a payload WITH features.audience set', () => {
+      const payload = {
+        ...valid,
+        features: { interactive: 'disabled' as const, audience: validAudience },
+      };
+      expect(tenantSettingsSchema.parse(payload)).toEqual(payload);
+    });
+
+    it('round-trips an existing valid payload WITHOUT features.audience (non-breaking)', () => {
+      // The base `valid` payload omits audience entirely — must still parse.
+      expect(tenantSettingsSchema.parse(valid)).toEqual(valid);
+    });
+
+    it('rejects unknown keys inside features.audience (strict)', () => {
+      expect(() =>
+        tenantSettingsSchema.parse({
+          ...valid,
+          features: {
+            interactive: 'disabled',
+            audience: { ...validAudience, surprise: 'extra' } as unknown,
+          },
+        }),
+      ).toThrow(/unrecognized/i);
+    });
+
+    it('rejects negative maxIngestRateHz', () => {
+      expect(() =>
+        tenantSettingsSchema.parse({
+          ...valid,
+          features: {
+            interactive: 'disabled',
+            audience: { ...validAudience, maxIngestRateHz: -1 },
+          },
+        }),
+      ).toThrow();
+    });
+
+    it('rejects zero maxIngestRateHz', () => {
+      expect(() =>
+        tenantSettingsSchema.parse({
+          ...valid,
+          features: {
+            interactive: 'disabled',
+            audience: { ...validAudience, maxIngestRateHz: 0 },
+          },
+        }),
+      ).toThrow();
+    });
+
+    it('rejects non-integer maxConcurrentVotersPerSession', () => {
+      expect(() =>
+        tenantSettingsSchema.parse({
+          ...valid,
+          features: {
+            interactive: 'disabled',
+            audience: { ...validAudience, maxConcurrentVotersPerSession: 1000.5 },
+          },
+        }),
+      ).toThrow();
+    });
+
+    it('rejects retentionDays ≤ 0', () => {
+      expect(() =>
+        tenantSettingsSchema.parse({
+          ...valid,
+          features: {
+            interactive: 'disabled',
+            audience: { ...validAudience, retentionDays: 0 },
+          },
+        }),
+      ).toThrow();
+    });
+
+    it('rejects missing required audience fields', () => {
+      expect(() =>
+        tenantSettingsSchema.parse({
+          ...valid,
+          features: {
+            interactive: 'disabled',
+            audience: { enabled: true } as unknown,
+          },
+        }),
+      ).toThrow();
+    });
+  });
 });

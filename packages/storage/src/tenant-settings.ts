@@ -34,6 +34,34 @@ export const aiBudgetSchema = z
 export type AiBudget = z.infer<typeof aiBudgetSchema>;
 
 /**
+ * T-453 — Per-tenant audience-backend feature flags + policy knobs.
+ * Optional sub-namespace on `features` per ADR-009 §D3 / §D5. Absent
+ * means "audience disabled" (default-deny per the T-411a posture for
+ * absent rows); the API layer materialises the defaults when the row
+ * exists but the sub-namespace is absent.
+ *
+ * Fields:
+ *   - `enabled` — master toggle (false ⇒ all audience routes return 403).
+ *   - `motionNativeEnabled` — gates the three motion-native clip families
+ *     (Heatmap / ReactionStream / AudienceAiPrompt) per ADR-010.
+ *   - `maxIngestRateHz` — per-tenant ingest cap (ADR-009 §D3; default 100).
+ *   - `maxConcurrentVotersPerSession` — per-session voter cap (default 1000).
+ *   - `retentionDays` — overrides the default `ttlAt = closedAt + 90 days`
+ *     posture per ADR-009 §D5.
+ */
+export const audienceFeatureSettingsSchema = z
+  .object({
+    enabled: z.boolean(),
+    motionNativeEnabled: z.boolean(),
+    maxIngestRateHz: z.number().positive().finite(),
+    maxConcurrentVotersPerSession: z.number().int().positive(),
+    retentionDays: z.number().int().positive(),
+  })
+  .strict();
+
+export type AudienceFeatureSettings = z.infer<typeof audienceFeatureSettingsSchema>;
+
+/**
  * Per-tenant frontier-enablement settings.
  *
  * `features.interactive` posture:
@@ -57,6 +85,9 @@ export const tenantSettingsSchema = z
     features: z
       .object({
         interactive: z.enum(['disabled', 'preview', 'ga']),
+        // T-453 — Optional audience-backend sub-namespace per ADR-009 §D3 /
+        // §D5. Absent means audience disabled; default-deny.
+        audience: audienceFeatureSettingsSchema.optional(),
       })
       .strict(),
     aiBudget: aiBudgetSchema.optional(),

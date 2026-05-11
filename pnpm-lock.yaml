@@ -19,7 +19,7 @@ importers:
         version: 1.59.1
       '@size-limit/preset-big-lib':
         specifier: 11.2.0
-        version: 11.2.0(esbuild@0.27.7)(size-limit@11.2.0)
+        version: 11.2.0(size-limit@11.2.0)
       '@types/node':
         specifier: 22.19.17
         version: 22.19.17
@@ -56,6 +56,12 @@ importers:
       '@hono/zod-validator':
         specifier: 0.4.2
         version: 0.4.2(hono@4.6.14)(zod@3.25.76)
+      '@stageflip/audience-contract':
+        specifier: workspace:^
+        version: link:../../packages/audience-contract
+      '@stageflip/loss-flags':
+        specifier: workspace:^
+        version: link:../../packages/loss-flags
       '@stageflip/mcp-server':
         specifier: workspace:^
         version: link:../../packages/mcp-server
@@ -68,6 +74,9 @@ importers:
       hono:
         specifier: 4.6.14
         version: 4.6.14
+      ws:
+        specifier: 8.18.0
+        version: 8.18.0
       zod:
         specifier: 3.25.76
         version: 3.25.76
@@ -75,6 +84,9 @@ importers:
       '@types/node':
         specifier: 22.19.17
         version: 22.19.17
+      '@types/ws':
+        specifier: 8.5.13
+        version: 8.5.13
       tsup:
         specifier: 8.5.1
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.10)(tsx@4.21.0)(typescript@5.6.3)(yaml@2.8.3)
@@ -1754,6 +1766,9 @@ importers:
 
   packages/storage:
     dependencies:
+      '@stageflip/audience-contract':
+        specifier: workspace:^
+        version: link:../audience-contract
       zod:
         specifier: 3.25.76
         version: 3.25.76
@@ -3875,6 +3890,9 @@ packages:
 
   '@types/ws@8.18.1':
     resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
+
+  '@types/ws@8.5.13':
+    resolution: {integrity: sha512-osM/gWBTPKgHV8XkTunnegTRIsvF6owmf5w+JtAfOw472dptdm0dlGv4xCt6GwQRcC2XVOvvRE/0bAoQcL2QkA==}
 
   '@types/yauzl@2.10.3':
     resolution: {integrity: sha512-oJoftv0LSuaDZE3Le4DbKX+KS9G36NzOeSap90UIK0yMA/NhKJhqlSGtNDORNRaIbQfzjXDrQa0ytJ6mNRGz/Q==}
@@ -7767,6 +7785,18 @@ packages:
   wrappy@1.0.2:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
 
+  ws@8.18.0:
+    resolution: {integrity: sha512-8VbfWfHLbbwu3+N6OKsOMpBdT4kXPDDB9cJk2bJ6mh9ucxdlnNvH1e+roYkKmN9Nxw2yjz7VzeO9oOz2zJ04Pw==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+
   ws@8.20.0:
     resolution: {integrity: sha512-sAt8BhgNbzCtgGbt2OxmpuryO63ZoDk/sqaB/znQm94T4fCEsy/yV+7CdC1kJhOU9lboAEU7R3kquuycDoibVA==}
     engines: {node: '>=10.0.0'}
@@ -9586,11 +9616,11 @@ snapshots:
     dependencies:
       size-limit: 11.2.0
 
-  '@size-limit/preset-big-lib@11.2.0(esbuild@0.27.7)(size-limit@11.2.0)':
+  '@size-limit/preset-big-lib@11.2.0(size-limit@11.2.0)':
     dependencies:
       '@size-limit/file': 11.2.0(size-limit@11.2.0)
       '@size-limit/time': 11.2.0(size-limit@11.2.0)
-      '@size-limit/webpack': 11.2.0(esbuild@0.27.7)(size-limit@11.2.0)
+      '@size-limit/webpack': 11.2.0(size-limit@11.2.0)
       size-limit: 11.2.0
     transitivePeerDependencies:
       - '@swc/core'
@@ -9616,11 +9646,11 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@size-limit/webpack@11.2.0(esbuild@0.27.7)(size-limit@11.2.0)':
+  '@size-limit/webpack@11.2.0(size-limit@11.2.0)':
     dependencies:
       nanoid: 5.1.9
       size-limit: 11.2.0
-      webpack: 5.106.2(esbuild@0.27.7)
+      webpack: 5.106.2
     transitivePeerDependencies:
       - '@swc/core'
       - esbuild
@@ -9889,6 +9919,10 @@ snapshots:
   '@types/whatwg-mimetype@3.0.2': {}
 
   '@types/ws@8.18.1':
+    dependencies:
+      '@types/node': 22.19.17
+
+  '@types/ws@8.5.13':
     dependencies:
       '@types/node': 22.19.17
 
@@ -13276,7 +13310,7 @@ snapshots:
       debug: 4.4.3
       devtools-protocol: 0.0.1367902
       typed-query-selector: 2.12.1
-      ws: 8.20.0
+      ws: 8.18.0
     transitivePeerDependencies:
       - bare-abort-controller
       - bare-buffer
@@ -14065,15 +14099,13 @@ snapshots:
 
   term-size@2.2.1: {}
 
-  terser-webpack-plugin@5.4.0(esbuild@0.27.7)(webpack@5.106.2(esbuild@0.27.7)):
+  terser-webpack-plugin@5.4.0(webpack@5.106.2):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       jest-worker: 27.5.1
       schema-utils: 4.3.3
       terser: 5.46.2
-      webpack: 5.106.2(esbuild@0.27.7)
-    optionalDependencies:
-      esbuild: 0.27.7
+      webpack: 5.106.2
 
   terser@5.46.2:
     dependencies:
@@ -14609,7 +14641,7 @@ snapshots:
 
   webpack-sources@3.3.4: {}
 
-  webpack@5.106.2(esbuild@0.27.7):
+  webpack@5.106.2:
     dependencies:
       '@types/eslint-scope': 3.7.7
       '@types/estree': 1.0.8
@@ -14632,7 +14664,7 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 4.3.3
       tapable: 2.3.2
-      terser-webpack-plugin: 5.4.0(esbuild@0.27.7)(webpack@5.106.2(esbuild@0.27.7))
+      terser-webpack-plugin: 5.4.0(webpack@5.106.2)
       watchpack: 2.5.1
       webpack-sources: 3.3.4
     transitivePeerDependencies:
@@ -14693,6 +14725,8 @@ snapshots:
       strip-ansi: 7.2.0
 
   wrappy@1.0.2: {}
+
+  ws@8.18.0: {}
 
   ws@8.20.0: {}
 
