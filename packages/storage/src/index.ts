@@ -21,3 +21,12 @@ export {
 } from './contract.js';
 
 export { InMemoryStorageAdapter } from './in-memory.js';
+
+// T-411a — TenantSettings storage facet (per-tenant frontier-enablement
+// settings; the storage layer for the toggle from
+// docs/decisions/ADR-005-frontier-clip-catalogue.md §D3).
+export { tenantSettingsSchema, type TenantSettings } from './tenant-settings.js';
+export {
+  InMemoryTenantSettingsStore,
+  type TenantSettingsStore,
+} from './tenant-settings-store.js';
