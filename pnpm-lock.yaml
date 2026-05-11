@@ -455,6 +455,22 @@ importers:
         specifier: 2.1.9
         version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
 
+  packages/asset-gen-contract:
+    dependencies:
+      '@stageflip/adapters-core':
+        specifier: workspace:*
+        version: link:../adapters-core
+      zod:
+        specifier: 3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: 2.1.9
+        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+      vitest:
+        specifier: 2.1.9
+        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+
   packages/auth-client:
     dependencies:
       '@stageflip/auth-schema':
