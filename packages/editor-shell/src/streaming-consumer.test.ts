@@ -7,10 +7,7 @@
 //   - surfaces transport-only events (plan-cancelled, validation-complete).
 
 import { describe, expect, it, vi } from 'vitest';
-import {
-  type AgentStreamHandlers,
-  consumeAgentStream,
-} from './streaming-consumer.js';
+import { type AgentStreamHandlers, consumeAgentStream } from './streaming-consumer.js';
 
 function responseOf(chunks: string[]): Response {
   const encoder = new TextEncoder();
@@ -43,7 +40,11 @@ describe('consumeAgentStream', () => {
       frame('step-start', { stepId: 's1' }, 0),
       frame('tool-call', { stepId: 's1', name: 'create_slide', args: {} }, 1),
       frame('plan-end', { finalDocument: { id: 'd' } }, 2),
-      frame('validation-complete', { validation: { tier: 'pass', programmatic: [], qualitative: [] } }, 3),
+      frame(
+        'validation-complete',
+        { validation: { tier: 'pass', programmatic: [], qualitative: [] } },
+        3,
+      ),
     ].join('');
     await consumeAgentStream(responseOf([text]), {
       onStepStart,

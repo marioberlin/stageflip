@@ -141,10 +141,15 @@ describe('POST /api/agent/execute?stream=true (SSE branch)', () => {
   });
 
   it('surfaces OrchestratorNotConfigured as 503 not_configured on the SSE branch', async () => {
-    vi.mocked(streamAgent).mockImplementationOnce(async function* () {
-      const { OrchestratorNotConfigured } = await import('@stageflip/app-agent');
+    const { OrchestratorNotConfigured } = await import('@stageflip/app-agent');
+    vi.mocked(streamAgent).mockImplementationOnce(async function* notConfigured() {
+      // First .next() rejects with OrchestratorNotConfigured before any
+      // SSE frame is written, so the route falls through to the 503
+      // JSON branch.
       throw new OrchestratorNotConfigured('missing_api_key');
-    });
+      // biome-ignore lint/correctness/noUnreachable: yield kept so TS sees an AsyncGenerator return type
+      yield { kind: 'step-start', stepId: 's' };
+    } as unknown as typeof streamAgent);
     const res = await POST(
       makeRequest({ prompt: 'Generate a deck', document: validDoc() }, 'stream=true'),
     );

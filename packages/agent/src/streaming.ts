@@ -11,8 +11,8 @@
 //
 // See docs/tasks/T-442.md + skills/stageflip/concepts/streaming-agent-events.
 
-import type { ValidationResult } from './validator/types.js';
 import type { ExecutorEvent } from './executor/types.js';
+import type { ValidationResult } from './validator/types.js';
 
 /** Discriminator for the transport-only abort sentinel. */
 export const PLAN_CANCELLED_KIND = 'plan-cancelled' as const;
