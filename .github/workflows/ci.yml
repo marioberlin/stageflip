@@ -74,6 +74,19 @@ jobs:
       - name: Gate - check-asset-licenses
         run: pnpm check-asset-licenses
 
+      # T-435 — adapter regression test suite (Phase 14 β closer). For
+      # each of the 9 reference adapters (T-426..T-434), reads the
+      # per-vendor JSON snapshot at
+      # `packages/adapter-regression/snapshots/<adapter-id>.json`,
+      # builds the live provider in stub mode, drives the canonical
+      # input through `synthesize()` / `generate()`, and asserts the
+      # live `cacheKey` + canonicalized-output SHA-256 + descriptor
+      # SHA-256 match the recorded snapshot. Catches silent drift in
+      # descriptor shape, capability, stub output, or cache-key
+      # derivation.
+      - name: Gate - check-adapter-regression
+        run: pnpm check-adapter-regression
+
       - name: Gate - Remotion import ban
         run: pnpm check-remotion-imports
 
