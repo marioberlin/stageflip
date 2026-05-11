@@ -17,7 +17,7 @@ NOT edit by hand — run `pnpm skills-sync` after registering a
 new bundle; `pnpm skills-sync:check` fails in CI if this file
 drifts.
 
-24 bundles, 134 tools total.
+25 bundles, 134 tools total.
 
 StageFlip ships tools grouped into bundles so an agent context
 rarely needs more than 30 tool definitions loaded at once
@@ -53,6 +53,7 @@ rarely needs more than 30 tool definitions loaded at once
 | [`cluster-f-compose`](./cluster-f-compose/SKILL.md) | 4 | Cluster F (Captions / Lyrics) composer tools — preset-binding factories for creator-caption / subtitle / lyric-video / keyword-highlight briefs (T-368). |
 | [`cluster-g-compose`](./cluster-g-compose/SKILL.md) | 4 | Cluster G (CTAs / social) composer tools — preset-binding factories for subscribe / follow / link-sticker / QR-bounce / social-handle briefs across the 5 ratified Cluster G presets (T-374). |
 | [`cluster-h-compose`](./cluster-h-compose/SKILL.md) | 0 | Cluster H (AR overlays) composer tools — preset-binding factories for AR overlay / VAR skeletal / swim-lane track briefs across the 4 ratified Cluster H presets (T-379). |
+| [`asset-generation`](./asset-generation/SKILL.md) | 0 | Asset-generation tools — wraps the Phase 14 α Provider Seam (AdapterRegistry / LicenseGate / FallbackChainExecutor + AssetCache + MediaProvenance) so agents can generate audio / image / video assets with provenance + content-addressed cache keys (T-423). |
 
 ## Per-bundle reference
 

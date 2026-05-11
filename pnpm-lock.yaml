@@ -683,6 +683,12 @@ importers:
 
   packages/engine:
     dependencies:
+      '@stageflip/adapters-core':
+        specifier: workspace:*
+        version: link:../adapters-core
+      '@stageflip/asset-cache':
+        specifier: workspace:*
+        version: link:../asset-cache
       '@stageflip/llm-abstraction':
         specifier: workspace:*
         version: link:../llm-abstraction
