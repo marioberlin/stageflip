@@ -156,3 +156,186 @@ describe('apply_centered_hero_layout', () => {
     ).toMatchObject({ ok: false, reason: 'slide_not_found' });
   });
 });
+
+// ---------------------------------------------------------------------------
+// 5 — arrange_reveal (T-407)
+// ---------------------------------------------------------------------------
+
+interface AnimationOp {
+  id: string;
+  timing: { kind: string; startFrame: number; durationFrames: number };
+  animation: {
+    kind: string;
+    direction?: string;
+    distance?: number;
+    from?: number;
+    to?: number;
+    easing?: string;
+  };
+  autoplay: boolean;
+}
+
+describe('arrange_reveal', () => {
+  it('emits one append-patch per element with default 9-frame stagger + fade', async () => {
+    const c = ctx(doc(['head', 'body', 'pic']));
+    const r = await find('arrange_reveal').handle(
+      { slideId: 'slide-1', revealOrder: ['head', 'body', 'pic'] },
+      c,
+    );
+    expect(r).toMatchObject({ ok: true, slideId: 'slide-1' });
+    const applied = (r as { ok: true; applied: { startFrame: number }[] }).applied;
+    expect(applied).toHaveLength(3);
+    expect(applied.map((a) => a.startFrame)).toEqual([0, 9, 18]);
+    const patches = c.patchSink.drain();
+    expect(patches).toHaveLength(3);
+    for (const p of patches) {
+      expect(p.op).toBe('add');
+      expect(String(p.path).endsWith('/animations/-')).toBe(true);
+      const v = p.value as AnimationOp;
+      expect(v.timing.kind).toBe('absolute');
+      expect(v.animation.kind).toBe('fade');
+      expect(v.timing.durationFrames).toBe(14);
+    }
+    expect((patches[0]?.value as AnimationOp).id).toBe('reveal-0');
+    expect((patches[1]?.value as AnimationOp).id).toBe('reveal-1');
+    expect((patches[2]?.value as AnimationOp).id).toBe('reveal-2');
+  });
+
+  it('honors initialDelayFrames + custom staggerFrames + enterDurationFrames', async () => {
+    const c = ctx(doc(['a', 'b', 'c']));
+    const r = await find('arrange_reveal').handle(
+      {
+        slideId: 'slide-1',
+        revealOrder: ['a', 'b', 'c'],
+        initialDelayFrames: 30,
+        staggerFrames: 15,
+        enterDurationFrames: 20,
+      },
+      c,
+    );
+    const applied = (r as { ok: true; applied: { startFrame: number }[] }).applied;
+    expect(applied.map((a) => a.startFrame)).toEqual([30, 45, 60]);
+    const patches = c.patchSink.drain();
+    for (const p of patches) {
+      expect((p.value as AnimationOp).timing.durationFrames).toBe(20);
+    }
+  });
+
+  it('emits slide-up enter animation with direction + distance defaults', async () => {
+    const c = ctx(doc(['x']));
+    await find('arrange_reveal').handle(
+      { slideId: 'slide-1', revealOrder: ['x'], enterAnimationKind: 'slide-up' },
+      c,
+    );
+    const patches = c.patchSink.drain();
+    const v = patches[0]?.value as AnimationOp;
+    expect(v.animation.kind).toBe('slide');
+    expect(v.animation.direction).toBe('up');
+    expect(v.animation.distance).toBe(100);
+  });
+
+  it('emits scale enter animation with from 0.8 → 1', async () => {
+    const c = ctx(doc(['x']));
+    await find('arrange_reveal').handle(
+      { slideId: 'slide-1', revealOrder: ['x'], enterAnimationKind: 'scale' },
+      c,
+    );
+    const v = c.patchSink.drain()[0]?.value as AnimationOp;
+    expect(v.animation.kind).toBe('scale');
+    expect(v.animation.from).toBe(0.8);
+    expect(v.animation.to).toBe(1);
+  });
+
+  it('overrides easing on enter animation', async () => {
+    const c = ctx(doc(['x']));
+    await find('arrange_reveal').handle(
+      { slideId: 'slide-1', revealOrder: ['x'], enterEasing: 'ease-in-out' },
+      c,
+    );
+    const v = c.patchSink.drain()[0]?.value as AnimationOp;
+    expect(v.animation.easing).toBe('ease-in-out');
+  });
+
+  it('returns applied with elementId / animationId / startFrame / durationFrames', async () => {
+    const c = ctx(doc(['head', 'body']));
+    const r = await find('arrange_reveal').handle(
+      { slideId: 'slide-1', revealOrder: ['head', 'body'] },
+      c,
+    );
+    expect(r).toMatchObject({
+      ok: true,
+      applied: [
+        { elementId: 'head', animationId: 'reveal-0', startFrame: 0, durationFrames: 14 },
+        { elementId: 'body', animationId: 'reveal-1', startFrame: 9, durationFrames: 14 },
+      ],
+    });
+  });
+
+  it('refuses wrong_mode', async () => {
+    const d = doc(['x']);
+    (d.content as { mode: string }).mode = 'video';
+    const c = ctx(d);
+    expect(
+      await find('arrange_reveal').handle({ slideId: 'slide-1', revealOrder: ['x'] }, c),
+    ).toMatchObject({ ok: false, reason: 'wrong_mode' });
+    expect(c.patchSink.drain()).toHaveLength(0);
+  });
+
+  it('refuses slide_not_found', async () => {
+    const c = ctx(doc(['x']));
+    expect(
+      await find('arrange_reveal').handle({ slideId: 'ghost', revealOrder: ['x'] }, c),
+    ).toMatchObject({ ok: false, reason: 'slide_not_found' });
+    expect(c.patchSink.drain()).toHaveLength(0);
+  });
+
+  it('refuses element_not_found', async () => {
+    const c = ctx(doc(['head']));
+    expect(
+      await find('arrange_reveal').handle(
+        { slideId: 'slide-1', revealOrder: ['head', 'ghost'] },
+        c,
+      ),
+    ).toMatchObject({ ok: false, reason: 'element_not_found' });
+    expect(c.patchSink.drain()).toHaveLength(0);
+  });
+
+  it('refuses duplicate_element_id (checked BEFORE slide / element resolution)', async () => {
+    const c = ctx(doc(['a', 'b']));
+    expect(
+      await find('arrange_reveal').handle({ slideId: 'slide-1', revealOrder: ['a', 'b', 'a'] }, c),
+    ).toMatchObject({ ok: false, reason: 'duplicate_element_id' });
+    expect(c.patchSink.drain()).toHaveLength(0);
+  });
+
+  it('produces deeply-equal patches on repeated invocation (determinism)', async () => {
+    const c1 = ctx(doc(['a', 'b', 'c']));
+    const c2 = ctx(doc(['a', 'b', 'c']));
+    const input = {
+      slideId: 'slide-1',
+      revealOrder: ['a', 'b', 'c'],
+      initialDelayFrames: 5,
+      staggerFrames: 12,
+      enterAnimationKind: 'slide-left' as const,
+    };
+    const r1 = await find('arrange_reveal').handle(input, c1);
+    const r2 = await find('arrange_reveal').handle(input, c2);
+    expect(r1).toEqual(r2);
+    expect(c1.patchSink.drain()).toEqual(c2.patchSink.drain());
+  });
+
+  it('picks fresh reveal-N ids when the element already carries reveal-* animations', async () => {
+    const d = doc(['x']);
+    const slide = (d.content as { slides: { elements: { animations: unknown[] }[] }[] }).slides[0];
+    const firstEl = slide?.elements[0];
+    if (firstEl) {
+      firstEl.animations = [{ id: 'reveal-3', timing: {}, animation: { kind: 'fade' } }];
+    }
+    const c = ctx(d);
+    const r = await find('arrange_reveal').handle({ slideId: 'slide-1', revealOrder: ['x'] }, c);
+    expect(r).toMatchObject({
+      ok: true,
+      applied: [{ animationId: 'reveal-4' }],
+    });
+  });
+});

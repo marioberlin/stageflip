@@ -1,13 +1,17 @@
 // packages/engine/src/handlers/semantic-layout/handlers.ts
-// `semantic-layout` bundle — 4 write-tier tools that reshape existing
+// `semantic-layout` bundle — 5 write-tier tools that reshape existing
 // elements into conventional slide layouts: title-over-body, two-column
-// split, horizontal KPI strip, centered hero. Slide-mode only.
+// split, horizontal KPI strip, centered hero, plus `arrange_reveal`
+// (T-407) which appends a staggered enter-animation sequence (canonical
+// use case: headline → body → media). Slide-mode only.
 //
-// Each tool emits per-element `replace` ops on `.../transform`. The
-// reference canvas is 1920×1080; margins default to 80 px. Unlike
-// domain composites (T-166) which create new elements, these tools
-// never add or remove elements — they only adjust transforms on
-// elements the caller already placed on the slide.
+// Tools 1–4 emit per-element `replace` ops on `.../transform`. Tool 5
+// emits per-element `add` ops on `.../animations/-` (appending one
+// animation per element in `revealOrder`). The reference canvas is
+// 1920×1080; margins default to 80 px. Unlike domain composites (T-166)
+// which create new elements, these tools never add or remove elements
+// — they only adjust transforms on (or attach animations to) elements
+// the caller already placed on the slide.
 
 import type { LLMToolDefinition } from '@stageflip/llm-abstraction';
 import { z } from 'zod';
@@ -307,6 +311,214 @@ const applyCenteredHeroLayout: ToolHandler<
 };
 
 // ---------------------------------------------------------------------------
+// 5 — arrange_reveal (T-407)
+// ---------------------------------------------------------------------------
+
+const ENTER_ANIMATION_KINDS = [
+  'fade',
+  'slide-up',
+  'slide-down',
+  'slide-left',
+  'slide-right',
+  'scale',
+] as const;
+type EnterAnimationKind = (typeof ENTER_ANIMATION_KINDS)[number];
+
+const ENTER_EASINGS = ['linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out'] as const;
+type EnterEasing = (typeof ENTER_EASINGS)[number];
+
+const REVEAL_DEFAULTS = {
+  initialDelayFrames: 0,
+  staggerFrames: 9, // ≈300 ms at 30fps
+  enterDurationFrames: 14, // ≈450 ms at 30fps
+  enterAnimationKind: 'fade' as EnterAnimationKind,
+  enterEasing: 'ease-out' as EnterEasing,
+  autoplay: true,
+} as const;
+
+const arrangeRevealInput = z
+  .object({
+    slideId: z.string().min(1),
+    revealOrder: z.array(z.string().min(1)).min(1).max(20),
+    initialDelayFrames: z.number().int().nonnegative().max(600).optional(),
+    staggerFrames: z.number().int().nonnegative().max(600).optional(),
+    enterDurationFrames: z.number().int().positive().max(600).optional(),
+    enterAnimationKind: z.enum(ENTER_ANIMATION_KINDS).optional(),
+    enterEasing: z.enum(ENTER_EASINGS).optional(),
+    autoplay: z.boolean().optional(),
+  })
+  .strict();
+const arrangeRevealOutput = z.discriminatedUnion('ok', [
+  z
+    .object({
+      ok: z.literal(true),
+      slideId: z.string(),
+      applied: z.array(
+        z
+          .object({
+            elementId: z.string(),
+            animationId: z.string(),
+            startFrame: z.number().int().nonnegative(),
+            durationFrames: z.number().int().positive(),
+          })
+          .strict(),
+      ),
+    })
+    .strict(),
+  z
+    .object({
+      ok: z.literal(false),
+      reason: z.enum([
+        'wrong_mode',
+        'slide_not_found',
+        'element_not_found',
+        'duplicate_element_id',
+      ]),
+      detail: z.string().optional(),
+    })
+    .strict(),
+]);
+
+interface SerializedAnimation {
+  readonly id: string;
+  readonly timing: { readonly kind: 'absolute'; startFrame: number; durationFrames: number };
+  readonly animation: Record<string, unknown> & { readonly kind: string };
+  readonly autoplay: boolean;
+}
+
+interface ElementWithAnimations {
+  readonly id: string;
+  readonly animations?: readonly { readonly id: string }[];
+}
+
+/**
+ * Pick an animation id for the i-th element in the reveal sequence.
+ * Default `reveal-<i>`; if the element already carries any `reveal-*`
+ * animations (caller re-invoked `arrange_reveal` on the same slide),
+ * bump the id past the existing max so the new sequence is contiguous
+ * and disjoint from the prior batch (`reveal-${existingMax + 1 + i}`).
+ * Mirrors the `nextAnimationId` strategy in
+ * `clip-animation/handlers.ts` (scan existing ids for `^reveal-(\d+)$`).
+ */
+function nextRevealAnimationId(element: ElementWithAnimations, revealIndex: number): string {
+  const animations = element.animations ?? [];
+  const needle = 'reveal-';
+  let max = -1;
+  for (const a of animations) {
+    if (!a.id.startsWith(needle)) continue;
+    const tail = a.id.slice(needle.length);
+    if (!/^\d+$/.test(tail)) continue;
+    const n = Number.parseInt(tail, 10);
+    if (n > max) max = n;
+  }
+  const base = max + 1; // 0 if no pre-existing reveal-* on this element
+  return `${needle}${base + revealIndex}`;
+}
+
+function buildEnterAnimation(
+  kind: EnterAnimationKind,
+  easing: EnterEasing,
+): Record<string, unknown> & { kind: string } {
+  switch (kind) {
+    case 'fade':
+      return { kind: 'fade', from: 0, to: 1, easing };
+    case 'slide-up':
+      return { kind: 'slide', direction: 'up', distance: 100, easing };
+    case 'slide-down':
+      return { kind: 'slide', direction: 'down', distance: 100, easing };
+    case 'slide-left':
+      return { kind: 'slide', direction: 'left', distance: 100, easing };
+    case 'slide-right':
+      return { kind: 'slide', direction: 'right', distance: 100, easing };
+    case 'scale':
+      return { kind: 'scale', from: 0.8, to: 1, easing };
+  }
+}
+
+/**
+ * `arrange_reveal` — append a staggered enter-animation sequence to a list
+ * of caller-supplied element ids on a slide. The 0th id reveals first, the
+ * 1st reveals second, etc. Frame-native input (the canonical schema is
+ * frame-native; there is no fps surface on slide content). Canonical use
+ * case: headline → body → media reveal sequence at deck-open time.
+ *
+ * Defaults at 30fps: 9-frame stagger (~300 ms) and 14-frame enter duration
+ * (~450 ms) with `fade` + `ease-out`. Caller can override every default or
+ * pick a different enter kind (`slide-up` / `slide-left` / `scale` etc.).
+ *
+ * Refuses on `duplicate_element_id` (caller passed the same id twice in
+ * `revealOrder`) — checked BEFORE slide / element resolution so the error
+ * is most-informative. Otherwise routes through `locateSlide` for
+ * `wrong_mode` / `slide_not_found` / `element_not_found`.
+ *
+ * Animation ids are auto-generated as `reveal-N` (collision-safe against
+ * pre-existing `reveal-*` animations on the same element). One
+ * JSON-Patch `add` op per element appended to `.../animations/-`.
+ */
+const arrangeReveal: ToolHandler<
+  z.infer<typeof arrangeRevealInput>,
+  z.infer<typeof arrangeRevealOutput>,
+  MutationContext
+> = {
+  name: 'arrange_reveal',
+  bundle: SEMANTIC_LAYOUT_BUNDLE_NAME,
+  description:
+    "Append a staggered enter-animation sequence to caller-supplied element ids on a slide. Canonical use case: headline → body → media reveal at deck open. Caller passes `revealOrder` (an ordered list of element ids — the 0th reveals first); the tool emits one animation-add JSON-Patch per element. Frame-native input (the canonical schema has no ms surface on slide content): defaults at 30fps are 9-frame stagger (≈300 ms) + 14-frame enter (≈450 ms) + `fade` + `ease-out`. Override `enterAnimationKind` to `slide-up` / `slide-down` / `slide-left` / `slide-right` / `scale`. Refuses with `duplicate_element_id` if `revealOrder` carries duplicates (checked first); then `wrong_mode` / `slide_not_found` / `element_not_found` per the bundle's standard locator. Animation ids are auto-generated as `reveal-N` (collision-safe against pre-existing `reveal-*` animations). Does NOT touch `transform`, content, or any field other than `animations`.",
+  inputSchema: arrangeRevealInput,
+  outputSchema: arrangeRevealOutput,
+  handle: (input, ctx) => {
+    if (new Set(input.revealOrder).size !== input.revealOrder.length) {
+      return { ok: false, reason: 'duplicate_element_id' };
+    }
+    const loc = locateSlide(ctx, input.slideId, input.revealOrder);
+    if (typeof loc === 'string') return { ok: false, reason: loc };
+
+    const initialDelayFrames = input.initialDelayFrames ?? REVEAL_DEFAULTS.initialDelayFrames;
+    const staggerFrames = input.staggerFrames ?? REVEAL_DEFAULTS.staggerFrames;
+    const durationFrames = input.enterDurationFrames ?? REVEAL_DEFAULTS.enterDurationFrames;
+    const kind = input.enterAnimationKind ?? REVEAL_DEFAULTS.enterAnimationKind;
+    const easing = input.enterEasing ?? REVEAL_DEFAULTS.enterEasing;
+    const autoplay = input.autoplay ?? REVEAL_DEFAULTS.autoplay;
+
+    if (ctx.document.content.mode !== 'slide') {
+      // Defensive — locateSlide already returned 'wrong_mode' if so.
+      return { ok: false, reason: 'wrong_mode' };
+    }
+    const slide = ctx.document.content.slides[loc.slideIndex];
+    if (!slide) return { ok: false, reason: 'slide_not_found' };
+
+    const applied: {
+      elementId: string;
+      animationId: string;
+      startFrame: number;
+      durationFrames: number;
+    }[] = [];
+
+    input.revealOrder.forEach((elementId, i) => {
+      const elementIndex = loc.elementIndexById.get(elementId);
+      if (elementIndex === undefined) return;
+      const element = slide.elements[elementIndex] as unknown as ElementWithAnimations;
+      const animationId = nextRevealAnimationId(element, i);
+      const startFrame = initialDelayFrames + i * staggerFrames;
+      const animation: SerializedAnimation = {
+        id: animationId,
+        timing: { kind: 'absolute', startFrame, durationFrames },
+        animation: buildEnterAnimation(kind, easing),
+        autoplay,
+      };
+      ctx.patchSink.push({
+        op: 'add',
+        path: `/content/slides/${loc.slideIndex}/elements/${elementIndex}/animations/-`,
+        value: animation,
+      });
+      applied.push({ elementId, animationId, startFrame, durationFrames });
+    });
+
+    return { ok: true, slideId: input.slideId, applied };
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Barrel
 // ---------------------------------------------------------------------------
 
@@ -315,6 +527,7 @@ export const SEMANTIC_LAYOUT_HANDLERS: readonly ToolHandler<unknown, unknown, Mu
   applyTwoColumnLayout,
   applyKpiStripLayout,
   applyCenteredHeroLayout,
+  arrangeReveal,
 ] as unknown as readonly ToolHandler<unknown, unknown, MutationContext>[];
 
 const nonEmptyString = { type: 'string' as const, minLength: 1 };
@@ -380,6 +593,36 @@ export const SEMANTIC_LAYOUT_TOOL_DEFINITIONS: readonly LLMToolDefinition[] = [
         elementId: nonEmptyString,
         widthRatio: { type: 'number', minimum: 0.2, maximum: 1 },
         heightRatio: { type: 'number', minimum: 0.2, maximum: 1 },
+      },
+    },
+  },
+  {
+    name: 'arrange_reveal',
+    description: arrangeReveal.description,
+    input_schema: {
+      type: 'object',
+      required: ['slideId', 'revealOrder'],
+      additionalProperties: false,
+      properties: {
+        slideId: nonEmptyString,
+        revealOrder: {
+          type: 'array',
+          minItems: 1,
+          maxItems: 20,
+          items: nonEmptyString,
+        },
+        initialDelayFrames: { type: 'integer', minimum: 0, maximum: 600 },
+        staggerFrames: { type: 'integer', minimum: 0, maximum: 600 },
+        enterDurationFrames: { type: 'integer', minimum: 1, maximum: 600 },
+        enterAnimationKind: {
+          type: 'string',
+          enum: ['fade', 'slide-up', 'slide-down', 'slide-left', 'slide-right', 'scale'],
+        },
+        enterEasing: {
+          type: 'string',
+          enum: ['linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out'],
+        },
+        autoplay: { type: 'boolean' },
       },
     },
   },
