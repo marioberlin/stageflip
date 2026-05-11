@@ -65,3 +65,18 @@ export type {
 
 export { noopEmitTelemetry } from './telemetry.js';
 export type { EmitTelemetry } from './telemetry.js';
+
+// T-446 — per-provider data-flow security audit manifest.
+export {
+  RELEVANT_AUDIT_EVENT_KINDS,
+  RELEVANT_USAGE_FIELDS,
+  SECURITY_PERIMETERS,
+  parseSecurityManifest,
+  securityManifestSchema,
+} from './security-manifest.js';
+export type {
+  RelevantAuditEventKind,
+  RelevantUsageField,
+  SecurityManifest,
+  SecurityPerimeter,
+} from './security-manifest.js';
