@@ -13,10 +13,12 @@ import type { JsonPatchOp, MutationContext, PatchSink } from '../../router/types
 import {
   ASSET_GENERATION_HANDLERS,
   type AssetGenerationContext,
+  type CostTrackerStoreLike,
   type ExecuteAdapterCallInput,
   type ExecuteAdapterCallResult,
   type PlaceholderDispatchInput,
   type PlaceholderResolver,
+  type TenantSettingsStoreLike,
 } from './handlers.js';
 
 function collectingSink(): PatchSink & { drain(): JsonPatchOp[] } {
@@ -109,6 +111,9 @@ function makeCtx(opts: {
   placeholderResolver?: PlaceholderResolver;
   randomUuid?: () => string;
   nowMs?: () => number;
+  costTrackerStore?: CostTrackerStoreLike;
+  tenantSettingsStore?: TenantSettingsStoreLike;
+  tenantId?: string;
 }): AssetGenerationContext & { patchSink: ReturnType<typeof collectingSink> } {
   return {
     document: opts.document ?? makeDoc(),
@@ -124,6 +129,11 @@ function makeCtx(opts: {
       : {}),
     ...(opts.randomUuid !== undefined ? { randomUuid: opts.randomUuid } : {}),
     ...(opts.nowMs !== undefined ? { nowMs: opts.nowMs } : {}),
+    ...(opts.costTrackerStore !== undefined ? { costTrackerStore: opts.costTrackerStore } : {}),
+    ...(opts.tenantSettingsStore !== undefined
+      ? { tenantSettingsStore: opts.tenantSettingsStore }
+      : {}),
+    ...(opts.tenantId !== undefined ? { tenantId: opts.tenantId } : {}),
   };
 }
 
@@ -493,8 +503,9 @@ describe('get_adapter_capabilities', () => {
 });
 
 describe('barrel + invariants', () => {
-  it('handlers array length is 3', () => {
-    expect(ASSET_GENERATION_HANDLERS.length).toBe(3);
+  it('handlers array length is 4', () => {
+    // T-443 — bundle grew from 3 tools to 4 (added `query_cost_budget`).
+    expect(ASSET_GENERATION_HANDLERS.length).toBe(4);
   });
 
   it('every handler declares bundle === "asset-generation"', () => {
@@ -762,5 +773,399 @@ describe('generate_asset — T-438 optimistic placeholder path', () => {
     )) as { ok: true; slideId: string };
     expect(r.slideId).toBe('slide-1');
     resolver.resolveNext();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T-443 — cost-budget surfacing
+// ---------------------------------------------------------------------------
+
+interface FakeCostTracker extends CostTrackerStoreLike {
+  records: Array<{
+    tenantId: string;
+    adapterId: string;
+    amount: number;
+    currency: string;
+    recordedAt: string;
+  }>;
+  preset: number;
+}
+
+function fakeCostTracker(presetTotal = 0): FakeCostTracker {
+  const records: FakeCostTracker['records'] = [];
+  const tracker: FakeCostTracker = {
+    records,
+    preset: presetTotal,
+    recordCost: async (r) => {
+      records.push({ ...r });
+    },
+    getPeriodTotal: async (tenantId, _start, _end) => {
+      // Reflect any records pushed in addition to preset.
+      const live = records
+        .filter((rec) => rec.tenantId === tenantId)
+        .reduce((sum, rec) => sum + rec.amount, 0);
+      return presetTotal + live;
+    },
+  };
+  return tracker;
+}
+
+function fakeSettingsStore(aiBudget?: {
+  monthlyAmount: number;
+  currency: string;
+  periodEnd: string;
+}): TenantSettingsStoreLike {
+  return {
+    getTenantSettings: async (_tenantId: string) => {
+      return aiBudget === undefined ? { aiBudget: undefined } : { aiBudget };
+    },
+  };
+}
+
+function adapterWithCost(id: string, usd: number): AdapterRegistry {
+  const r = new AdapterRegistry();
+  r.register({
+    id,
+    modality: { kind: 'tts' },
+    capability: {},
+    license: { kind: 'apache-2.0' },
+    sandbox: { kind: 'in-process' },
+    costPerCall: { usd },
+  });
+  return r;
+}
+
+describe('generate_asset — T-443 cost-budget envelope', () => {
+  it('omits costBudget when no soft seams are wired (back-compat)', async () => {
+    const ctx = makeCtx({
+      registry: fakeRegistryWithTtsAdapter(),
+      gate: allowAllGate,
+      tenant: tenantContext,
+      executeAdapterCall: async () => ({ ok: true }),
+    });
+    const r = (await find('generate_asset').handle(validInput, ctx as MutationContext)) as {
+      ok: true;
+      costBudget?: unknown;
+    };
+    expect(r.ok).toBe(true);
+    expect(r.costBudget).toBeUndefined();
+  });
+
+  it('omits costBudget when tenantId is absent (host has no multi-tenant)', async () => {
+    const tracker = fakeCostTracker();
+    const settings = fakeSettingsStore({
+      monthlyAmount: 10,
+      currency: 'USD',
+      periodEnd: '2026-06-01T00:00:00.000Z',
+    });
+    const ctx = makeCtx({
+      registry: fakeRegistryWithTtsAdapter(),
+      gate: allowAllGate,
+      tenant: tenantContext,
+      executeAdapterCall: async () => ({ ok: true }),
+      costTrackerStore: tracker,
+      tenantSettingsStore: settings,
+      // No tenantId.
+    });
+    const r = (await find('generate_asset').handle(validInput, ctx as MutationContext)) as {
+      ok: true;
+      costBudget?: unknown;
+    };
+    expect(r.costBudget).toBeUndefined();
+    expect(tracker.records).toHaveLength(0);
+  });
+
+  it('records the chosen adapter cost AND surfaces costBudget when both seams + tenantId wired', async () => {
+    const tracker = fakeCostTracker();
+    const settings = fakeSettingsStore({
+      monthlyAmount: 10,
+      currency: 'USD',
+      periodEnd: '2026-06-01T00:00:00.000Z',
+    });
+    const ctx = makeCtx({
+      registry: adapterWithCost('expensive-tts', 1.5),
+      gate: allowAllGate,
+      tenant: tenantContext,
+      executeAdapterCall: async () => ({ ok: true }),
+      costTrackerStore: tracker,
+      tenantSettingsStore: settings,
+      tenantId: 'tenant-1',
+      nowMs: () => Date.parse('2026-05-15T00:00:00.000Z'),
+    });
+    const r = (await find('generate_asset').handle(validInput, ctx as MutationContext)) as {
+      ok: true;
+      costBudget?: {
+        costIncurred: { adapterId: string; amount: number; currency: string };
+        budgetRemaining?: { amount: number; currency: string; periodEndAt: string };
+        budgetExhausted: boolean;
+      };
+    };
+    expect(r.costBudget).toBeDefined();
+    expect(r.costBudget?.costIncurred).toEqual({
+      adapterId: 'expensive-tts',
+      amount: 1.5,
+      currency: 'USD',
+    });
+    expect(r.costBudget?.budgetRemaining).toEqual({
+      amount: 8.5, // 10 - 1.5
+      currency: 'USD',
+      periodEndAt: '2026-06-01T00:00:00.000Z',
+    });
+    expect(r.costBudget?.budgetExhausted).toBe(false);
+
+    // Tracker received one record for the chosen adapter.
+    expect(tracker.records).toHaveLength(1);
+    expect(tracker.records[0]).toEqual({
+      tenantId: 'tenant-1',
+      adapterId: 'expensive-tts',
+      amount: 1.5,
+      currency: 'USD',
+      recordedAt: '2026-05-15T00:00:00.000Z',
+    });
+  });
+
+  it('records a zero-amount line for adapters with costPerCall.usd === 0', async () => {
+    const tracker = fakeCostTracker();
+    const ctx = makeCtx({
+      registry: adapterWithCost('free-tts', 0),
+      gate: allowAllGate,
+      tenant: tenantContext,
+      executeAdapterCall: async () => ({ ok: true }),
+      costTrackerStore: tracker,
+      tenantId: 'tenant-1',
+    });
+    const r = (await find('generate_asset').handle(validInput, ctx as MutationContext)) as {
+      ok: true;
+      costBudget?: { costIncurred: { amount: number } };
+    };
+    expect(r.costBudget?.costIncurred.amount).toBe(0);
+    expect(tracker.records[0]?.amount).toBe(0);
+  });
+
+  it('records cost without budgetRemaining when tenant has no aiBudget', async () => {
+    const tracker = fakeCostTracker();
+    const settings = fakeSettingsStore(undefined); // No aiBudget.
+    const ctx = makeCtx({
+      registry: adapterWithCost('tts-x', 0.5),
+      gate: allowAllGate,
+      tenant: tenantContext,
+      executeAdapterCall: async () => ({ ok: true }),
+      costTrackerStore: tracker,
+      tenantSettingsStore: settings,
+      tenantId: 'tenant-1',
+    });
+    const r = (await find('generate_asset').handle(validInput, ctx as MutationContext)) as {
+      ok: true;
+      costBudget?: {
+        costIncurred: { amount: number };
+        budgetRemaining?: unknown;
+        budgetExhausted: boolean;
+      };
+    };
+    expect(r.costBudget?.costIncurred.amount).toBe(0.5);
+    expect(r.costBudget?.budgetRemaining).toBeUndefined();
+    expect(r.costBudget?.budgetExhausted).toBe(false);
+  });
+
+  it('flags budgetExhausted=true when accumulated cost meets the budget', async () => {
+    // Preset: 9.5 already spent; this call costs 0.5; total = 10 = budget.
+    const tracker = fakeCostTracker(9.5);
+    const settings = fakeSettingsStore({
+      monthlyAmount: 10,
+      currency: 'USD',
+      periodEnd: '2026-06-01T00:00:00.000Z',
+    });
+    const ctx = makeCtx({
+      registry: adapterWithCost('tts-x', 0.5),
+      gate: allowAllGate,
+      tenant: tenantContext,
+      executeAdapterCall: async () => ({ ok: true }),
+      costTrackerStore: tracker,
+      tenantSettingsStore: settings,
+      tenantId: 'tenant-1',
+    });
+    const r = (await find('generate_asset').handle(validInput, ctx as MutationContext)) as {
+      ok: true;
+      costBudget?: { budgetRemaining?: { amount: number }; budgetExhausted: boolean };
+    };
+    expect(r.costBudget?.budgetRemaining?.amount).toBe(0);
+    expect(r.costBudget?.budgetExhausted).toBe(true);
+  });
+
+  it('flags budgetExhausted=true when remaining goes negative (overshoot)', async () => {
+    const tracker = fakeCostTracker(11);
+    const settings = fakeSettingsStore({
+      monthlyAmount: 10,
+      currency: 'USD',
+      periodEnd: '2026-06-01T00:00:00.000Z',
+    });
+    const ctx = makeCtx({
+      registry: adapterWithCost('tts-x', 0.5),
+      gate: allowAllGate,
+      tenant: tenantContext,
+      executeAdapterCall: async () => ({ ok: true }),
+      costTrackerStore: tracker,
+      tenantSettingsStore: settings,
+      tenantId: 'tenant-1',
+    });
+    const r = (await find('generate_asset').handle(validInput, ctx as MutationContext)) as {
+      ok: true;
+      costBudget?: { budgetRemaining?: { amount: number }; budgetExhausted: boolean };
+    };
+    expect(r.costBudget?.budgetRemaining?.amount).toBeLessThan(0);
+    expect(r.costBudget?.budgetExhausted).toBe(true);
+  });
+
+  it('does NOT record cost when the fallback chain exhausts (all adapters fail)', async () => {
+    const tracker = fakeCostTracker();
+    const ctx = makeCtx({
+      registry: adapterWithCost('tts-x', 1),
+      gate: allowAllGate,
+      tenant: tenantContext,
+      executeAdapterCall: async () => {
+        throw new Error('boom');
+      },
+      costTrackerStore: tracker,
+      tenantId: 'tenant-1',
+    });
+    const r = (await find('generate_asset').handle(validInput, ctx as MutationContext)) as {
+      ok: boolean;
+      reason?: string;
+    };
+    expect(r.ok).toBe(false);
+    expect(r.reason).toBe('all_adapters_failed');
+    expect(tracker.records).toHaveLength(0);
+  });
+});
+
+describe('query_cost_budget — T-443', () => {
+  it('returns cost_budget_unavailable when costTrackerStore is unwired', async () => {
+    const ctx = makeCtx({
+      tenant: tenantContext,
+      tenantSettingsStore: fakeSettingsStore({
+        monthlyAmount: 10,
+        currency: 'USD',
+        periodEnd: '2026-06-01T00:00:00.000Z',
+      }),
+      tenantId: 'tenant-1',
+    });
+    const r = (await find('query_cost_budget').handle({}, ctx as MutationContext)) as {
+      ok: false;
+      reason: string;
+    };
+    expect(r.ok).toBe(false);
+    expect(r.reason).toBe('cost_budget_unavailable');
+  });
+
+  it('returns cost_budget_unavailable when tenantSettingsStore is unwired', async () => {
+    const ctx = makeCtx({
+      tenant: tenantContext,
+      costTrackerStore: fakeCostTracker(),
+      tenantId: 'tenant-1',
+    });
+    const r = (await find('query_cost_budget').handle({}, ctx as MutationContext)) as {
+      ok: false;
+      reason: string;
+    };
+    expect(r.ok).toBe(false);
+    expect(r.reason).toBe('cost_budget_unavailable');
+  });
+
+  it('returns cost_budget_unavailable when tenantId is absent', async () => {
+    const ctx = makeCtx({
+      tenant: tenantContext,
+      costTrackerStore: fakeCostTracker(),
+      tenantSettingsStore: fakeSettingsStore({
+        monthlyAmount: 10,
+        currency: 'USD',
+        periodEnd: '2026-06-01T00:00:00.000Z',
+      }),
+    });
+    const r = (await find('query_cost_budget').handle({}, ctx as MutationContext)) as {
+      ok: false;
+      reason: string;
+    };
+    expect(r.ok).toBe(false);
+    expect(r.reason).toBe('cost_budget_unavailable');
+  });
+
+  it('returns no_budget_configured when settings exist but aiBudget is absent', async () => {
+    const ctx = makeCtx({
+      tenant: tenantContext,
+      costTrackerStore: fakeCostTracker(),
+      tenantSettingsStore: fakeSettingsStore(undefined),
+      tenantId: 'tenant-1',
+    });
+    const r = (await find('query_cost_budget').handle({}, ctx as MutationContext)) as {
+      ok: false;
+      reason: string;
+    };
+    expect(r.ok).toBe(false);
+    expect(r.reason).toBe('no_budget_configured');
+  });
+
+  it('returns the budget posture when seams + tenantId + aiBudget all present', async () => {
+    const ctx = makeCtx({
+      tenant: tenantContext,
+      costTrackerStore: fakeCostTracker(2.5),
+      tenantSettingsStore: fakeSettingsStore({
+        monthlyAmount: 10,
+        currency: 'USD',
+        periodEnd: '2026-06-01T00:00:00.000Z',
+      }),
+      tenantId: 'tenant-1',
+    });
+    const r = (await find('query_cost_budget').handle({}, ctx as MutationContext)) as {
+      ok: true;
+      budget: {
+        monthlyAmount: number;
+        currency: string;
+        periodEndAt: string;
+        used: number;
+        remaining: number;
+        exhausted: boolean;
+      };
+    };
+    expect(r.ok).toBe(true);
+    expect(r.budget.monthlyAmount).toBe(10);
+    expect(r.budget.currency).toBe('USD');
+    expect(r.budget.periodEndAt).toBe('2026-06-01T00:00:00.000Z');
+    expect(r.budget.used).toBe(2.5);
+    expect(r.budget.remaining).toBe(7.5);
+    expect(r.budget.exhausted).toBe(false);
+  });
+
+  it('flags exhausted=true when used >= monthlyAmount', async () => {
+    const ctx = makeCtx({
+      tenant: tenantContext,
+      costTrackerStore: fakeCostTracker(10),
+      tenantSettingsStore: fakeSettingsStore({
+        monthlyAmount: 10,
+        currency: 'USD',
+        periodEnd: '2026-06-01T00:00:00.000Z',
+      }),
+      tenantId: 'tenant-1',
+    });
+    const r = (await find('query_cost_budget').handle({}, ctx as MutationContext)) as {
+      ok: true;
+      budget: { exhausted: boolean; remaining: number };
+    };
+    expect(r.budget.remaining).toBe(0);
+    expect(r.budget.exhausted).toBe(true);
+  });
+
+  it('emits no patch ops (pure read)', async () => {
+    const ctx = makeCtx({
+      tenant: tenantContext,
+      costTrackerStore: fakeCostTracker(2.5),
+      tenantSettingsStore: fakeSettingsStore({
+        monthlyAmount: 10,
+        currency: 'USD',
+        periodEnd: '2026-06-01T00:00:00.000Z',
+      }),
+      tenantId: 'tenant-1',
+    });
+    await find('query_cost_budget').handle({}, ctx as MutationContext);
+    expect(ctx.patchSink.drain()).toEqual([]);
   });
 });
