@@ -12,6 +12,8 @@
 
 import { z } from 'zod';
 
+import { adapterCredentialsMapSchema } from './tenant-adapter-credentials.js';
+
 /**
  * T-443 — Per-tenant AI-generation budget. Single-currency per tenant;
  * the in-memory `TenantCostTrackerStore` does NOT cross-convert.
@@ -58,6 +60,12 @@ export const tenantSettingsSchema = z
       })
       .strict(),
     aiBudget: aiBudgetSchema.optional(),
+    // T-444 — per-adapter credentials scoped to one tenant. Map of
+    // adapterId → `{ apiKey?, baseUrl? }`. See
+    // `tenant-adapter-credentials.ts`. Absent / empty record == no
+    // credentials configured; the SandboxRunner forwards `null` to
+    // the adapter.
+    adapterCredentials: adapterCredentialsMapSchema.optional(),
     updatedAt: z.string().datetime(),
     updatedBy: z.string().min(1),
   })

@@ -148,6 +148,36 @@ export interface LatencyHint {
 }
 
 // ----------------------------------------------------------------------------
+// Resource limits (T-444 — sidecar-only; structural extension)
+// ----------------------------------------------------------------------------
+
+/**
+ * Resource ceilings declared on an adapter descriptor. Only meaningful
+ * for `sandbox.kind = 'sidecar'`; other runners ignore. Per ADR-007
+ * §D4 / T-444.
+ *
+ * - `maxMemoryMb` — peak resident-set-size in megabytes. Sidecar
+ *   runner polls every 500ms; on overage the child is SIGKILLed and a
+ *   `killed-for-resource-limit` audit event fires with
+ *   `dimension: 'memory'`.
+ * - `maxCpuMs`    — wall-clock CPU budget in milliseconds. NOT real
+ *   CPU time (v1 uses `setTimeout`); on expiry the child is SIGKILLed
+ *   and a `killed-for-resource-limit` audit event fires with
+ *   `dimension: 'cpu'`.
+ * - `maxDiskMb`   — declared in v1, ENFORCEMENT DEFERRED to T-447
+ *   (cgroups-based enforcer). The field is validated but not yet
+ *   acted upon.
+ *
+ * §13 structural extension. Option 3 deferral — metadata only; never
+ * rendered.
+ */
+export interface ResourceLimits {
+  readonly maxMemoryMb?: number;
+  readonly maxCpuMs?: number;
+  readonly maxDiskMb?: number;
+}
+
+// ----------------------------------------------------------------------------
 // Capability descriptor (opaque envelope)
 // ----------------------------------------------------------------------------
 
@@ -201,6 +231,11 @@ export interface AdapterDescriptor {
    * Routing engine does not infer relationships.
    */
   readonly requiresResearchProvider?: string;
+  /**
+   * T-444 — Resource ceilings for sandboxed execution. Only meaningful
+   * for `sandbox.kind = 'sidecar'`. Optional. See `ResourceLimits`.
+   */
+  readonly resourceLimits?: ResourceLimits;
 }
 
 // ----------------------------------------------------------------------------
@@ -259,6 +294,14 @@ const latencyHintSchema = z
   })
   .strict();
 
+const resourceLimitsSchema = z
+  .object({
+    maxMemoryMb: z.number().nonnegative().finite().optional(),
+    maxCpuMs: z.number().nonnegative().finite().optional(),
+    maxDiskMb: z.number().nonnegative().finite().optional(),
+  })
+  .strict();
+
 /**
  * Zod schema for `AdapterDescriptor`. Strict: unknown top-level keys are
  * rejected. `capability` is `record(unknown)` — opaque; per-modality
@@ -283,6 +326,7 @@ export const adapterDescriptorSchema = z
     latencyMs: latencyHintSchema.optional(),
     sourceGrounded: z.boolean().optional(),
     requiresResearchProvider: z.string().min(1).optional(),
+    resourceLimits: resourceLimitsSchema.optional(),
   })
   .strict();
 

@@ -31,6 +31,7 @@ export type {
   CapabilityDescriptor,
   CostHint,
   LatencyHint,
+  ResourceLimits,
   SandboxKind,
   SandboxModel,
 } from './adapter-descriptor.js';
@@ -53,7 +54,14 @@ export type {
 } from './license-gate.js';
 
 export { ADAPTER_FALLBACK_FAILURE_EVENT, FallbackChainExecutor } from './fallback-executor.js';
-export type { AdapterError, ExecuteOptions, ExecuteResult } from './fallback-executor.js';
+export type {
+  AdapterError,
+  ExecuteOptions,
+  ExecuteResult,
+  SandboxFactoryLike,
+  SandboxInvocationLike,
+  SandboxRunnerLike,
+} from './fallback-executor.js';
 
 export { noopEmitTelemetry } from './telemetry.js';
 export type { EmitTelemetry } from './telemetry.js';

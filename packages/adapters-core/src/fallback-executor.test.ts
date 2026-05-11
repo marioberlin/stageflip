@@ -163,4 +163,89 @@ describe('FallbackChainExecutor.execute', () => {
     const result = await executor.execute(adapters, call);
     expect(result.ok).toBe(false);
   });
+
+  // T-444 — sandbox-aware dispatch.
+  describe('sandbox-aware mode (T-444)', () => {
+    it('routes each adapter call through the supplied sandbox factory', async () => {
+      const adapters = [makeAdapter('a'), makeAdapter('b')];
+      const events: unknown[] = [];
+      const auditEmitter = {
+        emit(e: unknown) {
+          events.push(e);
+        },
+      };
+      // First adapter throws; second succeeds.
+      const pick = vi.fn((adapter: AdapterDescriptor) => ({
+        async run<TOut>(_inv: { descriptor: AdapterDescriptor }): Promise<TOut> {
+          if (adapter.id === 'a') throw new Error('sandboxed-boom');
+          return `sandboxed-${adapter.id}` as TOut;
+        },
+      }));
+      const sandboxFactory = { pick };
+      // The `call` arg should NOT be invoked in sandbox-aware mode.
+      const directCall = vi.fn();
+      const result = await executor.execute(adapters, directCall, {
+        sandboxFactory,
+        sandboxContext: {
+          tenantId: 't-1',
+          credentialFor: () => ({ apiKey: 'k' }),
+          auditEmitter,
+          inputFor: (a) => ({ adapterId: a.id }),
+        },
+      });
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.result).toBe('sandboxed-b');
+        expect(result.adapter.id).toBe('b');
+      }
+      expect(pick).toHaveBeenCalledTimes(2);
+      expect(directCall).not.toHaveBeenCalled();
+    });
+
+    it('falls back to direct call when sandboxFactory is omitted', async () => {
+      const adapters = [makeAdapter('a')];
+      const directCall = vi.fn(async () => 'direct-ok');
+      const result = await executor.execute(adapters, directCall);
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.result).toBe('direct-ok');
+      expect(directCall).toHaveBeenCalledTimes(1);
+    });
+
+    it('falls back to direct call when sandboxFactory is set but sandboxContext is omitted', async () => {
+      const adapters = [makeAdapter('a')];
+      const directCall = vi.fn(async () => 'direct-ok');
+      const pick = vi.fn();
+      await executor.execute(adapters, directCall, { sandboxFactory: { pick } });
+      expect(pick).not.toHaveBeenCalled();
+      expect(directCall).toHaveBeenCalled();
+    });
+
+    it('emits a telemetry failure event when a sandboxed call throws', async () => {
+      const adapters = [makeAdapter('a'), makeAdapter('b')];
+      const pick = (a: AdapterDescriptor) => ({
+        async run<TOut>(_inv: unknown): Promise<TOut> {
+          if (a.id === 'a') throw new Error('sb-fail-a');
+          return 'ok' as TOut;
+        },
+      });
+      const emit = vi.fn();
+      const result = await executor.execute(adapters, async () => 'unused', {
+        sandboxFactory: { pick },
+        sandboxContext: {
+          tenantId: 't-1',
+          credentialFor: () => null,
+          auditEmitter: { emit() {} },
+          inputFor: () => ({}),
+        },
+        emitTelemetry: emit,
+      });
+      expect(result.ok).toBe(true);
+      expect(emit).toHaveBeenCalledWith(ADAPTER_FALLBACK_FAILURE_EVENT, {
+        adapterId: 'a',
+        modality: 'tts',
+        errorMessage: 'sb-fail-a',
+        attempt: 1,
+      });
+    });
+  });
 });
