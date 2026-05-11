@@ -20,6 +20,7 @@ import {
   renderMarkdownReport,
   renderSummary,
   runAudit,
+  runCategory8,
   runCli,
   totalCriteria,
   totalsByStatus,
@@ -299,13 +300,13 @@ describe('discoverRepoRoot', () => {
 // ---------- runAudit smoke (real corpus) ----------
 
 describe('runAudit (real corpus)', () => {
-  it('produces 7 categories with criteria each', () => {
+  it('produces 8 categories with criteria each', () => {
     const report = runAudit({
       repoRoot: REPO_ROOT,
       presetsRoot: 'skills/stageflip/presets',
       generatedAt: '2026-05-11T00:00:00.000Z',
     });
-    expect(report.categories.length).toBe(7);
+    expect(report.categories.length).toBe(8);
     for (const cat of report.categories) {
       expect(cat.criteria.length).toBeGreaterThan(0);
     }
@@ -367,6 +368,149 @@ describe('runAudit on synthetic minimal tree', () => {
       expect(c31?.status).toBe('FAIL');
       const c32 = cat3?.criteria.find((c) => c.id === '3.2');
       expect(c32?.status).toBe('FAIL');
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+});
+
+// ---------- Category 8 (T-447 Phase 14 GA readiness) ----------
+
+describe('runCategory8 (real corpus)', () => {
+  it('returns 11 criteria in stable 8.1..8.11 ordering', () => {
+    const cat = runCategory8({ repoRoot: REPO_ROOT, presetsRoot: 'skills/stageflip/presets' });
+    expect(cat.number).toBe(8);
+    expect(cat.title).toBe('Phase 14 GA readiness');
+    expect(cat.criteria.length).toBe(11);
+    expect(cat.criteria.map((c) => c.id)).toEqual([
+      '8.1',
+      '8.2',
+      '8.3',
+      '8.4',
+      '8.5',
+      '8.6',
+      '8.7',
+      '8.8',
+      '8.9',
+      '8.10',
+      '8.11',
+    ]);
+  });
+
+  it('marks 8.2 PASS — 9 reference adapter packages on main', () => {
+    const cat = runCategory8({ repoRoot: REPO_ROOT, presetsRoot: 'skills/stageflip/presets' });
+    const c82 = cat.criteria.find((c) => c.id === '8.2');
+    expect(c82?.status).toBe('PASS');
+    expect(c82?.note).toMatch(/9\/9/);
+  });
+
+  it('marks 8.3 PASS — 9 security.json sidecars present', () => {
+    const cat = runCategory8({ repoRoot: REPO_ROOT, presetsRoot: 'skills/stageflip/presets' });
+    const c83 = cat.criteria.find((c) => c.id === '8.3');
+    expect(c83?.status).toBe('PASS');
+  });
+
+  it('marks 8.4 PASS — ADAPTER_IDS lists all 9 adapter ids', () => {
+    const cat = runCategory8({ repoRoot: REPO_ROOT, presetsRoot: 'skills/stageflip/presets' });
+    const c84 = cat.criteria.find((c) => c.id === '8.4');
+    expect(c84?.status).toBe('PASS');
+  });
+
+  it('marks 8.5 PASS — check-asset-licenses fully wired', () => {
+    const cat = runCategory8({ repoRoot: REPO_ROOT, presetsRoot: 'skills/stageflip/presets' });
+    const c85 = cat.criteria.find((c) => c.id === '8.5');
+    expect(c85?.status).toBe('PASS');
+  });
+
+  it('marks 8.6 PASS — check-adapter-regression fully wired', () => {
+    const cat = runCategory8({ repoRoot: REPO_ROOT, presetsRoot: 'skills/stageflip/presets' });
+    const c86 = cat.criteria.find((c) => c.id === '8.6');
+    expect(c86?.status).toBe('PASS');
+  });
+
+  it('marks 8.7 PASS — @stageflip/adapter-sandbox present', () => {
+    const cat = runCategory8({ repoRoot: REPO_ROOT, presetsRoot: 'skills/stageflip/presets' });
+    const c87 = cat.criteria.find((c) => c.id === '8.7');
+    expect(c87?.status).toBe('PASS');
+  });
+
+  it('marks 8.8 PASS — @stageflip/usage-telemetry + query_usage_telemetry tool present', () => {
+    const cat = runCategory8({ repoRoot: REPO_ROOT, presetsRoot: 'skills/stageflip/presets' });
+    const c88 = cat.criteria.find((c) => c.id === '8.8');
+    expect(c88?.status).toBe('PASS');
+  });
+
+  it('marks 8.9 PASS — check-data-flow-security fully wired', () => {
+    const cat = runCategory8({ repoRoot: REPO_ROOT, presetsRoot: 'skills/stageflip/presets' });
+    const c89 = cat.criteria.find((c) => c.id === '8.9');
+    expect(c89?.status).toBe('PASS');
+  });
+
+  it('marks 8.11 auto-WARN per closeout-timing memory', () => {
+    const cat = runCategory8({ repoRoot: REPO_ROOT, presetsRoot: 'skills/stageflip/presets' });
+    const c811 = cat.criteria.find((c) => c.id === '8.11');
+    // Per feedback_phase_closeout_timing.md — phase-N closeout lands at
+    // phase-N+1 start; T-449 docs not yet expected on main.
+    expect(['WARN', 'PASS']).toContain(c811?.status);
+  });
+});
+
+describe('runCategory8 on synthetic empty tree', () => {
+  it('flags 8.1 / 8.2 / 8.3 / 8.4 FAIL on an empty repo', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'check-ga-readiness-cat8-'));
+    try {
+      const cat = runCategory8({ repoRoot: tmp, presetsRoot: 'skills/stageflip/presets' });
+      const byId = new Map(cat.criteria.map((c) => [c.id, c]));
+      expect(byId.get('8.1')?.status).toBe('FAIL');
+      expect(byId.get('8.2')?.status).toBe('FAIL');
+      expect(byId.get('8.3')?.status).toBe('FAIL');
+      expect(byId.get('8.4')?.status).toBe('FAIL');
+      expect(byId.get('8.5')?.status).toBe('FAIL');
+      expect(byId.get('8.6')?.status).toBe('FAIL');
+      expect(byId.get('8.7')?.status).toBe('FAIL');
+      expect(byId.get('8.8')?.status).toBe('FAIL');
+      expect(byId.get('8.9')?.status).toBe('FAIL');
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('flags 8.1 PASS on synthetic tree with both ADRs ratified', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'check-ga-readiness-cat8-adrs-'));
+    try {
+      mkdirSync(join(tmp, 'docs/decisions'), { recursive: true });
+      writeFileSync(
+        join(tmp, 'docs/decisions/ADR-007-provider-seam-pattern.md'),
+        '# ADR-007\n\n**Status**: **Accepted**\n',
+      );
+      writeFileSync(
+        join(tmp, 'docs/decisions/ADR-008-asset-generation.md'),
+        '# ADR-008\n\n**Status**: **Accepted**\n',
+      );
+      const cat = runCategory8({ repoRoot: tmp, presetsRoot: 'skills/stageflip/presets' });
+      const c81 = cat.criteria.find((c) => c.id === '8.1');
+      expect(c81?.status).toBe('PASS');
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('flags 8.1 FAIL when ADR-007 is Proposed and ADR-008 is Accepted', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'check-ga-readiness-cat8-mix-'));
+    try {
+      mkdirSync(join(tmp, 'docs/decisions'), { recursive: true });
+      writeFileSync(
+        join(tmp, 'docs/decisions/ADR-007-provider-seam-pattern.md'),
+        '# ADR-007\n\n**Status**: **Proposed**\n',
+      );
+      writeFileSync(
+        join(tmp, 'docs/decisions/ADR-008-asset-generation.md'),
+        '# ADR-008\n\n**Status**: **Accepted**\n',
+      );
+      const cat = runCategory8({ repoRoot: tmp, presetsRoot: 'skills/stageflip/presets' });
+      const c81 = cat.criteria.find((c) => c.id === '8.1');
+      expect(c81?.status).toBe('FAIL');
+      expect(c81?.note).toMatch(/ADR-007/);
     } finally {
       rmSync(tmp, { recursive: true, force: true });
     }
