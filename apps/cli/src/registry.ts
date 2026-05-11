@@ -10,10 +10,12 @@ import { runDoctor } from './commands/doctor.js';
 import { runPluginInstall } from './commands/plugin-install.js';
 import { runRender } from './commands/render.js';
 import { createStubRunner } from './commands/stubs.js';
+import { createTenantCommands } from './commands/tenant.js';
 
 import type { CliCommand, CliCommandRegistry } from './types.js';
 
 const { runLogin, runLogout, runWhoami } = createAuthCommands();
+const { runSetInteractive: runTenantSetInteractive } = createTenantCommands();
 
 export const CLI_COMMAND_REGISTRY: CliCommandRegistry = {
   binaryName: 'stageflip',
@@ -229,6 +231,24 @@ export const CLI_COMMAND_REGISTRY: CliCommandRegistry = {
       args: [{ name: 'fixture', required: true, description: 'Fixture name.' }],
       stub: 'T-229',
     }),
+    // Tenant settings (T-411b)
+    cmd(
+      'tenant set-interactive',
+      "Set a tenant's features.interactive posture (disabled|preview|ga).",
+      {
+        flags: [
+          { name: '--tenant', description: 'Tenant id.', valueType: 'string' },
+          {
+            name: '--value',
+            description: 'New posture: disabled | preview | ga.',
+            valueType: 'string',
+          },
+          { name: '--dry-run', description: 'Print the would-be call without sending.' },
+        ],
+        run: runTenantSetInteractive,
+      },
+    ),
+
     cmd('runtimes list', 'List registered runtimes.', { stub: 'T-228' }),
     cmd('clips list', 'List registered clips.', {
       flags: [

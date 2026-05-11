@@ -59,6 +59,9 @@ importers:
       '@stageflip/mcp-server':
         specifier: workspace:^
         version: link:../../packages/mcp-server
+      '@stageflip/storage':
+        specifier: workspace:^
+        version: link:../../packages/storage
       firebase-admin:
         specifier: 13.0.1
         version: 13.0.1

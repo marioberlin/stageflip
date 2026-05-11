@@ -8,10 +8,13 @@ import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 
+import { InMemoryTenantSettingsStore, type TenantSettingsStore } from '@stageflip/storage';
+
 import { createFirebaseVerifier } from './auth/firebase.js';
 import { type AuthVariables, authMiddleware } from './auth/middleware.js';
 import { createPrincipalVerifier } from './auth/verify.js';
 import { type PrincipalResolution, createMcpSessionRoute } from './routes/mcp-session.js';
+import { createTenantSettingsRoute } from './routes/tenant-settings.js';
 
 export interface ServerConfig {
   readonly mcpSecret: string;
@@ -24,6 +27,13 @@ export interface ServerConfig {
   resolvePrincipal(args: { firebaseUid: string; email?: string }): Promise<PrincipalResolution>;
   /** Override the Firebase ID-token verifier (tests). */
   verifyFirebaseIdToken?: (token: string) => Promise<{ uid: string; email?: string }>;
+  /**
+   * T-411b — concrete TenantSettingsStore. Defaults to a process-local
+   * in-memory store (consistent with the TODO-stub `resolvePrincipal`
+   * default in `bin.ts`); production deployments inject the
+   * Postgres / Firebase store factory.
+   */
+  tenantSettingsStore?: TenantSettingsStore;
 }
 
 /**
@@ -58,6 +68,12 @@ export function createApp(config: ServerConfig): Hono<{ Variables: AuthVariables
   // Protected API surface — placeholder for subsequent tasks.
   app.use('/v1/*', authMiddleware({ verify }));
   app.get('/v1/whoami', (c) => c.json({ principal: c.var.principal }));
+
+  // T-411b — TenantSettings procedures (get / setInteractive / list). Mounted
+  // behind the existing /v1/* authMiddleware. Default store is in-memory;
+  // production callers inject a Postgres / Firebase store.
+  const tenantSettingsStore = config.tenantSettingsStore ?? new InMemoryTenantSettingsStore();
+  app.route('/v1/tenant-settings', createTenantSettingsRoute({ store: tenantSettingsStore }));
 
   return app;
 }
