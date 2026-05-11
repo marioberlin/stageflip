@@ -1,0 +1,9 @@
+---
+'@stageflip/engine': patch
+---
+
+T-379 — Add the `cluster-h-compose` engine handler bundle: 3 read-only composer tools (`compose_ar_overlay` / `compose_var_skeletal` / `compose_swim_lane_track`) that bind a semantic Cluster H (AR overlays) brief to a ratified preset id + opaque props payload. Tools declare `ToolContext` (no document reads, no patch sink); the caller mounts the chosen clip via a separate write-tier tool (`add_clip` from `create-mutate`).
+
+Dispatches across the 4 ratified Cluster H presets (T-375..T-378; ratified at T-378 closer 2026-05-11). `compose_ar_overlay` picks by `(sport, brand)`: `(soccer | football, sky-sports)` → `sky-sports-ar-formations`; `(basketball, nba)` → `nba-ar-replay`; other tuples return typed `no_preset_for_sport_brand` errors with helpful suggestions pointing at the dedicated VAR / swim tools. `compose_var_skeletal` covers the Hawk-Eye register (sealed brand enum `hawkeye | premier-league | uefa-cl`) → `hawkeye-var-3d-skeletal` (only Cluster H VAR consumer; pairs with Cluster B's `compose_var_call` per cluster SKILL line 37). `compose_swim_lane_track` covers the Olympic register (sealed brand enum `olympic | omega | fina | world-aquatics`, `laneCount: 2..10`, optional `recordTime` + `athletes[]` with ISO 3166-1 alpha-3 country codes) → `olympic-swim-lane-track` (only Cluster H swim consumer).
+
+All four Cluster H presets bind `clipKind: 'arOverlay'` (sky-sports = clipKind-default arm; the rest = `PRESET_ID_BINDINGS` overrides via Pattern C). v1 routes through static-fallback rendering only; live-mount via `ThreeSceneClip` is gated on Track A T-397+. **CLOSES Cluster H's agent surface** — sixth and final cluster-compose bundle following T-340 (cluster-b) / T-331 (cluster-a) / T-361 (cluster-e) / T-368 (cluster-f) / T-374 (cluster-g) / T-347 (cluster-c). No clip / parity-cli / preset markdown / parity golden / sister cluster-compose bundle touched.
