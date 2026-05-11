@@ -2587,6 +2587,179 @@ const olympicSwimLaneTrackBinding: ClipKindBinding = {
   },
 };
 
+/**
+ * `nba-ar-replay` (T-378) — fourth + FINAL `arOverlay`-clipKind preset;
+ * wired via `PRESET_ID_BINDINGS` override (Pattern C — fourth-preset-for-
+ * clipKind via override; the `arOverlay` clipKind-default arm in
+ * `DEFAULT_CLIP_KIND_RESOLVER` STAYS bound to `skySportsArFormationsBinding`
+ * from T-375 / PR #461 / commit `a5614b56`; sibling overrides
+ * `hawkeyeVarSkeletalBinding` from T-376 / PR #462 / commit `54a93ac1`
+ * and `olympicSwimLaneTrackBinding` from T-377 / PR #463 / commit
+ * `cb2a8c47` also stay unchanged). **CLOSES Cluster H (AR & environmental
+ * overlays) to 4/4 ELIGIBLE.**
+ *
+ * **NOT a §13 (F-30) verifier.** PR #461 (T-375 sky-sports-ar-formations
+ * as first downstream consumer) discharged the §13 obligation for the
+ * `arOverlay` clipKind structural extension introduced in T-375a (PR #460).
+ * This PR adds a new preset-binding entry; no new clipKind / element type /
+ * compositing mode.
+ *
+ * **v1 ships static-fallback rendering ONLY** per D-T375a-2: the primitive's
+ * `setupRef` API surface is reserved on the schema for forward compatibility
+ * but the v1 dispatch ignores `setupRef` at render time and always renders
+ * the static-fallback poster. Live-mount via `ThreeSceneClip` (NBA AR shot-
+ * arc trajectory tracked to camera motion + slowed-replay footage at 25%
+ * speed + parabolic shot-arc draw-in + court-anchored player markers +
+ * movement-vector arrows) lands with T-378-live-mount post-T-397 Track A
+ * finale (not yet merged).
+ *
+ * **Reverts to `permissions: ['camera-tracking']`** (D-T378-5). Per stub
+ * line 42 ("Court-anchored overlay requires camera tracking. Without it,
+ * fall back to a 2D court diagram with shot chart"), NBA AR replay is
+ * fundamentally camera-side — the court-anchored 3D AR overlay requires
+ * camera-coordinate tracking to project the shot-arc trajectory + player
+ * position markers onto the hardwood. Aligns with sibling sky-sports +
+ * hawkeye-var camera-tracking declarations; contrasts olympic-swim's
+ * network-bound `'network'` declaration.
+ *
+ * **Visual differentiation from sibling Cluster H presets:**
+ * - sky-sports: navy backdrop (`#0A1128`) + Premier League purple accent
+ *   border (`#38003C`) + `'Sky Sports Sans', 'Inter'` font stack — register:
+ *   pitch-anchored formation lineup.
+ * - hawkeye-var: PL purple backdrop (`#34003A`) + decision-green accent
+ *   border (`#00FC8A`) + `'Premier Sans', 'Champions', 'Space Grotesk'`
+ *   font stack — register: VAR offside-decision moment, dramatic suspense
+ *   beat.
+ * - olympic-swim: pool-blue backdrop (`#0E3B6E`) + Olympic-gold accent
+ *   border (`#D4AF37`) + `'Paris 2024', 'Atkinson Hyperlegible'` font stack
+ *   — register: lane-anchored timing graphics on a pool surface, world-
+ *   record-line dramatic moment.
+ * - nba-ar-replay: hardwood-warm backdrop (`#C68E54`) + NBA brand-red
+ *   accent border (`#C9082A`) + `'NBA Brand', 'Inter'` font stack —
+ *   register: court-anchored slow-motion shot-arc trajectory on a hardwood
+ *   surface, replay highlight moment per stub line 36 ("Replay trigger:
+ *   footage slows to ~25% speed for the highlight, 1.5 s entry transition").
+ *
+ * All four presets ship the SAME primitive (`arOverlay`) but render
+ * visually distinct cards — broadcaster brand canon lives in the per-preset
+ * binding, not the primitive (per D-T375a-3).
+ *
+ * **Single-frame static** at frame 60 for cluster-norm consistency with
+ * sibling sky-sports + hawkeye-var + olympic-swim presets. PSNR ≥ 36 /
+ * SSIM ≥ 0.93 per stub line 49 — looser than the cluster-norm 38/0.95
+ * because the stub authorises that variance for "3D + slow-mo footage
+ * variance"; the v1 static-fallback render is byte-deterministic so the
+ * looser thresholds carry no risk and reserve headroom for the post-T-397
+ * live-mount path's expected variance (slow-mo replay at 25% speed
+ * introduces sub-frame timing variance; parabolic shot-arc draws over
+ * 800 ms; court markers scale-in over 250 ms each).
+ */
+
+/**
+ * D-T378-2: sealed canonical NBA AR replay palette. Brand canon is preset-
+ * specific (NOT primitive-specific per D-T375a-3) — the primitive
+ * composites OVER existing video / sport context and intentionally does
+ * NOT bake palettes; per-preset color canon (NBA brand-red + hardwood-warm
+ * here; Sky Sports navy in sibling sky-sports-ar-formations binding;
+ * PL purple decision-green in sibling hawkeye-var-3d-skeletal binding;
+ * pool-blue Olympic-gold in sibling olympic-swim-lane-track binding) lives
+ * in the per-preset binding. `basketballOrange` + `nbaBlue` are exported
+ * for future live-mount consumers; v1 static-fallback doesn't surface them
+ * on the rendered card.
+ */
+export const NBA_AR_REPLAY_PALETTE = Object.freeze({
+  /** Hardwood-warm court tone — canonical NBA hardwood register. The AR
+   * overlay composites OVER live court footage; the static-fallback card
+   * uses this color to evoke the rendered moment. Per stub line 27
+   * ("Court color: hardwood-warm tone for the surface"). */
+  hardwoodWarm: '#C68E54',
+  /** NBA brand red — highlight accents per stub line 28 ("NBA brand
+   * orange #C9082A for highlight accents"). NOTE: the stub spec calls
+   * this color "orange" but the cited hex `#C9082A` is the canonical
+   * NBA brand red. We honor the stub hex value verbatim (the stub
+   * author's intent was the brand-red accent, mislabeled as orange). */
+  nbaRed: '#C9082A',
+  /** Basketball orange — court-anchored trajectory / shot-arc canon
+   * (the actual orange of the basketball + arc visualization). Reserved
+   * for future live-mount path (T-378-live-mount post-T-397; not
+   * surfaced in v1 static-fallback). */
+  basketballOrange: '#EE6730',
+  /** NBA brand blue — secondary brand register; reserved for live-mount
+   * navigation chrome / stat-bar background per future spec. Not
+   * surfaced in v1 static-fallback. */
+  nbaBlue: '#17408B',
+  /** Foreground white — replay-marker text ("REPLAY", "CLUTCH"), player
+   * names + numbers, stats overlays per stub typography lines 31-33. */
+  foreground: '#FFFFFF',
+} as const);
+
+const nbaArReplayBinding: ClipKindBinding = {
+  runtimeId: 'frame-runtime',
+  clipName: 'arOverlay',
+  buildProps() {
+    return {
+      staticFallback: {
+        // Centered-card label per D-T375a-5: ALL CAPS Bold 48px (primitive-
+        // governed font-size). "NBA — AR REPLAY" matches the preset stub's
+        // court-anchored AR overlay register per stub title and lines 22-26
+        // (court-anchored 3D AR overlay + shot trajectories).
+        label: 'NBA — AR REPLAY',
+        // Optional sublabel — Regular 22px at 70% opacity per D-T375a-5.
+        // "COURT TRAJECTORY · SHOT ARC" surfaces the trajectory + shot-arc
+        // canon per stub line 23 ("Shot trajectories: arcing line from
+        // launch to hoop, with peak height marker") + stub line 25
+        // ("Player position markers anchored to court coordinates").
+        sublabel: 'COURT TRAJECTORY · SHOT ARC',
+        // Hardwood-warm backdrop evokes the court surface register the AR
+        // overlay composites onto. Different from sibling sky-sports' navy
+        // (#0A1128), hawkeye-var's PL purple (#34003A), and olympic-swim's
+        // pool-blue (#0E3B6E) — each preset's backdrop signals its
+        // broadcast register at a glance.
+        backgroundColor: NBA_AR_REPLAY_PALETTE.hardwoodWarm,
+        // Foreground white for banner text + replay-marker text ("REPLAY",
+        // "CLUTCH") per stub line 33.
+        foregroundColor: NBA_AR_REPLAY_PALETTE.foreground,
+        // NBA brand-red 1px accent border per D-T375a-5; signals the NBA
+        // highlight register per stub line 28 ("NBA brand orange #C9082A
+        // for highlight accents"). NOT hardwood-warm (the backdrop) and
+        // NOT sibling presets' purples / golds — brand-red-on-hardwood
+        // is the canonical NBA broadcast register for highlight accents.
+        accentColor: NBA_AR_REPLAY_PALETTE.nbaRed,
+        // Default true — explicit for clarity. The bottom-right
+        // "AR · STATIC FALLBACK" 14px monospace badge at 50% opacity
+        // signals to the operator that the live-mount path is gated.
+        showLiveMountIndicator: true,
+      },
+      // NBA brand custom face is `proprietary-byo` per the preset
+      // frontmatter lines 7-9; Inter OFL is the rendered fallback per
+      // frontmatter lines 10-13. Inter's bold weights + tabular figures
+      // match the player-numbers + stats-overlay register per stub
+      // typography line 32 ("Stats overlays (points, FG%, distance):
+      // Bold, 16-22 pt, tabular"). The primitive's centered-card label
+      // renders at fixed 48px (D-T375a-5); this `font` declaration
+      // governs the family stack only.
+      font: {
+        family: "'NBA Brand', 'Inter', system-ui, -apple-system, sans-serif",
+        weight: 700,
+      },
+      // D-T378-5: declared per stub line 42 ("Court-anchored overlay
+      // requires camera tracking. Without it, fall back to a 2D court
+      // diagram with shot chart"). Reverts to 'camera-tracking' (sibling
+      // sky-sports + hawkeye-var both declare 'camera-tracking'; sibling
+      // olympic-swim is the only Cluster H preset declaring 'network').
+      // NBA AR replay is fundamentally camera-side — the court-anchored
+      // 3D AR overlay requires camera-coordinate tracking to project the
+      // shot-arc trajectory onto the hardwood. NOT exercised in v1
+      // (primitive ignores `permissions` at render time per D-T375a-2).
+      // Forward-compat for the post-T-397 live-mount path.
+      permissions: ['camera-tracking' as const],
+      // setupRef intentionally OMITTED in v1 — live-mount via
+      // ThreeSceneClip (T-384) lands with T-378-live-mount post-T-397
+      // Track A finale.
+    };
+  },
+};
+
 const squidGameGeometricBinding: ClipKindBinding = {
   runtimeId: 'frame-runtime',
   clipName: 'titleSequence',
@@ -4509,6 +4682,7 @@ export const PRESET_ID_BINDINGS: Readonly<Record<string, ClipKindBinding>> = {
   'twc-immersive-mixed-reality': twcImmersiveMixedRealityBinding, // T-347h (Cluster C 6/6 — CLOSES Cluster C ELIGIBLE; preset clipKind: fullScreen stays; binding overrides clipName to the new imrStaticFallback primitive. Static-fallback register; live ThreeSceneClip IMR rendering deferred to T-347h-three-scene Track A frontier per ADR-005)
   'hawkeye-var-3d-skeletal': hawkeyeVarSkeletalBinding, // T-376 (Cluster H 2/4; second arOverlay consumer via PRESET_ID_BINDINGS override — Pattern C second-preset-for-clipKind; arOverlay clipKind-default arm stays bound to skySportsArFormationsBinding from T-375. NOT a §13 verifier — reuses arOverlay clipKind whose structural-extension verification was discharged by PR #461)
   'olympic-swim-lane-track': olympicSwimLaneTrackBinding, // T-377 (Cluster H 3/4; third arOverlay consumer via PRESET_ID_BINDINGS override — Pattern C third-preset-for-clipKind; arOverlay clipKind-default arm stays bound to skySportsArFormationsBinding from T-375; sibling override hawkeyeVarSkeletalBinding from T-376 also stays unchanged. FIRST Cluster H preset to declare permissions: ['network'] for forward-compat with LiveDataClip + Omega Vionardo timing-feed post-T-397 Track A finale. NOT a §13 verifier — reuses arOverlay clipKind whose structural-extension verification was discharged by PR #461)
+  'nba-ar-replay': nbaArReplayBinding, // T-378 (Cluster H 4/4 — CLOSES Cluster H ELIGIBLE; fourth + final arOverlay consumer via PRESET_ID_BINDINGS override — Pattern C fourth-preset-for-clipKind / cluster closer; arOverlay clipKind-default arm stays bound to skySportsArFormationsBinding from T-375; sibling overrides hawkeyeVarSkeletalBinding from T-376 + olympicSwimLaneTrackBinding from T-377 also stay unchanged. Reverts to permissions: ['camera-tracking'] per stub line 42 — court-anchored AR overlay requires camera tracking; aligns with sky-sports + hawkeye-var camera-side declarations; contrasts olympic-swim's network-bound declaration. NOT a §13 verifier — reuses arOverlay clipKind whose structural-extension verification was discharged by PR #461)
 };
 
 /**
