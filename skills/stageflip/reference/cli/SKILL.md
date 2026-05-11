@@ -17,7 +17,7 @@ related:
 `pnpm skills-sync` after adding or renaming a command;
 `pnpm skills-sync:check` fails in CI on drift.
 
-35 commands registered.
+36 commands registered.
 
 ## Commands
 
@@ -443,6 +443,20 @@ stageflip parity update-expected <fixture>
 **Arguments**
 
 - `<fixture>` — Fixture name.
+
+### `stageflip tenant set-interactive`
+
+Set a tenant's features.interactive posture (disabled|preview|ga).
+
+```
+stageflip tenant set-interactive [flags]
+```
+
+**Flags**
+
+- `--tenant` `<string>` — Tenant id.
+- `--value` `<string>` — New posture: disabled | preview | ga.
+- `--dry-run` — Print the would-be call without sending.
 
 ### `stageflip runtimes list`
 
