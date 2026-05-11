@@ -9,6 +9,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@stageflip/adapters-core": "workspace:*",
     "@stageflip/cdp-host-bundle": "workspace:*",
     "@stageflip/export-router": "workspace:*",
     "@stageflip/parity": "workspace:*",

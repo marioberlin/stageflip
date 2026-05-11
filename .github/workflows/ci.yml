@@ -62,6 +62,18 @@ jobs:
       - name: Gate - licenses
         run: pnpm check-licenses
 
+      # T-422 — adapter-aware per-modality license whitelist (ADR-008
+      # §D13). Walks `packages/*/package.json` for adapter packages
+      # (matching the `tts-* | video-* | music-* | sfx-* | 3d-* | ...`
+      # naming convention), dynamic-imports each `descriptor` export,
+      # registers into a fresh `AdapterRegistry`, and asserts every
+      # adapter's `license.kind` is in the per-modality whitelist.
+      # Inaugural state: 0 adapter packages on `main`; gate exits 0
+      # with "0 adapters registered; whitelist not yet exercised".
+      # Precondition for T-426..T-434 reference adapters.
+      - name: Gate - check-asset-licenses
+        run: pnpm check-asset-licenses
+
       - name: Gate - Remotion import ban
         run: pnpm check-remotion-imports
 
