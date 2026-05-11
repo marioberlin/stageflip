@@ -87,6 +87,17 @@ jobs:
       - name: Gate - check-adapter-regression
         run: pnpm check-adapter-regression
 
+      # T-446 — per-provider data-flow security audit. Asserts every
+      # reference adapter ships a sidecar `security.json` matching the
+      # `SecurityManifest` Zod schema (from `@stageflip/adapters-core`)
+      # AND that the manifest's perimeter classification is consistent
+      # with the adapter's `AdapterDescriptor.sandbox.kind`. Catches
+      # MISSING manifests, PARSE-ERRORs, Zod INVALID, manifest-vs-
+      # descriptor INCONSISTENCY, and ORPHAN manifests. Inaugural state
+      # (T-446 ship date): 9 reference adapters + 9 manifests + 9 PASS.
+      - name: Gate - check-data-flow-security
+        run: pnpm check-data-flow-security
+
       - name: Gate - Remotion import ban
         run: pnpm check-remotion-imports
 
