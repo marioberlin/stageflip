@@ -17,7 +17,7 @@ Do NOT edit by hand — run `pnpm skills-sync` after registering or
 removing an adapter; `pnpm skills-sync:check` fails in CI if the
 committed file drifts.
 
-0 adapters currently registered; the catalog will populate as reference adapters T-426..T-434 land.
+1 adapters registered (vendor-neutral; per-tenant license-posture filtering happens in the routing engine, T-425).
 
 The catalog is the **vendor-neutral** view: every adapter that ships
 an `AdapterDescriptor` (ADR-007 §D1) appears here. Per-tenant
@@ -28,4 +28,4 @@ the capability-routing engine (T-425), not here.
 
 | Adapter ID | Modality | Capability summary | License | Cost tier | Latency tier | `requiresResearchProvider` |
 |---|---|---|---|---|---|---|
-| _empty_ | _empty_ | _empty_ | _empty_ | _empty_ | _empty_ | _empty_ |
+| `kokoro` | tts | 10 voices, 24000Hz | apache-2.0 | free | interactive < 1s | no |
