@@ -40,6 +40,7 @@ import { AdapterRegistry } from '../packages/adapters-core/src/index.js';
 import type { AdapterDescriptor } from '../packages/adapters-core/src/index.js';
 import { meshyDescriptor } from '../packages/3d-meshy/src/index.js';
 import { tripoDescriptor } from '../packages/3d-tripo/src/index.js';
+import { aceStepDescriptor } from '../packages/music-acestep/src/index.js';
 import { fishSpeechDescriptor } from '../packages/tts-fish-speech/src/index.js';
 import { kokoroDescriptor } from '../packages/tts-kokoro/src/index.js';
 import { runwayDescriptor } from '../packages/video-runway/src/index.js';
@@ -137,13 +138,21 @@ function buildAssetProvidersPkg(): { adapters: readonly AdapterDescriptor[] } {
   // video at cinematic 24fps; broad aspect-ratio set — exercises the
   // fourth proprietary-byo posture + the second video-gen branch with
   // emitsAudio=false / supportsLipSync=false differentiators).
-  // T-432..T-434 add the remaining three reference adapters here.
+  // T-432 — seventh reference adapter (ACE-Step music, MIT; FIRST
+  // music-gen modality adapter; 5-minute track in <10s on RTX 3090;
+  // edge-deployable in-process posture mirroring Kokoro; 44100Hz
+  // mono PCM stub-WAV; outputLicense: 'permissive' — exercises the
+  // music-gen branch of ADR-008 §D6 / §D13 with mit ∈ music-gen
+  // whitelist; second MIT-licensed adapter overall but FIRST in
+  // the music modality).
+  // T-433..T-434 add the remaining two reference adapters here.
   registry.register(kokoroDescriptor);
   registry.register(fishSpeechDescriptor);
   registry.register(tripoDescriptor);
   registry.register(meshyDescriptor);
   registry.register(seedanceDescriptor);
   registry.register(runwayDescriptor);
+  registry.register(aceStepDescriptor);
   return { adapters: registry.list() };
 }
 

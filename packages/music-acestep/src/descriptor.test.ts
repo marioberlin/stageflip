@@ -37,9 +37,9 @@ describe('aceStepDescriptor — adapter descriptor envelope', () => {
     expect(aceStepDescriptor.costPerCall?.usd).toBe(0);
   });
 
-  it('declares latencyMs.{p50,p95} ≤ 10s (5-min track in <10s on RTX 3090)', () => {
-    expect(aceStepDescriptor.latencyMs?.p50).toBeLessThanOrEqual(10_000);
-    expect(aceStepDescriptor.latencyMs?.p95).toBeLessThanOrEqual(10_000);
+  it('declares latencyMs.{p50,p95} < 10s (5-min track in <10s on RTX 3090; fast tier)', () => {
+    expect(aceStepDescriptor.latencyMs?.p50).toBeLessThan(10_000);
+    expect(aceStepDescriptor.latencyMs?.p95).toBeLessThan(10_000);
   });
 
   it('does NOT set sourceGrounded or requiresResearchProvider', () => {
@@ -62,9 +62,7 @@ describe('aceStepDescriptor — adapter descriptor envelope', () => {
 
 describe('aceStepMusicGenCapability — strict MusicGenCapabilityDescriptor subset', () => {
   it('passes validateMusicGenCapability (T-419 schema)', () => {
-    const result = validateMusicGenCapability(
-      aceStepMusicGenCapability as Record<string, unknown>,
-    );
+    const result = validateMusicGenCapability(aceStepMusicGenCapability as Record<string, unknown>);
     expect(result.ok).toBe(true);
   });
 

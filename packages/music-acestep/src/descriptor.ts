@@ -68,11 +68,11 @@ export const aceStepMusicGenCapability: MusicGenCapabilityDescriptor = {
  * `costPerCall.usd = 0` — ACE-Step is free at the model level (the
  * host pays its own compute). Bucketed as `free` cost-tier per
  * skills-sync's threshold.
- * `latencyMs.{p50,p95} = 8000 / 10000` reflect the upstream "5-minute
- * track in <10s on RTX 3090" claim — this places the adapter in the
- * catalog's `fast < 10s` tier (skills-sync's `latencyTier`
- * bucketing). Production wire-up (T-432a) calibrates against real
- * numbers.
+ * `latencyMs.{p50,p95} = 8000 / 9500` reflect the upstream "5-minute
+ * track in <10s on RTX 3090" claim — strictly < 10s places the
+ * adapter in the catalog's `fast < 10s` tier (skills-sync's
+ * `latencyTier` bucketing is `p95 < 10_000` exclusive). Production
+ * wire-up (T-432a) calibrates against real numbers.
  */
 export const aceStepDescriptor: AdapterDescriptor = {
   id: 'ace-step',
@@ -92,5 +92,5 @@ export const aceStepDescriptor: AdapterDescriptor = {
   license: { kind: 'mit' },
   sandbox: { kind: 'in-process' },
   costPerCall: { usd: 0 },
-  latencyMs: { p50: 8_000, p95: 10_000 },
+  latencyMs: { p50: 8_000, p95: 9_500 },
 };
