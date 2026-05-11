@@ -42,6 +42,7 @@ import { meshyDescriptor } from '../packages/3d-meshy/src/index.js';
 import { tripoDescriptor } from '../packages/3d-tripo/src/index.js';
 import { fishSpeechDescriptor } from '../packages/tts-fish-speech/src/index.js';
 import { kokoroDescriptor } from '../packages/tts-kokoro/src/index.js';
+import { seedanceDescriptor } from '../packages/video-seedance/src/index.js';
 import {
   LIVE_RUNTIME_MANIFEST,
   type ToolsIndexPkg,
@@ -126,11 +127,16 @@ function buildAssetProvidersPkg(): { adapters: readonly AdapterDescriptor[] } {
   // proprietary-byo; second 3D adapter; triangle-soup topology +
   // supportsAutoRigging: false — exercises the no-rig branch of
   // ADR-008 §D6).
-  // T-430..T-434 add the remaining five reference adapters here.
+  // T-430 — fifth reference adapter (Seedance 2.0 video via fal.ai,
+  // proprietary-byo; first video-gen adapter; 15s 1080p + native
+  // audio + lip-sync — exercises the video-gen branch of ADR-008
+  // §D6 + the third proprietary-byo posture).
+  // T-431..T-434 add the remaining four reference adapters here.
   registry.register(kokoroDescriptor);
   registry.register(fishSpeechDescriptor);
   registry.register(tripoDescriptor);
   registry.register(meshyDescriptor);
+  registry.register(seedanceDescriptor);
   return { adapters: registry.list() };
 }
 

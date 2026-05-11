@@ -17,7 +17,7 @@ Do NOT edit by hand — run `pnpm skills-sync` after registering or
 removing an adapter; `pnpm skills-sync:check` fails in CI if the
 committed file drifts.
 
-4 adapters registered (vendor-neutral; per-tenant license-posture filtering happens in the routing engine, T-425).
+5 adapters registered (vendor-neutral; per-tenant license-posture filtering happens in the routing engine, T-425).
 
 The catalog is the **vendor-neutral** view: every adapter that ships
 an `AdapterDescriptor` (ADR-007 §D1) appears here. Per-tenant
@@ -32,3 +32,4 @@ the capability-routing engine (T-425), not here.
 | `tripo` | three-d | glb, 50000 poly | proprietary-byo | enterprise | batch < 5min | no |
 | `fish-speech` | tts | 8 voices, 22050Hz | apache-2.0 | free | fast < 10s | no |
 | `kokoro` | tts | 10 voices, 24000Hz | apache-2.0 | free | interactive < 1s | no |
+| `seedance` | video-gen | 16:9/9:16/1:1, max 15s | proprietary-byo | enterprise | batch < 5min | no |
