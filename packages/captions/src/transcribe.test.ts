@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createMemoryCache } from './cache.js';
 import { createMockProvider } from './providers/mock.js';
 import { transcribeAndPack } from './transcribe.js';
+import { type TtsBypassInput, transcribeAndPackWithTtsBypass } from './tts-bypass.js';
 import type { TranscribeRequest, TranscriptionProvider } from './types.js';
 
 const source = { kind: 'bytes' as const, bytes: new Uint8Array([1, 2, 3]) };
@@ -82,5 +83,107 @@ describe('transcribeAndPack', () => {
     await transcribeAndPack({ source, pack, provider });
     await transcribeAndPack({ source, pack, provider });
     expect(spy).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('transcribeAndPackWithTtsBypass', () => {
+  const kokoroTts: TtsBypassInput = {
+    provenance: { kind: 'tts', provider: 'kokoro' },
+    wordTimestamps: [
+      { word: 'Hello', startS: 0, endS: 0.5 },
+      { word: 'world', startS: 0.5, endS: 1.0 },
+    ],
+  };
+
+  const fishTts: TtsBypassInput = {
+    provenance: { kind: 'tts', provider: 'fish-speech' },
+    wordTimestamps: [{ word: 'Konnichiwa', startS: 0, endS: 0.8 }],
+  };
+
+  it('bypasses Whisper on Kokoro provenance with valid timestamps', async () => {
+    const spy = vi.fn(async (_req: TranscribeRequest) => ({
+      language: 'en',
+      words: [{ text: 'whisper', startMs: 0, endMs: 400 }],
+    }));
+    const provider: TranscriptionProvider = { id: 'whisper-spy', transcribe: spy };
+    const result = await transcribeAndPackWithTtsBypass({
+      source,
+      pack,
+      provider,
+      tts: kokoroTts,
+    });
+    expect(spy).not.toHaveBeenCalled();
+    expect(result.viaTtsBypass).toBe(true);
+    expect(result.ttsBypassProvider).toBe('kokoro');
+    expect(result.segments[0]?.text).toBe('Hello world');
+  });
+
+  it('bypasses Whisper on Fish Speech provenance with valid timestamps', async () => {
+    const spy = vi.fn(async (_req: TranscribeRequest) => ({
+      language: 'ja',
+      words: [{ text: 'whisper', startMs: 0, endMs: 400 }],
+    }));
+    const provider: TranscriptionProvider = { id: 'whisper-spy', transcribe: spy };
+    const result = await transcribeAndPackWithTtsBypass({
+      source,
+      pack,
+      provider,
+      tts: fishTts,
+      language: 'ja',
+    });
+    expect(spy).not.toHaveBeenCalled();
+    expect(result.viaTtsBypass).toBe(true);
+    expect(result.ttsBypassProvider).toBe('fish-speech');
+    expect(result.language).toBe('ja');
+    expect(result.segments[0]?.text).toBe('Konnichiwa');
+  });
+
+  it('falls back to Whisper when provenance provider is not whitelisted', async () => {
+    const spy = vi.fn(async (_req: TranscribeRequest) => ({
+      language: 'en',
+      words: [{ text: 'whispered', startMs: 0, endMs: 400 }],
+    }));
+    const provider: TranscriptionProvider = { id: 'whisper-spy', transcribe: spy };
+    const result = await transcribeAndPackWithTtsBypass({
+      source,
+      pack,
+      provider,
+      tts: {
+        provenance: { kind: 'tts', provider: 'elevenlabs' },
+        wordTimestamps: kokoroTts.wordTimestamps,
+      },
+    });
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(result.viaTtsBypass).toBeUndefined();
+    expect(result.ttsBypassProvider).toBeUndefined();
+    expect(result.segments[0]?.text).toBe('whispered');
+  });
+
+  it('falls back to Whisper when wordTimestamps are missing', async () => {
+    const spy = vi.fn(async (_req: TranscribeRequest) => ({
+      language: 'en',
+      words: [{ text: 'whispered', startMs: 0, endMs: 400 }],
+    }));
+    const provider: TranscriptionProvider = { id: 'whisper-spy', transcribe: spy };
+    const result = await transcribeAndPackWithTtsBypass({
+      source,
+      pack,
+      provider,
+      tts: { provenance: { kind: 'tts', provider: 'kokoro' } },
+    });
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(result.viaTtsBypass).toBeUndefined();
+    expect(result.segments[0]?.text).toBe('whispered');
+  });
+
+  it('falls back to Whisper when tts arg is absent (regression-safe default)', async () => {
+    const spy = vi.fn(async (_req: TranscribeRequest) => ({
+      language: 'en',
+      words: [{ text: 'whispered', startMs: 0, endMs: 400 }],
+    }));
+    const provider: TranscriptionProvider = { id: 'whisper-spy', transcribe: spy };
+    const result = await transcribeAndPackWithTtsBypass({ source, pack, provider });
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(result.viaTtsBypass).toBeUndefined();
   });
 });

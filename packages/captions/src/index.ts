@@ -28,3 +28,14 @@ export {
   createOpenAIProvider,
 } from './providers/openai.js';
 export { type TranscribeAndPackRequest, transcribeAndPack } from './transcribe.js';
+export {
+  TTS_BYPASS_WHITELIST,
+  type TtsBypassWhitelistedProvider,
+  type TtsBypassProvenance,
+  type TtsBypassWord,
+  type TtsBypassInput,
+  type CaptionPipelineResultWithBypass,
+  type TranscribeAndPackWithTtsBypassRequest,
+  extractTtsBypassWords,
+  transcribeAndPackWithTtsBypass,
+} from './tts-bypass.js';
