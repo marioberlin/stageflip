@@ -211,9 +211,17 @@ export function usePermissionFlow(
             attemptNumber: attempt,
           });
         }
+        // T-411c: the use-permission-flow path invokes shim.mount without
+        // the `tenantFlagGate` option so the shim cannot return
+        // `'tenant-flag-denied'` here. Narrow defensively — the
+        // permission-flow state union (state.ts) does not (yet) carry the
+        // tenant-flag reason; a future PR may widen it once the host
+        // shells thread the gate input through this hook.
+        const dispatchedReason: 'tenant-denied' | 'permission-denied' =
+          result.reason === 'tenant-flag-denied' ? 'tenant-denied' : result.reason;
         dispatchAction({
           type: 'denied',
-          reason: result.reason,
+          reason: dispatchedReason,
           ...(result.deniedPermission !== undefined
             ? { deniedPermission: result.deniedPermission }
             : {}),

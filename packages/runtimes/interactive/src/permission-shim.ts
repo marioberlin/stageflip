@@ -1,5 +1,9 @@
 // packages/runtimes/interactive/src/permission-shim.ts
 // `PermissionShim` per ADR-003 §D4 + T-306 D-T306-3. Mount-time gate that:
+//   0. (T-411c) When `options.tenantFlagGate` is supplied, consults the
+//      D-T411-4 `(features.interactive, target)` matrix via the cached
+//      `TenantFlagCache.readSync` — synchronous, pure, no I/O. Default-
+//      deny on cache miss per T-411 D-T411-5.
 //   1. Consults `tenantPolicy.canMount(family)` BEFORE any browser prompt.
 //   2. Iterates `clip.liveMount.permissions` and resolves each via the
 //      appropriate browser API. `mic` → `getUserMedia({audio:true})`.
@@ -7,8 +11,9 @@
 //      (always granted; tracked for security review per ADR-003 §D6).
 //   3. Caches granted permissions per (session, family) so a second mount
 //      of the same family does not re-prompt the user.
-//   4. Emits `permission-denied` telemetry on every denial — the security
-//      review (ADR-003 §D6) consumes this stream.
+//   4. Emits `permission-denied` / `permission-denied-tenant-flag` /
+//      `tenant-denied` telemetry on every denial — the security review
+//      (ADR-003 §D6) consumes this stream.
 //
 // On any short-circuit (tenant denied, permission denied), the shim returns
 // `{ granted: false, fallbackTo: 'static' }` and the mount-harness routes
@@ -27,6 +32,12 @@
 import type { InteractiveClip, Permission } from '@stageflip/schema';
 
 import { type MountContext, PERMISSIVE_TENANT_POLICY, type TenantPolicy } from './contract.js';
+import {
+  TENANT_FLAG_GATING_MATRIX,
+  type TenantFlagCache,
+  type TenantFlagTarget,
+  type TenantFlagValue,
+} from './host/tenant-flag-cache.js';
 
 /** Result of `PermissionShim.mount()`. */
 export type PermissionResult =
@@ -37,9 +48,37 @@ export type PermissionResult =
   | {
       granted: false;
       fallbackTo: 'static';
-      reason: 'tenant-denied' | 'permission-denied';
+      reason: 'tenant-flag-denied' | 'tenant-denied' | 'permission-denied';
       deniedPermission?: Permission;
     };
+
+/**
+ * Per-mount tenant-flag gate (T-411c D-T411c-5). When supplied to
+ * `PermissionShim.mount()`, the shim runs a NEW step 0 BEFORE the
+ * existing tenant-policy gate: it reads the cached
+ * `features.interactive` value for `(tenantId, target)` and short-
+ * circuits to `staticFallback` if the D-T411-4 matrix says the target
+ * is not permitted at the tenant's posture. When omitted, the shim
+ * behaves exactly as the T-306 / T-385 baseline (back-compat).
+ */
+export interface TenantFlagGateInput {
+  /** The host's session-scoped cache; only `readSync` is consulted on the hot path. */
+  cache: TenantFlagCache;
+  /** Tenant whose `features.interactive` value drives the gating decision. */
+  tenantId: string;
+  /** Deployment target per ADR-005 §D4 — drives the gating decision per the D-T411-4 matrix. */
+  target: TenantFlagTarget;
+}
+
+/**
+ * Mount-time options. Today carries only the optional tenant-flag
+ * gate; future mount-time inputs (per-mount tenant-policy override,
+ * permission pre-prompt UI selection, etc.) accrete here.
+ */
+export interface PermissionShimMountOptions {
+  /** Optional T-411c tenant-flag gate; back-compat default behaves as T-306. */
+  tenantFlagGate?: TenantFlagGateInput;
+}
 
 /**
  * Telemetry emitter — same signature as `MountContext.emitTelemetry`. The
@@ -127,11 +166,41 @@ export class PermissionShim {
   /**
    * Vet a clip's permission envelope. Returns `{granted:true,...}` if every
    * declared permission is allowed; `{granted:false,...}` if the tenant
-   * denied the family or any permission was denied. ORDER MATTERS — tenant
-   * policy is checked BEFORE any browser prompt so a denied-tenant clip
-   * never flashes a permission dialog.
+   * denied the family or any permission was denied. ORDER MATTERS — when
+   * `options.tenantFlagGate` is supplied, the T-411c tenant-flag matrix
+   * runs as STEP 0 (before any other check); then the existing
+   * tenant-policy gate; then the per-permission browser prompts. Keeping
+   * the tenant-flag gate outermost matches ADR-005 §D5 step 1 and means a
+   * tenant whose `features.interactive` posture forbids live-mount never
+   * flashes a permission dialog or invokes the family-policy hook.
    */
-  async mount(clip: InteractiveClip): Promise<PermissionResult> {
+  async mount(
+    clip: InteractiveClip,
+    options: PermissionShimMountOptions = {},
+  ): Promise<PermissionResult> {
+    // Step 0: tenant-flag matrix gate (T-411c). Synchronous, cache-backed,
+    // pure — see TenantFlagCache.readSync. Skipped when no gate input is
+    // supplied (back-compat with T-306 / T-385 consumers).
+    const flagGate = options.tenantFlagGate;
+    if (flagGate !== undefined) {
+      const cachedValue = flagGate.cache.readSync(flagGate.tenantId, flagGate.target);
+      // Default-deny on cache miss per T-411 D-T411-5: `undefined` →
+      // treat as `'disabled'`. Telemetry distinguishes the two via the
+      // `flagValue` attribute so operators can tell "actively disabled"
+      // from "tenant flag not loaded" at observability time.
+      const effectiveValue: TenantFlagValue = cachedValue ?? 'disabled';
+      const decision = TENANT_FLAG_GATING_MATRIX[effectiveValue][flagGate.target];
+      if (decision === 'static-fallback-only') {
+        this.emitTelemetry('permission-denied-tenant-flag', {
+          family: clip.family,
+          tenantId: flagGate.tenantId,
+          target: flagGate.target,
+          flagValue: cachedValue ?? 'cache-miss',
+        });
+        return { granted: false, fallbackTo: 'static', reason: 'tenant-flag-denied' };
+      }
+    }
+
     // Step 1: tenant-policy gate. Synchronous; runs before any I/O.
     if (!this.tenantPolicy.canMount(clip.family)) {
       this.emitTelemetry('tenant-denied', { family: clip.family });

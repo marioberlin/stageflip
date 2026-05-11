@@ -60,7 +60,13 @@ export function buildSkillsSidebar(skills: readonly SkillEntry[]): SidebarGroup[
     const items: SidebarItem[] = inTier
       .map((s) => ({
         label: s.title,
-        slug: s.id,
+        // Astro routes `<dir>/index.md` to slug `<dir>` (drops the trailing
+        // `/index` segment). Skills authored at `skills/stageflip/index/SKILL.md`
+        // (a path constraint from check-skill-drift's id regex requiring at
+        // least one segment after `skills/stageflip/`) resolve to slug
+        // `skills/stageflip` in Astro. Mirror that normalisation here so
+        // the Starlight sidebar references the actual generated route.
+        slug: s.id.replace(/\/index$/, ''),
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
     groups.push({ label, items });

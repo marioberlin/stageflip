@@ -58,8 +58,24 @@ export {
   type PermissionBrowserApi,
   type PermissionResult,
   PermissionShim,
+  type PermissionShimMountOptions,
   type PermissionShimOptions,
+  type TenantFlagGateInput,
 } from './permission-shim.js';
+// T-411c — tenant-flag cache surface (host-shell wiring point for the
+// interactive-runtime tenant-frontier-flag matrix; see
+// `docs/tasks/T-411c.md`).
+export {
+  createTenantFlagCache,
+  type CreateTenantFlagCacheOptions,
+  type MutableTenantFlagCache,
+  TENANT_FLAG_GATING_MATRIX,
+  type TenantFlagCache,
+  type TenantFlagDecision,
+  type TenantFlagPopulator,
+  type TenantFlagTarget,
+  type TenantFlagValue,
+} from './host/tenant-flag-cache.js';
 export {
   InteractiveClipFamilyAlreadyRegisteredError,
   InteractiveClipRegistry,
