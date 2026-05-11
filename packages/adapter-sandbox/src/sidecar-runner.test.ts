@@ -13,7 +13,23 @@ import {
   SidecarRpcError,
   SidecarSandboxRunner,
 } from './sidecar-runner.js';
-import type { SandboxInvocation } from './types.js';
+import type { AdapterUsageEventLike, SandboxInvocation } from './types.js';
+
+class CapturingUsageEmitter {
+  readonly events: AdapterUsageEventLike[] = [];
+  emit(event: AdapterUsageEventLike): void {
+    this.events.push(event);
+  }
+}
+
+function makeClock(initialMs: number, stepMs: number): () => number {
+  let t = initialMs;
+  return () => {
+    const v = t;
+    t += stepMs;
+    return v;
+  };
+}
 
 interface FakeChild extends SidecarChildHandle {
   emitStdout(line: string): void;
@@ -300,6 +316,98 @@ describe('SidecarSandboxRunner', () => {
     await p;
     expect(cpuCancel).toHaveBeenCalled();
     expect(child.killSignals).toContain('SIGKILL');
+  });
+
+  // ---- T-445 — usage telemetry ----
+
+  it('emits success usage event when seam wired', async () => {
+    const child = makeFakeChild();
+    const usageEmitter = new CapturingUsageEmitter();
+    const clock = makeClock(10_000, 250);
+    const runner = new SidecarSandboxRunner({ spawnSidecar: () => child });
+    const p = runner.run({
+      descriptor: sidecarDescriptor,
+      tenantId: 't-1',
+      credential: null,
+      input: {},
+      auditEmitter: new InMemoryAuditEmitter(),
+      usageEmitter,
+      clock,
+      selectedReason: 'capability-router',
+    });
+    child.emitStdout(JSON.stringify({ jsonrpc: '2.0', id: 1, result: 'ok' }));
+    await p;
+    expect(usageEmitter.events.length).toBe(1);
+    expect(usageEmitter.events[0]).toMatchObject({
+      adapterId: 'fake-sidecar',
+      modality: 'tts',
+      selectedReason: 'capability-router',
+      latencyMs: 250,
+      outcome: 'success',
+    });
+  });
+
+  it('emits killed usage event on cpu limit breach', async () => {
+    const child = makeFakeChild();
+    let cpuFire: (() => void) | undefined;
+    const setWallClockTimer = vi.fn((_ms: number, cb: () => void) => {
+      cpuFire = cb;
+      return () => {};
+    });
+    const sidecarDescWithCpu: AdapterDescriptor = {
+      ...sidecarDescriptor,
+      ...({ resourceLimits: { maxCpuMs: 10 } } as { resourceLimits: { maxCpuMs: number } }),
+    };
+    const usageEmitter = new CapturingUsageEmitter();
+    const clock = makeClock(0, 5);
+    const runner = new SidecarSandboxRunner({
+      spawnSidecar: () => child,
+      setWallClockTimer,
+    });
+    const p = runner.run({
+      descriptor: sidecarDescWithCpu,
+      tenantId: 't-1',
+      credential: null,
+      input: {},
+      auditEmitter: new InMemoryAuditEmitter(),
+      usageEmitter,
+      clock,
+      selectedReason: 'capability-router',
+    });
+    cpuFire?.();
+    await expect(p).rejects.toThrow(/cpu/);
+    expect(usageEmitter.events.length).toBe(1);
+    expect(usageEmitter.events[0]).toMatchObject({
+      outcome: 'killed',
+      latencyMs: 5,
+    });
+  });
+
+  it('emits failed usage event on RPC error', async () => {
+    const child = makeFakeChild();
+    const usageEmitter = new CapturingUsageEmitter();
+    const clock = makeClock(0, 7);
+    const runner = new SidecarSandboxRunner({ spawnSidecar: () => child });
+    const p = runner.run({
+      descriptor: sidecarDescriptor,
+      tenantId: 't-1',
+      credential: null,
+      input: {},
+      auditEmitter: new InMemoryAuditEmitter(),
+      usageEmitter,
+      clock,
+      selectedReason: 'explicit',
+    });
+    child.emitStdout(
+      JSON.stringify({ jsonrpc: '2.0', id: 1, error: { code: -1, message: 'boom' } }),
+    );
+    await expect(p).rejects.toThrow('boom');
+    expect(usageEmitter.events.length).toBe(1);
+    expect(usageEmitter.events[0]).toMatchObject({
+      outcome: 'failed',
+      selectedReason: 'explicit',
+      latencyMs: 7,
+    });
   });
 
   it('rejects descriptors whose sandbox.kind is not sidecar', async () => {

@@ -47,6 +47,41 @@ export interface ResourceLimits {
 }
 
 // ----------------------------------------------------------------------------
+// Usage telemetry (T-445; structural — mirrors @stageflip/usage-telemetry)
+// ----------------------------------------------------------------------------
+
+/**
+ * Structural mirror of `@stageflip/usage-telemetry`'s `AdapterUsageEvent`.
+ * Declared inline so `@stageflip/adapter-sandbox` does NOT take a runtime
+ * dependency on `@stageflip/usage-telemetry`. Hosts may pass an
+ * `InMemoryUsageTelemetryEmitter` directly — the structural shape lines
+ * up.
+ *
+ * Per T-445: layered alongside (not inside) `AdapterAuditEvent`. The
+ * audit event is the security-class signal; the usage event is the
+ * metrics-class signal. Both are emitted per adapter invocation.
+ */
+export interface AdapterUsageEventLike {
+  readonly tenantId: string;
+  readonly adapterId: string;
+  readonly modality: string;
+  readonly selectedReason: 'capability-router' | 'explicit';
+  readonly latencyMs: number;
+  readonly costAmount: number;
+  readonly costCurrency: string;
+  readonly outcome: 'success' | 'failed' | 'killed';
+  readonly timestamp: string;
+}
+
+/**
+ * Structural mirror of `@stageflip/usage-telemetry`'s
+ * `UsageTelemetryEmitter`. Declared inline (see above).
+ */
+export interface UsageTelemetryEmitterLike {
+  emit(event: AdapterUsageEventLike): void;
+}
+
+// ----------------------------------------------------------------------------
 // Sandbox invocation
 // ----------------------------------------------------------------------------
 
@@ -61,6 +96,11 @@ export interface ResourceLimits {
  * per-modality protocol (TTS / 3D / etc.) owns the shape and is
  * forwarded verbatim into the sandbox process / HTTPS body / in-
  * process callable.
+ *
+ * **T-445 — optional usage telemetry fields.** When the host wires
+ * `usageEmitter` + `clock` + `selectedReason`, every adapter invocation
+ * emits an `AdapterUsageEventLike` POST-terminal-audit-event. When any
+ * of the three is absent, usage emission is a no-op (back-compat).
  */
 export interface SandboxInvocation {
   readonly descriptor: AdapterDescriptor;
@@ -68,6 +108,21 @@ export interface SandboxInvocation {
   readonly credential: AdapterCredential | null;
   readonly input: unknown;
   readonly auditEmitter: AuditEmitter;
+  /** T-445 — host-wired metrics sink. Absent: usage emission skipped. */
+  readonly usageEmitter?: UsageTelemetryEmitterLike;
+  /**
+   * T-445 — wall-clock seam returning milliseconds since the Unix
+   * epoch. Absent: usage emission skipped. Tests inject a deterministic
+   * counter; production wires `Date.now`.
+   */
+  readonly clock?: () => number;
+  /**
+   * T-445 — caller-supplied attribution. `'capability-router'` when the
+   * planner's `routeCapability` ranked + chose the adapter;
+   * `'explicit'` when the caller named it directly. Absent: usage
+   * emission skipped (the field is required on the usage event).
+   */
+  readonly selectedReason?: 'capability-router' | 'explicit';
 }
 
 // ----------------------------------------------------------------------------

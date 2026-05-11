@@ -17,6 +17,7 @@
 // upstream via a transport wrapper.
 
 import type { AdapterAuditEvent, SandboxInvocation, SandboxRunner } from './types.js';
+import { maybeMakeUsageEmitContext } from './usage-emit.js';
 
 /**
  * Host-supplied callable invoked by `InProcessSandboxRunner`. Receives
@@ -53,6 +54,10 @@ export class InProcessSandboxRunner implements SandboxRunner {
     const startEvent: AdapterAuditEvent = { kind: 'start', ...baseEvent };
     invocation.auditEmitter.emit(startEvent);
 
+    // T-445 — capture clock for usage telemetry (no-op when seam absent).
+    const usageCtx = maybeMakeUsageEmitContext(invocation);
+    const startMs = usageCtx !== undefined ? usageCtx.clock() : 0;
+
     try {
       const result = (await this.callable(
         invocation.descriptor,
@@ -61,6 +66,9 @@ export class InProcessSandboxRunner implements SandboxRunner {
       )) as TOut;
       const completeEvent: AdapterAuditEvent = { kind: 'complete', ...baseEvent };
       invocation.auditEmitter.emit(completeEvent);
+      if (usageCtx !== undefined) {
+        usageCtx.emit('success', startMs, usageCtx.clock());
+      }
       return result;
     } catch (cause) {
       const errorMessage = cause instanceof Error ? cause.message : String(cause);
@@ -70,6 +78,9 @@ export class InProcessSandboxRunner implements SandboxRunner {
         errorMessage,
       };
       invocation.auditEmitter.emit(failedEvent);
+      if (usageCtx !== undefined) {
+        usageCtx.emit('failed', startMs, usageCtx.clock());
+      }
       throw cause;
     }
   }

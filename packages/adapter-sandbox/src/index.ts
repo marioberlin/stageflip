@@ -12,10 +12,12 @@
 export type {
   AdapterAuditEvent,
   AdapterCredential,
+  AdapterUsageEventLike,
   AuditEmitter,
   ResourceLimits,
   SandboxInvocation,
   SandboxRunner,
+  UsageTelemetryEmitterLike,
 } from './types.js';
 
 export { InMemoryAuditEmitter } from './audit-emitter.js';

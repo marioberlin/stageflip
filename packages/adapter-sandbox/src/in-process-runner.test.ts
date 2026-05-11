@@ -8,7 +8,23 @@ import type { AdapterDescriptor } from '@stageflip/adapters-core';
 
 import { InMemoryAuditEmitter } from './audit-emitter.js';
 import { InProcessSandboxRunner } from './in-process-runner.js';
-import type { SandboxInvocation } from './types.js';
+import type { AdapterUsageEventLike, SandboxInvocation } from './types.js';
+
+class CapturingUsageEmitter {
+  readonly events: AdapterUsageEventLike[] = [];
+  emit(event: AdapterUsageEventLike): void {
+    this.events.push(event);
+  }
+}
+
+function makeClock(initialMs: number, stepMs: number): () => number {
+  let t = initialMs;
+  return () => {
+    const v = t;
+    t += stepMs;
+    return v;
+  };
+}
 
 const descriptor: AdapterDescriptor = {
   id: 'fake-tts',
@@ -83,5 +99,72 @@ describe('InProcessSandboxRunner', () => {
     );
     const evs = emitter.events();
     expect(evs[1]).toMatchObject({ kind: 'failed', errorMessage: 'just-a-string' });
+  });
+
+  // ---- T-445 — usage telemetry ----
+
+  it('does not emit usage when seam absent', async () => {
+    const usageEmitter = new CapturingUsageEmitter();
+    const runner = new InProcessSandboxRunner(async () => 'ok');
+    // Only usageEmitter wired (missing clock + selectedReason) — must skip emission.
+    await runner.run(makeInvocation({ usageEmitter }));
+    expect(usageEmitter.events).toEqual([]);
+  });
+
+  it('emits success usage event when all three seam fields are wired', async () => {
+    const usageEmitter = new CapturingUsageEmitter();
+    const clock = makeClock(1_000_000, 50); // start=1_000_000; end=1_000_050
+    const runner = new InProcessSandboxRunner(async () => 'ok');
+    await runner.run(makeInvocation({ usageEmitter, clock, selectedReason: 'capability-router' }));
+    expect(usageEmitter.events.length).toBe(1);
+    expect(usageEmitter.events[0]).toMatchObject({
+      tenantId: 't-1',
+      adapterId: 'fake-tts',
+      modality: 'tts',
+      selectedReason: 'capability-router',
+      latencyMs: 50,
+      costAmount: 0,
+      costCurrency: 'USD',
+      outcome: 'success',
+    });
+    expect(usageEmitter.events[0]?.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  });
+
+  it('emits failed usage event with selectedReason=explicit', async () => {
+    const usageEmitter = new CapturingUsageEmitter();
+    const clock = makeClock(2_000_000, 10);
+    const runner = new InProcessSandboxRunner(async () => {
+      throw new Error('boom');
+    });
+    await expect(
+      runner.run(makeInvocation({ usageEmitter, clock, selectedReason: 'explicit' })),
+    ).rejects.toThrow('boom');
+    expect(usageEmitter.events.length).toBe(1);
+    expect(usageEmitter.events[0]).toMatchObject({
+      selectedReason: 'explicit',
+      outcome: 'failed',
+      latencyMs: 10,
+    });
+  });
+
+  it('reads costAmount from descriptor.costPerCall.usd when present', async () => {
+    const usageEmitter = new CapturingUsageEmitter();
+    const clock = makeClock(0, 1);
+    const runner = new InProcessSandboxRunner(async () => 'ok');
+    const descriptorWithCost: AdapterDescriptor = {
+      ...descriptor,
+      costPerCall: { usd: 0.04 },
+    };
+    await runner.run({
+      descriptor: descriptorWithCost,
+      tenantId: 't-1',
+      credential: null,
+      input: { text: 'hi' },
+      auditEmitter: new InMemoryAuditEmitter(),
+      usageEmitter,
+      clock,
+      selectedReason: 'capability-router',
+    });
+    expect(usageEmitter.events[0]?.costAmount).toBe(0.04);
   });
 });

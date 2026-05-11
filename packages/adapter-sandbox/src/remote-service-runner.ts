@@ -11,6 +11,7 @@
 // Determinism: pure dispatch. No clock. No RNG.
 
 import type { AdapterAuditEvent, SandboxInvocation, SandboxRunner } from './types.js';
+import { maybeMakeUsageEmitContext } from './usage-emit.js';
 
 /**
  * Host-supplied HTTPS callable. Receives the resolved URL + headers +
@@ -75,6 +76,10 @@ export class RemoteServiceSandboxRunner implements SandboxRunner {
     const startEvent: AdapterAuditEvent = { kind: 'start', ...baseEvent };
     auditEmitter.emit(startEvent);
 
+    // T-445 — capture clock for usage telemetry (no-op when seam absent).
+    const usageCtx = maybeMakeUsageEmitContext(invocation);
+    const startMs = usageCtx !== undefined ? usageCtx.clock() : 0;
+
     try {
       const url = this.resolveBaseUrl(descriptor.sandbox.baseUrlEnvVar, credential);
       const headers: Record<string, string> = {
@@ -88,6 +93,9 @@ export class RemoteServiceSandboxRunner implements SandboxRunner {
       const result = (await this.httpsCallable(url, headers, input)) as TOut;
       const completeEvent: AdapterAuditEvent = { kind: 'complete', ...baseEvent };
       auditEmitter.emit(completeEvent);
+      if (usageCtx !== undefined) {
+        usageCtx.emit('success', startMs, usageCtx.clock());
+      }
       return result;
     } catch (cause) {
       const errorMessage = cause instanceof Error ? cause.message : String(cause);
@@ -97,6 +105,9 @@ export class RemoteServiceSandboxRunner implements SandboxRunner {
         errorMessage,
       };
       auditEmitter.emit(failedEvent);
+      if (usageCtx !== undefined) {
+        usageCtx.emit('failed', startMs, usageCtx.clock());
+      }
       throw cause;
     }
   }
