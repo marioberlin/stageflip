@@ -7,10 +7,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { parseAdapterDescriptor } from '@stageflip/adapters-core';
-import {
-  type SfxCapabilityDescriptor,
-  validateSfxCapability,
-} from '@stageflip/asset-gen-contract';
+import { type SfxCapabilityDescriptor, validateSfxCapability } from '@stageflip/asset-gen-contract';
 
 import {
   STABLE_AUDIO_MAX_DURATION_S,
@@ -61,9 +58,7 @@ describe('stableAudioDescriptor — adapter descriptor envelope', () => {
 
 describe('stableAudioSfxCapability — strict SfxCapabilityDescriptor subset', () => {
   it('passes validateSfxCapability (T-419 schema)', () => {
-    const result = validateSfxCapability(
-      stableAudioSfxCapability as Record<string, unknown>,
-    );
+    const result = validateSfxCapability(stableAudioSfxCapability as Record<string, unknown>);
     expect(result.ok).toBe(true);
   });
 
