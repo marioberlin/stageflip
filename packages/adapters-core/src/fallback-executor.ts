@@ -44,13 +44,57 @@ export type ExecuteResult<T> =
   | { readonly ok: false; readonly errors: readonly AdapterError[] };
 
 /**
+ * Sandbox-dispatch seam — structural type matching
+ * `@stageflip/adapter-sandbox`'s `SandboxFactory` and `SandboxRunner`.
+ * Imported structurally so `@stageflip/adapters-core` does NOT take a
+ * runtime dependency on `@stageflip/adapter-sandbox` (the dependency
+ * arrow flows the other way).
+ *
+ * When `ExecuteOptions.sandboxFactory` is set, each adapter call is
+ * routed through `factory.pick(adapter).run(invocation)` — emitting
+ * audit events along the way. When omitted, the executor calls the
+ * caller's `call(adapter)` directly (back-compat with T-418-era
+ * tests).
+ */
+export interface SandboxFactoryLike {
+  pick(descriptor: AdapterDescriptor): SandboxRunnerLike;
+}
+
+/** Structural runner shape — mirrors `@stageflip/adapter-sandbox`'s `SandboxRunner`. */
+export interface SandboxRunnerLike {
+  run<TOut>(invocation: SandboxInvocationLike): Promise<TOut>;
+}
+
+/** Structural invocation envelope — mirrors `@stageflip/adapter-sandbox`'s `SandboxInvocation`. */
+export interface SandboxInvocationLike {
+  readonly descriptor: AdapterDescriptor;
+  readonly tenantId: string;
+  readonly credential: { readonly apiKey?: string; readonly baseUrl?: string } | null;
+  readonly input: unknown;
+  readonly auditEmitter: { emit(event: unknown): void };
+}
+
+/**
  * Optional execution options. `emitTelemetry` defaults to a no-op;
  * `clock` is forwarded into telemetry payloads when supplied (used by
  * tests / OTel pipelines that want monotonic ordering).
+ *
+ * T-444 — `sandboxFactory` + `sandboxContext` route per-adapter calls
+ * through the sandbox dispatch layer. When omitted the executor falls
+ * back to the original direct-call behavior.
  */
 export interface ExecuteOptions {
   readonly emitTelemetry?: EmitTelemetry;
   readonly clock?: () => number;
+  readonly sandboxFactory?: SandboxFactoryLike;
+  readonly sandboxContext?: {
+    readonly tenantId: string;
+    readonly credentialFor: (
+      adapter: AdapterDescriptor,
+    ) => { readonly apiKey?: string; readonly baseUrl?: string } | null;
+    readonly auditEmitter: { emit(event: unknown): void };
+    readonly inputFor: (adapter: AdapterDescriptor) => unknown;
+  };
 }
 
 const FALLBACK_FAILURE_EVENT = 'adapter.fallback.failure';
@@ -82,10 +126,24 @@ export class FallbackChainExecutor {
 
     const errors: AdapterError[] = [];
     let attempts = 0;
+    const sandboxFactory = opts?.sandboxFactory;
+    const sandboxContext = opts?.sandboxContext;
     for (const adapter of adapters) {
       attempts += 1;
       try {
-        const result = await call(adapter);
+        let result: T;
+        if (sandboxFactory !== undefined && sandboxContext !== undefined) {
+          const runner = sandboxFactory.pick(adapter);
+          result = await runner.run<T>({
+            descriptor: adapter,
+            tenantId: sandboxContext.tenantId,
+            credential: sandboxContext.credentialFor(adapter),
+            input: sandboxContext.inputFor(adapter),
+            auditEmitter: sandboxContext.auditEmitter,
+          });
+        } else {
+          result = await call(adapter);
+        }
         return { ok: true, result, adapter, attempts };
       } catch (cause) {
         const errorMessage = cause instanceof Error ? cause.message : String(cause);

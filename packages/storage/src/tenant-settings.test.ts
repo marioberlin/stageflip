@@ -154,4 +154,48 @@ describe('tenantSettingsSchema', () => {
       ).toThrow();
     });
   });
+
+  // T-444 — adapterCredentials structural extension.
+  describe('adapterCredentials (T-444)', () => {
+    it('round-trips a populated map', () => {
+      const settings = {
+        ...valid,
+        adapterCredentials: {
+          'tts-kokoro': { apiKey: 'sk-a' },
+          'video-runway': { baseUrl: 'https://runway.example' },
+        },
+      };
+      expect(tenantSettingsSchema.parse(settings).adapterCredentials).toEqual(
+        settings.adapterCredentials,
+      );
+    });
+
+    it('accepts an empty record', () => {
+      const settings = { ...valid, adapterCredentials: {} };
+      expect(tenantSettingsSchema.parse(settings).adapterCredentials).toEqual({});
+    });
+
+    it('is optional', () => {
+      const parsed = tenantSettingsSchema.parse(valid);
+      expect(parsed.adapterCredentials).toBeUndefined();
+    });
+
+    it('rejects empty {} credential value', () => {
+      expect(() =>
+        tenantSettingsSchema.parse({
+          ...valid,
+          adapterCredentials: { kokoro: {} },
+        } as unknown),
+      ).toThrow();
+    });
+
+    it('rejects non-kebab-case adapterId key', () => {
+      expect(() =>
+        tenantSettingsSchema.parse({
+          ...valid,
+          adapterCredentials: { Kokoro_TTS: { apiKey: 'sk' } },
+        } as unknown),
+      ).toThrow();
+    });
+  });
 });

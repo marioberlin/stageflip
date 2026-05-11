@@ -46,3 +46,20 @@ export {
   type CostRecord,
   type TenantCostTrackerStore,
 } from './tenant-cost-tracker-store.js';
+
+// T-444 — TenantAdapterCredentialsStore storage facet (per-tenant +
+// per-adapter scoped credentials; pairs with the new
+// `TenantSettings.adapterCredentials?` field). The host's
+// `SandboxFactory` calls `getCredentials(tenantId, adapterId)` and
+// forwards ONLY the matched record to the runner.
+export {
+  adapterCredentialSchema,
+  adapterCredentialsMapSchema,
+  adapterIdSchema,
+  type AdapterCredential,
+  type AdapterCredentialsMap,
+} from './tenant-adapter-credentials.js';
+export {
+  InMemoryTenantAdapterCredentialsStore,
+  type TenantAdapterCredentialsStore,
+} from './tenant-adapter-credentials-store.js';

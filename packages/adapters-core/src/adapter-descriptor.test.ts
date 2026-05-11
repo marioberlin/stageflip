@@ -151,4 +151,99 @@ describe('adapterDescriptorSchema', () => {
     };
     expect(() => parseAdapterDescriptor(candidate)).not.toThrow();
   });
+
+  // T-444 — resourceLimits structural extension.
+  describe('resourceLimits (T-444)', () => {
+    it('round-trips a fully-populated resourceLimits', () => {
+      const candidate: AdapterDescriptor = {
+        ...baseDescriptor,
+        resourceLimits: { maxMemoryMb: 256, maxCpuMs: 5000, maxDiskMb: 100 },
+      };
+      const parsed = parseAdapterDescriptor(candidate);
+      expect(parsed.resourceLimits).toEqual({
+        maxMemoryMb: 256,
+        maxCpuMs: 5000,
+        maxDiskMb: 100,
+      });
+    });
+
+    it('accepts each dimension independently (partial)', () => {
+      expect(
+        parseAdapterDescriptor({
+          ...baseDescriptor,
+          resourceLimits: { maxMemoryMb: 128 },
+        }).resourceLimits,
+      ).toEqual({ maxMemoryMb: 128 });
+      expect(
+        parseAdapterDescriptor({
+          ...baseDescriptor,
+          resourceLimits: { maxCpuMs: 1000 },
+        }).resourceLimits,
+      ).toEqual({ maxCpuMs: 1000 });
+      expect(
+        parseAdapterDescriptor({
+          ...baseDescriptor,
+          resourceLimits: { maxDiskMb: 50 },
+        }).resourceLimits,
+      ).toEqual({ maxDiskMb: 50 });
+    });
+
+    it('accepts empty resourceLimits object', () => {
+      const parsed = parseAdapterDescriptor({
+        ...baseDescriptor,
+        resourceLimits: {},
+      });
+      expect(parsed.resourceLimits).toEqual({});
+    });
+
+    it('rejects negative dimensions', () => {
+      expect(() =>
+        parseAdapterDescriptor({
+          ...baseDescriptor,
+          resourceLimits: { maxMemoryMb: -1 },
+        }),
+      ).toThrow();
+      expect(() =>
+        parseAdapterDescriptor({
+          ...baseDescriptor,
+          resourceLimits: { maxCpuMs: -1 },
+        }),
+      ).toThrow();
+      expect(() =>
+        parseAdapterDescriptor({
+          ...baseDescriptor,
+          resourceLimits: { maxDiskMb: -1 },
+        }),
+      ).toThrow();
+    });
+
+    it('rejects non-finite (Infinity / NaN) dimensions', () => {
+      expect(() =>
+        parseAdapterDescriptor({
+          ...baseDescriptor,
+          resourceLimits: { maxMemoryMb: Number.POSITIVE_INFINITY },
+        }),
+      ).toThrow();
+      expect(() =>
+        parseAdapterDescriptor({
+          ...baseDescriptor,
+          resourceLimits: { maxCpuMs: Number.NaN },
+        }),
+      ).toThrow();
+    });
+
+    it('rejects unknown keys in resourceLimits (strict)', () => {
+      expect(() =>
+        parseAdapterDescriptor({
+          ...baseDescriptor,
+          resourceLimits: { maxMemoryMb: 128, maxNetworkMbps: 10 },
+        }),
+      ).toThrow();
+    });
+
+    it('parses without resourceLimits (optional)', () => {
+      const parsed = parseAdapterDescriptor(baseDescriptor);
+      expect(parsed.resourceLimits).toBeUndefined();
+    });
+  });
 });
