@@ -5,6 +5,7 @@
 
 import type { LossFlag } from '@stageflip/loss-flags';
 import type { AssetReader } from './assets/types.js';
+import type { AiPptxElementInput } from './provenance-walk.js';
 
 /**
  * Stable machine-readable identifiers for every PPTX-export-specific lossy
@@ -44,6 +45,15 @@ export interface ExportPptxOptions {
    * `modifiedAt` are byte-identical.
    */
   modifiedAt?: Date;
+  /**
+   * T-441 — opt-in list of MediaElements whose provenance the writer
+   * walks at export time. AI-generated rows (per
+   * `classifyAiKind`) surface as a `<p:extLst>` extension on
+   * `ppt/presentation.xml`. When absent / empty / no AI rows match,
+   * the presentation body is byte-identical to a call without the
+   * option.
+   */
+  aiElements?: readonly AiPptxElementInput[];
 }
 
 /** The frozen-epoch fallback when `opts.modifiedAt` is omitted. */

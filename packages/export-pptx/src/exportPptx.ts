@@ -5,6 +5,7 @@
 
 import type { LossFlag } from '@stageflip/loss-flags';
 import type { Document, SlideContent, SlideLayout, SlideMaster } from '@stageflip/schema';
+import { emitAiContentExtension } from './ai-content-ext.js';
 import { collectAssets } from './assets/collect.js';
 import { emitLossFlag } from './loss-flags.js';
 import { emitContentTypes } from './parts/content-types.js';
@@ -15,6 +16,7 @@ import { emitSlideLayout } from './parts/slide-layout.js';
 import { emitSlideMaster } from './parts/slide-master.js';
 import { emitSlide } from './parts/slide.js';
 import { emitTheme } from './parts/theme.js';
+import { extractAiPptxManifest } from './provenance-walk.js';
 import { type ExportPptxOptions, type ExportPptxResult, FROZEN_EPOCH } from './types.js';
 import { type EntryMap, packZip } from './zip/pack.js';
 
@@ -176,9 +178,19 @@ export async function exportPptx(
     masterCount: masters.length,
   });
   entries['_rels/.rels'] = emitRootRels();
+  // T-441: walk the opt-in `aiElements` list; when ≥1 row classifies as
+  // AI-generated, serialize the `<p:extLst>` block to splice into
+  // `<p:presentation>`. Absent / empty / no-AI input → no extension
+  // emitted (presentation body is byte-identical to pre-T-441).
+  const aiManifest =
+    opts.aiElements !== undefined && opts.aiElements.length > 0
+      ? extractAiPptxManifest(opts.aiElements)
+      : undefined;
+  const extLstXml = aiManifest !== undefined ? emitAiContentExtension(aiManifest) : '';
   entries['ppt/presentation.xml'] = emitPresentation({
     slideCount: slides.length,
     masterCount: masters.length,
+    ...(extLstXml.length > 0 ? { extLstXml } : {}),
   });
   entries['ppt/_rels/presentation.xml.rels'] = emitPresentationRels(slides.length, masters.length);
   entries['ppt/theme/theme1.xml'] = emitTheme();
