@@ -92,13 +92,7 @@ describe('runwayVideoGenCapability — strict VideoGenCapabilityDescriptor subse
   });
 
   it('declares broad aspect-ratio set (16:9 / 9:16 / 1:1 / 4:3 / 3:4)', () => {
-    expect(runwayVideoGenCapability.aspectRatios).toEqual([
-      '16:9',
-      '9:16',
-      '1:1',
-      '4:3',
-      '3:4',
-    ]);
+    expect(runwayVideoGenCapability.aspectRatios).toEqual(['16:9', '9:16', '1:1', '4:3', '3:4']);
   });
 
   it('declares emitsAudio = false (THE differentiator — Runway is silent video; audio paired separately)', () => {
