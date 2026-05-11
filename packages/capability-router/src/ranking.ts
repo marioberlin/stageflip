@@ -109,8 +109,10 @@ export function rankHighestQuality(scorer?: QualityScorer): Comparator<AdapterDe
 export function rankBalanced(scorer?: QualityScorer): Comparator<AdapterDescriptor> {
   const score = scorer ?? (() => 0);
   return (a, b) => {
-    const sa = -Math.log10(costUsd(a) + LOG_EPSILON) - Math.log10(latencyMs(a) + LOG_EPSILON) + score(a);
-    const sb = -Math.log10(costUsd(b) + LOG_EPSILON) - Math.log10(latencyMs(b) + LOG_EPSILON) + score(b);
+    const sa =
+      -Math.log10(costUsd(a) + LOG_EPSILON) - Math.log10(latencyMs(a) + LOG_EPSILON) + score(a);
+    const sb =
+      -Math.log10(costUsd(b) + LOG_EPSILON) - Math.log10(latencyMs(b) + LOG_EPSILON) + score(b);
     const delta = sb - sa; // descending
     if (delta !== 0) return delta;
     return compareIdAsc(a, b);

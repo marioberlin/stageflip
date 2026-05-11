@@ -18,8 +18,8 @@ import { defaultLicenseGate } from '@stageflip/adapters-core';
 import {
   type CapabilityPredicate,
   type FilteredByReason,
-  type RejectionReason,
   REJECTION_REASONS,
+  type RejectionReason,
   type RoutingInput,
 } from './types.js';
 
@@ -59,8 +59,7 @@ function zeroTally(): Record<RejectionReason, number> {
   // Sanity: the literal must enumerate every REJECTION_REASONS entry.
   // Iterating is cheap and catches future drift.
   for (const reason of REJECTION_REASONS) {
-    // biome-ignore lint/suspicious/noPrototypeBuiltins: explicit dense-key check
-    if (!Object.prototype.hasOwnProperty.call(out, reason)) {
+    if (!(reason in out)) {
       throw new Error(`capability-router: REJECTION_REASONS drift — missing key '${reason}'`);
     }
   }
