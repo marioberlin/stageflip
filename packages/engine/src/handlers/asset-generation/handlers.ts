@@ -145,6 +145,60 @@ export interface ExecuteAdapterCallResult {
   readonly ok: true;
 }
 
+// ---------------------------------------------------------------------------
+// T-438 — optimistic-placeholder seam
+// ---------------------------------------------------------------------------
+
+/**
+ * Inputs the host-supplied `placeholderResolver.dispatch` callback receives
+ * when `generate_asset` is invoked with `optimistic: true`. Mirrors
+ * `ExecuteAdapterCallInput` but carries the full `licensed` candidate
+ * adapter list (the seam owns adapter selection / fallback-chain
+ * execution in the optimistic path; the synchronous path uses
+ * `FallbackChainExecutor` directly).
+ *
+ * The seam owns the eventual swap: once an adapter resolves, the seam
+ * MUST deliver a follow-up patch that replaces the placeholder element
+ * (correlated via `placeholderId`) with the terminal-state MediaElement.
+ * The transport (next-cycle tool call vs streaming event) is the seam's
+ * choice — T-438 ships only the contract. T-442 lands the transport
+ * plumbing.
+ */
+export interface PlaceholderDispatchInput {
+  readonly placeholderId: string;
+  readonly licensed: readonly AdapterDescriptor[];
+  readonly modality: AssetProducingModality;
+  readonly prompt: string;
+  readonly model?: string;
+  readonly voice?: string;
+  readonly params?: Record<string, unknown>;
+  readonly seed?: number | string;
+  readonly researchSessionId?: string;
+  readonly cacheKey: string;
+  readonly cacheKeyParts: AssetCacheKey;
+  readonly tenantContext: TenantContext;
+  readonly target: {
+    readonly slideId: string;
+    readonly elementType: AssetElementType;
+    readonly src: string;
+  };
+}
+
+/**
+ * Soft-seam the host wires to enable `optimistic: true` on
+ * `generate_asset`. Absent when the host hasn't opted in; in that case
+ * `generate_asset` with `optimistic: true` returns
+ * `{ ok: false, reason: 'asset_generation_unavailable' }`.
+ *
+ * `dispatch` is fire-and-forget from the handler's POV — the handler
+ * does NOT await it. Implementations typically resolve immediately
+ * after kicking the adapter off in their own queue (returning a Promise
+ * the handler discards).
+ */
+export interface PlaceholderResolver {
+  dispatch(input: PlaceholderDispatchInput): Promise<void>;
+}
+
 /**
  * Soft-seam context the executor wires for asset-generation tools. When
  * any required seam is absent, handlers return
@@ -167,6 +221,27 @@ export interface AssetGenerationContext extends MutationContext {
     input: ExecuteAdapterCallInput,
   ) => Promise<ExecuteAdapterCallResult>;
   readonly assetCacheStore?: AssetCacheStore<{ assetUri: string }>;
+  /**
+   * T-438 — optimistic-placeholder seam. When wired, callers MAY pass
+   * `optimistic: true` to `generate_asset` and the handler returns
+   * immediately with a placeholder result while the seam dispatches
+   * the real adapter call in the background.
+   */
+  readonly placeholderResolver?: PlaceholderResolver;
+  /**
+   * T-438 — UUID source. Optional; defaults to `crypto.randomUUID()`.
+   * Tests inject a deterministic generator. Editor / Node hosts may
+   * omit. (Web Crypto's `randomUUID` is available in both browser
+   * editors and Node ≥18, so the default is safe.)
+   */
+  readonly randomUuid?: () => string;
+  /**
+   * T-438 — clock source for `estimatedCompletionAt` derivation.
+   * Optional; defaults to `Date.now()`. Tests inject a deterministic
+   * clock. Living OUTSIDE `packages/frame-runtime` / clip / renderer
+   * code, so the determinism rules do not apply.
+   */
+  readonly nowMs?: () => number;
 }
 
 // ---------------------------------------------------------------------------
@@ -209,6 +284,13 @@ const generateAssetInput = z
     seed: z.union([z.number(), z.string().min(1)]).optional(),
     researchSessionId: z.string().min(1).optional(),
     target: targetInputSchema,
+    /**
+     * T-438 — when `true`, the handler returns a placeholder result
+     * immediately and dispatches the real adapter via
+     * `placeholderResolver` in the background. Default `false`
+     * (back-compat — synchronous path identical to T-423).
+     */
+    optimistic: z.boolean().optional(),
   })
   .strict();
 
@@ -222,16 +304,32 @@ const adapterErrorSchema = z
   })
   .strict();
 
-const generateAssetOutput = z.discriminatedUnion('ok', [
-  z
-    .object({
-      ok: z.literal(true),
-      slideId: z.string(),
-      elementId: z.string(),
-      cacheKey: z.string(),
-      provenance: mediaProvenanceSchema,
-    })
-    .strict(),
+const generateAssetSuccessSyncSchema = z
+  .object({
+    ok: z.literal(true),
+    slideId: z.string(),
+    elementId: z.string(),
+    cacheKey: z.string(),
+    provenance: mediaProvenanceSchema,
+  })
+  .strict();
+
+const generateAssetSuccessPlaceholderSchema = z
+  .object({
+    ok: z.literal(true),
+    kind: z.literal('placeholder'),
+    slideId: z.string(),
+    elementId: z.string(),
+    placeholderId: z.string(),
+    modality: z.enum(ASSET_PRODUCING_MODALITIES),
+    cacheKey: z.string(),
+    estimatedCompletionAt: z.string().datetime().optional(),
+  })
+  .strict();
+
+const generateAssetOutput = z.union([
+  generateAssetSuccessSyncSchema,
+  generateAssetSuccessPlaceholderSchema,
   z
     .object({
       ok: z.literal(false),
@@ -310,9 +408,20 @@ function buildMediaElement(
  * `MediaProvenance`, and emit a JSON-Patch op that mounts the produced
  * media element on the target slide.
  *
+ * **T-438 — optimistic mode.** When `input.optimistic === true`, the
+ * handler returns immediately after deriving the cacheKey + selecting
+ * licensed candidates: it emits a placeholder MediaElement (provenance
+ * `kind: 'asset-gen-pending'` + `placeholderId` + `cacheKey` +
+ * `estimatedCompletionAt`) and fires the real adapter dispatch
+ * fire-and-forget via the `placeholderResolver.dispatch` seam. The
+ * seam owns the eventual swap from placeholder → resolved asset
+ * (transport: next-cycle tool call or T-442 streaming event).
+ *
  * Soft-seam context: requires `adapterRegistry` + `licenseGate` +
- * `tenantContext` + `executeAdapterCall` on the `AssetGenerationContext`.
- * When any seam is absent, returns
+ * `tenantContext`. Synchronous mode (`optimistic` absent or `false`)
+ * additionally requires `executeAdapterCall`. Optimistic mode
+ * additionally requires `placeholderResolver`.
+ * When any required seam is absent, returns
  * `{ ok: false, reason: 'asset_generation_unavailable' }`.
  *
  * Error responses (typed, not exceptions):
@@ -336,24 +445,29 @@ const generateAsset: ToolHandler<GenerateAssetInput, GenerateAssetOutput, Mutati
   name: 'generate_asset',
   bundle: ASSET_GENERATION_BUNDLE_NAME,
   description:
-    "Generate a new media asset (audio / image / video) by dispatching through the Provider Seam (ADR-007 + ADR-008). Sealed `modality` enum (12 asset-producing modalities: tts / video-gen / music-gen / sfx / three-d / infographic-gen / slide-deck-gen / mind-map-gen / table-gen / quiz-gen / flashcard-gen / report-gen). Required `prompt` (1..16000 chars; normalized via NFC + trim + collapse + lowercase before hashing). Optional `model` / `voice` (TTS-only) / `params` / `seed` / `researchSessionId` (source-grounded). Required `target: { slideId, elementType: audio|image|video, transform, src: 'asset:<id>' }`. The bundle derives a content-addressed cache key per ADR-008 §D1, populates a strict `MediaProvenance` shape, and emits a JSON-Patch `add` op that mounts the element on the named slide with `provenance` populated. Returns `{ ok: true, slideId, elementId, cacheKey, provenance }` on success; typed `{ ok: false, reason }` on every failure path. Read soft-seam: when the executor has not wired the asset-generation context (`adapterRegistry` + `licenseGate` + `tenantContext` + `executeAdapterCall`), returns `{ ok: false, reason: 'asset_generation_unavailable' }` rather than throwing. v1 does not cache-hit short-circuit (T-435/T-436/T-437 land that); the optional cache store is written on success only.",
+    "Generate a new media asset (audio / image / video) by dispatching through the Provider Seam (ADR-007 + ADR-008). Sealed `modality` enum (12 asset-producing modalities: tts / video-gen / music-gen / sfx / three-d / infographic-gen / slide-deck-gen / mind-map-gen / table-gen / quiz-gen / flashcard-gen / report-gen). Required `prompt` (1..16000 chars; normalized via NFC + trim + collapse + lowercase before hashing). Optional `model` / `voice` (TTS-only) / `params` / `seed` / `researchSessionId` (source-grounded). Optional `optimistic: boolean` (T-438) — when true, the tool returns a placeholder result `{ ok: true, kind: 'placeholder', slideId, elementId, placeholderId, modality, cacheKey, estimatedCompletionAt? }` IMMEDIATELY and dispatches the real adapter in the background via the `placeholderResolver` seam; the editor renders the placeholder element (provenance.kind = 'asset-gen-pending') as a greyed-out box with spinner until a follow-up swap patch replaces it with the resolved asset. Required `target: { slideId, elementType: audio|image|video, transform, src: 'asset:<id>' }`. The bundle derives a content-addressed cache key per ADR-008 §D1, populates a strict `MediaProvenance` shape, and emits a JSON-Patch `add` op that mounts the element on the named slide with `provenance` populated. Returns `{ ok: true, slideId, elementId, cacheKey, provenance }` on synchronous success; placeholder shape on optimistic success; typed `{ ok: false, reason }` on every failure path. Read soft-seam: when the executor has not wired the asset-generation context (`adapterRegistry` + `licenseGate` + `tenantContext` + `executeAdapterCall` for sync; `placeholderResolver` instead for optimistic), returns `{ ok: false, reason: 'asset_generation_unavailable' }` rather than throwing. v1 does not cache-hit short-circuit (T-435/T-436/T-437 land that); the optional cache store is written on success only.",
   inputSchema: generateAssetInput,
   outputSchema: generateAssetOutput,
   handle: async (input, ctx) => {
     const seam = getAssetSeam(ctx);
 
-    // 1 — seam check
+    // 1 — seam check (synchronous path requires executeAdapterCall;
+    // optimistic path requires placeholderResolver instead).
     if (
       seam.adapterRegistry === undefined ||
       seam.licenseGate === undefined ||
       seam.tenantContext === undefined ||
-      seam.executeAdapterCall === undefined
+      (input.optimistic === true
+        ? seam.placeholderResolver === undefined
+        : seam.executeAdapterCall === undefined)
     ) {
       return {
         ok: false,
         reason: 'asset_generation_unavailable',
         detail:
-          'generate_asset requires AssetGenerationContext seams (adapterRegistry + licenseGate + tenantContext + executeAdapterCall). The executor has not wired them — pre-T-425/T-426..T-434.',
+          input.optimistic === true
+            ? 'generate_asset with optimistic: true requires the placeholderResolver seam (plus adapterRegistry + licenseGate + tenantContext). The executor has not wired it — pre-T-442.'
+            : 'generate_asset requires AssetGenerationContext seams (adapterRegistry + licenseGate + tenantContext + executeAdapterCall). The executor has not wired them — pre-T-425/T-426..T-434.',
       };
     }
 
@@ -391,9 +505,114 @@ const generateAsset: ToolHandler<GenerateAssetInput, GenerateAssetOutput, Mutati
       return { ok: false, reason: 'no_licensed_adapter' };
     }
 
+    // 4b — optimistic branch (T-438) — return placeholder immediately,
+    // dispatch the real adapter via the placeholderResolver seam in
+    // the background. The seam owns adapter execution + the eventual
+    // swap; the synchronous-path steps 5-8 do NOT run.
+    if (input.optimistic === true) {
+      // Non-null asserted from step-1 seam check (we returned early
+      // when placeholderResolver was undefined for optimistic mode).
+      // biome-ignore lint/style/noNonNullAssertion: validated above
+      const placeholderResolverLocal = seam.placeholderResolver!;
+      // biome-ignore lint/style/noNonNullAssertion: validated above
+      const tenantContextLocal = seam.tenantContext!;
+
+      const uuid = (seam.randomUuid ?? defaultRandomUuid)();
+      const placeholderId = `ph-${uuid}`;
+      const estimatedCompletionAt = deriveEstimatedCompletionAt(
+        licensed,
+        input.modality,
+        seam.nowMs ?? defaultNowMs,
+      );
+
+      // Build placeholder provenance + element. Carries kind:
+      // 'asset-gen-pending' + placeholderId + cacheKey + the same
+      // adapter-hint fields the synchronous provenance would carry,
+      // so the editor can render a labeled spinner ("Generating with
+      // <provider>...") even before the swap.
+      const placeholderProvenance: Record<string, unknown> = {
+        kind: 'asset-gen-pending' as const,
+        placeholderId,
+        cacheKey,
+        provider: licensed[0]?.id,
+        prompt: normalizePromptForProvenance(input.prompt),
+      };
+      if (input.model !== undefined) placeholderProvenance.model = input.model;
+      if (input.seed !== undefined) placeholderProvenance.seed = input.seed;
+      if (input.voice !== undefined) placeholderProvenance.voiceId = input.voice;
+      if (input.researchSessionId !== undefined) {
+        placeholderProvenance.researchSessionId = input.researchSessionId;
+      }
+      if (estimatedCompletionAt !== undefined) {
+        placeholderProvenance.estimatedCompletionAt = estimatedCompletionAt;
+      }
+      const provenance = mediaProvenanceSchema.parse(placeholderProvenance);
+
+      const elementId = nextElementId(ctx.document);
+      const element = buildMediaElement(
+        elementId,
+        input.target.elementType,
+        input.target.transform,
+        input.target.src,
+        provenance,
+      );
+      ctx.patchSink.push({
+        op: 'add',
+        path: `/content/slides/${slideIndex}/elements/-`,
+        value: element,
+      });
+
+      // Fire-and-forget the dispatch; the seam owns the eventual swap.
+      // Errors from the seam are logged via the seam's own telemetry
+      // surface; we deliberately do not surface them on the handler's
+      // sync return value — the placeholder result IS the return.
+      void placeholderResolverLocal
+        .dispatch({
+          placeholderId,
+          licensed,
+          modality: input.modality,
+          prompt: input.prompt,
+          ...(input.model !== undefined ? { model: input.model } : {}),
+          ...(input.voice !== undefined ? { voice: input.voice } : {}),
+          ...(input.params !== undefined ? { params: input.params } : {}),
+          ...(input.seed !== undefined ? { seed: input.seed } : {}),
+          ...(input.researchSessionId !== undefined
+            ? { researchSessionId: input.researchSessionId }
+            : {}),
+          cacheKey,
+          cacheKeyParts,
+          tenantContext: tenantContextLocal,
+          target: {
+            slideId: input.target.slideId,
+            elementType: input.target.elementType,
+            src: input.target.src,
+          },
+        })
+        .catch((_err) => {
+          // Seam dispatch errors are the seam's responsibility (it
+          // owns the swap transport + telemetry). Swallow here so the
+          // background continuation never raises an unhandled
+          // rejection on the host process.
+        });
+
+      const result: GenerateAssetOutput = {
+        ok: true,
+        kind: 'placeholder',
+        slideId: input.target.slideId,
+        elementId,
+        placeholderId,
+        modality: input.modality,
+        cacheKey,
+        ...(estimatedCompletionAt !== undefined ? { estimatedCompletionAt } : {}),
+      };
+      return result;
+    }
+
     // 5 — fallback-chain execution
-    const tenantContextLocal = seam.tenantContext;
-    const executeAdapterCallLocal = seam.executeAdapterCall;
+    // biome-ignore lint/style/noNonNullAssertion: validated in step-1 seam check
+    const tenantContextLocal = seam.tenantContext!;
+    // biome-ignore lint/style/noNonNullAssertion: validated in step-1 seam check
+    const executeAdapterCallLocal = seam.executeAdapterCall!;
     const callInputBase = {
       modality: input.modality,
       prompt: input.prompt,
@@ -474,6 +693,65 @@ const generateAsset: ToolHandler<GenerateAssetInput, GenerateAssetOutput, Mutati
 /** NFC-trim-collapse-lowercase normalize — mirrors `@stageflip/asset-cache`'s `normalizePrompt`. */
 function normalizePromptForProvenance(prompt: string): string {
   return prompt.normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+/**
+ * T-438 — per-modality fallback latency hint (milliseconds) when the
+ * chosen adapter exposes no `latencyMs.p95` capability metadata. These
+ * are upper-bound editor hints (the spinner countdown), not contracts.
+ */
+const DEFAULT_LATENCY_FALLBACK_MS: Readonly<Record<AssetProducingModality, number>> = {
+  tts: 5_000, // 1-5s typical
+  'music-gen': 30_000, // ~30s
+  sfx: 8_000,
+  'video-gen': 120_000, // 1-2min
+  'three-d': 60_000, // ~1min
+  'infographic-gen': 30_000,
+  'slide-deck-gen': 300_000, // up to 5min
+  'mind-map-gen': 60_000,
+  'table-gen': 30_000,
+  'quiz-gen': 45_000,
+  'flashcard-gen': 30_000,
+  'report-gen': 300_000,
+};
+
+/**
+ * Derive an upper-bound ISO-8601 timestamp for the placeholder
+ * countdown. Picks the largest `latencyMs.p95` across the candidate
+ * adapters (the fallback chain may try several); falls back to the
+ * per-modality hint above. Returns `undefined` when the clock seam is
+ * unwired AND no candidate exposes a latency hint — in that case the
+ * editor renders an indefinite spinner.
+ */
+function deriveEstimatedCompletionAt(
+  licensed: readonly AdapterDescriptor[],
+  modality: AssetProducingModality,
+  nowMs: () => number,
+): string | undefined {
+  let maxLatencyMs: number | undefined;
+  for (const adapter of licensed) {
+    const p95 = adapter.latencyMs?.p95;
+    if (typeof p95 === 'number' && Number.isFinite(p95) && p95 > 0) {
+      maxLatencyMs = maxLatencyMs === undefined ? p95 : Math.max(maxLatencyMs, p95);
+    }
+  }
+  const latencyMs = maxLatencyMs ?? DEFAULT_LATENCY_FALLBACK_MS[modality];
+  if (latencyMs === undefined) return undefined;
+  return new Date(nowMs() + latencyMs).toISOString();
+}
+
+/**
+ * Default UUID source. Uses Web Crypto's `randomUUID` which is
+ * available in both browser editor contexts and Node ≥18 (where
+ * `globalThis.crypto.randomUUID` resolves to the same implementation).
+ */
+function defaultRandomUuid(): string {
+  return globalThis.crypto.randomUUID();
+}
+
+/** Default clock. */
+function defaultNowMs(): number {
+  return Date.now();
 }
 
 // ---------------------------------------------------------------------------
@@ -639,6 +917,7 @@ export const ASSET_GENERATION_TOOL_DEFINITIONS: readonly LLMToolDefinition[] = [
         params: { type: 'object' },
         seed: { type: ['number', 'string'] },
         researchSessionId: { type: 'string', minLength: 1 },
+        optimistic: { type: 'boolean' },
         target: targetObject,
         // Note: `transform` shape detailed in `targetObject.description` to keep
         // the schema flat for the LLM-facing JSONSchema.
