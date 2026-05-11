@@ -1,0 +1,17 @@
+{
+  "id": "tripo",
+  "modality": "three-d",
+  "descriptorSha256": "acab6bdda9352d962b08f78b559c8489d323a7f94f2f0679dd33319ffe0da476",
+  "sampleInputs": [
+    {
+      "name": "minimal",
+      "input": {
+        "prompt": "A simple character.",
+        "rig": false,
+        "seed": 1
+      },
+      "outputSha256": "e5d9b8f46d97d7dfb033be3a6cd7d286151b7d63fd6ff9b19558143411b796fe",
+      "cacheKey": "three-d/924eed8ee3547110505839c3726770ffebcb5c1670224c3e70296c03bd1d9249"
+    }
+  ]
+}

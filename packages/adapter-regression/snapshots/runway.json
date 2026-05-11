@@ -1,0 +1,20 @@
+{
+  "id": "runway",
+  "modality": "video-gen",
+  "descriptorSha256": "e4f73a8b6c40f812c5ef806024446c43b2d32714440789ace3cf6e401b6d65e9",
+  "sampleInputs": [
+    {
+      "name": "minimal",
+      "input": {
+        "prompt": "A cat on a mat.",
+        "aspectRatio": "16:9",
+        "frameRate": 24,
+        "durationS": 5,
+        "outputFormat": "mp4",
+        "seed": 1
+      },
+      "outputSha256": "46b3062ef161f84b4690f6fbc67b47ffa17f9274126918d1461bcd81755429c5",
+      "cacheKey": "video-gen/426c47c8456654d94b5d491d04590ad858be2a7d9da88381678cef5feaea8539"
+    }
+  ]
+}

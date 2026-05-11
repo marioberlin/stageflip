@@ -1,0 +1,20 @@
+{
+  "id": "seedance",
+  "modality": "video-gen",
+  "descriptorSha256": "a4dfc79fad30fc79243006610e512b657c67f78c5c99625866370507740260b8",
+  "sampleInputs": [
+    {
+      "name": "minimal",
+      "input": {
+        "prompt": "A cat on a mat.",
+        "aspectRatio": "16:9",
+        "frameRate": 24,
+        "durationS": 5,
+        "outputFormat": "mp4",
+        "seed": 1
+      },
+      "outputSha256": "a1565bbfb61bd97deea655ae4bb332e1fe70a2ff1de6888e1a5683df3fd80908",
+      "cacheKey": "video-gen/c81a312fb633f93516284085909bbad8627e40083aa00764aae405b30afe5b29"
+    }
+  ]
+}

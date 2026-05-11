@@ -1,0 +1,18 @@
+{
+  "id": "ace-step",
+  "modality": "music-gen",
+  "descriptorSha256": "b3ade63d555dd74567facc20216c10ed6e3fb184d98855f7c962759f253435a0",
+  "sampleInputs": [
+    {
+      "name": "minimal",
+      "input": {
+        "prompt": "Ambient pad.",
+        "durationS": 30,
+        "outputFormat": "wav",
+        "seed": 1
+      },
+      "outputSha256": "f0025c15939afbb6ea3eb574b110dc7174bdbdbf8a7a54d592e410d84f98bb23",
+      "cacheKey": "music-gen/3ba1c43e9f0d16ece5111b5f12f3c0b78d109c2106f3dc94935f6c74c3dda81f"
+    }
+  ]
+}

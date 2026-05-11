@@ -1,0 +1,18 @@
+{
+  "id": "yue",
+  "modality": "music-gen",
+  "descriptorSha256": "215d551ce517be1a72d86c418ac5eb4d006fa255344e64ecca69dc7f48fab273",
+  "sampleInputs": [
+    {
+      "name": "minimal",
+      "input": {
+        "prompt": "Ambient pad.",
+        "durationS": 30,
+        "outputFormat": "wav",
+        "seed": 1
+      },
+      "outputSha256": "0f566417be80c51abd69410c5206b526078e1e2de6ca6e7d5eb1de57a9abd855",
+      "cacheKey": "music-gen/b38824927cba4a6b3c5dbcfe7e6cb296132b2cdd102b77ab8cb352fa0e8f2673"
+    }
+  ]
+}

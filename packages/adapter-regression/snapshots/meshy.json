@@ -1,0 +1,17 @@
+{
+  "id": "meshy",
+  "modality": "three-d",
+  "descriptorSha256": "7725895e192f7d30e5fe1ac8e3b8bc815285253dce58764579486cdee49d3389",
+  "sampleInputs": [
+    {
+      "name": "minimal",
+      "input": {
+        "prompt": "A simple character.",
+        "rig": false,
+        "seed": 1
+      },
+      "outputSha256": "9e3fc5dc91d7adc34f5b4c2ffa247d0ee667606227d9713080bec97dba985739",
+      "cacheKey": "three-d/8798ef7ba4639f1512fbca3a9a517febd4b5bcc045c9ad110d385d900bd9ea8f"
+    }
+  ]
+}
