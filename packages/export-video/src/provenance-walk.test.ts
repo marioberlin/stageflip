@@ -4,12 +4,12 @@
 import type { MediaProvenance } from '@stageflip/schema';
 import { describe, expect, it } from 'vitest';
 
+import { DEFAULT_AI_WATERMARK } from './ai-watermark.js';
 import {
   type AiVideoElementInputRow,
   classifyAiKind,
   extractAiContentManifest,
 } from './provenance-walk.js';
-import { DEFAULT_AI_WATERMARK } from './ai-watermark.js';
 
 function ttsProvenance(overrides: Partial<MediaProvenance> = {}): MediaProvenance {
   return {

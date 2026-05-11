@@ -114,9 +114,7 @@ describe('exportProvenanceAware', () => {
       document: fakeDocument,
       variants: targets,
       renderer: makeRenderer(),
-      aiElements: [
-        { elementId: 'el-1', provenance: { kind: 'tts', provider: 'tts-kokoro' } },
-      ],
+      aiElements: [{ elementId: 'el-1', provenance: { kind: 'tts', provider: 'tts-kokoro' } }],
       aiWatermark: { enabled: true },
     });
     expect(result.multiAspect.rendererId).toBe('fake-renderer');
@@ -130,9 +128,7 @@ describe('exportProvenanceAware', () => {
       document: fakeDocument,
       variants: targets,
       renderer: makeRenderer(),
-      aiElements: [
-        { elementId: 'el-1', provenance: { kind: 'tts', provider: 'tts-kokoro' } },
-      ],
+      aiElements: [{ elementId: 'el-1', provenance: { kind: 'tts', provider: 'tts-kokoro' } }],
       aiWatermark: { enabled: true, text: 'Custom AI', position: 'top-left' },
     });
     expect(result.aiContent?.watermark.text).toBe('Custom AI');

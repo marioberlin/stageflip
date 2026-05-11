@@ -5,8 +5,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  buildWatermarkPlan,
   DEFAULT_AI_WATERMARK,
+  buildWatermarkPlan,
   mergeFrameRanges,
   serializeAiContentSidecar,
 } from './ai-watermark.js';
@@ -120,9 +120,7 @@ describe('buildWatermarkPlan', () => {
       { elementId: 'a', provenance: { kind: 'tts', provider: 'tts-kokoro' } },
     ];
     const plan = buildWatermarkPlan(rows, { ...DEFAULT_AI_WATERMARK, enabled: true });
-    expect(plan?.frameRanges).toEqual([
-      { startFrame: 0, endFrame: Number.MAX_SAFE_INTEGER },
-    ]);
+    expect(plan?.frameRanges).toEqual([{ startFrame: 0, endFrame: Number.MAX_SAFE_INTEGER }]);
   });
 
   it('ignores frame ranges from imported / no-provenance rows', () => {
