@@ -38,6 +38,7 @@ import {
 import * as schema from '../packages/schema/src/index.js';
 import { AdapterRegistry } from '../packages/adapters-core/src/index.js';
 import type { AdapterDescriptor } from '../packages/adapters-core/src/index.js';
+import { kokoroDescriptor } from '../packages/tts-kokoro/src/index.js';
 import {
   LIVE_RUNTIME_MANIFEST,
   type ToolsIndexPkg,
@@ -112,8 +113,9 @@ function toolsIndexPkg(registry: BundleRegistry): ToolsIndexPkg {
  */
 function buildAssetProvidersPkg(): { adapters: readonly AdapterDescriptor[] } {
   const registry = new AdapterRegistry();
-  // T-426..T-434 land each reference adapter here, e.g.:
-  //   registry.register(ttsKokoroDescriptor);
+  // T-426 — first reference adapter (Kokoro TTS, Apache 2.0).
+  // T-427..T-434 add the remaining eight reference adapters here.
+  registry.register(kokoroDescriptor);
   return { adapters: registry.list() };
 }
 
