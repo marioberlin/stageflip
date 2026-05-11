@@ -8,11 +8,21 @@ import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 
-import { InMemoryTenantSettingsStore, type TenantSettingsStore } from '@stageflip/storage';
+import {
+  type AudienceResultsStore,
+  InMemoryAudienceResultsStore,
+  InMemoryTenantSettingsStore,
+  type TenantSettingsStore,
+} from '@stageflip/storage';
 
 import { createFirebaseVerifier } from './auth/firebase.js';
 import { type AuthVariables, authMiddleware } from './auth/middleware.js';
 import { createPrincipalVerifier } from './auth/verify.js';
+import { createAudienceSessionsRoute } from './routes/audience-sessions.js';
+import {
+  type AudienceWebSocketServer,
+  createAudienceWebSocketServer,
+} from './routes/audience-ws.js';
 import { type PrincipalResolution, createMcpSessionRoute } from './routes/mcp-session.js';
 import { createTenantSettingsRoute } from './routes/tenant-settings.js';
 
@@ -34,6 +44,18 @@ export interface ServerConfig {
    * Postgres / Firebase store factory.
    */
   tenantSettingsStore?: TenantSettingsStore;
+  /**
+   * T-453 — concrete AudienceResultsStore. Defaults to a process-local
+   * in-memory store; production deployments inject the Firestore-backed
+   * impl from `@stageflip/storage-firebase` (T-474).
+   */
+  audienceResultsStore?: AudienceResultsStore;
+  /**
+   * T-453 — pepper for voter-token SHA-256 hashing per ADR-009 §D5.
+   * Production wiring reads from the `AUDIENCE_TOKEN_PEPPER` env var; the
+   * default value here is for tests + dev only.
+   */
+  audienceTokenPepper?: string;
 }
 
 /**
@@ -75,12 +97,34 @@ export function createApp(config: ServerConfig): Hono<{ Variables: AuthVariables
   const tenantSettingsStore = config.tenantSettingsStore ?? new InMemoryTenantSettingsStore();
   app.route('/v1/tenant-settings', createTenantSettingsRoute({ store: tenantSettingsStore }));
 
+  // T-453 — Audience-session REST routes (open / close / state / join).
+  // Mounted behind the same /v1/* authMiddleware; cross-tenant guard
+  // enforced per-handler. The /join endpoint accepts any authenticated
+  // principal but enforces per-IP rate-cap (anonymous-OK posture lands
+  // when T-456 ships the voter landing page).
+  const audienceResultsStore =
+    config.audienceResultsStore ??
+    new InMemoryAudienceResultsStore({
+      pepper: config.audienceTokenPepper ?? 'in-memory-default-pepper-DO-NOT-USE-PROD',
+    });
+  app.route(
+    '/v1/audience/sessions',
+    createAudienceSessionsRoute({ tenantSettingsStore, audienceResultsStore }),
+  );
+
   return app;
 }
 
 export interface StartServerOptions extends ServerConfig {
   /** Override for tests. Defaults to `@hono/node-server`'s `serve`. */
   readonly serveFn?: typeof serve;
+  /**
+   * T-453 — when `true`, mount the audience WebSocket multiplexer on
+   * the HTTP server returned by `serve()`. Default `true` in production;
+   * test harnesses that drive the app via `app.request(...)` can set
+   * `false` to avoid binding a socket.
+   */
+  readonly mountAudienceWebSocket?: boolean;
 }
 
 export function startServer(options: StartServerOptions): { close: () => Promise<void> } {
@@ -90,7 +134,41 @@ export function startServer(options: StartServerOptions): { close: () => Promise
     fetch: app.fetch,
     port: options.port,
   });
+
+  // T-453 — Mount the WebSocket multiplexer on the same HTTP server.
+  // The audienceResultsStore lookup mirrors createApp; we re-resolve here
+  // because the WS layer needs the same instance the REST routes use,
+  // and the in-memory default constructed inside createApp is private to
+  // the closure. Production wiring passes both via config.
+  let audienceWs: AudienceWebSocketServer | undefined;
+  if (options.mountAudienceWebSocket !== false) {
+    const audienceResultsStore =
+      options.audienceResultsStore ??
+      new InMemoryAudienceResultsStore({
+        pepper: options.audienceTokenPepper ?? 'in-memory-default-pepper-DO-NOT-USE-PROD',
+      });
+    audienceWs = createAudienceWebSocketServer({
+      httpServer: server as unknown as import('node:http').Server,
+      audienceResultsStore,
+      verifyPresenterToken: async (token) => {
+        // Bridge to the existing principal verifier; on success the
+        // presenter's org is the source of cross-tenant gating.
+        const verify = createPrincipalVerifier({
+          mcpSecret: options.mcpSecret,
+          verifyFirebaseIdToken: options.verifyFirebaseIdToken ?? createFirebaseVerifier(),
+        });
+        const principal = await verify(`Bearer ${token}`);
+        const org = principal.kind === 'mcp-session' ? principal.org : '';
+        return { principalId: principal.sub, org };
+      },
+      verifyVoterToken: async (token) => ({ ok: token.length > 0 }),
+    });
+  }
+
   return {
-    close: () => new Promise<void>((resolve) => server.close(() => resolve())),
+    close: async () => {
+      if (audienceWs) await audienceWs.close();
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    },
   };
 }

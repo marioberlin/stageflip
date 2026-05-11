@@ -27,10 +27,13 @@ export { InMemoryStorageAdapter } from './in-memory.js';
 // docs/decisions/ADR-005-frontier-clip-catalogue.md §D3).
 // T-443 — extended with optional `aiBudget` field; see
 // skills/stageflip/concepts/cost-budget/SKILL.md.
+// T-453 — extended with optional `features.audience` sub-namespace.
 export {
   aiBudgetSchema,
+  audienceFeatureSettingsSchema,
   tenantSettingsSchema,
   type AiBudget,
+  type AudienceFeatureSettings,
   type TenantSettings,
 } from './tenant-settings.js';
 export {
@@ -63,3 +66,23 @@ export {
   InMemoryTenantAdapterCredentialsStore,
   type TenantAdapterCredentialsStore,
 } from './tenant-adapter-credentials-store.js';
+
+// T-453 — AudienceResultsStore storage facet (per-session audience-event
+// + aggregation persistence per ADR-009 §D5). Ships only the in-memory
+// impl + contract here; the Firestore-backed impl lands in T-474
+// (`@stageflip/storage-firebase`).
+export {
+  audienceEventDocSchema,
+  audienceSessionAdapterDescriptorSchema,
+  audienceSessionDocSchema,
+  type AudienceEventDoc,
+  type AudienceSessionAdapterDescriptor,
+  type AudienceSessionDoc,
+} from './audience-results.js';
+export {
+  InMemoryAudienceResultsStore,
+  type AppendEventInput,
+  type AudienceResultsStore,
+  type CloseSessionInput,
+  type OpenSessionInput,
+} from './audience-results-store.js';
