@@ -41,6 +41,7 @@ import type { AdapterDescriptor } from '../packages/adapters-core/src/index.js';
 import { meshyDescriptor } from '../packages/3d-meshy/src/index.js';
 import { tripoDescriptor } from '../packages/3d-tripo/src/index.js';
 import { aceStepDescriptor } from '../packages/music-acestep/src/index.js';
+import { yueDescriptor } from '../packages/music-yue/src/index.js';
 import { fishSpeechDescriptor } from '../packages/tts-fish-speech/src/index.js';
 import { kokoroDescriptor } from '../packages/tts-kokoro/src/index.js';
 import { runwayDescriptor } from '../packages/video-runway/src/index.js';
@@ -145,7 +146,15 @@ function buildAssetProvidersPkg(): { adapters: readonly AdapterDescriptor[] } {
   // music-gen branch of ADR-008 §D6 / §D13 with mit ∈ music-gen
   // whitelist; second MIT-licensed adapter overall but FIRST in
   // the music modality).
-  // T-433..T-434 add the remaining two reference adapters here.
+  // T-433 — eighth reference adapter (YuE music, Apache 2.0; SECOND
+  // music-gen modality adapter; FIRST adapter to exercise the
+  // `attribution-required` outputLicense disposition; provider emits
+  // `attribution: "Generated with YuE (Apache 2.0)"` in every
+  // `MusicGenResult` which T-423 handler bundle propagates into
+  // `MediaProvenance.attribution`; full-song generation; in-process
+  // posture mirroring ACE-Step). Apache 2.0 ∈ music-gen whitelist
+  // (ADR-008 §D13 line 655).
+  // T-434 adds the remaining reference adapter here.
   registry.register(kokoroDescriptor);
   registry.register(fishSpeechDescriptor);
   registry.register(tripoDescriptor);
@@ -153,6 +162,7 @@ function buildAssetProvidersPkg(): { adapters: readonly AdapterDescriptor[] } {
   registry.register(seedanceDescriptor);
   registry.register(runwayDescriptor);
   registry.register(aceStepDescriptor);
+  registry.register(yueDescriptor);
   return { adapters: registry.list() };
 }
 
