@@ -10,7 +10,12 @@
 // Importing this module has NO side effects — adapter instantiation
 // happens only when a caller invokes `buildAdapter()`.
 
-export { ADAPTER_IDS, ADAPTER_MODALITY, canonicalInputFor, isAdapterId } from './canonical-input.js';
+export {
+  ADAPTER_IDS,
+  ADAPTER_MODALITY,
+  canonicalInputFor,
+  isAdapterId,
+} from './canonical-input.js';
 export type { AdapterId, CanonicalInput } from './canonical-input.js';
 
 export { buildAdapter } from './adapters.js';

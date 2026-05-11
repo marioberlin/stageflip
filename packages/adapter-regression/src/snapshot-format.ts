@@ -87,54 +87,51 @@ export function parseAdapterRegressionSnapshot(input: unknown): AdapterRegressio
     throw new Error('snapshot: root must be an object');
   }
   const o = input as Record<string, unknown>;
-  if (typeof o['id'] !== 'string' || o['id'].length === 0) {
+  if (typeof o.id !== 'string' || o.id.length === 0) {
     throw new Error('snapshot: `id` must be a non-empty string');
   }
-  if (typeof o['modality'] !== 'string' || o['modality'].length === 0) {
+  if (typeof o.modality !== 'string' || o.modality.length === 0) {
     throw new Error('snapshot: `modality` must be a non-empty string');
   }
-  if (typeof o['descriptorSha256'] !== 'string' || !/^[0-9a-f]{64}$/.test(o['descriptorSha256'])) {
+  if (typeof o.descriptorSha256 !== 'string' || !/^[0-9a-f]{64}$/.test(o.descriptorSha256)) {
     throw new Error('snapshot: `descriptorSha256` must be a 64-hex lowercase string');
   }
-  if (!Array.isArray(o['sampleInputs']) || o['sampleInputs'].length === 0) {
+  if (!Array.isArray(o.sampleInputs) || o.sampleInputs.length === 0) {
     throw new Error('snapshot: `sampleInputs` must be a non-empty array');
   }
   const sampleInputs: SampleInputSnapshot[] = [];
-  const rawSamples = o['sampleInputs'];
+  const rawSamples = o.sampleInputs;
   for (let i = 0; i < rawSamples.length; i += 1) {
     const s = rawSamples[i];
     if (typeof s !== 'object' || s === null) {
       throw new Error(`snapshot: sampleInputs[${i}] must be an object`);
     }
     const so = s as Record<string, unknown>;
-    if (typeof so['name'] !== 'string' || so['name'].length === 0) {
+    if (typeof so.name !== 'string' || so.name.length === 0) {
       throw new Error(`snapshot: sampleInputs[${i}].name must be a non-empty string`);
     }
-    if (typeof so['input'] !== 'object' || so['input'] === null || Array.isArray(so['input'])) {
+    if (typeof so.input !== 'object' || so.input === null || Array.isArray(so.input)) {
       throw new Error(`snapshot: sampleInputs[${i}].input must be an object`);
     }
-    if (
-      typeof so['outputSha256'] !== 'string' ||
-      !/^[0-9a-f]{64}$/.test(so['outputSha256'])
-    ) {
+    if (typeof so.outputSha256 !== 'string' || !/^[0-9a-f]{64}$/.test(so.outputSha256)) {
       throw new Error(
         `snapshot: sampleInputs[${i}].outputSha256 must be a 64-hex lowercase string`,
       );
     }
-    if (typeof so['cacheKey'] !== 'string' || so['cacheKey'].length === 0) {
+    if (typeof so.cacheKey !== 'string' || so.cacheKey.length === 0) {
       throw new Error(`snapshot: sampleInputs[${i}].cacheKey must be a non-empty string`);
     }
     sampleInputs.push({
-      name: so['name'],
-      input: so['input'] as Readonly<Record<string, unknown>>,
-      outputSha256: so['outputSha256'],
-      cacheKey: so['cacheKey'],
+      name: so.name,
+      input: so.input as Readonly<Record<string, unknown>>,
+      outputSha256: so.outputSha256,
+      cacheKey: so.cacheKey,
     });
   }
   return {
-    id: o['id'],
-    modality: o['modality'],
-    descriptorSha256: o['descriptorSha256'],
+    id: o.id,
+    modality: o.modality,
+    descriptorSha256: o.descriptorSha256,
     sampleInputs,
   };
 }

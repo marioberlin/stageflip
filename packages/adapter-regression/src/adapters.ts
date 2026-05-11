@@ -7,18 +7,15 @@
 // invocation method (`synthesize` for TTS; `generate` for video/music/
 // sfx/three-d) — this module unifies them behind `invoke()`.
 
-import { KokoroTtsProvider, kokoroDescriptor } from '@stageflip/tts-kokoro';
-import { FishSpeechTtsProvider, fishSpeechDescriptor } from '@stageflip/tts-fish-speech';
-import { TripoThreeDProvider, tripoDescriptor } from '@stageflip/3d-tripo';
 import { MeshyThreeDProvider, meshyDescriptor } from '@stageflip/3d-meshy';
-import { SeedanceVideoProvider, seedanceDescriptor } from '@stageflip/video-seedance';
-import { RunwayVideoProvider, runwayDescriptor } from '@stageflip/video-runway';
+import { TripoThreeDProvider, tripoDescriptor } from '@stageflip/3d-tripo';
 import { AceStepMusicProvider, aceStepDescriptor } from '@stageflip/music-acestep';
 import { YueMusicProvider, yueDescriptor } from '@stageflip/music-yue';
-import {
-  StableAudioSfxProvider,
-  stableAudioDescriptor,
-} from '@stageflip/sfx-stable-audio';
+import { StableAudioSfxProvider, stableAudioDescriptor } from '@stageflip/sfx-stable-audio';
+import { FishSpeechTtsProvider, fishSpeechDescriptor } from '@stageflip/tts-fish-speech';
+import { KokoroTtsProvider, kokoroDescriptor } from '@stageflip/tts-kokoro';
+import { RunwayVideoProvider, runwayDescriptor } from '@stageflip/video-runway';
+import { SeedanceVideoProvider, seedanceDescriptor } from '@stageflip/video-seedance';
 
 import type { AdapterId } from './canonical-input.js';
 import type { CanonicalInput } from './canonical-input.js';
@@ -157,49 +154,49 @@ interface ThreeDCallShape {
 
 function toTtsCall(input: CanonicalInput): TtsCallShape {
   return {
-    tenantId: input['tenantId'] as string,
-    voiceId: input['voiceId'] as string,
-    text: input['text'] as string,
-    outputFormat: input['outputFormat'] as 'wav',
-    sampleRate: input['sampleRate'] as number,
-    ...(input['seed'] !== undefined ? { seed: input['seed'] as number } : {}),
+    tenantId: input.tenantId as string,
+    voiceId: input.voiceId as string,
+    text: input.text as string,
+    outputFormat: input.outputFormat as 'wav',
+    sampleRate: input.sampleRate as number,
+    ...(input.seed !== undefined ? { seed: input.seed as number } : {}),
   };
 }
 
 function toVideoCall(input: CanonicalInput): VideoCallShape {
   return {
-    prompt: input['prompt'] as string,
-    aspectRatio: input['aspectRatio'] as string,
-    frameRate: input['frameRate'] as number,
-    durationS: input['durationS'] as number,
-    outputFormat: input['outputFormat'] as 'mp4',
-    ...(input['seed'] !== undefined ? { seed: input['seed'] as number } : {}),
+    prompt: input.prompt as string,
+    aspectRatio: input.aspectRatio as string,
+    frameRate: input.frameRate as number,
+    durationS: input.durationS as number,
+    outputFormat: input.outputFormat as 'mp4',
+    ...(input.seed !== undefined ? { seed: input.seed as number } : {}),
   };
 }
 
 function toMusicCall(input: CanonicalInput): MusicCallShape {
   return {
-    prompt: input['prompt'] as string,
-    durationS: input['durationS'] as number,
-    outputFormat: input['outputFormat'] as 'wav',
-    ...(input['seed'] !== undefined ? { seed: input['seed'] as number } : {}),
+    prompt: input.prompt as string,
+    durationS: input.durationS as number,
+    outputFormat: input.outputFormat as 'wav',
+    ...(input.seed !== undefined ? { seed: input.seed as number } : {}),
   };
 }
 
 function toSfxCall(input: CanonicalInput): SfxCallShape {
   return {
-    prompt: input['prompt'] as string,
-    durationS: input['durationS'] as number,
-    outputFormat: input['outputFormat'] as 'wav',
-    sampleRate: input['sampleRate'] as number,
-    ...(input['seed'] !== undefined ? { seed: input['seed'] as number } : {}),
+    prompt: input.prompt as string,
+    durationS: input.durationS as number,
+    outputFormat: input.outputFormat as 'wav',
+    sampleRate: input.sampleRate as number,
+    ...(input.seed !== undefined ? { seed: input.seed as number } : {}),
   };
 }
 
 function toThreeDCall(input: CanonicalInput): ThreeDCallShape {
   return {
-    prompt: input['prompt'] as string,
-    ...(input['rig'] !== undefined ? { rig: input['rig'] as boolean } : {}),
-    ...(input['seed'] !== undefined ? { seed: input['seed'] as number } : {}),
+    prompt: input.prompt as string,
+    ...(input.rig !== undefined ? { rig: input.rig as boolean } : {}),
+    ...(input.seed !== undefined ? { seed: input.seed as number } : {}),
   };
 }

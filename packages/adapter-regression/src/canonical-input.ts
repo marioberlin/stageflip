@@ -129,9 +129,7 @@ export function canonicalInputFor(adapterId: AdapterId): CanonicalInput {
     case 'sfx': {
       const sampleRate = overrides.sampleRate;
       if (sampleRate === undefined) {
-        throw new Error(
-          `canonicalInputFor: SFX adapter ${adapterId} requires sampleRate override`,
-        );
+        throw new Error(`canonicalInputFor: SFX adapter ${adapterId} requires sampleRate override`);
       }
       return {
         prompt: 'A door creak.',

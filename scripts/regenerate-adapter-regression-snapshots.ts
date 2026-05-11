@@ -34,12 +34,7 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const REPO_ROOT = resolve(__dirname, '..');
-const SNAPSHOTS_DIR_DEFAULT = resolve(
-  REPO_ROOT,
-  'packages',
-  'adapter-regression',
-  'snapshots',
-);
+const SNAPSHOTS_DIR_DEFAULT = resolve(REPO_ROOT, 'packages', 'adapter-regression', 'snapshots');
 
 /**
  * Build a snapshot for one adapter. Pure aside from the adapter's own

@@ -19,6 +19,16 @@ import {
 } from './snapshot-format.js';
 
 /**
+ * The minimal output shape every adapter's `synthesize` / `generate`
+ * promises: a `cacheKey` string + any number of additional fields. The
+ * snapshot runner only compares the `cacheKey` directly and hashes the
+ * whole object; concrete fields are adapter-specific.
+ */
+export interface AdapterInvocationResult {
+  readonly cacheKey: string;
+}
+
+/**
  * The minimal contract the runner needs from an adapter under test. The
  * 9 reference adapters all match this shape — they expose a
  * `descriptor` static + a callable invocation surface (`synthesize` or
@@ -29,16 +39,6 @@ import {
  * gate adapter (`scripts/check-adapter-regression.ts`) builds these
  * wrappers from the live provider classes.
  */
-/**
- * The minimal output shape every adapter's `synthesize` / `generate`
- * promises: a `cacheKey` string + any number of additional fields. The
- * snapshot runner only compares the `cacheKey` directly and hashes the
- * whole object; concrete fields are adapter-specific.
- */
-export interface AdapterInvocationResult {
-  readonly cacheKey: string;
-}
-
 export interface RegressableAdapter {
   readonly id: string;
   readonly descriptor: AdapterDescriptor;
@@ -85,9 +85,7 @@ export async function runAdapterAgainstSnapshot(
 ): Promise<AdapterRegressionVerdict> {
   // Higher-order identity checks first.
   const idMismatch =
-    adapter.id === snapshot.id
-      ? undefined
-      : { expected: snapshot.id, actual: adapter.id };
+    adapter.id === snapshot.id ? undefined : { expected: snapshot.id, actual: adapter.id };
   const liveModality = adapter.descriptor.modality.kind;
   const modalityMismatch =
     liveModality === snapshot.modality

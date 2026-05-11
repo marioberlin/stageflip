@@ -76,9 +76,11 @@ describe('runAdapterAgainstSnapshot', () => {
     const adapter = fakeAdapter(result);
     const snapshot = await buildExpectedSnapshot(adapter, { text: 'hi' }, result);
     // Mutate the snapshot's expected cacheKey.
+    const first = snapshot.sampleInputs[0];
+    if (first === undefined) throw new Error('test fixture invariant');
     const mutated: AdapterRegressionSnapshot = {
       ...snapshot,
-      sampleInputs: [{ ...snapshot.sampleInputs[0]!, cacheKey: 'tts/wrong' }],
+      sampleInputs: [{ ...first, cacheKey: 'tts/wrong' }],
     };
     const verdict = await runAdapterAgainstSnapshot(adapter, mutated);
     expect(verdict.ok).toBe(false);
@@ -93,9 +95,11 @@ describe('runAdapterAgainstSnapshot', () => {
     const result = { cacheKey: 'tts/aaa', url: 'data:audio/wav;...', durationS: 0.5 };
     const adapter = fakeAdapter(result);
     const snapshot = await buildExpectedSnapshot(adapter, { text: 'hi' }, result);
+    const first = snapshot.sampleInputs[0];
+    if (first === undefined) throw new Error('test fixture invariant');
     const mutated: AdapterRegressionSnapshot = {
       ...snapshot,
-      sampleInputs: [{ ...snapshot.sampleInputs[0]!, outputSha256: 'f'.repeat(64) }],
+      sampleInputs: [{ ...first, outputSha256: 'f'.repeat(64) }],
     };
     const verdict = await runAdapterAgainstSnapshot(adapter, mutated);
     expect(verdict.ok).toBe(false);
@@ -142,11 +146,7 @@ describe('runAdapterAgainstSnapshot', () => {
   it('treats invocation throw as outputSha256 drift', async () => {
     const result = { cacheKey: 'tts/aaa', url: 'data:audio/wav;...', durationS: 0.5 };
     const adapter = fakeAdapter(result, { throws: true });
-    const snapshot = await buildExpectedSnapshot(
-      fakeAdapter(result),
-      { text: 'hi' },
-      result,
-    );
+    const snapshot = await buildExpectedSnapshot(fakeAdapter(result), { text: 'hi' }, result);
     const verdict = await runAdapterAgainstSnapshot(adapter, snapshot);
     expect(verdict.ok).toBe(false);
     if (verdict.ok) return;

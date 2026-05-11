@@ -10,13 +10,13 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { ADAPTER_IDS, type AdapterId } from '../packages/adapter-regression/src/index.js';
-import { buildSnapshotFor } from './regenerate-adapter-regression-snapshots.js';
 import {
   formatReport,
   readSnapshot,
   runRegressions,
   snapshotPathFor,
 } from './check-adapter-regression.js';
+import { buildSnapshotFor } from './regenerate-adapter-regression-snapshots.js';
 
 describe('snapshotPathFor', () => {
   it('joins snapshotsDir + adapter id + .json', () => {
@@ -86,9 +86,11 @@ describe('runRegressions', () => {
 
   it('reports drift when a snapshot cacheKey is mutated', async () => {
     const snapshot = await buildSnapshotFor('kokoro');
+    const first = snapshot.sampleInputs[0];
+    if (first === undefined) throw new Error('test fixture invariant');
     const mutated = {
       ...snapshot,
-      sampleInputs: [{ ...snapshot.sampleInputs[0]!, cacheKey: 'tts/wrong' }],
+      sampleInputs: [{ ...first, cacheKey: 'tts/wrong' }],
     };
     writeFileSync(join(dir, 'kokoro.json'), JSON.stringify(mutated, null, 2), 'utf8');
     const report = await runRegressions(dir, ['kokoro']);

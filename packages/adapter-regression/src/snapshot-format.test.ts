@@ -47,7 +47,11 @@ describe('descriptorSha256', () => {
 
 describe('outputSha256', () => {
   it('hashes a synthesize result', async () => {
-    const hex = await outputSha256({ cacheKey: 'tts/abc', url: 'data:audio/wav;...', durationS: 0.5 });
+    const hex = await outputSha256({
+      cacheKey: 'tts/abc',
+      url: 'data:audio/wav;...',
+      durationS: 0.5,
+    });
     expect(hex).toMatch(/^[0-9a-f]{64}$/);
   });
 });
@@ -96,18 +100,22 @@ describe('parseAdapterRegressionSnapshot', () => {
 
   it('rejects sampleInputs row with bad outputSha256', () => {
     const bad = validSnapshot();
-    const badSamples = [{ ...bad.sampleInputs[0]!, outputSha256: 'not-hex' }];
-    expect(() =>
-      parseAdapterRegressionSnapshot({ ...bad, sampleInputs: badSamples }),
-    ).toThrow(/outputSha256/);
+    const first = bad.sampleInputs[0];
+    if (first === undefined) throw new Error('test fixture invariant: at least one sample');
+    const badSamples = [{ ...first, outputSha256: 'not-hex' }];
+    expect(() => parseAdapterRegressionSnapshot({ ...bad, sampleInputs: badSamples })).toThrow(
+      /outputSha256/,
+    );
   });
 
   it('rejects sampleInputs row with empty cacheKey', () => {
     const bad = validSnapshot();
-    const badSamples = [{ ...bad.sampleInputs[0]!, cacheKey: '' }];
-    expect(() =>
-      parseAdapterRegressionSnapshot({ ...bad, sampleInputs: badSamples }),
-    ).toThrow(/cacheKey/);
+    const first = bad.sampleInputs[0];
+    if (first === undefined) throw new Error('test fixture invariant: at least one sample');
+    const badSamples = [{ ...first, cacheKey: '' }];
+    expect(() => parseAdapterRegressionSnapshot({ ...bad, sampleInputs: badSamples })).toThrow(
+      /cacheKey/,
+    );
   });
 });
 
@@ -127,7 +135,7 @@ describe('serializeAdapterRegressionSnapshot', () => {
       ],
     });
     expect(out.endsWith('\n')).toBe(true);
-    expect(out).toMatch(/\n  "id": "demo"/);
+    expect(out).toMatch(/\n {2}"id": "demo"/);
   });
 
   it('round-trips through parse', () => {

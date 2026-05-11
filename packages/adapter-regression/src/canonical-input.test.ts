@@ -70,8 +70,8 @@ describe('canonicalInputFor', () => {
 
   it('returns a valid TTS shape for fish-speech with 22050Hz', () => {
     const input = canonicalInputFor('fish-speech');
-    expect(input['sampleRate']).toBe(22050);
-    expect(input['voiceId']).toBe('fs_en_default');
+    expect(input.sampleRate).toBe(22050);
+    expect(input.voiceId).toBe('fs_en_default');
   });
 
   it('returns a valid video-gen shape for seedance', () => {

@@ -33,8 +33,8 @@ import { fileURLToPath } from 'node:url';
 import {
   ADAPTER_IDS,
   type AdapterId,
-  type AdapterRegressionVerdict,
   type AdapterRegressionSnapshot,
+  type AdapterRegressionVerdict,
   buildAdapter,
   formatVerdict,
   parseAdapterRegressionSnapshot,
@@ -63,12 +63,7 @@ export interface AdapterRegressionReport {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const REPO_ROOT = resolve(__dirname, '..');
-const SNAPSHOTS_DIR_DEFAULT = resolve(
-  REPO_ROOT,
-  'packages',
-  'adapter-regression',
-  'snapshots',
-);
+const SNAPSHOTS_DIR_DEFAULT = resolve(REPO_ROOT, 'packages', 'adapter-regression', 'snapshots');
 
 /** Snapshot file path for an adapter id. Exported for tests. */
 export function snapshotPathFor(snapshotsDir: string, adapterId: AdapterId): string {
@@ -192,9 +187,7 @@ export function formatReport(report: AdapterRegressionReport): string {
     for (const id of report.missingSnapshots) {
       lines.push(`    ${id}`);
     }
-    lines.push(
-      '  -> regenerate via `pnpm regenerate-adapter-snapshots` and commit the result.',
-    );
+    lines.push('  -> regenerate via `pnpm regenerate-adapter-snapshots` and commit the result.');
   }
 
   if (report.snapshotParseErrors.length > 0) {
@@ -219,9 +212,7 @@ export function formatReport(report: AdapterRegressionReport): string {
 // main
 // ---------------------------------------------------------------------------
 
-export async function main(
-  snapshotsDir: string = SNAPSHOTS_DIR_DEFAULT,
-): Promise<number> {
+export async function main(snapshotsDir: string = SNAPSHOTS_DIR_DEFAULT): Promise<number> {
   const report = await runRegressions(snapshotsDir);
   const out = formatReport(report);
   if (report.exitCode === 0) {
