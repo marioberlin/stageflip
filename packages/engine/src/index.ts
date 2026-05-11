@@ -184,3 +184,12 @@ export {
   CLUSTER_H_COMPOSE_TOOL_DEFINITIONS,
   registerClusterHComposeBundle,
 } from './handlers/cluster-h-compose/register.js';
+export {
+  ASSET_GENERATION_BUNDLE_NAME,
+  ASSET_GENERATION_HANDLERS,
+  ASSET_GENERATION_TOOL_DEFINITIONS,
+  type AssetGenerationContext,
+  type ExecuteAdapterCallInput,
+  type ExecuteAdapterCallResult,
+  registerAssetGenerationBundle,
+} from './handlers/asset-generation/register.js';

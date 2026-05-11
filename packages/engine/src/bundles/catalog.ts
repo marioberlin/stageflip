@@ -138,6 +138,12 @@ export const CANONICAL_BUNDLES: readonly ToolBundle[] = [
       'Cluster H (AR overlays) composer tools — preset-binding factories for AR overlay / VAR skeletal / swim-lane track briefs across the 4 ratified Cluster H presets (T-379).',
     tools: [],
   },
+  {
+    name: 'asset-generation',
+    description:
+      'Asset-generation tools — wraps the Phase 14 α Provider Seam (AdapterRegistry / LicenseGate / FallbackChainExecutor + AssetCache + MediaProvenance) so agents can generate audio / image / video assets with provenance + content-addressed cache keys (T-423).',
+    tools: [],
+  },
 ];
 
 export const CANONICAL_BUNDLE_NAMES: readonly string[] = CANONICAL_BUNDLES.map((b) => b.name);
