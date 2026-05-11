@@ -12,6 +12,7 @@ export {
   buildProviderFromEnv,
   createOrchestrator,
   runAgent,
+  streamAgent,
 } from './orchestrator.js';
 
 export type {

@@ -91,3 +91,18 @@ export {
   DEFAULT_VALIDATOR_MAX_TOKENS,
   createValidator,
 } from './validator/validator.js';
+
+// T-442 — SSE / ReadableStream transport for ExecutorEvents.
+export {
+  PLAN_CANCELLED_KIND,
+  VALIDATION_COMPLETE_KIND,
+  decodeExecutorEventFromSse,
+  encodeExecutorEventAsSse,
+  toReadableStream,
+} from './streaming.js';
+export type {
+  PlanCancelledEvent,
+  StreamEvent,
+  ToReadableStreamOptions,
+  ValidationCompleteEvent,
+} from './streaming.js';
