@@ -1,0 +1,37 @@
+{
+  "adapterId": "tripo",
+  "perimeter": "remote-network",
+  "dataLeavingPerimeter": {
+    "prompt": true,
+    "inputBytes": true,
+    "tenantId": false,
+    "cacheKey": false
+  },
+  "pii": {
+    "voiceClone": false,
+    "userContent": true
+  },
+  "networkEndpoint": {
+    "hostname": "api.tripo3d.ai",
+    "protocol": "https",
+    "authMethod": "bearer-token"
+  },
+  "dataRetention": {
+    "providerRetainsInput": true,
+    "providerRetainsOutput": true,
+    "retentionPolicy": "provider-default"
+  },
+  "auditSignal": {
+    "relevantAuditEvents": ["start", "complete", "failed"],
+    "relevantUsageFields": [
+      "tenantId",
+      "adapterId",
+      "modality",
+      "latencyMs",
+      "costAmount",
+      "outcome",
+      "timestamp"
+    ]
+  },
+  "lastReviewedAt": "2026-05-11"
+}

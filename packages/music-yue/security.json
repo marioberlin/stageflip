@@ -1,0 +1,31 @@
+{
+  "adapterId": "yue",
+  "perimeter": "in-process",
+  "dataLeavingPerimeter": {
+    "prompt": false,
+    "inputBytes": false,
+    "tenantId": false,
+    "cacheKey": false
+  },
+  "pii": {
+    "voiceClone": false,
+    "userContent": false
+  },
+  "dataRetention": {
+    "providerRetainsInput": false,
+    "providerRetainsOutput": false,
+    "retentionPolicy": "tenant-controlled"
+  },
+  "auditSignal": {
+    "relevantAuditEvents": ["start", "complete", "failed"],
+    "relevantUsageFields": [
+      "tenantId",
+      "adapterId",
+      "modality",
+      "latencyMs",
+      "outcome",
+      "timestamp"
+    ]
+  },
+  "lastReviewedAt": "2026-05-11"
+}
