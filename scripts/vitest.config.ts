@@ -23,6 +23,7 @@ export default defineConfig({
         'generate-preset-parity-fixture.ts',
         'check-cluster-eligibility.ts',
         'check-asset-licenses.ts',
+        'check-data-flow-security.ts',
       ],
       exclude: ['*.test.ts', '*.config.ts'],
       thresholds: {

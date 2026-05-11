@@ -1,0 +1,37 @@
+{
+  "adapterId": "seedance",
+  "perimeter": "remote-network",
+  "dataLeavingPerimeter": {
+    "prompt": true,
+    "inputBytes": true,
+    "tenantId": false,
+    "cacheKey": false
+  },
+  "pii": {
+    "voiceClone": false,
+    "userContent": true
+  },
+  "networkEndpoint": {
+    "hostname": "fal.run",
+    "protocol": "https",
+    "authMethod": "api-key-header"
+  },
+  "dataRetention": {
+    "providerRetainsInput": true,
+    "providerRetainsOutput": true,
+    "retentionPolicy": "provider-default"
+  },
+  "auditSignal": {
+    "relevantAuditEvents": ["start", "complete", "failed"],
+    "relevantUsageFields": [
+      "tenantId",
+      "adapterId",
+      "modality",
+      "latencyMs",
+      "costAmount",
+      "outcome",
+      "timestamp"
+    ]
+  },
+  "lastReviewedAt": "2026-05-11"
+}

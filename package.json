@@ -25,6 +25,7 @@
     "e2e:install": "playwright install --with-deps chromium",
     "check-licenses": "tsx scripts/check-licenses.ts",
     "check-asset-licenses": "tsx scripts/check-asset-licenses.ts",
+    "check-data-flow-security": "tsx scripts/check-data-flow-security.ts",
     "check-adapter-regression": "tsx scripts/check-adapter-regression.ts",
     "regenerate-adapter-snapshots": "tsx scripts/regenerate-adapter-regression-snapshots.ts",
     "check-remotion-imports": "tsx scripts/check-remotion-imports.ts",
