@@ -2,7 +2,7 @@
 // T-203b — orchestrator behaviour: bundle → clickTag inject → fallback
 // embed → deterministic ZIP → budget check.
 
-import type { AssetRef, BannerFallback, DisplayBudget } from '@stageflip/schema';
+import type { AssetRef, BannerFallback, DisplayBudget, MediaProvenance } from '@stageflip/schema';
 import { unzipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
 
@@ -222,6 +222,118 @@ describe('exportHtml5Zip (multi-size)', () => {
     expect(out.ok).toBe(false);
     expect(out.results[0]?.findings).toEqual([]);
     expect(out.results[1]?.findings[0]?.code).toBe('budget-exceeded');
+  });
+
+  it('T-439: omits aiContent and skips badge injection when no AI elements present', async () => {
+    const result = await exportHtml5ZipForSize(MPU, baseInput(), baseOpts());
+    expect(result.aiContent).toBeUndefined();
+    const entries = unzipSync(result.zipBytes);
+    const html = new TextDecoder().decode(entries['index.html']);
+    expect(html).not.toContain('stageflip-ai-disclosure');
+  });
+
+  it('T-439: populates aiContent + injects badge when an AI element is supplied', async () => {
+    const ttsProvenance: MediaProvenance = {
+      kind: 'tts',
+      provider: 'tts-kokoro',
+      model: 'kokoro-82m',
+      prompt: 'hello banner',
+      cacheKey: 'sha256-tts-1',
+    };
+    const input = baseInput({
+      aiElements: [{ elementId: 'el-tts', provenance: ttsProvenance }],
+    });
+    const result = await exportHtml5ZipForSize(MPU, input, baseOpts());
+    expect(result.aiContent).toBeDefined();
+    expect(result.aiContent?.elements).toHaveLength(1);
+    expect(result.aiContent?.elements[0]).toMatchObject({
+      elementId: 'el-tts',
+      provider: 'tts-kokoro',
+      modality: 'tts',
+      cacheKey: 'sha256-tts-1',
+    });
+    expect(result.aiContent?.disclosure).toEqual({ ftc: 'compliant', euAiAct: 'compliant' });
+
+    const entries = unzipSync(result.zipBytes);
+    const html = new TextDecoder().decode(entries['index.html']);
+    expect(html).toContain('<!-- stageflip-ai-disclosure -->');
+    expect(html).toContain('<aside data-ai-disclosure');
+  });
+
+  it('T-439: per-tenant badge config flows into the injected badge text', async () => {
+    const input = baseInput({
+      aiElements: [
+        {
+          elementId: 'el-img',
+          provenance: { kind: 'image-gen', provider: 'image-flux', model: 'flux-1' },
+        },
+      ],
+    });
+    const result = await exportHtml5ZipForSize(
+      MPU,
+      input,
+      baseOpts({ aiBadge: { text: 'Made with AI', position: 'bottom-left' } }),
+    );
+    const entries = unzipSync(result.zipBytes);
+    const html = new TextDecoder().decode(entries['index.html']);
+    expect(html).toContain('Made with AI');
+    expect(html).toContain('bottom: 8px');
+    expect(html).toContain('left: 8px');
+  });
+
+  it('T-439: aiBadge text="" disables visible badge but manifest still surfaces AI elements', async () => {
+    const input = baseInput({
+      aiElements: [
+        {
+          elementId: 'el-tts',
+          provenance: { kind: 'tts', provider: 'tts-kokoro', model: 'kokoro-82m' },
+        },
+      ],
+    });
+    const result = await exportHtml5ZipForSize(MPU, input, baseOpts({ aiBadge: { text: '' } }));
+    expect(result.aiContent?.elements).toHaveLength(1);
+    expect(result.aiContent?.disclosure.ftc).toBe('requires-tenant-config');
+    expect(result.aiContent?.disclosure.euAiAct).toBe('requires-tenant-config');
+    const entries = unzipSync(result.zipBytes);
+    const html = new TextDecoder().decode(entries['index.html']);
+    expect(html).not.toContain('stageflip-ai-disclosure');
+  });
+
+  it('T-439: AI-content export is deterministic — two runs produce byte-identical ZIPs', async () => {
+    const input = baseInput({
+      aiElements: [{ elementId: 'el-tts', provenance: { kind: 'tts', provider: 'tts-kokoro' } }],
+    });
+    const a = await exportHtml5ZipForSize(MPU, input, baseOpts());
+    const b = await exportHtml5ZipForSize(MPU, input, baseOpts());
+    expect(a.zipBytes).toEqual(b.zipBytes);
+  });
+
+  it('T-439: imported-kind elements are filtered out of aiContent', async () => {
+    const input = baseInput({
+      aiElements: [
+        { elementId: 'el-imported', provenance: { kind: 'imported' } },
+        {
+          elementId: 'el-tts',
+          provenance: { kind: 'tts', provider: 'tts-kokoro', model: 'kokoro-82m' },
+        },
+      ],
+    });
+    const result = await exportHtml5ZipForSize(MPU, input, baseOpts());
+    expect(result.aiContent?.elements).toHaveLength(1);
+    expect(result.aiContent?.elements[0]?.elementId).toBe('el-tts');
+  });
+
+  it('T-439: annotates data-element-id mount nodes when bundler exposes them', async () => {
+    const htmlWithMount =
+      '<!doctype html><html><head></head><body><div data-element-id="el-tts">tts</div></body></html>';
+    const bundler = new StaticBundler(htmlWithMount);
+    const input = baseInput({
+      aiElements: [{ elementId: 'el-tts', provenance: { kind: 'tts', provider: 'tts-kokoro' } }],
+    });
+    const result = await exportHtml5ZipForSize(MPU, input, baseOpts({ bundler }));
+    const entries = unzipSync(result.zipBytes);
+    const html = new TextDecoder().decode(entries['index.html']);
+    expect(html).toContain('data-element-id="el-tts" data-ai-generated="true"');
   });
 
   it('runs under the configured concurrency cap', async () => {

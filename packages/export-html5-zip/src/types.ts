@@ -6,7 +6,9 @@
 // the deterministic-ZIP utility + the clickTag injector. T-203b will
 // wire the orchestrator that consumes them.
 
-import type { BannerFallback, DisplayBudget } from '@stageflip/schema';
+import type { BannerFallback, DisplayBudget, MediaProvenance } from '@stageflip/schema';
+
+import type { AiContentDisclosure } from './provenance-walk.js';
 
 /**
  * One canonical banner dimension. Mirrors `BannerSize` from `@stageflip/schema`
@@ -78,6 +80,25 @@ export interface BannerExportInput {
   readonly fallback?: BannerFallback;
   /** Per-document budget from the schema. */
   readonly budget: DisplayBudget;
+  /**
+   * T-439 — opt-in list of MediaElements whose provenance should be
+   * scanned for AI-generated content disclosure (FTC + EU AI Act). The
+   * orchestrator extracts per-element disclosure rows, injects a visible
+   * badge into the banner's `<body>`, and surfaces an
+   * `aiContent: AiContentDisclosure` field in the per-size result. When
+   * absent or empty, the export path is byte-identical to non-AI banners.
+   */
+  readonly aiElements?: readonly AiElementInputRow[];
+}
+
+/**
+ * One per-element row supplied to the orchestrator's AI-content walker.
+ * Hosts that build `BannerExportInput` map each document MediaElement
+ * (audio / image / video / future GLB) to one of these rows.
+ */
+export interface AiElementInputRow {
+  readonly elementId: string;
+  readonly provenance?: MediaProvenance;
 }
 
 /** Validation finding produced during export. */
@@ -97,6 +118,15 @@ export interface BannerExportResult {
   readonly zipKb: number;
   /** Findings produced during this size's export (budget breaches, etc.). */
   readonly findings: readonly ExportFinding[];
+  /**
+   * T-439 — AI-generated content disclosure manifest. Populated when
+   * `BannerExportInput.aiElements` contains at least one element whose
+   * `provenance.kind` indicates AI-generated content (per
+   * `classifyAiKind` — `tts`, `video-gen`, `music-gen`, `sfx`,
+   * `three-d`, `image-gen`, or T-438's `asset-gen-pending`). Undefined
+   * when no AI elements are present.
+   */
+  readonly aiContent?: AiContentDisclosure;
 }
 
 /** Multi-size export outcome. */

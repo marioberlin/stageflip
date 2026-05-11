@@ -14,9 +14,16 @@
 
 import type { AssetRef, BannerFallback, DisplayBudget } from '@stageflip/schema';
 
+import {
+  type AiDisclosureBadgeConfig,
+  DEFAULT_AI_BADGE,
+  annotateAiElementsInHtml,
+  injectAiBadge,
+} from './ai-badge.js';
 import type { AssetResolver } from './asset-resolver.js';
 import { injectClickTagScript } from './click-tag.js';
 import { mapWithConcurrency } from './concurrency.js';
+import { type AiContentDisclosure, extractAiDisclosures } from './provenance-walk.js';
 import type {
   BannerExportInput,
   BannerExportResult,
@@ -41,6 +48,15 @@ export interface ExportOrchestratorOptions {
   readonly fallbackProvider?: FallbackProvider;
   /** Concurrency cap for multi-size export. Default 3. */
   readonly concurrency?: number;
+  /**
+   * T-439 — per-tenant AI-disclosure badge config (FTC + EU AI Act). Partial
+   * overrides are merged with `DEFAULT_AI_BADGE`. When `text === ''`, the
+   * visible badge is suppressed BUT the `aiContent` manifest field still
+   * surfaces AI elements (with `disclosure.{ftc,euAiAct} = 'requires-tenant-config'`).
+   * Ignored when `BannerExportInput.aiElements` is absent or contains no
+   * AI-kind elements.
+   */
+  readonly aiBadge?: Partial<AiDisclosureBadgeConfig>;
 }
 
 const DEFAULT_CONCURRENCY = 3;
@@ -100,7 +116,25 @@ export async function exportHtml5ZipForSize(
   const findings: ExportFinding[] = [];
 
   const bundle = await opts.bundler.bundle(size);
-  const htmlWithClickTag = injectClickTagScript(bundle.html, input.clickTag);
+  let html = injectClickTagScript(bundle.html, input.clickTag);
+
+  // T-439 — provenance walk: extract AI-generated content disclosures.
+  const badgeConfig: AiDisclosureBadgeConfig = { ...DEFAULT_AI_BADGE, ...(opts.aiBadge ?? {}) };
+  const badgeEnabled = badgeConfig.text.length > 0;
+  const aiContent: AiContentDisclosure | undefined =
+    input.aiElements !== undefined && input.aiElements.length > 0
+      ? (() => {
+          const walked = extractAiDisclosures(input.aiElements ?? [], { badgeEnabled });
+          return walked.elements.length > 0 ? walked : undefined;
+        })()
+      : undefined;
+  if (aiContent !== undefined) {
+    if (badgeEnabled) {
+      html = injectAiBadge(html, badgeConfig);
+    }
+    const ids = aiContent.elements.map((e) => e.elementId);
+    html = annotateAiElementsInHtml(html, ids);
+  }
 
   const fallback = await resolveFallback(size, input, opts.fallbackProvider);
   const pngBytes = await resolveAssetBytes(opts.assetResolver, fallback.png);
@@ -110,7 +144,7 @@ export async function exportHtml5ZipForSize(
       : undefined;
 
   const files: ZipFile[] = [
-    { path: 'index.html', bytes: stringToZipBytes(htmlWithClickTag) },
+    { path: 'index.html', bytes: stringToZipBytes(html) },
     { path: 'fallback.png', bytes: pngBytes },
   ];
   if (gifBytes !== undefined) {
@@ -130,6 +164,7 @@ export async function exportHtml5ZipForSize(
     zipBytes,
     zipKb,
     findings,
+    ...(aiContent !== undefined ? { aiContent } : {}),
   };
 }
 
