@@ -3,7 +3,7 @@ title: Workflow — Export PPTX
 id: skills/stageflip/workflows/export-pptx
 tier: workflow
 status: substantive
-last_updated: 2026-04-27
+last_updated: 2026-05-11
 owner_task: T-250
 related:
   - skills/stageflip/workflows/import-pptx
@@ -151,6 +151,68 @@ Three new loss flags surface unresolvable references:
 Both unresolved cases fall back to materialized geometry (base-writer
 behavior). The fallback is silent at the schema layer (no flag noise);
 flags surface only at the writer.
+
+## AI content extension (T-441)
+
+T-441 adds a provenance-aware `<p:extLst>` block to
+`ppt/presentation.xml`. The exporter accepts an opt-in
+`aiElements?: ReadonlyArray<AiPptxElementInput>` option; each row is
+`{ elementId, slideId?, provenance? }` (one per MediaElement —
+`image` / `audio` / `video`). The walker:
+
+1. Filters out rows whose `provenance` is absent OR whose
+   `provenance.kind === 'imported'`.
+2. Treats the seven AI-generated discriminators as in-scope:
+   `tts`, `video-gen`, `music-gen`, `sfx`, `three-d`, `image-gen`,
+   and T-438's non-terminal `'asset-gen-pending'`.
+3. Returns `undefined` when no AI row matched, so the writer
+   suppresses the entire `<p:extLst>` block (byte-identical to
+   pre-T-441).
+
+When ≥1 row matched, the writer splices a `<p:extLst>` block after
+`<p:notesSz>` and before `</p:presentation>`:
+
+```xml
+<p:extLst>
+  <p:ext uri="https://stageflip.dev/extensions/ai-content/v1">
+    <sf:aiContent xmlns:sf="https://stageflip.dev/extensions/ai-content/v1">
+      <sf:element id="el-1" provider="tts-kokoro" modality="tts"
+                  slideId="s1" cacheKey="sha256-abc" prompt="hello"/>
+      ...
+    </sf:aiContent>
+  </p:ext>
+</p:extLst>
+```
+
+### Posture vs T-439 / T-440
+
+| Exporter | Posture | Reason |
+|---|---|---|
+| T-439 IAB display | auto-mark with visible badge | ad-tech regulatory floor |
+| T-440 video | opt-in watermark + sidecar | broad context; over-disclosure risk |
+| T-441 PPTX | always-emit data, no badge | consumer apps own the disclosure UI |
+
+PPTX consumers (PowerPoint / Keynote / LibreOffice Impress) walk
+`<p:extLst>` at file load per ISO/IEC 29500-1 §15.1.1 and preserve
+unknown URIs on round-trip. T-441 ships **data only** — no visual
+badge or watermark on the rendered slide.
+
+### Public surface
+
+```ts
+import {
+  AI_CONTENT_EXT_URI,
+  classifyAiKind,
+  emitAiContentExtension,
+  exportPptx,
+  extractAiPptxManifest,
+} from '@stageflip/export-pptx';
+import type { AiPptxElementInput } from '@stageflip/export-pptx';
+```
+
+`classifyAiKind` / `extractAiPptxManifest` / `emitAiContentExtension`
+are pure functions; `AI_CONTENT_EXT_URI` is the canonical
+stageflip namespace URI.
 
 ## References
 

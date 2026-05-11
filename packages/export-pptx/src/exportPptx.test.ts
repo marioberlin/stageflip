@@ -464,6 +464,132 @@ describe('exportPptx — determinism source-grep (AC #28)', () => {
   });
 });
 
+describe('exportPptx — T-441 AI content extension', () => {
+  function unpackPresentationXml(bytes: Uint8Array): string {
+    const entries = unzipSync(bytes);
+    const raw = entries['ppt/presentation.xml'];
+    if (raw === undefined) throw new Error('presentation.xml missing');
+    return new TextDecoder().decode(raw);
+  }
+
+  const SIMPLE_DOC = (): Document =>
+    buildDoc({
+      slides: [
+        { id: 's1', elements: [{ id: 'e1', type: 'text', transform: TRANSFORM, text: 'hi' }] },
+      ],
+    });
+
+  it('AC #9: presentation.xml is byte-identical when aiElements is absent vs not passed', async () => {
+    const doc = SIMPLE_DOC();
+    const ts = new Date('2025-06-15T12:00:00Z');
+    const a = unpackPresentationXml((await exportPptx(doc, { modifiedAt: ts })).bytes);
+    const b = unpackPresentationXml(
+      (await exportPptx(doc, { modifiedAt: ts, aiElements: undefined })).bytes,
+    );
+    expect(a).toBe(b);
+    expect(a).not.toContain('<p:extLst>');
+  });
+
+  it('AC #10: aiElements with one AI-generated row splices <p:extLst> into presentation.xml', async () => {
+    const doc = SIMPLE_DOC();
+    const r = await exportPptx(doc, {
+      aiElements: [
+        {
+          elementId: 'el-tts',
+          slideId: 's1',
+          provenance: {
+            kind: 'tts',
+            provider: 'tts-kokoro',
+            model: 'kokoro-82m',
+            cacheKey: 'sha256-tts-abc',
+            prompt: 'narrator: hello world',
+          },
+        },
+      ],
+    });
+    const xml = unpackPresentationXml(r.bytes);
+    expect(xml).toContain('<p:extLst>');
+    expect(xml).toContain('https://stageflip.dev/extensions/ai-content/v1');
+    expect(xml).toContain('<sf:aiContent');
+    expect(xml).toContain('id="el-tts"');
+    expect(xml).toContain('provider="tts-kokoro"');
+    expect(xml).toContain('modality="tts"');
+    expect(xml).toContain('slideId="s1"');
+    expect(xml).toContain('cacheKey="sha256-tts-abc"');
+    expect(xml).toContain('prompt="narrator: hello world"');
+    // Element ordering: extLst comes after notesSz and before </p:presentation>.
+    const idxNotesSz = xml.indexOf('<p:notesSz');
+    const idxExtLst = xml.indexOf('<p:extLst');
+    const idxClose = xml.indexOf('</p:presentation>');
+    expect(idxNotesSz).toBeGreaterThan(0);
+    expect(idxExtLst).toBeGreaterThan(idxNotesSz);
+    expect(idxClose).toBeGreaterThan(idxExtLst);
+  });
+
+  it('AC #11: aiElements containing only imported / no-provenance rows produces no extension', async () => {
+    const doc = SIMPLE_DOC();
+    const r = await exportPptx(doc, {
+      aiElements: [
+        { elementId: 'el-imported', provenance: { kind: 'imported' } },
+        { elementId: 'el-no-prov' },
+      ],
+    });
+    const xml = unpackPresentationXml(r.bytes);
+    expect(xml).not.toContain('<p:extLst>');
+    expect(xml).not.toContain('stageflip.dev/extensions/ai-content');
+  });
+
+  it('AC #12: determinism — two consecutive exports with identical aiElements are byte-identical', async () => {
+    const doc = SIMPLE_DOC();
+    const ts = new Date('2025-06-15T12:00:00Z');
+    const aiElements = [
+      {
+        elementId: 'el-1',
+        provenance: { kind: 'image-gen' as const, provider: 'image-flux', model: 'flux-1' },
+      },
+    ];
+    const a = (await exportPptx(doc, { modifiedAt: ts, aiElements })).bytes;
+    const b = (await exportPptx(doc, { modifiedAt: ts, aiElements })).bytes;
+    expect(Buffer.from(a).equals(Buffer.from(b))).toBe(true);
+  });
+
+  it('AC #13: PPTX with <p:extLst> round-trips through @stageflip/import-pptx with no extra loss flags', async () => {
+    // Lazy import so the test file doesn't pull import-pptx for unrelated tests.
+    const { parsePptx } = await import('@stageflip/import-pptx');
+    const doc = SIMPLE_DOC();
+    const baseline = await parsePptx((await exportPptx(doc)).bytes);
+    const withExt = await parsePptx(
+      (
+        await exportPptx(doc, {
+          aiElements: [
+            { elementId: 'el-1', provenance: { kind: 'image-gen', provider: 'image-flux' } },
+          ],
+        })
+      ).bytes,
+    );
+    // Importer treats unknown extensions opaquely; flag count must not grow.
+    expect(withExt.lossFlags.length).toBe(baseline.lossFlags.length);
+  });
+
+  it('emits multiple <sf:element> rows in input order', async () => {
+    const doc = SIMPLE_DOC();
+    const r = await exportPptx(doc, {
+      aiElements: [
+        { elementId: 'b', provenance: { kind: 'tts', provider: 'tts-kokoro' } },
+        { elementId: 'a', provenance: { kind: 'image-gen', provider: 'image-flux' } },
+        { elementId: 'c', provenance: { kind: 'video-gen', provider: 'video-seedance' } },
+      ],
+    });
+    const xml = unpackPresentationXml(r.bytes);
+    const idxB = xml.indexOf('id="b"');
+    const idxA = xml.indexOf('id="a"');
+    const idxC = xml.indexOf('id="c"');
+    expect(idxB).toBeGreaterThan(0);
+    expect(idxA).toBeGreaterThan(idxB);
+    expect(idxC).toBeGreaterThan(idxA);
+  });
+});
+
 /**
  * Strip line and block comments. Naive but adequate for our source —
  * we don't write '/*' inside string literals in this package.

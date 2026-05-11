@@ -22,6 +22,13 @@ export interface PresentationInput {
   size?: { cx: number; cy: number };
   /** T-253-rider: number of masters; drives `<p:sldMasterIdLst>` emission. */
   masterCount?: number;
+  /**
+   * T-441 — optional `<p:extLst>` body to splice immediately before
+   * `</p:presentation>`. OOXML requires `<p:extLst>` at the end of
+   * the presentation body content. The caller pre-serializes the
+   * block; this function just splices it in.
+   */
+  extLstXml?: string;
 }
 
 /**
@@ -46,12 +53,16 @@ export function emitPresentation(input: PresentationInput): string {
   }
   const masterIdLst =
     masterCount > 0 ? `<p:sldMasterIdLst>${masterIds.join('')}</p:sldMasterIdLst>` : '';
+  // T-441: `<p:extLst>` (when present) goes after `<p:notesSz>` and
+  // before `</p:presentation>` per OOXML element ordering.
+  const extLst = input.extLstXml ?? '';
   // Office prefers `<p:sldMasterIdLst>` to come before `<p:sldIdLst>`. Order matters.
   const body = `<p:presentation xmlns:p="${NS_P}" xmlns:r="${NS_R}" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">\
 ${masterIdLst}\
 <p:sldIdLst>${sldIds.join('')}</p:sldIdLst>\
 <p:sldSz cx="${size.cx}" cy="${size.cy}"/>\
 <p:notesSz cx="${size.cy}" cy="${size.cx}"/>\
+${extLst}\
 </p:presentation>`;
   return `${XML_PROLOG}${body}`;
 }
