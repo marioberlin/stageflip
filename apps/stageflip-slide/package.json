@@ -16,6 +16,7 @@
   "dependencies": {
     "@stageflip/agent": "workspace:*",
     "@stageflip/app-agent": "workspace:*",
+    "@stageflip/app-api": "workspace:*",
     "@stageflip/editor-shell": "workspace:*",
     "@stageflip/engine": "workspace:*",
     "@stageflip/frame-runtime": "workspace:*",
@@ -23,6 +24,7 @@
     "@stageflip/loss-flags": "workspace:*",
     "@stageflip/runtimes-contract": "workspace:*",
     "@stageflip/schema": "workspace:*",
+    "@stageflip/storage": "workspace:*",
     "next": "15.5.15",
     "react": "19.2.5",
     "react-dom": "19.2.5",
