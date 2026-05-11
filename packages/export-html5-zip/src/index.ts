@@ -7,6 +7,7 @@
 // minify via terser, pluggable `ImageOptimizer`).
 
 export type {
+  AiElementInputRow,
   BannerAsset,
   BannerExportInput,
   BannerExportResult,
@@ -17,6 +18,24 @@ export type {
   HtmlBundler,
   MultiSizeExportResult,
 } from './types.js';
+
+export {
+  type AiDisclosureBadgeConfig,
+  DEFAULT_AI_BADGE,
+  aiBadgeHtml,
+  annotateAiElementsInHtml,
+  injectAiBadge,
+} from './ai-badge.js';
+
+export {
+  type AiContentDisclosure,
+  type AiContentDisclosureElement,
+  type AiElementInput,
+  type DisclosureCompliance,
+  type WalkConfig,
+  classifyAiKind,
+  extractAiDisclosures,
+} from './provenance-walk.js';
 
 export {
   DETERMINISTIC_ZIP_MTIME,
