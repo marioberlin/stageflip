@@ -743,6 +743,9 @@ importers:
 
   packages/editor-shell:
     dependencies:
+      '@stageflip/agent':
+        specifier: workspace:*
+        version: link:../agent
       '@stageflip/loss-flags':
         specifier: workspace:*
         version: link:../loss-flags

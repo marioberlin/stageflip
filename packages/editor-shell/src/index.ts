@@ -213,6 +213,12 @@ export {
   useAssetGenPlaceholders,
 } from './elements/asset-gen-placeholder';
 
+// T-442 — SSE consumer for /api/agent/execute?stream=true.
+export {
+  type AgentStreamHandlers,
+  consumeAgentStream,
+} from './streaming-consumer';
+
 // T-201 — multi-size banner preview grid (StageFlip.Display).
 export {
   type BannerSize,
