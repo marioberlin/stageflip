@@ -38,6 +38,7 @@ import {
 import * as schema from '../packages/schema/src/index.js';
 import { AdapterRegistry } from '../packages/adapters-core/src/index.js';
 import type { AdapterDescriptor } from '../packages/adapters-core/src/index.js';
+import { fishSpeechDescriptor } from '../packages/tts-fish-speech/src/index.js';
 import { kokoroDescriptor } from '../packages/tts-kokoro/src/index.js';
 import {
   LIVE_RUNTIME_MANIFEST,
@@ -114,8 +115,11 @@ function toolsIndexPkg(registry: BundleRegistry): ToolsIndexPkg {
 function buildAssetProvidersPkg(): { adapters: readonly AdapterDescriptor[] } {
   const registry = new AdapterRegistry();
   // T-426 — first reference adapter (Kokoro TTS, Apache 2.0).
-  // T-427..T-434 add the remaining eight reference adapters here.
+  // T-427 — second reference adapter (Fish Speech TTS, Apache 2.0;
+  // first voice-clone adapter — exercises ADR-008 §D4 consent path).
+  // T-428..T-434 add the remaining seven reference adapters here.
   registry.register(kokoroDescriptor);
+  registry.register(fishSpeechDescriptor);
   return { adapters: registry.list() };
 }
 
