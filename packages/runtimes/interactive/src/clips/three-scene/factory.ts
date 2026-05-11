@@ -29,6 +29,11 @@ import { type Root, createRoot } from 'react-dom/client';
 
 import type { ClipFactory, MountContext, MountHandle } from '../../contract.js';
 import { MissingFrameSourceError } from '../../frame-source.js';
+import {
+  ASSET_GEN_SETUP_PROPS_KEY,
+  type AssetGenGlbResult,
+  type AssetGenSeedSrc,
+} from './asset-gen-consumer.js';
 import { type SeededPRNG, createSeededPRNG } from './prng.js';
 import { type RAFShimHandle, installRAFShim } from './raf-shim.js';
 import { type SetupImporter, resolveSetupRef } from './setup-resolver.js';
@@ -40,6 +45,25 @@ import { type SetupImporter, resolveSetupRef } from './setup-resolver.js';
 export type ThreeSceneMountFailureReason = 'setup-throw' | 'setupRef-resolve' | 'invalid-props';
 
 /**
+ * Caller-supplied hook that resolves an `asset-gen` seedSrc descriptor
+ * (T-437) against the host's `AssetCacheStore`. When set, the factory
+ * invokes the resolver once per mount BEFORE the author's setup
+ * callback runs and merges the result under
+ * `setupProps.__assetGen` so the setup callback can mount the cached
+ * GLB bytes (or fall back to a placeholder) inside the Three.js scene.
+ *
+ * The resolver receives the raw `seedSrc` descriptor read off
+ * `ThreeSceneClipProps.setupProps.seedSrc` (a host-side convention
+ * documented in the three-runtime SKILL). Hosts that don't use
+ * asset-gen mounting omit this option and the factory's behavior is
+ * byte-identical to T-384.
+ *
+ * Never throws — the resolver returns a structured `AssetGenGlbResult`
+ * (success or failure reason) and the failure path is silent.
+ */
+export type AssetGenResolver = (seedSrc: AssetGenSeedSrc) => Promise<AssetGenGlbResult>;
+
+/**
  * Optional caller-injected hooks.
  */
 export interface ThreeSceneClipFactoryOptions {
@@ -49,6 +73,33 @@ export interface ThreeSceneClipFactoryOptions {
   fps?: number;
   /** Clip duration in frames — defaults to `Number.POSITIVE_INFINITY`. */
   clipDurationInFrames?: number;
+  /**
+   * Optional 3D asset-gen resolver hook (T-437). When set, the factory
+   * looks for `setupProps.seedSrc` on the parsed clip props; if present
+   * and structurally a `{ kind, cacheKey, provider }` descriptor, the
+   * resolver runs and the result is merged into setupProps under
+   * `__assetGen` before the author's `setup` callback fires.
+   * When absent, this code path is skipped entirely.
+   */
+  assetGenResolver?: AssetGenResolver;
+}
+
+/**
+ * Read a `seedSrc` descriptor off the parsed `setupProps`. Returns
+ * `undefined` when the slot is absent or structurally wrong — the
+ * resolver fires only when at least `kind` is a string (the resolver's
+ * own checks handle missing provider / cacheKey).
+ */
+function readSeedSrc(setupProps: Record<string, unknown>): AssetGenSeedSrc | undefined {
+  const raw = setupProps.seedSrc;
+  if (raw === null || typeof raw !== 'object') return undefined;
+  const obj = raw as Record<string, unknown>;
+  if (typeof obj.kind !== 'string') return undefined;
+  return {
+    kind: obj.kind,
+    cacheKey: typeof obj.cacheKey === 'string' ? obj.cacheKey : '',
+    ...(typeof obj.provider === 'string' ? { provider: obj.provider } : {}),
+  };
 }
 
 /**
@@ -101,7 +152,29 @@ async function mountThreeScene(
       `threeSceneClipFactory: liveMount.props failed threeSceneClipPropsSchema — ${propsResult.error.message}`,
     );
   }
-  const currentProps: ThreeSceneClipProps = propsResult.data;
+  let currentProps: ThreeSceneClipProps = propsResult.data;
+
+  // 2b. Asset-gen resolver hook (T-437). When the host wired an
+  //     `assetGenResolver` AND `setupProps.seedSrc` is a structurally
+  //     valid `{ kind, cacheKey, provider }` descriptor, resolve the
+  //     cached GLB bytes and merge the result into setupProps under
+  //     `__assetGen`. The resolver itself never throws — pre-flight or
+  //     cache-miss failures surface as a typed failure-shape that the
+  //     author's setup callback inspects to choose between mounting
+  //     the bytes and falling back to a placeholder.
+  if (options.assetGenResolver !== undefined) {
+    const seedSrc = readSeedSrc(currentProps.setupProps);
+    if (seedSrc !== undefined) {
+      const assetGenResult = await options.assetGenResolver(seedSrc);
+      currentProps = {
+        ...currentProps,
+        setupProps: {
+          ...currentProps.setupProps,
+          [ASSET_GEN_SETUP_PROPS_KEY]: assetGenResult,
+        },
+      };
+    }
+  }
 
   // 3. Resolve `setupRef` via dynamic-import (D-T384-3).
   ctx.emitTelemetry('three-scene-clip.mount.start', {
