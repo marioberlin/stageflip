@@ -17,6 +17,8 @@ import {
   type ExecutorEvent,
   type Plan,
   type Planner,
+  type StreamEvent,
+  VALIDATION_COMPLETE_KIND,
   type ValidationResult,
   type Validator,
   createExecutor,
@@ -199,4 +201,63 @@ export async function runAgent(request: RunAgentRequest): Promise<RunAgentResult
   void createPatchSink;
 
   return { plan, events, finalDocument, validation };
+}
+
+/**
+ * Streaming variant of {@link runAgent}. Yields each {@link ExecutorEvent}
+ * as the Executor emits it, then appends a transport-only
+ * `validation-complete` event carrying the Validator verdict.
+ *
+ * The Planner runs synchronously up front (it produces one Plan, not a
+ * stream); the Executor runs as a true AsyncIterable; the Validator
+ * runs once after `plan-end` and its result is folded into the stream
+ * as a single trailing event.
+ *
+ * Consumers that want the canonical `ExecutorEvent` shape only can
+ * filter out events whose `kind === 'validation-complete'`. Consumers
+ * that want both (the SSE route via `toReadableStream`) get the full
+ * `StreamEvent` union on the wire.
+ */
+export async function* streamAgent(
+  request: RunAgentRequest,
+  options: { signal?: AbortSignal } = {},
+): AsyncIterable<StreamEvent> {
+  const provider = request.providerOverride ?? buildProviderFromEnv();
+  const { planner, executor, validator } = createOrchestrator(provider);
+
+  const plan = await planner.plan(
+    {
+      prompt: request.prompt,
+      document: request.document,
+      model: request.plannerModel ?? DEFAULT_PLANNER_MODEL,
+    },
+    options.signal ? { signal: options.signal } : {},
+  );
+
+  let finalDocument = request.document;
+  for await (const event of executor.run(
+    {
+      plan,
+      document: request.document,
+      model: request.executorModel ?? DEFAULT_EXECUTOR_MODEL,
+      ...(request.selection ? { selection: request.selection } : {}),
+    },
+    options.signal ? { signal: options.signal } : {},
+  )) {
+    if (event.kind === 'plan-end') {
+      finalDocument = event.finalDocument;
+    }
+    yield event;
+  }
+
+  // Run validation; surface the verdict on the same stream. Validator
+  // does not accept an AbortSignal in its current contract, so on a
+  // late client disconnect the request runs to completion server-side —
+  // the dropped client just never sees the validation-complete event.
+  const validation = await validator.validate({
+    document: finalDocument,
+    model: request.validatorModel ?? DEFAULT_VALIDATOR_MODEL,
+  });
+
+  yield { kind: VALIDATION_COMPLETE_KIND, validation };
 }

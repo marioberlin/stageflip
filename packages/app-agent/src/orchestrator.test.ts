@@ -14,6 +14,7 @@ import {
   OrchestratorNotConfigured,
   buildProviderFromEnv,
   createOrchestrator,
+  streamAgent,
 } from './orchestrator.js';
 
 // Matches `LLMProvider` surface enough for orchestrator tests; nothing
@@ -90,5 +91,17 @@ describe('createOrchestrator', () => {
     expect(typeof deps.planner.plan).toBe('function');
     expect(typeof deps.executor.run).toBe('function');
     expect(typeof deps.validator.validate).toBe('function');
+  });
+});
+
+describe('streamAgent', () => {
+  it('is exported as an async generator function (T-442)', () => {
+    expect(typeof streamAgent).toBe('function');
+    // Construct an iterable without invoking the body — the planner call
+    // would otherwise require a real provider. Calling the function only
+    // returns a generator object; .next() is what actually executes.
+    // biome-ignore lint/suspicious/noExplicitAny: minimal shape for the export check
+    const gen = streamAgent({} as any);
+    expect(typeof (gen as AsyncIterable<unknown>)[Symbol.asyncIterator]).toBe('function');
   });
 });
