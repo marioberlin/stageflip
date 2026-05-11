@@ -1,0 +1,20 @@
+{
+  "id": "kokoro",
+  "modality": "tts",
+  "descriptorSha256": "9eef84023bdb9f56b4a311df4d1e9e8367c633d89b71ca4c58ba2ebf46029530",
+  "sampleInputs": [
+    {
+      "name": "minimal",
+      "input": {
+        "tenantId": "t-regression",
+        "voiceId": "af_default",
+        "text": "Hello world.",
+        "outputFormat": "wav",
+        "sampleRate": 24000,
+        "seed": 1
+      },
+      "outputSha256": "44b08d4e44145cebb2b33d777553b5bcab327696442d8974e3cfdb08d461b367",
+      "cacheKey": "tts/d8821a12d40ea5c3fd070c0c1793d5cfb075ab83aad90da7398f903312e50ebb"
+    }
+  ]
+}

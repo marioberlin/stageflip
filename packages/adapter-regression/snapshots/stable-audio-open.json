@@ -1,0 +1,19 @@
+{
+  "id": "stable-audio-open",
+  "modality": "sfx",
+  "descriptorSha256": "aaf508108af1fcf239571b05e608f8943905c1b5e6c8f1a81908385ffbf5fbc6",
+  "sampleInputs": [
+    {
+      "name": "minimal",
+      "input": {
+        "prompt": "A door creak.",
+        "durationS": 2,
+        "outputFormat": "wav",
+        "sampleRate": 44100,
+        "seed": 1
+      },
+      "outputSha256": "7179a5c13edf42def94726a301cb4aada4bac56f582b69835f4a69ba0a082f4f",
+      "cacheKey": "sfx/70b50825a69f40142e928b7801c43da7594d1528a14c98aacc08efe752c0f212"
+    }
+  ]
+}

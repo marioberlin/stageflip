@@ -1,0 +1,20 @@
+{
+  "id": "fish-speech",
+  "modality": "tts",
+  "descriptorSha256": "61b4329d0d50018c872bdc11326fed873ee2d8b56f2dd60ba880c40925d50d6b",
+  "sampleInputs": [
+    {
+      "name": "minimal",
+      "input": {
+        "tenantId": "t-regression",
+        "voiceId": "fs_en_default",
+        "text": "Hello world.",
+        "outputFormat": "wav",
+        "sampleRate": 22050,
+        "seed": 1
+      },
+      "outputSha256": "3a2fac0d8765e7d1564adf24fc3ff7b841a5de11294d8ed86c4dbe329cbcbec4",
+      "cacheKey": "tts/1a3d226853ee74865f545c12fb34fc3932ae5d4548fd6fe2f38089a304dc52e9"
+    }
+  ]
+}

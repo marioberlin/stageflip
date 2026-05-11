@@ -440,6 +440,52 @@ importers:
         specifier: 2.1.9
         version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
 
+  packages/adapter-regression:
+    dependencies:
+      '@stageflip/3d-meshy':
+        specifier: workspace:*
+        version: link:../3d-meshy
+      '@stageflip/3d-tripo':
+        specifier: workspace:*
+        version: link:../3d-tripo
+      '@stageflip/adapters-core':
+        specifier: workspace:*
+        version: link:../adapters-core
+      '@stageflip/asset-cache':
+        specifier: workspace:*
+        version: link:../asset-cache
+      '@stageflip/asset-gen-contract':
+        specifier: workspace:*
+        version: link:../asset-gen-contract
+      '@stageflip/music-acestep':
+        specifier: workspace:*
+        version: link:../music-acestep
+      '@stageflip/music-yue':
+        specifier: workspace:*
+        version: link:../music-yue
+      '@stageflip/sfx-stable-audio':
+        specifier: workspace:*
+        version: link:../sfx-stable-audio
+      '@stageflip/tts-fish-speech':
+        specifier: workspace:*
+        version: link:../tts-fish-speech
+      '@stageflip/tts-kokoro':
+        specifier: workspace:*
+        version: link:../tts-kokoro
+      '@stageflip/video-runway':
+        specifier: workspace:*
+        version: link:../video-runway
+      '@stageflip/video-seedance':
+        specifier: workspace:*
+        version: link:../video-seedance
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: 2.1.9
+        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+      vitest:
+        specifier: 2.1.9
+        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+
   packages/adapters-core:
     dependencies:
       zod:
@@ -1852,6 +1898,9 @@ importers:
 
   scripts:
     dependencies:
+      '@stageflip/adapter-regression':
+        specifier: workspace:*
+        version: link:../packages/adapter-regression
       '@stageflip/adapters-core':
         specifier: workspace:*
         version: link:../packages/adapters-core
