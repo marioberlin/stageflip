@@ -173,6 +173,27 @@ $ stageflip lint saas-banner
 | **Animation (B4)** | Entrance/exit preset: fade_in, slide_in_left, bounce_in, etc. |
 | **Runtime** | The engine that animates a clip (frame-runtime, GSAP, Lottie, Three, shader, CSS, Blender) |
 | **Parity test** | Automated render comparison ensuring editor preview matches final export |
+| **Preset** | A ratified composition recipe (palette + geometry + canon) selectable from a cluster — invoked via a `compose_*` agent tool |
+| **Cluster** | A domain group of presets (broadcast / sports / weather / titles / data / captions / CTAs / AR overlays). 8 clusters, 50 presets on `main` |
+
+### 3.1 Preset clusters
+
+StageFlip ships 50 ratified presets across 8 clusters. Each cluster (with the exception of titles) exposes a `compose_*` agent-tool surface for invocation from Claude / MCP.
+
+| Cluster | Domain | Presets | Compose tools | Reference |
+|---|---|---:|---|---|
+| **A** | News & broadcast | 8 | `cluster-a-compose` | `skills/stageflip/presets/news/SKILL.md` |
+| **B** | Sports | 9 | `cluster-b-compose` | `skills/stageflip/presets/sports/SKILL.md` |
+| **C** | Weather | 6 | `cluster-c-compose` | `skills/stageflip/presets/weather/SKILL.md` |
+| **D** | Titles & main-on-end | 6 | (none — titles ship as-is) | `skills/stageflip/presets/titles/SKILL.md` |
+| **E** | Data & finance | 6 | `cluster-e-compose` | `skills/stageflip/presets/data/SKILL.md` |
+| **F** | Captions & subtitles | 6 | `cluster-f-compose` | `skills/stageflip/presets/captions/SKILL.md` |
+| **G** | CTAs / social | 5 | `cluster-g-compose` | `skills/stageflip/presets/ctas/SKILL.md` |
+| **H** | AR & environmental overlays | 4 | `cluster-h-compose` | `skills/stageflip/presets/ar/SKILL.md` |
+
+Cluster D is the deliberate exception: titles are picked verbatim rather than composed. All other clusters ship a `compose_*` handler bundle registered in `CANONICAL_BUNDLES`.
+
+Cluster H presets render via static-fallback in v1; live-mount of the underlying `ThreeSceneClip` is gated on Track A finale (T-397..T-405) and the tenant-level frontier-enablement toggle (T-411).
 
 ---
 
@@ -281,6 +302,36 @@ Claude: [runs bulk_render_with_variables]
         Rendered 5 variants across 3 sizes = 15 banners. ZIP: …
 ```
 
+### 5.1 Cluster compose tools
+
+Each cluster (except D) exposes one or more `compose_*` tools that materialize a preset into the document with cluster-canonical defaults. Claude picks a tool from the cluster matching the user's brief and parameterizes it with the brief's content. Examples:
+
+| Tool | Bundle | Outcome |
+|---|---|---|
+| `compose_news_lower_third` | `cluster-a-compose` | Add a CNN-style lowerThird with the brief's headline |
+| `compose_score_bug` | `cluster-b-compose` | Add a sports scorebug parameterized by team / score / period |
+| `compose_weather_panel` | `cluster-c-compose` | Add a forecast panel (TWC / BBC / NHC variants) |
+| `compose_finance_ticker` | `cluster-e-compose` | Add a Bloomberg-style ticker bound to a data source |
+| `compose_caption_band` | `cluster-f-compose` | Add a caption track with cluster-F preset styling |
+| `compose_cta_sticker` | `cluster-g-compose` | Add a follow / subscribe / link CTA |
+| `compose_ar_overlay` | `cluster-h-compose` | Add an AR overlay (sky-sports / hawkeye / olympic / nba variants) |
+
+Full enumeration is auto-generated under `skills/stageflip/tools/cluster-{a,b,c,e,f,g,h}-compose/SKILL.md`. The orchestrator reads these on plugin install; Claude routes user briefs to the matching tool by cluster intent.
+
+### 5.2 Semantic-layout tools (cross-cluster)
+
+Beyond cluster-compose tools, StageFlip ships a small set of **semantic-layout** tools that are domain-agnostic and operate on the document model directly:
+
+| Tool | Outcome |
+|---|---|
+| `arrange_grid` | Lay elements out on a grid (rows × cols); auto-resolves overlaps |
+| `arrange_stack` | Stack elements vertically or horizontally with consistent gutters |
+| `arrange_align` | Align elements on an axis (left/right/center/top/bottom/baseline) |
+| `arrange_distribute` | Distribute spacing evenly between elements on an axis |
+| `arrange_reveal` | Staggered headline → body → media reveal (T-407); use when the brief says "intro slide", "title card", or "hero reveal" |
+
+`arrange_reveal` is the newest addition; see `docs/tasks/T-407.md`.
+
 ---
 
 ## 6. Common Workflows
@@ -345,6 +396,23 @@ Full token reference: `skills/stageflip/concepts/theme-system/SKILL.md`.
 
 Before exporting, `stageflip loss-flags <doc> --target=pptx` shows exactly what won't round-trip. The web editor surfaces this as a pre-export modal.
 
+### 8.1 Static vs live routing (`@stageflip/export-router`, T-408)
+
+Targets fall into two render modes:
+
+| Render mode | Targets | Pipeline |
+|---|---|---|
+| **Static** | MP4 / MOV / WebM / PNG / PDF / PPTX / Marp MD | CDP host bakes frames; deterministic |
+| **Live** | HTML5 ZIP / display-interactive | Live runtime hosts in browser; preserves interactivity |
+
+`@stageflip/export-router` is the single decision layer: given a document and a target format, it routes to the static or live pipeline. Cluster H (AR overlays) renders static-fallback in v1 even when the underlying clip is `live`-capable; live-mount of `ThreeSceneClip` is gated on Track A finale (T-397..T-405) plus the tenant frontier-enablement toggle (T-411).
+
+### 8.2 Export-parity CI gate (T-409)
+
+Every preset × export-target combination is verified by the `Gate - preset × export parity` CI job on every push to `main` or any PR touching `packages/runtimes/**`, `packages/export-*/**`, `packages/parity-cli/**`, or any `presets/**` markdown. The gate runs the cross-product matrix and asserts that the routing decision recorded in each preset's parity fixture matches `@stageflip/export-router`'s live decision.
+
+A preset that ships a parity fixture inconsistent with the router is rejected at PR time, not at user-render time.
+
 ---
 
 ## 9. Troubleshooting
@@ -359,6 +427,7 @@ Before exporting, `stageflip loss-flags <doc> --target=pptx` shows exactly what 
 | Exports fail with determinism error | Clip likely uses `Math.random()` or `Date.now()`; update clip or file bug |
 | Display banner over file-size budget | Run `stageflip optimize <doc>`; or remove heavy runtimes (Three, shader) |
 | Font rendering looks wrong in export | Check `stageflip info <doc>` for missing fonts; embed locally via asset upload |
+| Preset renders blank or near-blank | Likely a structural-extension regression (CLAUDE.md §13). Check `docs/handover-cluster-d-regression.md` for the historical case and `pnpm tsx scripts/check-preset-integrity.ts` for the non-blank-pixel invariant |
 
 ---
 
@@ -372,6 +441,12 @@ Before exporting, `stageflip loss-flags <doc> --target=pptx` shows exactly what 
 | GitHub Issues | https://github.com/<org>/stageflip/issues |
 | Status page | https://status.stageflip.com |
 | Security | security@stageflip.com (GPG key on site) |
+
+### 10.1 GA-readiness audit (`pnpm check-ga-readiness`, T-410)
+
+For maintainers and self-hosters: `pnpm check-ga-readiness` walks the repo, verifies a 24-criterion checklist spanning cluster ratification, CI gates, documentation, frontier runtime, enterprise admin, and Phase 13 closeout, and emits `docs/ga-readiness-report.md` with PASS / FAIL / WARN per criterion.
+
+This is a **manual phase-boundary audit**, not a CI gate. Run it at phase boundaries to surface the GA punch list. Exit code is 0 when all criteria are PASS / WARN / N/A; non-zero when any criterion FAILs.
 
 ---
 
