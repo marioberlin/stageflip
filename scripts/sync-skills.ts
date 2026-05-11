@@ -44,6 +44,7 @@ import { aceStepDescriptor } from '../packages/music-acestep/src/index.js';
 import { yueDescriptor } from '../packages/music-yue/src/index.js';
 import { fishSpeechDescriptor } from '../packages/tts-fish-speech/src/index.js';
 import { kokoroDescriptor } from '../packages/tts-kokoro/src/index.js';
+import { stableAudioDescriptor } from '../packages/sfx-stable-audio/src/index.js';
 import { runwayDescriptor } from '../packages/video-runway/src/index.js';
 import { seedanceDescriptor } from '../packages/video-seedance/src/index.js';
 import {
@@ -154,7 +155,13 @@ function buildAssetProvidersPkg(): { adapters: readonly AdapterDescriptor[] } {
   // `MediaProvenance.attribution`; full-song generation; in-process
   // posture mirroring ACE-Step). Apache 2.0 ∈ music-gen whitelist
   // (ADR-008 §D13 line 655).
-  // T-434 adds the remaining reference adapter here.
+  // T-434 — ninth and FINAL reference adapter (Stable Audio Open SFX,
+  // Apache 2.0; FIRST + only `sfx` modality adapter; short-form
+  // [<=30s @ 44100Hz] one-shot SFX + ambient loops; in-process posture
+  // mirroring ACE-Step / YuE). Apache 2.0 ∈ sfx whitelist (ADR-008
+  // §D13 line 656). CLOSES the Phase 14 β reference-adapter sequence
+  // (9 of 9); T-435 — Phase 14 β regression test suite — is the β
+  // closer.
   registry.register(kokoroDescriptor);
   registry.register(fishSpeechDescriptor);
   registry.register(tripoDescriptor);
@@ -163,6 +170,7 @@ function buildAssetProvidersPkg(): { adapters: readonly AdapterDescriptor[] } {
   registry.register(runwayDescriptor);
   registry.register(aceStepDescriptor);
   registry.register(yueDescriptor);
+  registry.register(stableAudioDescriptor);
   return { adapters: registry.list() };
 }
 
