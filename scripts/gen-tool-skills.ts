@@ -22,6 +22,7 @@ import {
   CANONICAL_BUNDLES,
   createCanonicalRegistry,
   registerArrangeVariantsBundle,
+  registerAssetGenerationBundle,
   registerClusterAComposeBundle,
   registerClusterBComposeBundle,
   registerClusterCComposeBundle,
@@ -75,6 +76,7 @@ const OWNER_TASK_MAP: Record<string, string> = {
   'cluster-f-compose': 'T-368',
   'cluster-g-compose': 'T-374',
   'cluster-h-compose': 'T-379',
+  'asset-generation': 'T-423',
 };
 
 function populateRegistry() {
@@ -106,6 +108,7 @@ function populateRegistry() {
   registerClusterFComposeBundle(registry, router);
   registerClusterGComposeBundle(registry, router);
   registerClusterHComposeBundle(registry, router);
+  registerAssetGenerationBundle(registry, router);
   return registry;
 }
 

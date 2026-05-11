@@ -30,6 +30,7 @@ import {
   ToolRouter,
   createCanonicalRegistry,
   registerArrangeVariantsBundle,
+  registerAssetGenerationBundle,
   registerClipAnimationBundle,
   registerClusterAComposeBundle,
   registerClusterBComposeBundle,
@@ -123,6 +124,7 @@ function populate(registry: BundleRegistry, router: ToolRouter<ExecutorContext>)
   registerClusterFComposeBundle(registry, router);
   registerClusterGComposeBundle(registry, router);
   registerClusterHComposeBundle(registry, router);
+  registerAssetGenerationBundle(registry, router);
 }
 
 /**
