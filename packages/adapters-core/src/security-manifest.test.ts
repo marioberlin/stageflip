@@ -6,10 +6,10 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  parseSecurityManifest,
   RELEVANT_AUDIT_EVENT_KINDS,
   RELEVANT_USAGE_FIELDS,
   SECURITY_PERIMETERS,
+  parseSecurityManifest,
   securityManifestSchema,
 } from './security-manifest.js';
 
