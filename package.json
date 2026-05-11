@@ -27,6 +27,7 @@
     "check-asset-licenses": "tsx scripts/check-asset-licenses.ts",
     "check-data-flow-security": "tsx scripts/check-data-flow-security.ts",
     "check-adapter-regression": "tsx scripts/check-adapter-regression.ts",
+    "check-audience-permissions": "tsx scripts/check-audience-permissions.ts",
     "regenerate-adapter-snapshots": "tsx scripts/regenerate-adapter-regression-snapshots.ts",
     "check-remotion-imports": "tsx scripts/check-remotion-imports.ts",
     "check-skill-drift": "tsx scripts/check-skill-drift.ts",

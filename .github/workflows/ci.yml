@@ -113,6 +113,17 @@ jobs:
       - name: Gate - determinism (scoped to clip/runtime code)
         run: pnpm check-determinism
 
+      # T-455 — every Live Audience clip module under
+      # `packages/runtimes/audience/src/clips/**` must declare a
+      # co-located `MANIFEST: AudienceClipManifest` export whose
+      # `permissions` is exactly `['audience-network']` per ADR-009 §D13
+      # / ADR-010 §D6. Static source scan — no module import / execution.
+      # Inaugural state: 0 audience clips on `main` (T-461..T-471 are
+      # downstream); gate exits 0 with "0 audience clips registered;
+      # audience-network whitelist not yet exercised".
+      - name: Gate - check-audience-permissions
+        run: pnpm check-audience-permissions
+
       # T-409 — preset x export parity. Drives every (preset, ExportTarget)
       # pair through @stageflip/export-router (T-408) and asserts each
       # routing decision is well-formed and points at a real exporter

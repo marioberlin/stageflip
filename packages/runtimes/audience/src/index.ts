@@ -45,6 +45,7 @@ export {
   runAudienceClient,
   type SetTimeoutFn,
 } from './audience-client.js';
+export type { AudienceClipManifest } from './clip-manifest.js';
 export {
   AudienceClipKindAlreadyRegisteredError,
   AudienceClipRegistry,
