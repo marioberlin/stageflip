@@ -28,6 +28,7 @@
     "check-skill-drift": "tsx scripts/check-skill-drift.ts",
     "check-determinism": "tsx scripts/check-determinism.ts",
     "check-preset-integrity": "tsx scripts/check-preset-integrity.ts",
+    "check-export-parity": "tsx scripts/check-export-parity.ts",
     "invoke-type-design-consultant": "tsx scripts/invoke-type-design-consultant.ts",
     "generate-parity-fixture": "tsx scripts/generate-preset-parity-fixture.ts",
     "check-cluster-eligibility": "tsx scripts/check-cluster-eligibility.ts",

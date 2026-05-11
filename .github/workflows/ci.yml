@@ -77,6 +77,16 @@ jobs:
       - name: Gate - determinism (scoped to clip/runtime code)
         run: pnpm check-determinism
 
+      # T-409 — preset x export parity. Drives every (preset, ExportTarget)
+      # pair through @stageflip/export-router (T-408) and asserts each
+      # routing decision is well-formed and points at a real exporter
+      # package. 400 pairs total (50 presets x 8 targets); pure function
+      # over the on-disk preset corpus + EXPORT_MATRIX. Does NOT invoke
+      # exporters - pixel-level verification happens in the parity
+      # (fixture scoring) job below.
+      - name: Gate - preset x export parity
+        run: pnpm check-export-parity
+
       - name: Gate - bundle-size budget (size-limit)
         run: pnpm size-limit
 

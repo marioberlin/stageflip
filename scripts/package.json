@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@stageflip/cdp-host-bundle": "workspace:*",
+    "@stageflip/export-router": "workspace:*",
     "@stageflip/parity": "workspace:*",
     "@stageflip/parity-cli": "workspace:*",
     "@stageflip/renderer-cdp": "workspace:*",

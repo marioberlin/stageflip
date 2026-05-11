@@ -1612,6 +1612,9 @@ importers:
       '@stageflip/cdp-host-bundle':
         specifier: workspace:*
         version: link:../packages/cdp-host-bundle
+      '@stageflip/export-router':
+        specifier: workspace:*
+        version: link:../packages/export-router
       '@stageflip/parity':
         specifier: workspace:*
         version: link:../packages/parity
