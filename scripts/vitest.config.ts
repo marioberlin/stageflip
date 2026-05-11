@@ -24,6 +24,7 @@ export default defineConfig({
         'check-cluster-eligibility.ts',
         'check-asset-licenses.ts',
         'check-data-flow-security.ts',
+        'check-audience-permissions.ts',
       ],
       exclude: ['*.test.ts', '*.config.ts'],
       thresholds: {
@@ -79,6 +80,13 @@ export default defineConfig({
           functions: 85,
           statements: 85,
           branches: 75,
+        },
+        // T-455 AC — check-audience-permissions coverage floor.
+        'check-audience-permissions.ts': {
+          lines: 85,
+          functions: 85,
+          statements: 85,
+          branches: 80,
         },
       },
     },
