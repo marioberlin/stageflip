@@ -42,6 +42,7 @@ import { meshyDescriptor } from '../packages/3d-meshy/src/index.js';
 import { tripoDescriptor } from '../packages/3d-tripo/src/index.js';
 import { fishSpeechDescriptor } from '../packages/tts-fish-speech/src/index.js';
 import { kokoroDescriptor } from '../packages/tts-kokoro/src/index.js';
+import { runwayDescriptor } from '../packages/video-runway/src/index.js';
 import { seedanceDescriptor } from '../packages/video-seedance/src/index.js';
 import {
   LIVE_RUNTIME_MANIFEST,
@@ -131,12 +132,18 @@ function buildAssetProvidersPkg(): { adapters: readonly AdapterDescriptor[] } {
   // proprietary-byo; first video-gen adapter; 15s 1080p + native
   // audio + lip-sync — exercises the video-gen branch of ADR-008
   // §D6 + the third proprietary-byo posture).
-  // T-431..T-434 add the remaining four reference adapters here.
+  // T-431 — sixth reference adapter (Runway Gen-4 video, proprietary-byo;
+  // second video-gen adapter; production-tier; 10s up-to-4K silent
+  // video at cinematic 24fps; broad aspect-ratio set — exercises the
+  // fourth proprietary-byo posture + the second video-gen branch with
+  // emitsAudio=false / supportsLipSync=false differentiators).
+  // T-432..T-434 add the remaining three reference adapters here.
   registry.register(kokoroDescriptor);
   registry.register(fishSpeechDescriptor);
   registry.register(tripoDescriptor);
   registry.register(meshyDescriptor);
   registry.register(seedanceDescriptor);
+  registry.register(runwayDescriptor);
   return { adapters: registry.list() };
 }
 
