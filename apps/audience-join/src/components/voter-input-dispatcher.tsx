@@ -14,6 +14,8 @@
 import type { AudienceClipKind } from '@stageflip/audience-contract';
 import type { ComponentType, ReactElement } from 'react';
 
+import { LivePollMultipleChoiceVoterInput } from './live-poll-multiple-choice-voter-input';
+
 /**
  * Props handed to every per-kind voter input. The dispatcher itself is
  * shape-agnostic; per-kind components widen the contract as needed.
@@ -36,14 +38,19 @@ export interface VoterInputDispatcherProps extends VoterInputProps {
 export type VoterInputRegistry = ReadonlyMap<AudienceClipKind, ComponentType<VoterInputProps>>;
 
 /**
- * Default registry — empty in T-456. T-461..T-471 add entries as their
- * per-kind UIs land. Exported so the voter app's `<VoterAppClient>` can
- * pass it in, and so tests can verify the empty-default contract.
+ * Default registry — entries land per clip-family task. T-461 adds
+ * `live-poll-multiple-choice` as the inaugural entry; T-462..T-471 add
+ * the eight sibling kinds. Exported so the voter app's
+ * `<VoterAppClient>` can pass it in, and so tests can verify the
+ * registered + unregistered code paths.
  */
 export const defaultVoterInputRegistry: VoterInputRegistry = new Map<
   AudienceClipKind,
   ComponentType<VoterInputProps>
->();
+>([
+  // T-461 — first audience clip family. Sets the precedent for T-462..T-471.
+  ['live-poll-multiple-choice', LivePollMultipleChoiceVoterInput],
+]);
 
 /**
  * Generic placeholder rendered when no per-kind component is registered

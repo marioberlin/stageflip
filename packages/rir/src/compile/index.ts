@@ -276,6 +276,24 @@ function toRIRContent(el: Element): RIRElementContent {
           ...(el.posterFrame !== undefined ? { posterFrame: el.posterFrame } : {}),
         },
       };
+    case 'live-poll-multiple-choice':
+      // T-461: First audience-clip element variant. Lowered onto the
+      // generic `clip` RIR shape with `runtime: 'audience'` so the
+      // `@stageflip/runtimes-audience` `audienceRuntime` (registered
+      // with `findClip(kind)`) picks it up. The clip-kind discriminant
+      // doubles as the RIR `clipName`. Provenance is carried through
+      // `params` so the static-fallback path has the inlined snapshot
+      // available at export time.
+      return {
+        type: 'clip',
+        runtime: 'audience',
+        clipName: 'live-poll-multiple-choice',
+        params: {
+          props: el.props,
+          permissions: el.permissions,
+          ...(el.provenance !== undefined ? { provenance: el.provenance } : {}),
+        },
+      };
     default: {
       const never: never = el;
       return never;

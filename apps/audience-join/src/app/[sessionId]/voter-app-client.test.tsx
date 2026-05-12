@@ -119,9 +119,12 @@ describe('<VoterAppClient>', () => {
       expect(banner.getAttribute('data-state')).toBe('connected');
     });
 
-    // Once connected with a snapshot, the dispatcher should pick the
-    // clip kind from the aggregation and render the unregistered fallback.
-    expect(screen.getByTestId('voter-input-unregistered')).toBeDefined();
+    // Once connected with a snapshot, the dispatcher resolves the
+    // clip kind to the registered voter-input. T-461 added the first
+    // entry (`live-poll-multiple-choice`); the wrapper carries the
+    // session id forward.
+    const wrapper = screen.getByTestId('voter-input-live-poll-multiple-choice-wrapper');
+    expect(wrapper.getAttribute('data-session-id')).toBe('sess-1');
   });
 
   it('shows error banner when join fetch fails', async () => {
