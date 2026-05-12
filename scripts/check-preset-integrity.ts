@@ -142,6 +142,19 @@ export const VALID_CLIP_KINDS = new Set<string>([
   'qrCodeBounce',
   // Cluster H — AR
   'arOverlay',
+  // Cluster I — Live audience (T-486; clipKinds match the 11
+  // AudienceClipKind discriminants from @stageflip/audience-contract).
+  'live-poll-multiple-choice',
+  'live-poll-open-text',
+  'live-poll-rating',
+  'live-qa',
+  'live-quiz',
+  'leaderboard',
+  'word-cloud',
+  'survey',
+  'heatmap',
+  'reaction-stream',
+  'audience-ai-prompt',
   // Interactive family (frontier — clipKind references the family per ADR-005).
   'shader',
   'three-scene',
