@@ -11,6 +11,7 @@
   "dependencies": {
     "@stageflip/adapter-regression": "workspace:*",
     "@stageflip/adapters-core": "workspace:*",
+    "@stageflip/audience-contract": "workspace:*",
     "@stageflip/cdp-host-bundle": "workspace:*",
     "@stageflip/export-router": "workspace:*",
     "@stageflip/parity": "workspace:*",
@@ -21,6 +22,7 @@
     "@stageflip/testing": "workspace:*"
   },
   "devDependencies": {
+    "@types/k6": "2.0.0",
     "@types/node": "22.19.17",
     "@types/pngjs": "6.0.5",
     "@vitest/coverage-v8": "2.1.9",

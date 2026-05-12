@@ -9,7 +9,7 @@ export default defineConfig({
   test: {
     globals: false,
     environment: 'node',
-    include: ['*.test.ts'],
+    include: ['*.test.ts', 'loadtest/*.test.ts'],
     exclude: ['**/node_modules/**'],
     coverage: {
       provider: 'v8',
@@ -25,8 +25,9 @@ export default defineConfig({
         'check-asset-licenses.ts',
         'check-data-flow-security.ts',
         'check-audience-permissions.ts',
+        'loadtest/audience-sla.ts',
       ],
-      exclude: ['*.test.ts', '*.config.ts'],
+      exclude: ['*.test.ts', '*.config.ts', 'loadtest/*.test.ts'],
       thresholds: {
         lines: 80,
         functions: 80,
@@ -87,6 +88,13 @@ export default defineConfig({
           functions: 85,
           statements: 85,
           branches: 80,
+        },
+        // T-477 AC — audience-sla.ts pure helpers floor.
+        'loadtest/audience-sla.ts': {
+          lines: 85,
+          functions: 85,
+          statements: 85,
+          branches: 85,
         },
       },
     },

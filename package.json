@@ -45,6 +45,7 @@
     "load:full": "STAGEFLIP_LOAD_PROFILE=full k6 run --out json=tests/load/runs/full-$(date +%Y%m%dT%H%M%S).json tests/load/scenarios/api-mixed.js && STAGEFLIP_LOAD_PROFILE=full k6 run --out json=tests/load/runs/full-render-$(date +%Y%m%dT%H%M%S).json tests/load/scenarios/render-submit.js && STAGEFLIP_LOAD_PROFILE=full k6 run --out json=tests/load/runs/full-collab-$(date +%Y%m%dT%H%M%S).json tests/load/scenarios/collab-sync.js",
     "load:seed": "tsx tests/load/cli/seed-cli.ts",
     "load:cleanup": "tsx tests/load/cli/cleanup-cli.ts",
+    "audience-sla-loadtest:smoke": "k6 run --vus 10 --duration 30s scripts/loadtest/audience-sla.k6.ts",
     "skills-sync": "tsx scripts/sync-skills.ts",
     "skills-sync:check": "tsx scripts/sync-skills.ts --check",
     "gen:tool-skills": "tsx scripts/gen-tool-skills.ts",
