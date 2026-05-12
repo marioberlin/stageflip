@@ -32,3 +32,18 @@ export type {
   FirestoreQuerySnapshotLike,
   FirestoreTenantSettingsLike,
 } from './tenant-settings.js';
+
+// T-474 — Audience-results Firestore facet (per-session audience-event +
+// aggregation persistence per ADR-009 §D5; mirrors the
+// TenantSettingsStore pattern + uses the same region-router for EU
+// residency).
+export { createFirebaseAudienceResultsStore } from './audience-results.js';
+export type {
+  FirebaseAudienceResultsStoreOptions,
+  FirestoreAudienceResultsLike,
+  FirestoreCollectionRefLike as FirestoreAudienceCollectionRefLike,
+  FirestoreDocRefLike as FirestoreAudienceDocRefLike,
+  FirestoreDocSnapshotLike as FirestoreAudienceDocSnapshotLike,
+  FirestoreQueryLike,
+  FirestoreQuerySnapshotLike as FirestoreAudienceQuerySnapshotLike,
+} from './audience-results.js';
