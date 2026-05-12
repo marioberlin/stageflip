@@ -20,14 +20,16 @@ afterEach(() => {
 });
 
 describe('defaultVoterInputRegistry', () => {
-  it('contains the live-poll-multiple-choice + live-poll-open-text + live-poll-rating + live-qa entries (T-461..T-464)', () => {
+  it('contains the live-poll-multiple-choice + live-poll-open-text + live-poll-rating + live-qa + live-quiz entries (T-461..T-465)', () => {
     // T-461 added the first entry; T-462 added the second; T-463 added the third;
-    // T-464 added the fourth (first non-LivePoll family). Bumped 3 → 4.
-    expect(defaultVoterInputRegistry.size).toBe(4);
+    // T-464 added the fourth (first non-LivePoll family); T-465 added the fifth
+    // (competitive multi-question quiz). Bumped 4 → 5.
+    expect(defaultVoterInputRegistry.size).toBe(5);
     expect(defaultVoterInputRegistry.has('live-poll-multiple-choice')).toBe(true);
     expect(defaultVoterInputRegistry.has('live-poll-open-text')).toBe(true);
     expect(defaultVoterInputRegistry.has('live-poll-rating')).toBe(true);
     expect(defaultVoterInputRegistry.has('live-qa')).toBe(true);
+    expect(defaultVoterInputRegistry.has('live-quiz')).toBe(true);
   });
 });
 
@@ -38,7 +40,8 @@ describe('<VoterInputDispatcher>', () => {
         k !== 'live-poll-multiple-choice' &&
         k !== 'live-poll-open-text' &&
         k !== 'live-poll-rating' &&
-        k !== 'live-qa',
+        k !== 'live-qa' &&
+        k !== 'live-quiz',
     ),
   )('falls back to UnregisteredKindFallback for unregistered kind %s', (kind) => {
     render(<VoterInputDispatcher sessionId="s" clipKind={kind} />);
@@ -75,6 +78,14 @@ describe('<VoterInputDispatcher>', () => {
     const wrapper = screen.getByTestId('voter-input-live-qa-wrapper');
     expect(wrapper.getAttribute('data-session-id')).toBe('sess-qa');
     expect(wrapper.getAttribute('data-clip-kind')).toBe('live-qa');
+    expect(screen.queryByTestId('voter-input-unregistered')).toBeNull();
+  });
+
+  it('resolves live-quiz to the LiveQuizVoterInput (T-465)', () => {
+    render(<VoterInputDispatcher sessionId="sess-quiz" clipKind="live-quiz" />);
+    const wrapper = screen.getByTestId('voter-input-live-quiz-wrapper');
+    expect(wrapper.getAttribute('data-session-id')).toBe('sess-quiz');
+    expect(wrapper.getAttribute('data-clip-kind')).toBe('live-quiz');
     expect(screen.queryByTestId('voter-input-unregistered')).toBeNull();
   });
 

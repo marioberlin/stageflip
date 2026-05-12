@@ -49,7 +49,8 @@ function renderTemplateElement(el: Element, ctx: SlideEmitContext): string {
     case 'live-poll-multiple-choice':
     case 'live-poll-open-text':
     case 'live-poll-rating':
-    case 'live-qa': {
+    case 'live-qa':
+    case 'live-quiz': {
       // Template-tier image / video / etc. placeholders are uncommon; emit
       // a minimal `<p:sp>` stub so the part stays structurally valid, plus
       // a loss flag so the consumer can surface the gap. Future T-253
