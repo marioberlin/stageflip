@@ -105,6 +105,9 @@ importers:
       '@stageflip/runtimes-audience':
         specifier: workspace:*
         version: link:../../packages/runtimes/audience
+      '@stageflip/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
       next:
         specifier: 15.5.15
         version: 15.5.15(@opentelemetry/api@1.9.1)(@playwright/test@1.59.1)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)

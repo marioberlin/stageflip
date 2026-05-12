@@ -254,8 +254,11 @@ describe('elementSchema (discriminated union)', () => {
     // live-quiz; `LeaderboardVote = never`).
     // Bumped from 19 to 20 in T-467 to add 'word-cloud' — seventh audience-clip
     // variant on the union (ADR-010 §D2; live aggregating word weights).
-    expect(ELEMENT_TYPES).toHaveLength(20);
-    expect(new Set(ELEMENT_TYPES).size).toBe(20);
+    // Bumped from 20 to 21 in T-468 to add 'survey' — eighth audience-clip
+    // variant on the union (ADR-010 §D2; multi-question pre/post survey;
+    // closes the standard-family v1 set).
+    expect(ELEMENT_TYPES).toHaveLength(21);
+    expect(new Set(ELEMENT_TYPES).size).toBe(21);
   });
 
   it('elementSchema accepts a live-poll-multiple-choice element via the union (T-461)', () => {
@@ -386,6 +389,37 @@ describe('elementSchema (discriminated union)', () => {
       expect(el.props.prompt).toBe('Describe the talk in three words');
       expect(el.props.maxWords).toBe(100);
       expect(el.props.maxWordsPerVoter).toBe(3);
+      expect(el.permissions).toEqual(['audience-network']);
+    }
+  });
+
+  it('elementSchema accepts a survey element via the union (T-468)', () => {
+    const el = elementSchema.parse({
+      ...BASE,
+      type: 'survey',
+      permissions: ['audience-network'],
+      props: {
+        questions: [
+          {
+            id: 'q1',
+            type: 'multiple-choice',
+            text: 'Which framework?',
+            options: ['React', 'Vue'],
+          },
+          {
+            id: 'q2',
+            type: 'rating',
+            text: 'Rate the session',
+            scaleMin: 1,
+            scaleMax: 5,
+          },
+        ],
+      },
+    });
+    expect(el.type).toBe('survey');
+    if (el.type === 'survey') {
+      expect(el.props.questions).toHaveLength(2);
+      expect(el.props.questions[0]?.type).toBe('multiple-choice');
       expect(el.permissions).toEqual(['audience-network']);
     }
   });

@@ -20,6 +20,7 @@ import { LivePollOpenTextVoterInput } from './live-poll-open-text-voter-input';
 import { LivePollRatingVoterInput } from './live-poll-rating-voter-input';
 import { LiveQAVoterInput } from './live-qa-voter-input';
 import { LiveQuizVoterInput } from './live-quiz-voter-input';
+import { SurveyVoterInput } from './survey-voter-input';
 import { WordCloudVoterInput } from './word-cloud-voter-input';
 
 /**
@@ -57,7 +58,10 @@ export type VoterInputRegistry = ReadonlyMap<AudienceClipKind, ComponentType<Vot
  * T-467 adds `word-cloud` as the seventh entry (live aggregating word
  * weights — voter UI parses a comma-separated list, slices to
  * `maxWordsPerVoter`, truncates over-long words client-side);
- * T-468..T-471 add the remaining sibling kinds. Exported so the voter
+ * T-468 adds `survey` as the eighth entry (multi-question pre/post
+ * survey — voter UI is a vertical form with one input per question;
+ * closes the standard-family v1 set);
+ * T-469..T-471 add the remaining sibling kinds. Exported so the voter
  * app's `<VoterAppClient>` can pass it in, and so tests can verify the
  * registered + unregistered code paths.
  *
@@ -96,6 +100,12 @@ export const defaultVoterInputRegistry: VoterInputRegistry = new Map<
   // frequency. Voter UI parses a comma-separated textarea, slices to
   // `maxWordsPerVoter`, truncates over-long words client-side.
   ['word-cloud', WordCloudVoterInput],
+  // T-468 — eighth audience clip family. Multi-question pre/post
+  // survey — three question types (`multiple-choice` / `open-text` /
+  // `rating`); voter UI is a vertical form with one input per
+  // question + a single submit button at the bottom. Closes the
+  // standard-family v1 set.
+  ['survey', SurveyVoterInput],
 ]);
 
 /**

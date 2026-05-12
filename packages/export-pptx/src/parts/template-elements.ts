@@ -52,7 +52,8 @@ function renderTemplateElement(el: Element, ctx: SlideEmitContext): string {
     case 'live-qa':
     case 'live-quiz':
     case 'leaderboard':
-    case 'word-cloud': {
+    case 'word-cloud':
+    case 'survey': {
       // Template-tier image / video / etc. placeholders are uncommon; emit
       // a minimal `<p:sp>` stub so the part stays structurally valid, plus
       // a loss flag so the consumer can surface the gap. Future T-253

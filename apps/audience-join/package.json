@@ -17,6 +17,7 @@
     "@stageflip/audience-contract": "workspace:*",
     "@stageflip/audience-join-shared": "workspace:*",
     "@stageflip/runtimes-audience": "workspace:*",
+    "@stageflip/schema": "workspace:*",
     "next": "15.5.15",
     "react": "19.2.5",
     "react-dom": "19.2.5"
