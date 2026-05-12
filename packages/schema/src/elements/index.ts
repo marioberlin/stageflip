@@ -6,6 +6,10 @@
 import { z } from 'zod';
 
 import { type InteractiveClip, interactiveClipSchema } from '../clips/interactive.js';
+import {
+  type AudienceAiPromptClipElement,
+  audienceAiPromptClipElementSchema,
+} from './audience-ai-prompt.js';
 import { type AudioElement, audioElementSchema } from './audio.js';
 import { type ElementBase, elementBaseSchema } from './base.js';
 import { type BlenderClipElement, blenderClipSchema } from './blender-clip.js';
@@ -75,7 +79,8 @@ export type Element =
   | WordCloudClipElement
   | SurveyClipElement
   | HeatmapClipElement
-  | ReactionStreamClipElement;
+  | ReactionStreamClipElement
+  | AudienceAiPromptClipElement;
 
 /**
  * Group schema with recursive `children: Element[]`. Uses `z.lazy` and an
@@ -137,6 +142,7 @@ export const elementSchema = z.union([
   surveyClipElementSchema,
   heatmapClipElementSchema,
   reactionStreamClipElementSchema,
+  audienceAiPromptClipElementSchema,
   groupElementSchema,
 ]) as unknown as z.ZodType<Element>;
 
@@ -168,12 +174,14 @@ export const ELEMENT_TYPES = [
   'survey',
   'heatmap',
   'reaction-stream',
+  'audience-ai-prompt',
 ] as const;
 export type ElementType = (typeof ELEMENT_TYPES)[number];
 
 // Re-export everything from each per-type file so callers can import from
 // this barrel without reaching into individual files. New exports added to
 // any element file propagate automatically.
+export * from './audience-ai-prompt.js';
 export * from './audience-provenance.js';
 export * from './audio.js';
 export * from './base.js';

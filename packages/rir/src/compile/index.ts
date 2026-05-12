@@ -436,6 +436,26 @@ function toRIRContent(el: Element): RIRElementContent {
           ...(el.provenance !== undefined ? { provenance: el.provenance } : {}),
         },
       };
+    case 'audience-ai-prompt':
+      // T-471: Eleventh + FINAL audience-clip element variant — THIRD
+      // marquee differentiator. Audience-driven AI generation: voters
+      // submit prompts → upvote shortlist → winning prompt triggers
+      // the P14 asset-gen pipeline (Seedance T-430 / ACE-Step T-432 /
+      // etc., per `targetModality`); the generated asset is rendered
+      // in the static-fallback. Same lowering as T-461..T-470 —
+      // `runtime: 'audience'` + `clipName: 'audience-ai-prompt'` so
+      // `@stageflip/runtimes-audience` `audienceRuntime` picks it up.
+      // Closes the v1 clip-family set.
+      return {
+        type: 'clip',
+        runtime: 'audience',
+        clipName: 'audience-ai-prompt',
+        params: {
+          props: el.props,
+          permissions: el.permissions,
+          ...(el.provenance !== undefined ? { provenance: el.provenance } : {}),
+        },
+      };
     default: {
       const never: never = el;
       return never;

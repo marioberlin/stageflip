@@ -14,6 +14,7 @@
 import type { AudienceClipKind } from '@stageflip/audience-contract';
 import type { ComponentType, ReactElement } from 'react';
 
+import { AudienceAiPromptVoterInput } from './audience-ai-prompt-voter-input';
 import { HeatmapVoterInput } from './heatmap-voter-input';
 import { LeaderboardViewOnly } from './leaderboard-view-only';
 import { LivePollMultipleChoiceVoterInput } from './live-poll-multiple-choice-voter-input';
@@ -125,6 +126,13 @@ export const defaultVoterInputRegistry: VoterInputRegistry = new Map<
   // multi-tap permitted; server-side 10 Hz rate-limit per ADR-009 §D3
   // line 231 override bounds spam.
   ['reaction-stream', ReactionStreamVoterInput],
+  // T-471 — eleventh + FINAL audience clip family. THIRD marquee
+  // differentiator: audience-driven AI generation. Voter UI is tabbed
+  // (Submit / Browse) mirroring T-464's LiveQA pattern; submit emits
+  // `{ kind: 'audience-ai-prompt', action: 'submit', text }`; upvote
+  // emits `{ action: 'upvote', promptId }`. Lock-when-winner-set:
+  // once a winner is declared, both tabs disable.
+  ['audience-ai-prompt', AudienceAiPromptVoterInput],
 ]);
 
 /**

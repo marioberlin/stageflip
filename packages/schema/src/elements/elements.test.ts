@@ -263,8 +263,12 @@ describe('elementSchema (discriminated union)', () => {
     // Bumped from 22 to 23 in T-470 to add 'reaction-stream' — tenth
     // audience-clip variant on the union (ADR-010 §D2; SECOND marquee
     // differentiator; emoji particle storm via the T-383 ShaderClip).
-    expect(ELEMENT_TYPES).toHaveLength(23);
-    expect(new Set(ELEMENT_TYPES).size).toBe(23);
+    // Bumped from 23 to 24 in T-471 to add 'audience-ai-prompt' —
+    // eleventh + FINAL audience-clip variant on the union (ADR-010 §D2;
+    // THIRD marquee differentiator; audience-driven AI generation via
+    // the P14 asset-gen pipeline). Closes the v1 clip-family set.
+    expect(ELEMENT_TYPES).toHaveLength(24);
+    expect(new Set(ELEMENT_TYPES).size).toBe(24);
   });
 
   it('elementSchema accepts a live-poll-multiple-choice element via the union (T-461)', () => {
@@ -445,6 +449,26 @@ describe('elementSchema (discriminated union)', () => {
       expect(el.props.prompt).toBe('Tap where you focus');
       expect(el.props.maxIntensity).toBe(1);
       expect(el.props.gridResolution).toEqual({ w: 32, h: 32 });
+      expect(el.permissions).toEqual(['audience-network']);
+    }
+  });
+
+  it('elementSchema accepts an audience-ai-prompt element via the union (T-471)', () => {
+    const el = elementSchema.parse({
+      ...BASE,
+      type: 'audience-ai-prompt',
+      permissions: ['audience-network'],
+      props: {
+        prompt: 'What should we generate next?',
+        targetModality: 'video-gen',
+      },
+    });
+    expect(el.type).toBe('audience-ai-prompt');
+    if (el.type === 'audience-ai-prompt') {
+      expect(el.props.prompt).toBe('What should we generate next?');
+      expect(el.props.targetModality).toBe('video-gen');
+      expect(el.props.topN).toBe(20);
+      expect(el.props.maxPromptLength).toBe(200);
       expect(el.permissions).toEqual(['audience-network']);
     }
   });
