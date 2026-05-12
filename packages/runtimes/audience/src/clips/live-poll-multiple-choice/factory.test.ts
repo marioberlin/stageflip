@@ -168,7 +168,7 @@ describe('livePollMultipleChoiceClipFactory', () => {
     const handle = await livePollMultipleChoiceClipFactory(ctx);
     expect(handle).toBeDefined();
     // The React tree mounts on the next microtask; wait one tick.
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     const root = document.querySelector('[data-stageflip-clip="live-poll-multiple-choice"]');
     expect(root).not.toBeNull();
     handle.dispose();
@@ -197,7 +197,7 @@ describe('livePollMultipleChoiceClipFactory', () => {
       },
     });
     const handle = await livePollMultipleChoiceClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     const total = document.querySelector('[data-testid="live-poll-mc-total"]');
     expect(total?.textContent).toBe('18 votes');
     handle.dispose();
@@ -214,7 +214,7 @@ describe('livePollMultipleChoiceClipFactory', () => {
       voterToken: 'v-tok',
     });
     const handle = await livePollMultipleChoiceClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     push({
       sessionId: 's-1',
       frameNo: 1,
@@ -257,7 +257,7 @@ describe('livePollMultipleChoiceClipFactory', () => {
     const { provider } = makeStubProvider();
     const ctx = makeCtx({ controller, provider });
     const handle = await livePollMultipleChoiceClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     controller.abort();
     // Calling dispose twice is a no-op.
     expect(() => handle.dispose()).not.toThrow();

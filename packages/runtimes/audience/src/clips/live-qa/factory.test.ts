@@ -166,7 +166,7 @@ describe('liveQAClipFactory', () => {
     const ctx = makeCtx({ controller, provider });
     const handle = await liveQAClipFactory(ctx);
     expect(handle).toBeDefined();
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     const root = document.querySelector('[data-stageflip-clip="live-qa"]');
     expect(root).not.toBeNull();
     handle.dispose();
@@ -209,7 +209,7 @@ describe('liveQAClipFactory', () => {
       },
     });
     const handle = await liveQAClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     const total = document.querySelector('[data-testid="live-qa-total"]');
     expect(total?.textContent).toBe('2 questions');
     const cards = document.querySelectorAll('[data-testid^="live-qa-card-"]');
@@ -228,7 +228,7 @@ describe('liveQAClipFactory', () => {
       voterToken: 'v-tok',
     });
     const handle = await liveQAClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     push({
       sessionId: 's-1',
       frameNo: 1,
@@ -281,7 +281,7 @@ describe('liveQAClipFactory', () => {
     const { provider } = makeStubProvider();
     const ctx = makeCtx({ controller, provider });
     const handle = await liveQAClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     controller.abort();
     expect(() => handle.dispose()).not.toThrow();
   });

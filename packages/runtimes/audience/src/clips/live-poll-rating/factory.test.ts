@@ -167,7 +167,7 @@ describe('livePollRatingClipFactory', () => {
     const ctx = makeCtx({ controller, provider });
     const handle = await livePollRatingClipFactory(ctx);
     expect(handle).toBeDefined();
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     const root = document.querySelector('[data-stageflip-clip="live-poll-rating"]');
     expect(root).not.toBeNull();
     handle.dispose();
@@ -197,7 +197,7 @@ describe('livePollRatingClipFactory', () => {
       },
     });
     const handle = await livePollRatingClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     const total = document.querySelector('[data-testid="live-poll-rating-total"]');
     expect(total?.textContent).toBe('21 votes');
     const mean = document.querySelector('[data-testid="live-poll-rating-mean"]');
@@ -216,7 +216,7 @@ describe('livePollRatingClipFactory', () => {
       voterToken: 'v-tok',
     });
     const handle = await livePollRatingClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     push({
       sessionId: 's-1',
       frameNo: 1,
@@ -263,7 +263,7 @@ describe('livePollRatingClipFactory', () => {
     const { provider } = makeStubProvider();
     const ctx = makeCtx({ controller, provider });
     const handle = await livePollRatingClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     controller.abort();
     expect(() => handle.dispose()).not.toThrow();
   });

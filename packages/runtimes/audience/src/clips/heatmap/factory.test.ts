@@ -164,7 +164,7 @@ describe('heatmapClipFactory', () => {
     const ctx = makeCtx({ controller, provider });
     const handle = await heatmapClipFactory(ctx);
     expect(handle).toBeDefined();
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     const root = document.querySelector('[data-stageflip-clip="heatmap"]');
     expect(root).not.toBeNull();
     expect(root?.getAttribute('data-state')).toBe('waiting');
@@ -198,7 +198,7 @@ describe('heatmapClipFactory', () => {
       },
     });
     const handle = await heatmapClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     const root = document.querySelector('[data-stageflip-clip="heatmap"]');
     expect(root?.getAttribute('data-state')).toBe('aggregated');
     const total = document.querySelector('[data-testid="heatmap-total"]');
@@ -217,7 +217,7 @@ describe('heatmapClipFactory', () => {
       voterToken: 'v-tok',
     });
     const handle = await heatmapClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     push({
       sessionId: 's-1',
       frameNo: 1,
@@ -265,7 +265,7 @@ describe('heatmapClipFactory', () => {
     const { provider } = makeStubProvider();
     const ctx = makeCtx({ controller, provider });
     const handle = await heatmapClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     controller.abort();
     expect(() => handle.dispose()).not.toThrow();
   });
