@@ -42,6 +42,7 @@ import {
   registerClusterFComposeBundle,
   registerClusterGComposeBundle,
   registerClusterHComposeBundle,
+  registerClusterIComposeBundle,
   registerCreateMutateBundle,
   registerDataSourceBindingsBundle,
   registerDisplayModeBundle,
@@ -129,6 +130,7 @@ function populate(registry: BundleRegistry, router: ToolRouter<ExecutorContext>)
   registerClusterHComposeBundle(registry, router);
   registerAssetGenerationBundle(registry, router);
   registerAudienceEngagementBundle(registry, router);
+  registerClusterIComposeBundle(registry, router);
 }
 
 /**

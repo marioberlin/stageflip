@@ -150,6 +150,12 @@ export const CANONICAL_BUNDLES: readonly ToolBundle[] = [
       '11 compose_audience_* tools for authoring Live Audience clips per ADR-009 / ADR-010 — one composer per AudienceClipKind discriminant (live-poll-multiple-choice / live-poll-open-text / live-poll-rating / live-qa / live-quiz / leaderboard / word-cloud / survey / heatmap / reaction-stream / audience-ai-prompt). Each tool emits a (presetId?, clipKind, props) triple; the caller mounts via add_clip from create-mutate. Cluster I (T-486) ratifies presets later — until then presetId is undefined and the runtime dispatches by clipKind (T-457).',
     tools: [],
   },
+  {
+    name: 'cluster-i-compose',
+    description:
+      '3 read-only composer tools that bind a semantic Cluster I (Live audience) brief to a ratified preset id + audience clipKind + opaque props payload. compose_live_poll → slido-classic-poll | mentimeter-bar-vote; compose_audience_qa → bbc-question-time | conference-qa-upvote; compose_quiz_round → kahoot-competitive | classroom-quiz. Cluster I = 6 audience presets ratified in T-486 (T-487).',
+    tools: [],
+  },
 ];
 
 export const CANONICAL_BUNDLE_NAMES: readonly string[] = CANONICAL_BUNDLES.map((b) => b.name);

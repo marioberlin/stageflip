@@ -14,6 +14,7 @@ import {
   createCanonicalRegistry,
   registerArrangeVariantsBundle,
   registerAudienceEngagementBundle,
+  registerClusterIComposeBundle,
   registerClipAnimationBundle,
   registerClusterAComposeBundle,
   registerClusterBComposeBundle,
@@ -98,6 +99,7 @@ function buildPopulatedBundleRegistry(): BundleRegistry {
   registerClusterFComposeBundle(registry, router);
   registerClusterGComposeBundle(registry, router);
   registerAudienceEngagementBundle(registry, router);
+  registerClusterIComposeBundle(registry, router);
   return registry;
 }
 

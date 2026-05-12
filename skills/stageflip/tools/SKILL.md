@@ -17,7 +17,7 @@ NOT edit by hand — run `pnpm skills-sync` after registering a
 new bundle; `pnpm skills-sync:check` fails in CI if this file
 drifts.
 
-26 bundles, 145 tools total.
+27 bundles, 148 tools total.
 
 StageFlip ships tools grouped into bundles so an agent context
 rarely needs more than 30 tool definitions loaded at once
@@ -55,6 +55,7 @@ rarely needs more than 30 tool definitions loaded at once
 | [`cluster-h-compose`](./cluster-h-compose/SKILL.md) | 0 | Cluster H (AR overlays) composer tools — preset-binding factories for AR overlay / VAR skeletal / swim-lane track briefs across the 4 ratified Cluster H presets (T-379). |
 | [`asset-generation`](./asset-generation/SKILL.md) | 0 | Asset-generation tools — wraps the Phase 14 α Provider Seam (AdapterRegistry / LicenseGate / FallbackChainExecutor + AssetCache + MediaProvenance) so agents can generate audio / image / video assets with provenance + content-addressed cache keys (T-423). |
 | [`audience-engagement`](./audience-engagement/SKILL.md) | 11 | 11 compose_audience_* tools for authoring Live Audience clips per ADR-009 / ADR-010 — one composer per AudienceClipKind discriminant (live-poll-multiple-choice / live-poll-open-text / live-poll-rating / live-qa / live-quiz / leaderboard / word-cloud / survey / heatmap / reaction-stream / audience-ai-prompt). Each tool emits a (presetId?, clipKind, props) triple; the caller mounts via add_clip from create-mutate. Cluster I (T-486) ratifies presets later — until then presetId is undefined and the runtime dispatches by clipKind (T-457). |
+| [`cluster-i-compose`](./cluster-i-compose/SKILL.md) | 3 | 3 read-only composer tools that bind a semantic Cluster I (Live audience) brief to a ratified preset id + audience clipKind + opaque props payload. compose_live_poll → slido-classic-poll \| mentimeter-bar-vote; compose_audience_qa → bbc-question-time \| conference-qa-upvote; compose_quiz_round → kahoot-competitive \| classroom-quiz. Cluster I = 6 audience presets ratified in T-486 (T-487). |
 
 ## Per-bundle reference
 
