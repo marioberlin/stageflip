@@ -239,8 +239,27 @@ describe('elementSchema (discriminated union)', () => {
   });
   it('ELEMENT_TYPES covers all discriminant values', () => {
     // Bumped from 12 to 13 in T-305 to add 'interactive-clip' (ADR-003 §D2).
-    expect(ELEMENT_TYPES).toHaveLength(13);
-    expect(new Set(ELEMENT_TYPES).size).toBe(13);
+    // Bumped from 13 to 14 in T-461 to add 'live-poll-multiple-choice' — first
+    // audience-clip variant on the union (ADR-010 §D2).
+    expect(ELEMENT_TYPES).toHaveLength(14);
+    expect(new Set(ELEMENT_TYPES).size).toBe(14);
+  });
+
+  it('elementSchema accepts a live-poll-multiple-choice element via the union (T-461)', () => {
+    const el = elementSchema.parse({
+      ...BASE,
+      type: 'live-poll-multiple-choice',
+      permissions: ['audience-network'],
+      props: {
+        question: 'What now?',
+        options: ['A', 'B'],
+      },
+    });
+    expect(el.type).toBe('live-poll-multiple-choice');
+    if (el.type === 'live-poll-multiple-choice') {
+      expect(el.props.options).toHaveLength(2);
+      expect(el.permissions).toEqual(['audience-network']);
+    }
   });
 });
 
