@@ -1,5 +1,5 @@
 {
-  "name": "@stageflip/editor-shell",
+  "name": "@stageflip/audience-join-shared",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -20,27 +20,20 @@
     "lint": "biome check src",
     "test": "vitest run --passWithNoTests"
   },
-  "peerDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
-  },
   "dependencies": {
-    "@stageflip/agent": "workspace:*",
-    "@stageflip/audience-join-shared": "workspace:*",
-    "@stageflip/loss-flags": "workspace:*",
-    "@stageflip/schema": "workspace:*",
-    "fast-json-patch": "3.1.1",
-    "jotai": "2.19.1",
-    "qrcode": "1.5.4",
-    "zod": "3.25.76"
+    "@stageflip/audience-contract": "workspace:*"
   },
   "devDependencies": {
-    "@testing-library/react": "16.3.2",
-    "@types/qrcode": "1.5.5",
-    "@types/react": "19.2.14",
-    "@types/react-dom": "19.2.3",
-    "happy-dom": "20.9.0",
-    "react": "19.2.5",
-    "react-dom": "19.2.5"
+    "@vitest/coverage-v8": "2.1.9",
+    "vitest": "2.1.9"
+  },
+  "license": "BUSL-1.1",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marioberlin/stageflip.git",
+    "directory": "packages/audience-join-shared"
   }
 }

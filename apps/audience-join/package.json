@@ -1,0 +1,33 @@
+{
+  "name": "@stageflip/app-audience-join",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "StageFlip audience-join voter landing page (T-456) — Next.js 15 app on port 3500.",
+  "scripts": {
+    "dev": "next dev --port 3500",
+    "build": "next build",
+    "start": "next start --port 3500",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src",
+    "test": "vitest run --passWithNoTests",
+    "e2e": "pnpm exec turbo run build --filter=@stageflip/app-audience-join && playwright test --config playwright.config.ts"
+  },
+  "dependencies": {
+    "@stageflip/audience-contract": "workspace:*",
+    "@stageflip/audience-join-shared": "workspace:*",
+    "@stageflip/runtimes-audience": "workspace:*",
+    "next": "15.5.15",
+    "react": "19.2.5",
+    "react-dom": "19.2.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.59.1",
+    "@testing-library/react": "16.3.2",
+    "@types/node": "22.19.17",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "happy-dom": "20.9.0",
+    "typescript": "5.6.3"
+  }
+}

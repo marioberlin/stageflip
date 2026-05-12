@@ -385,11 +385,20 @@ export function isAdapterPackageName(name: string): boolean {
   const SCOPE = '@stageflip/';
   if (!name.startsWith(SCOPE)) return false;
   const unscoped = name.slice(SCOPE.length);
-  // Contract packages (e.g., `audience-contract`, `asset-gen-contract`) ship
-  // interfaces + Zod schemas, NOT concrete adapter descriptors. They match
-  // the modality-prefix naming convention but must be excluded from the
-  // adapter walk; the license gate runs against concrete adapters only.
-  if (unscoped.endsWith('-contract')) return false;
+  // Non-adapter sibling packages (contracts, shared helpers, runtimes,
+  // join UX, etc.) match the modality-prefix naming convention but must
+  // be excluded from the adapter walk; the license gate runs against
+  // concrete adapters only.
+  //
+  // Suffix exclusions:
+  //   * `-contract`  — interfaces + Zod schemas (e.g., `audience-contract`,
+  //                    `asset-gen-contract`). T-419 / T-452.
+  //   * `-shared`    — pure helper modules sibling to contracts (e.g.,
+  //                    `audience-join-shared`). T-456.
+  const NON_ADAPTER_SUFFIXES = ['-contract', '-shared'] as const;
+  if (NON_ADAPTER_SUFFIXES.some((suffix) => unscoped.endsWith(suffix))) {
+    return false;
+  }
   return ADAPTER_PACKAGE_PREFIXES.some((prefix) => unscoped.startsWith(prefix));
 }
 

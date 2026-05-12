@@ -232,3 +232,6 @@ export {
   BannerSizeGrid,
   BannerSizePreview,
 } from './banner-size/components';
+
+// T-456 — audience-join QR + room-code modal.
+export { AudienceJoinModal, type AudienceJoinModalProps } from './audience-join';
