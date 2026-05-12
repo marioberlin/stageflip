@@ -1114,6 +1114,264 @@ export function runCategory8(opts: CheckOpts): CategoryResult {
   return { number: 8, title: 'Phase 14 GA readiness', criteria };
 }
 
+// ---------- Category 9 — Phase 15 GA readiness constants (T-488) ----------
+
+/** Phase 15 ADRs that must be `Accepted` to clear the GA gate. */
+const PHASE_15_ADRS = ['ADR-009', 'ADR-010'] as const;
+
+/** The 11 AudienceClipKind discriminants T-461..T-471 ship. */
+const PHASE_15_AUDIENCE_CLIP_KINDS = [
+  'live-poll-multiple-choice',
+  'live-poll-open-text',
+  'live-poll-rating',
+  'live-qa',
+  'live-quiz',
+  'leaderboard',
+  'word-cloud',
+  'survey',
+  'heatmap',
+  'reaction-stream',
+  'audience-ai-prompt',
+] as const;
+
+/** The 6 audience-backend adapter packages (native + 5 vendors). */
+const PHASE_15_AUDIENCE_ADAPTER_PKGS = [
+  'audience-native',
+  'audience-slido',
+  'audience-mentimeter',
+  'audience-polleverywhere',
+  'audience-vevox',
+  'audience-wooclap',
+] as const;
+
+/** The 6 Cluster I preset slugs ratified in T-486. */
+const PHASE_15_CLUSTER_I_PRESETS = [
+  'slido-classic-poll',
+  'mentimeter-bar-vote',
+  'kahoot-competitive',
+  'bbc-question-time',
+  'conference-qa-upvote',
+  'classroom-quiz',
+] as const;
+
+/** Phase 15 CI gates wired into `.github/workflows/ci.yml`. */
+const PHASE_15_CHECK_GATES = [
+  {
+    script: 'check-audience-permissions',
+    file: 'check-audience-permissions.ts',
+    ciStep: 'Gate - check-audience-permissions',
+  },
+  {
+    script: 'check-audience-vendor-parity',
+    file: 'check-audience-vendor-parity.ts',
+    ciStep: 'Gate - check-audience-vendor-parity',
+  },
+] as const;
+
+/**
+ * Category 9 — Phase 15 GA readiness (T-488).
+ *
+ * 12 criteria covering ADR ratification (9, 10), the 11 audience clip
+ * family implementations, the 6 audience-backend adapters, the 6
+ * Cluster I presets + compose bundle, the two Phase 15 CI gates, the
+ * audience-data persistence + quiz-fairness primitives, the parity-
+ * fixture skeletons, the closeout / security-review punch list.
+ * Surfaces the Phase 15 GA punch list the Orchestrator uses at the
+ * phase boundary.
+ */
+export function runCategory9(opts: CheckOpts): CategoryResult {
+  const criteria: CriterionResult[] = [];
+
+  // ---------- 9.1 — ADR-009 + ADR-010 ratified ----------
+  const decisionsDir = join(opts.repoRoot, 'docs/decisions');
+  const adrStatuses: Array<{ adr: string; status: 'PASS' | 'FAIL' | 'MISSING'; note: string }> = [];
+  for (const adr of PHASE_15_ADRS) {
+    const matches = existsSync(decisionsDir)
+      ? readdirSync(decisionsDir).filter((f) => f.startsWith(`${adr}-`) && f.endsWith('.md'))
+      : [];
+    if (matches.length === 0) {
+      adrStatuses.push({ adr, status: 'MISSING', note: 'file missing' });
+      continue;
+    }
+    const adrPath = join(decisionsDir, matches[0] as string);
+    const body = readFileSync(adrPath, 'utf8');
+    if (/\*\*Status\*\*:\s*\*\*Accepted\*\*/i.test(body) || /Status:\s*Accepted/i.test(body)) {
+      adrStatuses.push({ adr, status: 'PASS', note: 'Accepted' });
+    } else {
+      const m = body.match(/\*\*Status\*\*:\s*\*\*([^*]+)\*\*/i) ?? body.match(/Status:\s*(\S+)/i);
+      const actual = m?.[1] ?? 'unknown';
+      adrStatuses.push({ adr, status: 'FAIL', note: actual });
+    }
+  }
+  const adrFails = adrStatuses.filter((a) => a.status !== 'PASS');
+  criteria.push({
+    id: '9.1',
+    description: 'ADR-009 (audience backend) + ADR-010 (live audience clip family) ratified',
+    status: adrFails.length === 0 ? 'PASS' : 'FAIL',
+    note:
+      adrFails.length === 0
+        ? 'both Phase 15 α ADRs ratified'
+        : adrFails.map((a) => `${a.adr}: ${a.note}`).join('; '),
+  });
+
+  // ---------- 9.2 — All 11 audience clip families present ----------
+  const audienceClipsDir = join(opts.repoRoot, 'packages/runtimes/audience/src/clips');
+  const missingClipKinds: string[] = [];
+  for (const kind of PHASE_15_AUDIENCE_CLIP_KINDS) {
+    const dir = join(audienceClipsDir, kind);
+    if (!existsSync(dir) || !existsSync(join(dir, 'manifest.ts'))) {
+      missingClipKinds.push(kind);
+    }
+  }
+  criteria.push({
+    id: '9.2',
+    description: 'All 11 audience clip families present (T-461..T-471)',
+    status: missingClipKinds.length === 0 ? 'PASS' : 'FAIL',
+    note:
+      missingClipKinds.length === 0
+        ? '11/11 clip families present'
+        : `missing: ${missingClipKinds.join(', ')}`,
+  });
+
+  // ---------- 9.3 — 6 audience-backend adapter packages present ----------
+  const missingAdapterPkgs: string[] = [];
+  for (const pkg of PHASE_15_AUDIENCE_ADAPTER_PKGS) {
+    const pkgJson = join(opts.repoRoot, 'packages', pkg, 'package.json');
+    if (!existsSync(pkgJson)) missingAdapterPkgs.push(pkg);
+  }
+  criteria.push({
+    id: '9.3',
+    description: 'All 6 audience-backend adapter packages present (native + 5 vendors)',
+    status: missingAdapterPkgs.length === 0 ? 'PASS' : 'FAIL',
+    note:
+      missingAdapterPkgs.length === 0
+        ? '6/6 adapter packages present'
+        : `missing: ${missingAdapterPkgs.join(', ')}`,
+  });
+
+  // ---------- 9.4 — 6 Cluster I preset markdown files present ----------
+  const presetsDir = join(opts.repoRoot, 'skills/stageflip/presets/audience');
+  const missingPresets: string[] = [];
+  for (const id of PHASE_15_CLUSTER_I_PRESETS) {
+    if (!existsSync(join(presetsDir, `${id}.md`))) missingPresets.push(id);
+  }
+  criteria.push({
+    id: '9.4',
+    description: 'All 6 Cluster I preset markdown files present (T-486)',
+    status: missingPresets.length === 0 ? 'PASS' : 'FAIL',
+    note:
+      missingPresets.length === 0 ? '6/6 presets present' : `missing: ${missingPresets.join(', ')}`,
+  });
+
+  // ---------- 9.5 — audience-engagement + cluster-i-compose bundles ----------
+  const catalogPath = join(opts.repoRoot, 'packages/engine/src/bundles/catalog.ts');
+  let bundleWireStatus: CriterionStatus = 'PASS';
+  let bundleNote = 'both bundles present in catalog';
+  if (!existsSync(catalogPath)) {
+    bundleWireStatus = 'FAIL';
+    bundleNote = 'catalog.ts missing';
+  } else {
+    const body = readFileSync(catalogPath, 'utf8');
+    const missing = ['audience-engagement', 'cluster-i-compose'].filter(
+      (b) => !body.includes(`'${b}'`),
+    );
+    if (missing.length > 0) {
+      bundleWireStatus = 'FAIL';
+      bundleNote = `missing bundles: ${missing.join(', ')}`;
+    }
+  }
+  criteria.push({
+    id: '9.5',
+    description: 'audience-engagement + cluster-i-compose canonical bundles wired (T-457 + T-487)',
+    status: bundleWireStatus,
+    note: bundleNote,
+  });
+
+  // ---------- 9.6/9.7 — Phase 15 CI gates wired ----------
+  const ciYaml = join(opts.repoRoot, '.github/workflows/ci.yml');
+  const ciBody = existsSync(ciYaml) ? readFileSync(ciYaml, 'utf8') : '';
+  const scriptsDir = join(opts.repoRoot, 'scripts');
+  for (const gate of PHASE_15_CHECK_GATES) {
+    const scriptPresent = existsSync(join(scriptsDir, gate.file));
+    const ciWired = ciBody.includes(gate.ciStep);
+    const status: CriterionStatus =
+      scriptPresent && ciWired ? 'PASS' : !scriptPresent ? 'FAIL' : 'WARN';
+    criteria.push({
+      id: gate.script === 'check-audience-permissions' ? '9.6' : '9.7',
+      description: `Phase 15 CI gate "${gate.script}" wired into ci.yml`,
+      status,
+      note: !scriptPresent
+        ? `script ${gate.file} missing`
+        : !ciWired
+          ? `script present but CI step "${gate.ciStep}" missing`
+          : 'script + CI step present',
+    });
+  }
+
+  // ---------- 9.8 — quiz-fairness primitives shipped (T-473) ----------
+  const quizFairnessPath = join(opts.repoRoot, 'packages/audience-contract/src/quiz-fairness.ts');
+  criteria.push({
+    id: '9.8',
+    description: 'Quiz-fairness scoring primitives shipped (T-473)',
+    status: existsSync(quizFairnessPath) ? 'PASS' : 'FAIL',
+    note: existsSync(quizFairnessPath) ? 'present' : 'quiz-fairness.ts missing',
+  });
+
+  // ---------- 9.9 — Firestore audience-results impl shipped (T-474) ----------
+  const firebaseAudiencePath = join(
+    opts.repoRoot,
+    'packages/storage-firebase/src/audience-results.ts',
+  );
+  criteria.push({
+    id: '9.9',
+    description: 'Firestore-backed AudienceResultsStore shipped (T-474)',
+    status: existsSync(firebaseAudiencePath) ? 'PASS' : 'FAIL',
+    note: existsSync(firebaseAudiencePath) ? 'present' : 'audience-results.ts missing',
+  });
+
+  // ---------- 9.10 — latency tests + SLA load test scaffolds ----------
+  const latencyPath = join(opts.repoRoot, 'apps/api/src/test/audience-latency.test.ts');
+  const loadtestPath = join(opts.repoRoot, 'scripts/loadtest/audience-sla.k6.ts');
+  const allPresent = existsSync(latencyPath) && existsSync(loadtestPath);
+  criteria.push({
+    id: '9.10',
+    description: 'Latency tests (T-475) + SLA load-test (T-477) scaffolds shipped',
+    status: allPresent ? 'PASS' : 'FAIL',
+    note: allPresent
+      ? 'both opt-in harnesses present'
+      : `missing: ${!existsSync(latencyPath) ? 'latency.test.ts' : ''}${
+          !existsSync(loadtestPath) ? ' loadtest/audience-sla.k6.ts' : ''
+        }`,
+  });
+
+  // ---------- 9.11 — parity-fixtures/audience/ directory ----------
+  const parityFixturesDir = join(opts.repoRoot, 'parity-fixtures/audience');
+  const missingFixtures: string[] = [];
+  for (const kind of PHASE_15_AUDIENCE_CLIP_KINDS) {
+    const dir = join(parityFixturesDir, kind);
+    if (!existsSync(join(dir, 'manifest.json'))) missingFixtures.push(kind);
+  }
+  criteria.push({
+    id: '9.11',
+    description: 'Cluster I parity-fixture skeletons present for all 11 clip kinds (T-476)',
+    status: missingFixtures.length === 0 ? 'PASS' : 'FAIL',
+    note:
+      missingFixtures.length === 0
+        ? '11/11 fixture skeletons present'
+        : `missing: ${missingFixtures.join(', ')}`,
+  });
+
+  // ---------- 9.12 — security review (human-gated) ----------
+  criteria.push({
+    id: '9.12',
+    description: 'GA security review covers auth flow + WebSocket abuse vectors + voice-clone',
+    status: 'WARN',
+    note: 'auto-WARN — security review is human-gated; T-488 orchestrator action records sign-off out-of-band',
+  });
+
+  return { number: 9, title: 'Phase 15 GA readiness', criteria };
+}
+
 // ---------- top-level orchestration ----------
 
 export interface RunOpts extends CheckOpts {
@@ -1134,6 +1392,7 @@ export function runAudit(opts: RunOpts): AuditReport {
       runCategory6(opts),
       runCategory7(),
       runCategory8(opts),
+      runCategory9(opts),
     ],
   };
 }
