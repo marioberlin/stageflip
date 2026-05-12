@@ -71,7 +71,7 @@ jobs:
 
       - name: Upload archives
         if: success() || failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: load-smoke-archives-${{ github.sha }}
           path: tests/load/runs/*.tar
@@ -135,7 +135,7 @@ jobs:
 
       - name: Upload K6 summaries
         if: success() || failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: load-smoke-summaries-${{ github.sha }}
           path: tests/load/runs/
