@@ -40,7 +40,8 @@ export class JSDOMReactHarness {
 
   /** Create a harness, installing the canvas-context stub. */
   static async create(options: JSDOMReactHarnessOptions): Promise<JSDOMReactHarness> {
-    (globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    (globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT =
+      true;
     const host = document.createElement('div');
     document.body.appendChild(host);
     const reactRoot = createRoot(host);

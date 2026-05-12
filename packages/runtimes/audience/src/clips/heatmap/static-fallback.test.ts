@@ -99,9 +99,7 @@ describe('HeatmapCanvasOverlay effect (via static-fallback tree)', () => {
         calls.push(1);
       },
     });
-    harness.render(
-      renderHeatmapStaticFallback({ snapshot: FULL_SNAPSHOT, context: CTX }),
-    );
+    harness.render(renderHeatmapStaticFallback({ snapshot: FULL_SNAPSHOT, context: CTX }));
     await harness.flushEffects();
     expect(calls.length).toBeGreaterThan(0);
     harness.dispose();
@@ -115,9 +113,7 @@ describe('HeatmapCanvasOverlay effect (via static-fallback tree)', () => {
       },
     });
     expect(() => {
-      harness.render(
-        renderHeatmapStaticFallback({ snapshot: FULL_SNAPSHOT, context: CTX }),
-      );
+      harness.render(renderHeatmapStaticFallback({ snapshot: FULL_SNAPSHOT, context: CTX }));
     }).not.toThrow();
     await harness.flushEffects();
     harness.dispose();
