@@ -2195,6 +2195,24 @@ importers:
       '@stageflip/audience-contract':
         specifier: workspace:*
         version: link:../packages/audience-contract
+      '@stageflip/audience-mentimeter':
+        specifier: workspace:*
+        version: link:../packages/audience-mentimeter
+      '@stageflip/audience-native':
+        specifier: workspace:*
+        version: link:../packages/audience-native
+      '@stageflip/audience-polleverywhere':
+        specifier: workspace:*
+        version: link:../packages/audience-polleverywhere
+      '@stageflip/audience-slido':
+        specifier: workspace:*
+        version: link:../packages/audience-slido
+      '@stageflip/audience-vevox':
+        specifier: workspace:*
+        version: link:../packages/audience-vevox
+      '@stageflip/audience-wooclap':
+        specifier: workspace:*
+        version: link:../packages/audience-wooclap
       '@stageflip/cdp-host-bundle':
         specifier: workspace:*
         version: link:../packages/cdp-host-bundle
