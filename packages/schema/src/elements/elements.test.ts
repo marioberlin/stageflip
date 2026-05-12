@@ -241,8 +241,10 @@ describe('elementSchema (discriminated union)', () => {
     // Bumped from 12 to 13 in T-305 to add 'interactive-clip' (ADR-003 §D2).
     // Bumped from 13 to 14 in T-461 to add 'live-poll-multiple-choice' — first
     // audience-clip variant on the union (ADR-010 §D2).
-    expect(ELEMENT_TYPES).toHaveLength(14);
-    expect(new Set(ELEMENT_TYPES).size).toBe(14);
+    // Bumped from 14 to 15 in T-462 to add 'live-poll-open-text' — second
+    // audience-clip variant on the union (ADR-010 §D2).
+    expect(ELEMENT_TYPES).toHaveLength(15);
+    expect(new Set(ELEMENT_TYPES).size).toBe(15);
   });
 
   it('elementSchema accepts a live-poll-multiple-choice element via the union (T-461)', () => {
@@ -258,6 +260,23 @@ describe('elementSchema (discriminated union)', () => {
     expect(el.type).toBe('live-poll-multiple-choice');
     if (el.type === 'live-poll-multiple-choice') {
       expect(el.props.options).toHaveLength(2);
+      expect(el.permissions).toEqual(['audience-network']);
+    }
+  });
+
+  it('elementSchema accepts a live-poll-open-text element via the union (T-462)', () => {
+    const el = elementSchema.parse({
+      ...BASE,
+      type: 'live-poll-open-text',
+      permissions: ['audience-network'],
+      props: {
+        question: 'Any thoughts?',
+        maxLength: 280,
+      },
+    });
+    expect(el.type).toBe('live-poll-open-text');
+    if (el.type === 'live-poll-open-text') {
+      expect(el.props.maxLength).toBe(280);
       expect(el.permissions).toEqual(['audience-network']);
     }
   });

@@ -109,7 +109,7 @@ a deterministic table-of-shapes for quick lookup.
 
 **Identifier:** `elementSchema`
 **Note:** Top-level 11-variant union across every element type.
-**Kind:** union of 14 variants
+**Kind:** union of 15 variants
 
 **Variants:**
 - object
@@ -124,6 +124,7 @@ a deterministic table-of-shapes for quick lookup.
 - object
 - object
 - lazy<…>
+- object
 - object
 - lazy<…>
 
@@ -380,7 +381,7 @@ a deterministic table-of-shapes for quick lookup.
 | `clickTag` | string? | — |
 | `fallback` | object? | — |
 | `budget` | object (refined) | ✓ |
-| `elements` | array<union<object \| object \| object \| object \| object \| object \| object \| object \| object \| object \| object \| lazy<…> \| object \| lazy<…>>> | ✓ |
+| `elements` | array<union<object \| object \| object \| object \| object \| object \| object \| object \| object \| object \| object \| lazy<…> \| object \| object \| lazy<…>>> | ✓ |
 
 ## DisplayBudget
 
