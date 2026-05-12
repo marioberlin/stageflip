@@ -418,6 +418,24 @@ function toRIRContent(el: Element): RIRElementContent {
           ...(el.provenance !== undefined ? { provenance: el.provenance } : {}),
         },
       };
+    case 'reaction-stream':
+      // T-470: Tenth audience-clip element variant — SECOND marquee
+      // differentiator. Emoji particle storm rendered via the T-383
+      // ShaderClip primitive (deterministic fragment shader; uniforms
+      // computed from a frozen `ReactionStreamAggregation`). Same
+      // lowering as T-461..T-469 — `runtime: 'audience'` + `clipName:
+      // 'reaction-stream'` so `@stageflip/runtimes-audience`
+      // `audienceRuntime` picks it up.
+      return {
+        type: 'clip',
+        runtime: 'audience',
+        clipName: 'reaction-stream',
+        params: {
+          props: el.props,
+          permissions: el.permissions,
+          ...(el.provenance !== undefined ? { provenance: el.provenance } : {}),
+        },
+      };
     default: {
       const never: never = el;
       return never;
