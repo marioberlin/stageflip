@@ -16,6 +16,7 @@ import type { ComponentType, ReactElement } from 'react';
 
 import { LivePollMultipleChoiceVoterInput } from './live-poll-multiple-choice-voter-input';
 import { LivePollOpenTextVoterInput } from './live-poll-open-text-voter-input';
+import { LivePollRatingVoterInput } from './live-poll-rating-voter-input';
 
 /**
  * Props handed to every per-kind voter input. The dispatcher itself is
@@ -41,9 +42,10 @@ export type VoterInputRegistry = ReadonlyMap<AudienceClipKind, ComponentType<Vot
 /**
  * Default registry — entries land per clip-family task. T-461 adds
  * `live-poll-multiple-choice` as the inaugural entry; T-462 adds
- * `live-poll-open-text` as the second entry; T-463..T-471 add the
- * remaining sibling kinds. Exported so the voter app's
- * `<VoterAppClient>` can pass it in, and so tests can verify the
+ * `live-poll-open-text` as the second entry; T-463 adds
+ * `live-poll-rating` as the third entry (closes the LivePoll family);
+ * T-464..T-471 add the remaining sibling kinds. Exported so the voter
+ * app's `<VoterAppClient>` can pass it in, and so tests can verify the
  * registered + unregistered code paths.
  */
 export const defaultVoterInputRegistry: VoterInputRegistry = new Map<
@@ -54,6 +56,9 @@ export const defaultVoterInputRegistry: VoterInputRegistry = new Map<
   ['live-poll-multiple-choice', LivePollMultipleChoiceVoterInput],
   // T-462 — second audience clip family. Open-text variant of LivePoll.
   ['live-poll-open-text', LivePollOpenTextVoterInput],
+  // T-463 — third audience clip family. Likert / rating variant of LivePoll
+  // (closes the LivePoll family).
+  ['live-poll-rating', LivePollRatingVoterInput],
 ]);
 
 /**

@@ -243,8 +243,10 @@ describe('elementSchema (discriminated union)', () => {
     // audience-clip variant on the union (ADR-010 §D2).
     // Bumped from 14 to 15 in T-462 to add 'live-poll-open-text' — second
     // audience-clip variant on the union (ADR-010 §D2).
-    expect(ELEMENT_TYPES).toHaveLength(15);
-    expect(new Set(ELEMENT_TYPES).size).toBe(15);
+    // Bumped from 15 to 16 in T-463 to add 'live-poll-rating' — third
+    // audience-clip variant on the union (ADR-010 §D2; closes the LivePoll family).
+    expect(ELEMENT_TYPES).toHaveLength(16);
+    expect(new Set(ELEMENT_TYPES).size).toBe(16);
   });
 
   it('elementSchema accepts a live-poll-multiple-choice element via the union (T-461)', () => {
@@ -277,6 +279,25 @@ describe('elementSchema (discriminated union)', () => {
     expect(el.type).toBe('live-poll-open-text');
     if (el.type === 'live-poll-open-text') {
       expect(el.props.maxLength).toBe(280);
+      expect(el.permissions).toEqual(['audience-network']);
+    }
+  });
+
+  it('elementSchema accepts a live-poll-rating element via the union (T-463)', () => {
+    const el = elementSchema.parse({
+      ...BASE,
+      type: 'live-poll-rating',
+      permissions: ['audience-network'],
+      props: {
+        question: 'Rate the talk',
+        scaleMin: 1,
+        scaleMax: 5,
+      },
+    });
+    expect(el.type).toBe('live-poll-rating');
+    if (el.type === 'live-poll-rating') {
+      expect(el.props.scaleMax).toBe(5);
+      expect(el.props.scaleMin).toBe(1);
       expect(el.permissions).toEqual(['audience-network']);
     }
   });

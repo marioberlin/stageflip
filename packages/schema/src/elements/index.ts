@@ -22,6 +22,10 @@ import {
   type LivePollOpenTextClipElement,
   livePollOpenTextClipElementSchema,
 } from './live-poll-open-text.js';
+import {
+  type LivePollRatingClipElement,
+  livePollRatingClipElementSchema,
+} from './live-poll-rating.js';
 import { type ShapeElement, shapeElementSchema } from './shape.js';
 import { type TableElement, tableElementSchema } from './table.js';
 import { type TextElement, textElementSchema } from './text.js';
@@ -53,7 +57,8 @@ export type Element =
   | BlenderClipElement
   | InteractiveClip
   | LivePollMultipleChoiceClipElement
-  | LivePollOpenTextClipElement;
+  | LivePollOpenTextClipElement
+  | LivePollRatingClipElement;
 
 /**
  * Group schema with recursive `children: Element[]`. Uses `z.lazy` and an
@@ -107,6 +112,7 @@ export const elementSchema = z.union([
   interactiveClipBranch,
   livePollMultipleChoiceClipElementSchema,
   livePollOpenTextClipElementSchema,
+  livePollRatingClipElementSchema,
   groupElementSchema,
 ]) as unknown as z.ZodType<Element>;
 
@@ -130,6 +136,7 @@ export const ELEMENT_TYPES = [
   'interactive-clip',
   'live-poll-multiple-choice',
   'live-poll-open-text',
+  'live-poll-rating',
 ] as const;
 export type ElementType = (typeof ELEMENT_TYPES)[number];
 
@@ -147,6 +154,7 @@ export * from './embed.js';
 export * from './image.js';
 export * from './live-poll-multiple-choice.js';
 export * from './live-poll-open-text.js';
+export * from './live-poll-rating.js';
 export * from './media-provenance.js';
 export * from './shape.js';
 export * from './table.js';
