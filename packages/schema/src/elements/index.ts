@@ -122,6 +122,7 @@ export type ElementType = (typeof ELEMENT_TYPES)[number];
 // Re-export everything from each per-type file so callers can import from
 // this barrel without reaching into individual files. New exports added to
 // any element file propagate automatically.
+export * from './audience-provenance.js';
 export * from './audio.js';
 export * from './base.js';
 export * from './blender-clip.js';
