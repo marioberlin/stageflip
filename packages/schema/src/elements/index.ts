@@ -14,6 +14,7 @@ import { type ClipElement, clipElementSchema } from './clip.js';
 import { type CodeElement, codeElementSchema } from './code.js';
 import { type EmbedElement, embedElementSchema } from './embed.js';
 import { type ImageElement, imageElementSchema } from './image.js';
+import { type LeaderboardClipElement, leaderboardClipElementSchema } from './leaderboard.js';
 import {
   type LivePollMultipleChoiceClipElement,
   livePollMultipleChoiceClipElementSchema,
@@ -62,7 +63,8 @@ export type Element =
   | LivePollOpenTextClipElement
   | LivePollRatingClipElement
   | LiveQAClipElement
-  | LiveQuizClipElement;
+  | LiveQuizClipElement
+  | LeaderboardClipElement;
 
 /**
  * Group schema with recursive `children: Element[]`. Uses `z.lazy` and an
@@ -119,6 +121,7 @@ export const elementSchema = z.union([
   livePollRatingClipElementSchema,
   liveQAClipElementSchema,
   liveQuizClipElementSchema,
+  leaderboardClipElementSchema,
   groupElementSchema,
 ]) as unknown as z.ZodType<Element>;
 
@@ -145,6 +148,7 @@ export const ELEMENT_TYPES = [
   'live-poll-rating',
   'live-qa',
   'live-quiz',
+  'leaderboard',
 ] as const;
 export type ElementType = (typeof ELEMENT_TYPES)[number];
 
@@ -160,6 +164,7 @@ export * from './clip.js';
 export * from './code.js';
 export * from './embed.js';
 export * from './image.js';
+export * from './leaderboard.js';
 export * from './live-poll-multiple-choice.js';
 export * from './live-poll-open-text.js';
 export * from './live-poll-rating.js';

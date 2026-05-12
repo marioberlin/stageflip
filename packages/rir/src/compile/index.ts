@@ -353,6 +353,25 @@ function toRIRContent(el: Element): RIRElementContent {
           ...(el.provenance !== undefined ? { provenance: el.provenance } : {}),
         },
       };
+    case 'leaderboard':
+      // T-466: Sixth audience-clip element variant (first DERIVED clip;
+      // paired with live-quiz; `LeaderboardVote = never` per ADR-010 §D2).
+      // Same lowering as T-461..T-465 — `runtime: 'audience'` +
+      // `clipName: 'leaderboard'` so `@stageflip/runtimes-audience`
+      // `audienceRuntime` picks it up. The cross-clip foreign-key
+      // (`props.quizId`) flows through `params.props` verbatim; the
+      // server-side derivation joining the upstream LiveQuizAggregation
+      // is the native provider's responsibility (T-478).
+      return {
+        type: 'clip',
+        runtime: 'audience',
+        clipName: 'leaderboard',
+        params: {
+          props: el.props,
+          permissions: el.permissions,
+          ...(el.provenance !== undefined ? { provenance: el.provenance } : {}),
+        },
+      };
     default: {
       const never: never = el;
       return never;
