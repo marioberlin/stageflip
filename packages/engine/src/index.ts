@@ -206,3 +206,12 @@ export {
   SURVEY_QUESTION_KINDS,
   type SurveyQuestionKind,
 } from './handlers/audience-engagement/register.js';
+export {
+  CLUSTER_I_COMPOSE_BUNDLE_NAME,
+  CLUSTER_I_COMPOSE_HANDLERS,
+  CLUSTER_I_COMPOSE_TOOL_DEFINITIONS,
+  CLUSTER_I_PRESET_IDS,
+  type ClusterIComposeOutput,
+  type ClusterIPresetId,
+  registerClusterIComposeBundle,
+} from './handlers/cluster-i-compose/register.js';
