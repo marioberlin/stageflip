@@ -247,8 +247,10 @@ describe('elementSchema (discriminated union)', () => {
     // audience-clip variant on the union (ADR-010 §D2; closes the LivePoll family).
     // Bumped from 16 to 17 in T-464 to add 'live-qa' — fourth audience-clip
     // variant on the union (ADR-010 §D2; first non-LivePoll family).
-    expect(ELEMENT_TYPES).toHaveLength(17);
-    expect(new Set(ELEMENT_TYPES).size).toBe(17);
+    // Bumped from 17 to 18 in T-465 to add 'live-quiz' — fifth audience-clip
+    // variant on the union (ADR-010 §D2; competitive multi-question quiz).
+    expect(ELEMENT_TYPES).toHaveLength(18);
+    expect(new Set(ELEMENT_TYPES).size).toBe(18);
   });
 
   it('elementSchema accepts a live-poll-multiple-choice element via the union (T-461)', () => {
@@ -320,6 +322,30 @@ describe('elementSchema (discriminated union)', () => {
       expect(el.props.moderationMode).toBe('open');
       expect(el.props.maxLength).toBe(500);
       expect(el.props.topN).toBe(100);
+      expect(el.permissions).toEqual(['audience-network']);
+    }
+  });
+
+  it('elementSchema accepts a live-quiz element via the union (T-465)', () => {
+    const el = elementSchema.parse({
+      ...BASE,
+      type: 'live-quiz',
+      permissions: ['audience-network'],
+      props: {
+        questions: [
+          {
+            id: 'q1',
+            text: 'Capital of France?',
+            options: ['London', 'Paris'],
+            correctOptionIndex: 1,
+          },
+        ],
+      },
+    });
+    expect(el.type).toBe('live-quiz');
+    if (el.type === 'live-quiz') {
+      expect(el.props.questions).toHaveLength(1);
+      expect(el.props.questions[0]?.correctOptionIndex).toBe(1);
       expect(el.permissions).toEqual(['audience-network']);
     }
   });

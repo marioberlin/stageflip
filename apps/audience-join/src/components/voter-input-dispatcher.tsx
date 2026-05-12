@@ -18,6 +18,7 @@ import { LivePollMultipleChoiceVoterInput } from './live-poll-multiple-choice-vo
 import { LivePollOpenTextVoterInput } from './live-poll-open-text-voter-input';
 import { LivePollRatingVoterInput } from './live-poll-rating-voter-input';
 import { LiveQAVoterInput } from './live-qa-voter-input';
+import { LiveQuizVoterInput } from './live-quiz-voter-input';
 
 /**
  * Props handed to every per-kind voter input. The dispatcher itself is
@@ -46,7 +47,9 @@ export type VoterInputRegistry = ReadonlyMap<AudienceClipKind, ComponentType<Vot
  * `live-poll-open-text` as the second entry; T-463 adds
  * `live-poll-rating` as the third entry (closes the LivePoll family);
  * T-464 adds `live-qa` as the fourth entry (first non-LivePoll family);
- * T-465..T-471 add the remaining sibling kinds. Exported so the voter
+ * T-465 adds `live-quiz` as the fifth entry (competitive multi-question
+ * quiz); T-466..T-471 add the remaining sibling kinds. Exported so the
+ * voter
  * app's `<VoterAppClient>` can pass it in, and so tests can verify the
  * registered + unregistered code paths.
  */
@@ -64,6 +67,10 @@ export const defaultVoterInputRegistry: VoterInputRegistry = new Map<
   // T-464 — fourth audience clip family. Q&A — voters submit + upvote
   // questions; first non-LivePoll family.
   ['live-qa', LiveQAVoterInput],
+  // T-465 — fifth audience clip family. Competitive multi-question quiz
+  // (live + final-round snapshot; per-question result + active-question
+  // pointer).
+  ['live-quiz', LiveQuizVoterInput],
 ]);
 
 /**
