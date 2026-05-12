@@ -257,8 +257,11 @@ describe('elementSchema (discriminated union)', () => {
     // Bumped from 20 to 21 in T-468 to add 'survey' — eighth audience-clip
     // variant on the union (ADR-010 §D2; multi-question pre/post survey;
     // closes the standard-family v1 set).
-    expect(ELEMENT_TYPES).toHaveLength(21);
-    expect(new Set(ELEMENT_TYPES).size).toBe(21);
+    // Bumped from 21 to 22 in T-469 to add 'heatmap' — ninth audience-clip
+    // variant on the union (ADR-010 §D2; FIRST marquee differentiator;
+    // spatial input via tap on an underlying image).
+    expect(ELEMENT_TYPES).toHaveLength(22);
+    expect(new Set(ELEMENT_TYPES).size).toBe(22);
   });
 
   it('elementSchema accepts a live-poll-multiple-choice element via the union (T-461)', () => {
@@ -420,6 +423,25 @@ describe('elementSchema (discriminated union)', () => {
     if (el.type === 'survey') {
       expect(el.props.questions).toHaveLength(2);
       expect(el.props.questions[0]?.type).toBe('multiple-choice');
+      expect(el.permissions).toEqual(['audience-network']);
+    }
+  });
+
+  it('elementSchema accepts a heatmap element via the union (T-469)', () => {
+    const el = elementSchema.parse({
+      ...BASE,
+      type: 'heatmap',
+      permissions: ['audience-network'],
+      props: {
+        prompt: 'Tap where you focus',
+        imageRef: 'https://example.com/image.png',
+      },
+    });
+    expect(el.type).toBe('heatmap');
+    if (el.type === 'heatmap') {
+      expect(el.props.prompt).toBe('Tap where you focus');
+      expect(el.props.maxIntensity).toBe(1);
+      expect(el.props.gridResolution).toEqual({ w: 32, h: 32 });
       expect(el.permissions).toEqual(['audience-network']);
     }
   });

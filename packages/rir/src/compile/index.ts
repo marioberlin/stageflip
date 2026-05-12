@@ -402,6 +402,22 @@ function toRIRContent(el: Element): RIRElementContent {
           ...(el.provenance !== undefined ? { provenance: el.provenance } : {}),
         },
       };
+    case 'heatmap':
+      // T-469: Ninth audience-clip element variant — FIRST marquee
+      // differentiator. Spatial input via tap on an underlying image;
+      // deterministic Gaussian-kernel raster client-side. Same lowering
+      // as T-461..T-468 — `runtime: 'audience'` + `clipName: 'heatmap'`
+      // so `@stageflip/runtimes-audience` `audienceRuntime` picks it up.
+      return {
+        type: 'clip',
+        runtime: 'audience',
+        clipName: 'heatmap',
+        params: {
+          props: el.props,
+          permissions: el.permissions,
+          ...(el.provenance !== undefined ? { provenance: el.provenance } : {}),
+        },
+      };
     default: {
       const never: never = el;
       return never;

@@ -11,7 +11,7 @@ export default mergeConfig(baseConfig, {
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
-      exclude: ['src/index.ts', 'src/**/*.test.ts'],
+      exclude: ['src/index.ts', 'src/**/*.test.ts', 'src/**/__*.ts'],
       thresholds: {
         lines: 85,
         functions: 85,

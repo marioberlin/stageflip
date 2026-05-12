@@ -14,6 +14,7 @@
 import type { AudienceClipKind } from '@stageflip/audience-contract';
 import type { ComponentType, ReactElement } from 'react';
 
+import { HeatmapVoterInput } from './heatmap-voter-input';
 import { LeaderboardViewOnly } from './leaderboard-view-only';
 import { LivePollMultipleChoiceVoterInput } from './live-poll-multiple-choice-voter-input';
 import { LivePollOpenTextVoterInput } from './live-poll-open-text-voter-input';
@@ -61,7 +62,11 @@ export type VoterInputRegistry = ReadonlyMap<AudienceClipKind, ComponentType<Vot
  * T-468 adds `survey` as the eighth entry (multi-question pre/post
  * survey — voter UI is a vertical form with one input per question;
  * closes the standard-family v1 set);
- * T-469..T-471 add the remaining sibling kinds. Exported so the voter
+ * T-469 adds `heatmap` as the ninth entry — FIRST marquee
+ * differentiator (spatial input via tap on an underlying image; voter
+ * UI captures normalised (x, y) coordinates relative to the image's
+ * bounding rect; voters may tap up to `maxIntensity` times);
+ * T-470..T-471 add the remaining sibling kinds. Exported so the voter
  * app's `<VoterAppClient>` can pass it in, and so tests can verify the
  * registered + unregistered code paths.
  *
@@ -106,6 +111,12 @@ export const defaultVoterInputRegistry: VoterInputRegistry = new Map<
   // question + a single submit button at the bottom. Closes the
   // standard-family v1 set.
   ['survey', SurveyVoterInput],
+  // T-469 — ninth audience clip family. FIRST marquee differentiator:
+  // spatial input via tap on an underlying image. Voter UI captures
+  // normalised (x, y) coordinates relative to the image's bounding
+  // rect; voters may tap up to `maxIntensity` times before the target
+  // disables.
+  ['heatmap', HeatmapVoterInput],
 ]);
 
 /**
