@@ -123,3 +123,11 @@ export type {
 // Quiz-fairness primitives (T-473)
 // ----------------------------------------------------------------------------
 export { applyLateJoinerLock, computeQuizScore } from './quiz-fairness.js';
+
+// ----------------------------------------------------------------------------
+// WebEmbed allowlist (T-484)
+// ----------------------------------------------------------------------------
+export {
+  AUDIENCE_BACKEND_ORIGINS,
+  isAudienceBackendOrigin,
+} from './audience-backend-origins.js';
