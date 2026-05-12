@@ -300,13 +300,13 @@ describe('discoverRepoRoot', () => {
 // ---------- runAudit smoke (real corpus) ----------
 
 describe('runAudit (real corpus)', () => {
-  it('produces 8 categories with criteria each', () => {
+  it('produces 9 categories with criteria each', () => {
     const report = runAudit({
       repoRoot: REPO_ROOT,
       presetsRoot: 'skills/stageflip/presets',
       generatedAt: '2026-05-11T00:00:00.000Z',
     });
-    expect(report.categories.length).toBe(8);
+    expect(report.categories.length).toBe(9);
     for (const cat of report.categories) {
       expect(cat.criteria.length).toBeGreaterThan(0);
     }
