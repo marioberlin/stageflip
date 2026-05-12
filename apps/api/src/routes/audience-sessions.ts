@@ -25,6 +25,7 @@ import { z } from 'zod';
 
 import { AUDIENCE_CLIP_KINDS, type AudienceClipKind } from '@stageflip/audience-contract';
 import type {
+  AbuseTrackingStore,
   AudienceFeatureSettings,
   AudienceResultsStore,
   TenantSettingsStore,
@@ -34,8 +35,8 @@ import type { AuthVariables } from '../auth/middleware.js';
 import type { Principal } from '../auth/verify.js';
 import { emitAudienceLossFlag } from './audience-loss-flags.js';
 import {
+  IpJoinRateLimiter,
   TenantRateLimiter,
-  TokenBucketRateLimiter,
   type VoterRateLimiter,
 } from './audience-rate-limit.js';
 
@@ -106,9 +107,16 @@ export interface AudienceSessionsRouteDeps {
   voterRateLimiter?: VoterRateLimiter;
   /**
    * Per-IP rate-limiter for `POST /:id/join`. Default 5 joins/sec / 10
-   * burst.
+   * burst (T-458 wraps in `IpJoinRateLimiter` so the IP axis consults
+   * the abuse store on the same path as the voter / tenant axes).
    */
-  voterJoinRateLimiter?: TokenBucketRateLimiter;
+  voterJoinRateLimiter?: IpJoinRateLimiter;
+  /**
+   * Optional abuse store wired into the default tenant + per-IP join
+   * limiters. T-458. Production wiring uses the in-memory impl;
+   * `T-474` will swap in the Firestore-backed adapter.
+   */
+  abuseTrackingStore?: AbuseTrackingStore;
   /** In-memory tracker for per-session voter counts (cap check). */
   voterCounts?: Map<string, Set<string>>;
 }
@@ -137,9 +145,16 @@ export function createAudienceSessionsRoute(
     new TenantRateLimiter({
       maxIngestRateHz: DEFAULT_AUDIENCE_FEATURE_SETTINGS.maxIngestRateHz,
       now,
+      ...(deps.abuseTrackingStore ? { abuseStore: deps.abuseTrackingStore } : {}),
     });
   const voterJoinRateLimiter =
-    deps.voterJoinRateLimiter ?? new TokenBucketRateLimiter({ ratePerSecond: 5, burst: 10, now });
+    deps.voterJoinRateLimiter ??
+    new IpJoinRateLimiter({
+      now,
+      ratePerSecond: 5,
+      burst: 10,
+      ...(deps.abuseTrackingStore ? { abuseStore: deps.abuseTrackingStore } : {}),
+    });
   const voterCounts = deps.voterCounts ?? new Map<string, Set<string>>();
 
   const app = new Hono<{ Variables: AuthVariables }>();
@@ -168,7 +183,8 @@ export function createAudienceSessionsRoute(
       );
     }
 
-    if (!tenantRateLimiter.tryConsume(body.tenantId).accepted) {
+    const tenantDecision = await tenantRateLimiter.tryConsume(body.tenantId);
+    if (!tenantDecision.accepted) {
       const flag = emitAudienceLossFlag({
         code: 'LF-AUDIENCE-TENANT-RATE-LIMITED',
         message: `tenant ${body.tenantId} exceeded openSession rate cap`,
@@ -179,6 +195,12 @@ export function createAudienceSessionsRoute(
           error: 'rate_limited',
           message: 'tenant-level audience rate cap exceeded',
           lossFlag: flag,
+          ...(tenantDecision.flagLevel !== undefined
+            ? { abuseLevel: tenantDecision.flagLevel }
+            : {}),
+          ...(tenantDecision.rejectReason !== undefined
+            ? { rejectReason: tenantDecision.rejectReason }
+            : {}),
         },
         429,
       );
@@ -305,14 +327,23 @@ export function createAudienceSessionsRoute(
       return c.json({ error: 'session_closed', message: 'session is closed', lossFlag: flag }, 410);
     }
     const ip = clientIp(c.req.raw, c.req.header('x-forwarded-for'));
-    if (!voterJoinRateLimiter.tryConsume(ip).accepted) {
+    const ipDecision = await voterJoinRateLimiter.tryConsume(ip);
+    if (!ipDecision.accepted) {
       const flag = emitAudienceLossFlag({
         code: 'LF-AUDIENCE-VOTER-RATE-LIMITED',
         message: `join rate limit hit for IP ${ip}`,
         location: { slideId: sessionId },
       });
       return c.json(
-        { error: 'rate_limited', message: 'too many joins from this IP', lossFlag: flag },
+        {
+          error: 'rate_limited',
+          message: 'too many joins from this IP',
+          lossFlag: flag,
+          ...(ipDecision.flagLevel !== undefined ? { abuseLevel: ipDecision.flagLevel } : {}),
+          ...(ipDecision.rejectReason !== undefined
+            ? { rejectReason: ipDecision.rejectReason }
+            : {}),
+        },
         429,
       );
     }

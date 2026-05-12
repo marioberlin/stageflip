@@ -7,7 +7,11 @@ import { describe, expect, it } from 'vitest';
 
 import { issueMcpSessionJwt } from '@stageflip/mcp-server';
 
-import { InMemoryAudienceResultsStore, InMemoryTenantSettingsStore } from '@stageflip/storage';
+import {
+  InMemoryAbuseTrackingStore,
+  InMemoryAudienceResultsStore,
+  InMemoryTenantSettingsStore,
+} from '@stageflip/storage';
 
 import { createApp } from '../server.js';
 
@@ -392,6 +396,53 @@ describe('POST /v1/audience/sessions/:id/join — mint voter token', () => {
     const body = (await res.json()) as { voterToken: string; sessionId: string };
     expect(body.voterToken).toMatch(/.+/);
     expect(body.sessionId).toBe('s-join');
+  });
+
+  it('429 + abuse-cooldown rejectReason when the IP is flagged (T-458)', async () => {
+    const tenantSettingsStore = new InMemoryTenantSettingsStore();
+    const audienceResultsStore = new InMemoryAudienceResultsStore({
+      pepper: 'test-pepper-32-bytes-fixed-value-x',
+    });
+    const abuseTrackingStore = new InMemoryAbuseTrackingStore();
+    // Pre-flag the IP at level 2 — 5 min cooldown.
+    await abuseTrackingStore.flag({ kind: 'ip', value: '10.0.0.7' }, 2);
+    const app = createApp({
+      mcpSecret: SECRET,
+      port: 0,
+      resolvePrincipal: async () => ({
+        sub: 'system',
+        org: 'org-default',
+        role: 'editor',
+        allowedBundles: [],
+      }),
+      tenantSettingsStore,
+      audienceResultsStore,
+      abuseTrackingStore,
+    });
+    await enableAudience(tenantSettingsStore, 'tenant-a');
+    await audienceResultsStore.openSession({
+      tenantId: 'tenant-a',
+      projectId: 'p',
+      sessionId: 's-abuse',
+      clipKind: 'live-poll-multiple-choice',
+      adapterDescriptor: { id: 'audience-native', license: 'MIT' },
+      createdAt: '2026-05-11T00:00:00.000Z',
+      ttlAt: '2026-05-12T00:00:00.000Z',
+    });
+    const token = await mcpToken({ org: 'tenant-a', role: 'editor' });
+    const res = await app.request('/v1/audience/sessions/s-abuse/join', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}`, 'x-forwarded-for': '10.0.0.7' },
+    });
+    expect(res.status).toBe(429);
+    const body = (await res.json()) as {
+      lossFlag: { code: string };
+      rejectReason: string;
+      abuseLevel: number;
+    };
+    expect(body.lossFlag.code).toBe('LF-AUDIENCE-VOTER-RATE-LIMITED');
+    expect(body.rejectReason).toBe('abuse-cooldown');
+    expect(body.abuseLevel).toBe(2);
   });
 
   it('409 + LF-AUDIENCE-CAPACITY-CAP when voter cap reached', async () => {

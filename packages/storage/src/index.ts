@@ -86,3 +86,26 @@ export {
   type CloseSessionInput,
   type OpenSessionInput,
 } from './audience-results-store.js';
+
+// T-458 — AbuseTrackingStore storage facet (per-source rate-limit-hit
+// accumulator + escalating-cooldown flag store per ADR-009 §D3 + §D8).
+// Sibling to TenantSettingsStore / TenantCostTrackerStore /
+// AudienceResultsStore. Ships only the in-memory impl + contract here;
+// the Firestore-backed impl lands in T-474.
+export {
+  ABUSE_COOLDOWN_MS,
+  ABUSE_ESCALATION_WINDOW_MS,
+  DEFAULT_ABUSE_THRESHOLD,
+  DEFAULT_ABUSE_WINDOW_MS,
+  abuseCounterSchema,
+  abuseFlagSchema,
+  abuseSourceSchema,
+  type AbuseCounter,
+  type AbuseFlag,
+  type AbuseSource,
+} from './abuse-tracking.js';
+export {
+  InMemoryAbuseTrackingStore,
+  type AbuseTrackingStore,
+  type InMemoryAbuseTrackingStoreOptions,
+} from './abuse-tracking-store.js';

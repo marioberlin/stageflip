@@ -174,17 +174,26 @@ async function handleVote(frame: VoteFrame, deps: DispatchDeps): Promise<void> {
     deps.closeWith(4000, 'session-closed');
     return;
   }
-  const decision = deps.voterRateLimiter.tryConsume(deps.principal.voterToken);
+  // T-458 — pass the session's `clipKind` into the limiter so the
+  // per-clip-kind override (reaction-stream 10 Hz) applies. Other kinds
+  // remain at the default 2 Hz.
+  const decision = await deps.voterRateLimiter.tryConsume(
+    deps.principal.voterToken,
+    session.clipKind,
+  );
   if (!decision.accepted) {
     emitAudienceLossFlag({
       code: 'LF-AUDIENCE-VOTER-RATE-LIMITED',
-      message: `voter ${deps.principal.voterToken.slice(0, 6)} rate-limited`,
+      message: `voter ${deps.principal.voterToken.slice(0, 6)} ${decision.rejectReason ?? 'rate-limited'} (level ${decision.flagLevel ?? 0})`,
       location: { slideId: deps.sessionId },
     });
     deps.send({
       type: 'error',
       code: 'LF-AUDIENCE-VOTER-RATE-LIMITED',
-      message: 'voter rate cap exceeded',
+      message:
+        decision.rejectReason === 'abuse-cooldown'
+          ? `voter in abuse cooldown (level ${decision.flagLevel ?? 0})`
+          : 'voter rate cap exceeded',
     });
     return;
   }
@@ -396,7 +405,16 @@ export function createAudienceWebSocketServer(
 ): AudienceWebSocketServer {
   const pathPrefix = deps.pathPrefix ?? '/v1/audience/ws';
   const reconnectBudget = deps.reconnectBudget ?? new ReconnectBudget();
-  const voterRateLimiter = deps.voterRateLimiter ?? new VoterRateLimiter();
+  // T-458 — production wiring registers the reaction-stream 10 Hz
+  // override on the default-built limiter. Callers that pass a custom
+  // limiter own the override registration themselves.
+  let voterRateLimiter: VoterRateLimiter;
+  if (deps.voterRateLimiter) {
+    voterRateLimiter = deps.voterRateLimiter;
+  } else {
+    voterRateLimiter = new VoterRateLimiter();
+    voterRateLimiter.setClipKindOverride('reaction-stream', 10);
+  }
   const now = deps.now ?? (() => new Date().toISOString());
   const mintEventId = deps.mintEventId ?? defaultMintEventId;
 

@@ -222,13 +222,93 @@ describe('dispatchAudienceMessage — vote frames', () => {
     const store = makeStore();
     await seedSession(store);
     const { deps, sent } = makeDispatchHarness(store);
-    // Drain the voter bucket (burst=20).
-    for (let i = 0; i < 20; i++) deps.voterRateLimiter.tryConsume('voter-1');
+    // T-458 — default voter limiter is 2 Hz / 4 burst; drain it.
+    for (let i = 0; i < 4; i++) await deps.voterRateLimiter.tryConsume('voter-1');
     await dispatchAudienceMessage(
       JSON.stringify({
         type: 'vote',
         clientTimestamp: '2026-05-11T00:00:00.500Z',
         payload: { kind: 'live-poll-multiple-choice', optionIndex: 1 },
+      }),
+      deps,
+    );
+    expect(sent[0]).toMatchObject({ code: 'LF-AUDIENCE-VOTER-RATE-LIMITED' });
+  });
+
+  it('reaction-stream override admits 10/s/voter (T-458)', async () => {
+    const store = makeStore();
+    // Open a reaction-stream session so the dispatcher reads kind = reaction-stream.
+    await store.openSession({
+      tenantId: 'tenant-a',
+      projectId: 'p',
+      sessionId: 'rs-1',
+      clipKind: 'reaction-stream',
+      adapterDescriptor: { id: 'audience-native', license: 'MIT' },
+      createdAt: '2026-05-11T00:00:00.000Z',
+      ttlAt: '2026-05-12T00:00:00.000Z',
+    });
+    const sent: ServerOutboundFrame[] = [];
+    const closes: Array<{ code: number; reason: string }> = [];
+    const limiter = new VoterRateLimiter({ now: () => 1_000_000 });
+    limiter.setClipKindOverride('reaction-stream', 10);
+    const deps: DispatchDeps = {
+      sessionId: 'rs-1',
+      principal: { kind: 'voter', voterToken: 'voter-rs' },
+      audienceResultsStore: store,
+      voterRateLimiter: limiter,
+      now: () => '2026-05-11T00:00:01.000Z',
+      mintEventId: () => 'evt-rs',
+      send: (f) => sent.push(f),
+      closeWith: (code, reason) => closes.push({ code, reason }),
+    };
+    // 10 votes — all admitted at the override 10 Hz / 20 burst.
+    for (let i = 0; i < 10; i++) {
+      await dispatchAudienceMessage(
+        JSON.stringify({
+          type: 'vote',
+          clientTimestamp: '2026-05-11T00:00:00.500Z',
+          payload: { kind: 'reaction-stream', emojiId: 'heart' },
+        }),
+        deps,
+      );
+    }
+    // No error frames sent; events recorded.
+    expect(sent.filter((f) => f.type === 'error')).toHaveLength(0);
+    expect(closes).toHaveLength(0);
+  });
+
+  it('non-reaction kinds throttle at the default 2 Hz (T-458)', async () => {
+    const store = makeStore();
+    await seedSession(store); // live-poll-multiple-choice — default rate.
+    const sent: ServerOutboundFrame[] = [];
+    const limiter = new VoterRateLimiter({ now: () => 1_000_000 });
+    limiter.setClipKindOverride('reaction-stream', 10);
+    const deps: DispatchDeps = {
+      sessionId: SESSION_ID,
+      principal: { kind: 'voter', voterToken: 'voter-poll' },
+      audienceResultsStore: store,
+      voterRateLimiter: limiter,
+      now: () => '2026-05-11T00:00:01.000Z',
+      mintEventId: () => 'evt-x',
+      send: (f) => sent.push(f),
+      closeWith: () => undefined,
+    };
+    // 4 admitted (burst), 5th refused.
+    for (let i = 0; i < 4; i++) {
+      await dispatchAudienceMessage(
+        JSON.stringify({
+          type: 'vote',
+          clientTimestamp: '2026-05-11T00:00:00.500Z',
+          payload: { kind: 'live-poll-multiple-choice', optionIndex: 0 },
+        }),
+        deps,
+      );
+    }
+    await dispatchAudienceMessage(
+      JSON.stringify({
+        type: 'vote',
+        clientTimestamp: '2026-05-11T00:00:00.500Z',
+        payload: { kind: 'live-poll-multiple-choice', optionIndex: 0 },
       }),
       deps,
     );
