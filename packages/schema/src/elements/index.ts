@@ -30,6 +30,7 @@ import {
 import { type LiveQAClipElement, liveQAClipElementSchema } from './live-qa.js';
 import { type LiveQuizClipElement, liveQuizClipElementSchema } from './live-quiz.js';
 import { type ShapeElement, shapeElementSchema } from './shape.js';
+import { type SurveyClipElement, surveyClipElementSchema } from './survey.js';
 import { type TableElement, tableElementSchema } from './table.js';
 import { type TextElement, textElementSchema } from './text.js';
 import { type VideoElement, videoElementSchema } from './video.js';
@@ -66,7 +67,8 @@ export type Element =
   | LiveQAClipElement
   | LiveQuizClipElement
   | LeaderboardClipElement
-  | WordCloudClipElement;
+  | WordCloudClipElement
+  | SurveyClipElement;
 
 /**
  * Group schema with recursive `children: Element[]`. Uses `z.lazy` and an
@@ -125,6 +127,7 @@ export const elementSchema = z.union([
   liveQuizClipElementSchema,
   leaderboardClipElementSchema,
   wordCloudClipElementSchema,
+  surveyClipElementSchema,
   groupElementSchema,
 ]) as unknown as z.ZodType<Element>;
 
@@ -153,6 +156,7 @@ export const ELEMENT_TYPES = [
   'live-quiz',
   'leaderboard',
   'word-cloud',
+  'survey',
 ] as const;
 export type ElementType = (typeof ELEMENT_TYPES)[number];
 
@@ -176,6 +180,7 @@ export * from './live-qa.js';
 export * from './live-quiz.js';
 export * from './media-provenance.js';
 export * from './shape.js';
+export * from './survey.js';
 export * from './table.js';
 export * from './text.js';
 export * from './video.js';

@@ -20,14 +20,16 @@ afterEach(() => {
 });
 
 describe('defaultVoterInputRegistry', () => {
-  it('contains the live-poll-multiple-choice + live-poll-open-text + live-poll-rating + live-qa + live-quiz + leaderboard + word-cloud entries (T-461..T-467)', () => {
+  it('contains the live-poll-multiple-choice + live-poll-open-text + live-poll-rating + live-qa + live-quiz + leaderboard + word-cloud + survey entries (T-461..T-468)', () => {
     // T-461 added the first entry; T-462 added the second; T-463 added the third;
     // T-464 added the fourth (first non-LivePoll family); T-465 added the fifth
     // (competitive multi-question quiz); T-466 added the sixth — first view-only
     // kind (leaderboard; `LeaderboardVote = never` per ADR-010 §D2);
     // T-467 added the seventh — word-cloud (live aggregating word weights;
-    // voter UI parses a comma-separated list). Bumped 6 → 7.
-    expect(defaultVoterInputRegistry.size).toBe(7);
+    // voter UI parses a comma-separated list);
+    // T-468 added the eighth — survey (multi-question pre/post survey;
+    // closes the standard-family v1 set). Bumped 7 → 8.
+    expect(defaultVoterInputRegistry.size).toBe(8);
     expect(defaultVoterInputRegistry.has('live-poll-multiple-choice')).toBe(true);
     expect(defaultVoterInputRegistry.has('live-poll-open-text')).toBe(true);
     expect(defaultVoterInputRegistry.has('live-poll-rating')).toBe(true);
@@ -35,6 +37,7 @@ describe('defaultVoterInputRegistry', () => {
     expect(defaultVoterInputRegistry.has('live-quiz')).toBe(true);
     expect(defaultVoterInputRegistry.has('leaderboard')).toBe(true);
     expect(defaultVoterInputRegistry.has('word-cloud')).toBe(true);
+    expect(defaultVoterInputRegistry.has('survey')).toBe(true);
   });
 });
 
@@ -48,7 +51,8 @@ describe('<VoterInputDispatcher>', () => {
         k !== 'live-qa' &&
         k !== 'live-quiz' &&
         k !== 'leaderboard' &&
-        k !== 'word-cloud',
+        k !== 'word-cloud' &&
+        k !== 'survey',
     ),
   )('falls back to UnregisteredKindFallback for unregistered kind %s', (kind) => {
     render(<VoterInputDispatcher sessionId="s" clipKind={kind} />);
@@ -101,6 +105,14 @@ describe('<VoterInputDispatcher>', () => {
     const wrapper = screen.getByTestId('voter-input-word-cloud-wrapper');
     expect(wrapper.getAttribute('data-session-id')).toBe('sess-wc');
     expect(wrapper.getAttribute('data-clip-kind')).toBe('word-cloud');
+    expect(screen.queryByTestId('voter-input-unregistered')).toBeNull();
+  });
+
+  it('resolves survey to the SurveyVoterInput (T-468)', () => {
+    render(<VoterInputDispatcher sessionId="sess-sv" clipKind="survey" />);
+    const wrapper = screen.getByTestId('voter-input-survey-wrapper');
+    expect(wrapper.getAttribute('data-session-id')).toBe('sess-sv');
+    expect(wrapper.getAttribute('data-clip-kind')).toBe('survey');
     expect(screen.queryByTestId('voter-input-unregistered')).toBeNull();
   });
 
