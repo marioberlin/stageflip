@@ -39,7 +39,9 @@
         "animations": [],
         "content": {
           "allowFullscreen": false,
-          "sandbox": ["allow-scripts"],
+          "sandbox": [
+            "allow-scripts"
+          ],
           "src": "https://example.com/widget",
           "type": "embed"
         },
