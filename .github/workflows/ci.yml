@@ -124,6 +124,14 @@ jobs:
       - name: Gate - check-audience-permissions
         run: pnpm check-audience-permissions
 
+      # T-485 — vendor parity matrix verification. Walks the 6
+      # audience-backend adapters (audience-native + 5 vendors) and
+      # asserts each descriptor's supportedClipKinds + supportsMotionNative
+      # match the ADR-009 §D8 vendor parity matrix. Drift between the
+      # descriptor and the ADR fails the gate.
+      - name: Gate - check-audience-vendor-parity
+        run: pnpm check-audience-vendor-parity
+
       # T-409 — preset x export parity. Drives every (preset, ExportTarget)
       # pair through @stageflip/export-router (T-408) and asserts each
       # routing decision is well-formed and points at a real exporter
