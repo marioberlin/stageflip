@@ -1,0 +1,28 @@
+{
+  "kind": "live-quiz",
+  "activeQuestionId": null,
+  "questionResults": [
+    {
+      "questionId": "q1",
+      "optionCounts": [12, 5, 3, 1],
+      "correctOptionIndex": 0,
+      "totalVotes": 21,
+      "status": "closed"
+    },
+    {
+      "questionId": "q2",
+      "optionCounts": [2, 18, 1, 0],
+      "correctOptionIndex": 1,
+      "totalVotes": 21,
+      "status": "closed"
+    },
+    {
+      "questionId": "q3",
+      "optionCounts": [4, 4, 8, 5],
+      "correctOptionIndex": 2,
+      "totalVotes": 21,
+      "status": "closed"
+    }
+  ],
+  "totalVoters": 21
+}

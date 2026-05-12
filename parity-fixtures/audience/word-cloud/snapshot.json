@@ -1,0 +1,26 @@
+{
+  "kind": "word-cloud",
+  "words": [
+    {
+      "word": "design",
+      "weight": 12
+    },
+    {
+      "word": "react",
+      "weight": 9
+    },
+    {
+      "word": "rust",
+      "weight": 7
+    },
+    {
+      "word": "audio",
+      "weight": 4
+    },
+    {
+      "word": "video",
+      "weight": 3
+    }
+  ],
+  "totalSubmissions": 18
+}

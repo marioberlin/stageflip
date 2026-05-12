@@ -1,0 +1,18 @@
+{
+  "kind": "live-poll-open-text",
+  "entries": [
+    {
+      "text": "great talk",
+      "count": 5
+    },
+    {
+      "text": "more demos!",
+      "count": 3
+    },
+    {
+      "text": "love the q&a",
+      "count": 2
+    }
+  ],
+  "totalVotes": 10
+}

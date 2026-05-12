@@ -1,0 +1,22 @@
+{
+  "kind": "audience-ai-prompt",
+  "prompts": [
+    {
+      "id": "p1",
+      "text": "A sunset over mountains",
+      "upvotes": 18
+    },
+    {
+      "id": "p2",
+      "text": "A city skyline at night",
+      "upvotes": 12
+    },
+    {
+      "id": "p3",
+      "text": "A forest in autumn",
+      "upvotes": 7
+    }
+  ],
+  "winnerPromptId": "p1",
+  "generatedAssetCacheKey": "cache://video/abc123"
+}

@@ -1,0 +1,30 @@
+{
+  "kind": "heatmap",
+  "taps": [
+    {
+      "x": 0.5,
+      "y": 0.5,
+      "intensity": 5
+    },
+    {
+      "x": 0.3,
+      "y": 0.4,
+      "intensity": 3
+    },
+    {
+      "x": 0.7,
+      "y": 0.6,
+      "intensity": 2
+    },
+    {
+      "x": 0.5,
+      "y": 0.8,
+      "intensity": 1
+    }
+  ],
+  "totalTaps": 11,
+  "gridResolution": {
+    "w": 32,
+    "h": 32
+  }
+}
