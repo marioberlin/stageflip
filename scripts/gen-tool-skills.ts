@@ -23,6 +23,7 @@ import {
   createCanonicalRegistry,
   registerArrangeVariantsBundle,
   registerAssetGenerationBundle,
+  registerAudienceEngagementBundle,
   registerClusterAComposeBundle,
   registerClusterBComposeBundle,
   registerClusterCComposeBundle,
@@ -77,6 +78,7 @@ const OWNER_TASK_MAP: Record<string, string> = {
   'cluster-g-compose': 'T-374',
   'cluster-h-compose': 'T-379',
   'asset-generation': 'T-423',
+  'audience-engagement': 'T-457',
 };
 
 function populateRegistry() {
@@ -109,6 +111,7 @@ function populateRegistry() {
   registerClusterGComposeBundle(registry, router);
   registerClusterHComposeBundle(registry, router);
   registerAssetGenerationBundle(registry, router);
+  registerAudienceEngagementBundle(registry, router);
   return registry;
 }
 

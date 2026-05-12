@@ -13,6 +13,7 @@ import {
   ToolRouter,
   createCanonicalRegistry,
   registerArrangeVariantsBundle,
+  registerAudienceEngagementBundle,
   registerClipAnimationBundle,
   registerClusterAComposeBundle,
   registerClusterBComposeBundle,
@@ -96,6 +97,7 @@ function buildPopulatedBundleRegistry(): BundleRegistry {
   registerClusterEComposeBundle(registry, router);
   registerClusterFComposeBundle(registry, router);
   registerClusterGComposeBundle(registry, router);
+  registerAudienceEngagementBundle(registry, router);
   return registry;
 }
 

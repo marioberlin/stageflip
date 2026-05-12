@@ -144,6 +144,12 @@ export const CANONICAL_BUNDLES: readonly ToolBundle[] = [
       'Asset-generation tools — wraps the Phase 14 α Provider Seam (AdapterRegistry / LicenseGate / FallbackChainExecutor + AssetCache + MediaProvenance) so agents can generate audio / image / video assets with provenance + content-addressed cache keys (T-423).',
     tools: [],
   },
+  {
+    name: 'audience-engagement',
+    description:
+      '11 compose_audience_* tools for authoring Live Audience clips per ADR-009 / ADR-010 — one composer per AudienceClipKind discriminant (live-poll-multiple-choice / live-poll-open-text / live-poll-rating / live-qa / live-quiz / leaderboard / word-cloud / survey / heatmap / reaction-stream / audience-ai-prompt). Each tool emits a (presetId?, clipKind, props) triple; the caller mounts via add_clip from create-mutate. Cluster I (T-486) ratifies presets later — until then presetId is undefined and the runtime dispatches by clipKind (T-457).',
+    tools: [],
+  },
 ];
 
 export const CANONICAL_BUNDLE_NAMES: readonly string[] = CANONICAL_BUNDLES.map((b) => b.name);

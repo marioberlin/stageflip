@@ -22,6 +22,7 @@
   "dependencies": {
     "@stageflip/adapters-core": "workspace:*",
     "@stageflip/asset-cache": "workspace:*",
+    "@stageflip/audience-contract": "workspace:*",
     "@stageflip/llm-abstraction": "workspace:*",
     "@stageflip/schema": "workspace:*",
     "@stageflip/variant-gen": "workspace:*",
