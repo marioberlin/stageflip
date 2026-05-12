@@ -13,6 +13,7 @@ import { type ChartElement, chartElementSchema } from './chart.js';
 import { type ClipElement, clipElementSchema } from './clip.js';
 import { type CodeElement, codeElementSchema } from './code.js';
 import { type EmbedElement, embedElementSchema } from './embed.js';
+import { type HeatmapClipElement, heatmapClipElementSchema } from './heatmap.js';
 import { type ImageElement, imageElementSchema } from './image.js';
 import { type LeaderboardClipElement, leaderboardClipElementSchema } from './leaderboard.js';
 import {
@@ -68,7 +69,8 @@ export type Element =
   | LiveQuizClipElement
   | LeaderboardClipElement
   | WordCloudClipElement
-  | SurveyClipElement;
+  | SurveyClipElement
+  | HeatmapClipElement;
 
 /**
  * Group schema with recursive `children: Element[]`. Uses `z.lazy` and an
@@ -128,6 +130,7 @@ export const elementSchema = z.union([
   leaderboardClipElementSchema,
   wordCloudClipElementSchema,
   surveyClipElementSchema,
+  heatmapClipElementSchema,
   groupElementSchema,
 ]) as unknown as z.ZodType<Element>;
 
@@ -157,6 +160,7 @@ export const ELEMENT_TYPES = [
   'leaderboard',
   'word-cloud',
   'survey',
+  'heatmap',
 ] as const;
 export type ElementType = (typeof ELEMENT_TYPES)[number];
 
@@ -171,6 +175,7 @@ export * from './chart.js';
 export * from './clip.js';
 export * from './code.js';
 export * from './embed.js';
+export * from './heatmap.js';
 export * from './image.js';
 export * from './leaderboard.js';
 export * from './live-poll-multiple-choice.js';
