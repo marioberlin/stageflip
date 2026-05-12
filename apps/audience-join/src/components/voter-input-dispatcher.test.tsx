@@ -20,18 +20,23 @@ afterEach(() => {
 });
 
 describe('defaultVoterInputRegistry', () => {
-  it('contains the live-poll-multiple-choice + live-poll-open-text entries (T-461 + T-462)', () => {
-    // T-461 added the first entry; T-462 added the second. Bumped 1 → 2.
-    expect(defaultVoterInputRegistry.size).toBe(2);
+  it('contains the live-poll-multiple-choice + live-poll-open-text + live-poll-rating entries (T-461 + T-462 + T-463)', () => {
+    // T-461 added the first entry; T-462 added the second; T-463 added the third.
+    // Bumped 2 → 3. Closes the LivePoll family.
+    expect(defaultVoterInputRegistry.size).toBe(3);
     expect(defaultVoterInputRegistry.has('live-poll-multiple-choice')).toBe(true);
     expect(defaultVoterInputRegistry.has('live-poll-open-text')).toBe(true);
+    expect(defaultVoterInputRegistry.has('live-poll-rating')).toBe(true);
   });
 });
 
 describe('<VoterInputDispatcher>', () => {
   it.each<AudienceClipKind>(
     AUDIENCE_CLIP_KINDS.filter(
-      (k) => k !== 'live-poll-multiple-choice' && k !== 'live-poll-open-text',
+      (k) =>
+        k !== 'live-poll-multiple-choice' &&
+        k !== 'live-poll-open-text' &&
+        k !== 'live-poll-rating',
     ),
   )('falls back to UnregisteredKindFallback for unregistered kind %s', (kind) => {
     render(<VoterInputDispatcher sessionId="s" clipKind={kind} />);
@@ -52,6 +57,14 @@ describe('<VoterInputDispatcher>', () => {
     const wrapper = screen.getByTestId('voter-input-live-poll-open-text-wrapper');
     expect(wrapper.getAttribute('data-session-id')).toBe('sess-ot');
     expect(wrapper.getAttribute('data-clip-kind')).toBe('live-poll-open-text');
+    expect(screen.queryByTestId('voter-input-unregistered')).toBeNull();
+  });
+
+  it('resolves live-poll-rating to the LivePollRatingVoterInput (T-463)', () => {
+    render(<VoterInputDispatcher sessionId="sess-rating" clipKind="live-poll-rating" />);
+    const wrapper = screen.getByTestId('voter-input-live-poll-rating-wrapper');
+    expect(wrapper.getAttribute('data-session-id')).toBe('sess-rating');
+    expect(wrapper.getAttribute('data-clip-kind')).toBe('live-poll-rating');
     expect(screen.queryByTestId('voter-input-unregistered')).toBeNull();
   });
 
