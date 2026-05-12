@@ -20,20 +20,22 @@ afterEach(() => {
 });
 
 describe('defaultVoterInputRegistry', () => {
-  it('contains the live-poll-multiple-choice + live-poll-open-text + live-poll-rating + live-qa + live-quiz + leaderboard + word-cloud + survey + heatmap + reaction-stream entries (T-461..T-470)', () => {
+  it('contains every audience clip-kind entry (T-461..T-471 — registry complete)', () => {
     // T-461 added the first entry; T-462 added the second; T-463 added the third;
     // T-464 added the fourth (first non-LivePoll family); T-465 added the fifth
     // (competitive multi-question quiz); T-466 added the sixth — first view-only
     // kind (leaderboard; `LeaderboardVote = never` per ADR-010 §D2);
-    // T-467 added the seventh — word-cloud (live aggregating word weights;
-    // voter UI parses a comma-separated list);
+    // T-467 added the seventh — word-cloud (live aggregating word weights);
     // T-468 added the eighth — survey (multi-question pre/post survey;
     // closes the standard-family v1 set);
     // T-469 added the ninth — heatmap (FIRST marquee differentiator;
-    // spatial input via tap on an underlying image).
+    // spatial input via tap on an underlying image);
     // T-470 added the tenth — reaction-stream (SECOND marquee differentiator;
-    // emoji particle storm via the T-383 ShaderClip). Bumped 9 → 10.
-    expect(defaultVoterInputRegistry.size).toBe(10);
+    // emoji particle storm via the T-383 ShaderClip);
+    // T-471 added the eleventh + FINAL — audience-ai-prompt (THIRD marquee
+    // differentiator; audience-driven AI generation via the P14 asset-gen
+    // pipeline). Bumped 10 → 11; closes the v1 clip-family set.
+    expect(defaultVoterInputRegistry.size).toBe(11);
     expect(defaultVoterInputRegistry.has('live-poll-multiple-choice')).toBe(true);
     expect(defaultVoterInputRegistry.has('live-poll-open-text')).toBe(true);
     expect(defaultVoterInputRegistry.has('live-poll-rating')).toBe(true);
@@ -44,28 +46,25 @@ describe('defaultVoterInputRegistry', () => {
     expect(defaultVoterInputRegistry.has('survey')).toBe(true);
     expect(defaultVoterInputRegistry.has('heatmap')).toBe(true);
     expect(defaultVoterInputRegistry.has('reaction-stream')).toBe(true);
+    expect(defaultVoterInputRegistry.has('audience-ai-prompt')).toBe(true);
+  });
+
+  it('registers every kind in AUDIENCE_CLIP_KINDS (registry complete after T-471)', () => {
+    for (const kind of AUDIENCE_CLIP_KINDS) {
+      expect(defaultVoterInputRegistry.has(kind)).toBe(true);
+    }
   });
 });
 
 describe('<VoterInputDispatcher>', () => {
-  it.each<AudienceClipKind>(
-    AUDIENCE_CLIP_KINDS.filter(
-      (k) =>
-        k !== 'live-poll-multiple-choice' &&
-        k !== 'live-poll-open-text' &&
-        k !== 'live-poll-rating' &&
-        k !== 'live-qa' &&
-        k !== 'live-quiz' &&
-        k !== 'leaderboard' &&
-        k !== 'word-cloud' &&
-        k !== 'survey' &&
-        k !== 'heatmap' &&
-        k !== 'reaction-stream',
-    ),
-  )('falls back to UnregisteredKindFallback for unregistered kind %s', (kind) => {
-    render(<VoterInputDispatcher sessionId="s" clipKind={kind} />);
+  it('falls back to UnregisteredKindFallback when the registry omits a kind (T-471 closes the registry — explicit empty-registry probe)', () => {
+    // After T-471 the default registry covers every kind in
+    // AUDIENCE_CLIP_KINDS. Verify the fallback path still works by
+    // injecting an empty registry.
+    const empty: VoterInputRegistry = new Map<AudienceClipKind, ComponentType<VoterInputProps>>();
+    render(<VoterInputDispatcher sessionId="s" clipKind="audience-ai-prompt" registry={empty} />);
     const placeholder = screen.getByTestId('voter-input-unregistered');
-    expect(placeholder.getAttribute('data-clip-kind')).toBe(kind);
+    expect(placeholder.getAttribute('data-clip-kind')).toBe('audience-ai-prompt');
   });
 
   it('resolves live-poll-multiple-choice to the LivePollMultipleChoiceVoterInput (T-461)', () => {
@@ -137,6 +136,14 @@ describe('<VoterInputDispatcher>', () => {
     const wrapper = screen.getByTestId('voter-input-reaction-stream-wrapper');
     expect(wrapper.getAttribute('data-session-id')).toBe('sess-rs');
     expect(wrapper.getAttribute('data-clip-kind')).toBe('reaction-stream');
+    expect(screen.queryByTestId('voter-input-unregistered')).toBeNull();
+  });
+
+  it('resolves audience-ai-prompt to the AudienceAiPromptVoterInput (T-471)', () => {
+    render(<VoterInputDispatcher sessionId="sess-aip" clipKind="audience-ai-prompt" />);
+    const wrapper = screen.getByTestId('voter-input-audience-ai-prompt-wrapper');
+    expect(wrapper.getAttribute('data-session-id')).toBe('sess-aip');
+    expect(wrapper.getAttribute('data-clip-kind')).toBe('audience-ai-prompt');
     expect(screen.queryByTestId('voter-input-unregistered')).toBeNull();
   });
 
