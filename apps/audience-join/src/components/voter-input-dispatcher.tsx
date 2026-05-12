@@ -14,6 +14,7 @@
 import type { AudienceClipKind } from '@stageflip/audience-contract';
 import type { ComponentType, ReactElement } from 'react';
 
+import { LeaderboardViewOnly } from './leaderboard-view-only';
 import { LivePollMultipleChoiceVoterInput } from './live-poll-multiple-choice-voter-input';
 import { LivePollOpenTextVoterInput } from './live-poll-open-text-voter-input';
 import { LivePollRatingVoterInput } from './live-poll-rating-voter-input';
@@ -48,10 +49,19 @@ export type VoterInputRegistry = ReadonlyMap<AudienceClipKind, ComponentType<Vot
  * `live-poll-rating` as the third entry (closes the LivePoll family);
  * T-464 adds `live-qa` as the fourth entry (first non-LivePoll family);
  * T-465 adds `live-quiz` as the fifth entry (competitive multi-question
- * quiz); T-466..T-471 add the remaining sibling kinds. Exported so the
- * voter
+ * quiz); T-466 adds `leaderboard` as the sixth entry — the FIRST
+ * view-only clip kind (per ADR-010 §D2 `LeaderboardVote = never`; the
+ * registered component is a results-display notice that NEVER invokes
+ * `onSubmit`, setting the precedent for future view-only siblings);
+ * T-467..T-471 add the remaining sibling kinds. Exported so the voter
  * app's `<VoterAppClient>` can pass it in, and so tests can verify the
  * registered + unregistered code paths.
+ *
+ * NB: the registry's component contract is `ComponentType<VoterInputProps>`
+ * — the dispatcher passes `sessionId` + `clipKind` only and never an
+ * `onSubmit` callback. View-only kinds (per T-466 the leaderboard is
+ * the first) accept the same props shape; they render results-display
+ * content with no interactive elements that could emit votes.
  */
 export const defaultVoterInputRegistry: VoterInputRegistry = new Map<
   AudienceClipKind,
@@ -71,6 +81,12 @@ export const defaultVoterInputRegistry: VoterInputRegistry = new Map<
   // (live + final-round snapshot; per-question result + active-question
   // pointer).
   ['live-quiz', LiveQuizVoterInput],
+  // T-466 — sixth audience clip family. FIRST view-only kind: the
+  // leaderboard is a DERIVED clip per ADR-010 §D2 (`LeaderboardVote =
+  // never`); the registered component renders a results-display notice
+  // and NEVER emits a vote. Sets the precedent for future view-only
+  // siblings (e.g., future results-only display kinds).
+  ['leaderboard', LeaderboardViewOnly],
 ]);
 
 /**

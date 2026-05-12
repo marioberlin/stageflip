@@ -249,8 +249,11 @@ describe('elementSchema (discriminated union)', () => {
     // variant on the union (ADR-010 §D2; first non-LivePoll family).
     // Bumped from 17 to 18 in T-465 to add 'live-quiz' — fifth audience-clip
     // variant on the union (ADR-010 §D2; competitive multi-question quiz).
-    expect(ELEMENT_TYPES).toHaveLength(18);
-    expect(new Set(ELEMENT_TYPES).size).toBe(18);
+    // Bumped from 18 to 19 in T-466 to add 'leaderboard' — sixth audience-clip
+    // variant on the union (ADR-010 §D2; first DERIVED clip — paired with
+    // live-quiz; `LeaderboardVote = never`).
+    expect(ELEMENT_TYPES).toHaveLength(19);
+    expect(new Set(ELEMENT_TYPES).size).toBe(19);
   });
 
   it('elementSchema accepts a live-poll-multiple-choice element via the union (T-461)', () => {
@@ -346,6 +349,23 @@ describe('elementSchema (discriminated union)', () => {
     if (el.type === 'live-quiz') {
       expect(el.props.questions).toHaveLength(1);
       expect(el.props.questions[0]?.correctOptionIndex).toBe(1);
+      expect(el.permissions).toEqual(['audience-network']);
+    }
+  });
+
+  it('elementSchema accepts a leaderboard element via the union (T-466)', () => {
+    const el = elementSchema.parse({
+      ...BASE,
+      type: 'leaderboard',
+      permissions: ['audience-network'],
+      props: {
+        quizId: 'quiz-1',
+      },
+    });
+    expect(el.type).toBe('leaderboard');
+    if (el.type === 'leaderboard') {
+      expect(el.props.quizId).toBe('quiz-1');
+      expect(el.props.topN).toBe(10);
       expect(el.permissions).toEqual(['audience-network']);
     }
   });

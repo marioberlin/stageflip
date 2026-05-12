@@ -20,16 +20,18 @@ afterEach(() => {
 });
 
 describe('defaultVoterInputRegistry', () => {
-  it('contains the live-poll-multiple-choice + live-poll-open-text + live-poll-rating + live-qa + live-quiz entries (T-461..T-465)', () => {
+  it('contains the live-poll-multiple-choice + live-poll-open-text + live-poll-rating + live-qa + live-quiz + leaderboard entries (T-461..T-466)', () => {
     // T-461 added the first entry; T-462 added the second; T-463 added the third;
     // T-464 added the fourth (first non-LivePoll family); T-465 added the fifth
-    // (competitive multi-question quiz). Bumped 4 → 5.
-    expect(defaultVoterInputRegistry.size).toBe(5);
+    // (competitive multi-question quiz); T-466 added the sixth — first view-only
+    // kind (leaderboard; `LeaderboardVote = never` per ADR-010 §D2). Bumped 5 → 6.
+    expect(defaultVoterInputRegistry.size).toBe(6);
     expect(defaultVoterInputRegistry.has('live-poll-multiple-choice')).toBe(true);
     expect(defaultVoterInputRegistry.has('live-poll-open-text')).toBe(true);
     expect(defaultVoterInputRegistry.has('live-poll-rating')).toBe(true);
     expect(defaultVoterInputRegistry.has('live-qa')).toBe(true);
     expect(defaultVoterInputRegistry.has('live-quiz')).toBe(true);
+    expect(defaultVoterInputRegistry.has('leaderboard')).toBe(true);
   });
 });
 
@@ -41,7 +43,8 @@ describe('<VoterInputDispatcher>', () => {
         k !== 'live-poll-open-text' &&
         k !== 'live-poll-rating' &&
         k !== 'live-qa' &&
-        k !== 'live-quiz',
+        k !== 'live-quiz' &&
+        k !== 'leaderboard',
     ),
   )('falls back to UnregisteredKindFallback for unregistered kind %s', (kind) => {
     render(<VoterInputDispatcher sessionId="s" clipKind={kind} />);
@@ -87,6 +90,19 @@ describe('<VoterInputDispatcher>', () => {
     expect(wrapper.getAttribute('data-session-id')).toBe('sess-quiz');
     expect(wrapper.getAttribute('data-clip-kind')).toBe('live-quiz');
     expect(screen.queryByTestId('voter-input-unregistered')).toBeNull();
+  });
+
+  it('resolves leaderboard to the LeaderboardViewOnly (T-466 — view-only)', () => {
+    render(<VoterInputDispatcher sessionId="sess-lb" clipKind="leaderboard" />);
+    const wrapper = screen.getByTestId('voter-input-leaderboard-wrapper');
+    expect(wrapper.getAttribute('data-session-id')).toBe('sess-lb');
+    expect(wrapper.getAttribute('data-clip-kind')).toBe('leaderboard');
+    expect(screen.queryByTestId('voter-input-unregistered')).toBeNull();
+    // T-466 — view-only kinds NEVER emit votes. The dispatched component
+    // must not introduce vote-emitting controls.
+    const notice = screen.getByTestId('voter-input-leaderboard-notice');
+    expect(notice.textContent).toMatch(/results display/i);
+    expect(document.querySelectorAll('button').length).toBe(0);
   });
 
   it('renders the registered component when one is supplied', () => {
