@@ -9,7 +9,9 @@ import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 
 import {
+  type AbuseTrackingStore,
   type AudienceResultsStore,
+  InMemoryAbuseTrackingStore,
   InMemoryAudienceResultsStore,
   InMemoryTenantSettingsStore,
   type TenantSettingsStore,
@@ -18,6 +20,7 @@ import {
 import { createFirebaseVerifier } from './auth/firebase.js';
 import { type AuthVariables, authMiddleware } from './auth/middleware.js';
 import { createPrincipalVerifier } from './auth/verify.js';
+import { VoterRateLimiter } from './routes/audience-rate-limit.js';
 import { createAudienceSessionsRoute } from './routes/audience-sessions.js';
 import {
   type AudienceWebSocketServer,
@@ -56,6 +59,12 @@ export interface ServerConfig {
    * default value here is for tests + dev only.
    */
   audienceTokenPepper?: string;
+  /**
+   * T-458 — concrete AbuseTrackingStore. Defaults to a process-local
+   * in-memory store; production deployments inject the Firestore-backed
+   * impl from `@stageflip/storage-firebase` when T-474 lands.
+   */
+  abuseTrackingStore?: AbuseTrackingStore;
 }
 
 /**
@@ -107,9 +116,15 @@ export function createApp(config: ServerConfig): Hono<{ Variables: AuthVariables
     new InMemoryAudienceResultsStore({
       pepper: config.audienceTokenPepper ?? 'in-memory-default-pepper-DO-NOT-USE-PROD',
     });
+  // T-458 — abuse store wired into the per-tenant + per-IP join limiters.
+  const abuseTrackingStore = config.abuseTrackingStore ?? new InMemoryAbuseTrackingStore();
   app.route(
     '/v1/audience/sessions',
-    createAudienceSessionsRoute({ tenantSettingsStore, audienceResultsStore }),
+    createAudienceSessionsRoute({
+      tenantSettingsStore,
+      audienceResultsStore,
+      abuseTrackingStore,
+    }),
   );
 
   return app;
@@ -147,9 +162,15 @@ export function startServer(options: StartServerOptions): { close: () => Promise
       new InMemoryAudienceResultsStore({
         pepper: options.audienceTokenPepper ?? 'in-memory-default-pepper-DO-NOT-USE-PROD',
       });
+    // T-458 — wire the abuse store into the WS-side voter limiter +
+    // register the reaction-stream override.
+    const abuseTrackingStore = options.abuseTrackingStore ?? new InMemoryAbuseTrackingStore();
+    const voterRateLimiter = new VoterRateLimiter({ abuseStore: abuseTrackingStore });
+    voterRateLimiter.setClipKindOverride('reaction-stream', 10);
     audienceWs = createAudienceWebSocketServer({
       httpServer: server as unknown as import('node:http').Server,
       audienceResultsStore,
+      voterRateLimiter,
       verifyPresenterToken: async (token) => {
         // Bridge to the existing principal verifier; on success the
         // presenter's org is the source of cross-tenant gating.
