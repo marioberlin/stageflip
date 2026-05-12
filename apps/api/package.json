@@ -19,7 +19,8 @@
     "start": "node dist/bin.js",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "test:latency": "RUN_LATENCY_TESTS=1 vitest run src/test/audience-latency.test.ts"
   },
   "dependencies": {
     "@hono/node-server": "1.13.8",
