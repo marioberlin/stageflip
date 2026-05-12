@@ -20,27 +20,38 @@ afterEach(() => {
 });
 
 describe('defaultVoterInputRegistry', () => {
-  it('contains the live-poll-multiple-choice entry (T-461 — first clip family)', () => {
-    expect(defaultVoterInputRegistry.size).toBe(1);
+  it('contains the live-poll-multiple-choice + live-poll-open-text entries (T-461 + T-462)', () => {
+    // T-461 added the first entry; T-462 added the second. Bumped 1 → 2.
+    expect(defaultVoterInputRegistry.size).toBe(2);
     expect(defaultVoterInputRegistry.has('live-poll-multiple-choice')).toBe(true);
+    expect(defaultVoterInputRegistry.has('live-poll-open-text')).toBe(true);
   });
 });
 
 describe('<VoterInputDispatcher>', () => {
-  it.each<AudienceClipKind>(AUDIENCE_CLIP_KINDS.filter((k) => k !== 'live-poll-multiple-choice'))(
-    'falls back to UnregisteredKindFallback for unregistered kind %s',
-    (kind) => {
-      render(<VoterInputDispatcher sessionId="s" clipKind={kind} />);
-      const placeholder = screen.getByTestId('voter-input-unregistered');
-      expect(placeholder.getAttribute('data-clip-kind')).toBe(kind);
-    },
-  );
+  it.each<AudienceClipKind>(
+    AUDIENCE_CLIP_KINDS.filter(
+      (k) => k !== 'live-poll-multiple-choice' && k !== 'live-poll-open-text',
+    ),
+  )('falls back to UnregisteredKindFallback for unregistered kind %s', (kind) => {
+    render(<VoterInputDispatcher sessionId="s" clipKind={kind} />);
+    const placeholder = screen.getByTestId('voter-input-unregistered');
+    expect(placeholder.getAttribute('data-clip-kind')).toBe(kind);
+  });
 
   it('resolves live-poll-multiple-choice to the LivePollMultipleChoiceVoterInput (T-461)', () => {
     render(<VoterInputDispatcher sessionId="sess-default" clipKind="live-poll-multiple-choice" />);
     const wrapper = screen.getByTestId('voter-input-live-poll-multiple-choice-wrapper');
     expect(wrapper.getAttribute('data-session-id')).toBe('sess-default');
     expect(wrapper.getAttribute('data-clip-kind')).toBe('live-poll-multiple-choice');
+    expect(screen.queryByTestId('voter-input-unregistered')).toBeNull();
+  });
+
+  it('resolves live-poll-open-text to the LivePollOpenTextVoterInput (T-462)', () => {
+    render(<VoterInputDispatcher sessionId="sess-ot" clipKind="live-poll-open-text" />);
+    const wrapper = screen.getByTestId('voter-input-live-poll-open-text-wrapper');
+    expect(wrapper.getAttribute('data-session-id')).toBe('sess-ot');
+    expect(wrapper.getAttribute('data-clip-kind')).toBe('live-poll-open-text');
     expect(screen.queryByTestId('voter-input-unregistered')).toBeNull();
   });
 
