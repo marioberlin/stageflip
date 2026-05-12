@@ -33,6 +33,7 @@ import {
   createCanonicalRegistry,
   registerArrangeVariantsBundle,
   registerAssetGenerationBundle,
+  registerAudienceEngagementBundle,
   registerClipAnimationBundle,
   registerClusterAComposeBundle,
   registerClusterBComposeBundle,
@@ -127,6 +128,7 @@ function populate(registry: BundleRegistry, router: ToolRouter<ExecutorContext>)
   registerClusterGComposeBundle(registry, router);
   registerClusterHComposeBundle(registry, router);
   registerAssetGenerationBundle(registry, router);
+  registerAudienceEngagementBundle(registry, router);
 }
 
 /**

@@ -895,6 +895,9 @@ importers:
       '@stageflip/asset-cache':
         specifier: workspace:*
         version: link:../asset-cache
+      '@stageflip/audience-contract':
+        specifier: workspace:*
+        version: link:../audience-contract
       '@stageflip/llm-abstraction':
         specifier: workspace:*
         version: link:../llm-abstraction

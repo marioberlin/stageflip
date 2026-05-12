@@ -193,3 +193,16 @@ export {
   type ExecuteAdapterCallResult,
   registerAssetGenerationBundle,
 } from './handlers/asset-generation/register.js';
+export {
+  AUDIENCE_CLIP_KINDS,
+  type AudienceClipKind,
+  type AudienceComposeResult,
+  AUDIENCE_ENGAGEMENT_BUNDLE_NAME,
+  AUDIENCE_ENGAGEMENT_HANDLERS,
+  AUDIENCE_ENGAGEMENT_TOOL_DEFINITIONS,
+  QA_MODERATION_MODES,
+  type QaModerationMode,
+  registerAudienceEngagementBundle,
+  SURVEY_QUESTION_KINDS,
+  type SurveyQuestionKind,
+} from './handlers/audience-engagement/register.js';
