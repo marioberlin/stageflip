@@ -73,9 +73,11 @@ export {
 // (`@stageflip/storage-firebase`).
 export {
   audienceEventDocSchema,
+  audienceQuizStateSchema,
   audienceSessionAdapterDescriptorSchema,
   audienceSessionDocSchema,
   type AudienceEventDoc,
+  type AudienceQuizState,
   type AudienceSessionAdapterDescriptor,
   type AudienceSessionDoc,
 } from './audience-results.js';

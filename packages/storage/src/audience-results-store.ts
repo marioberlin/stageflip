@@ -21,8 +21,10 @@ import { createHash } from 'node:crypto';
 
 import {
   type AudienceEventDoc,
+  type AudienceQuizState,
   type AudienceSessionDoc,
   audienceEventDocSchema,
+  audienceQuizStateSchema,
   audienceSessionDocSchema,
 } from './audience-results.js';
 
@@ -130,6 +132,18 @@ export interface AudienceResultsStore {
    * exist.
    */
   setTtl(sessionId: string, ttlAt: string): Promise<void>;
+
+  /**
+   * Mutate the optional `quizState` field on the session doc (T-473).
+   * The supplied `mutator` receives the current state (or `undefined`
+   * if absent) and returns the next state. The new state is
+   * Zod-validated before persisting; the call throws on validation
+   * failure. Throws if the session does not exist.
+   */
+  updateQuizState(
+    sessionId: string,
+    mutator: (current: AudienceQuizState | undefined) => AudienceQuizState,
+  ): Promise<AudienceQuizState>;
 
   /**
    * List the events recorded against `sessionId` ordered by
@@ -268,6 +282,29 @@ export class InMemoryAudienceResultsStore implements AudienceResultsStore {
     }
     const next: AudienceSessionDoc = audienceSessionDocSchema.parse({ ...existing, ttlAt });
     this.sessions.set(sessionId, next);
+  }
+
+  /**
+   * T-473 — mutate the session's optional `quizState`. The supplied
+   * mutator receives the current state (or `undefined` if unset) and
+   * returns the next state; the result is validated via the Zod schema
+   * before persisting. Throws if the session does not exist.
+   */
+  async updateQuizState(
+    sessionId: string,
+    mutator: (current: AudienceQuizState | undefined) => AudienceQuizState,
+  ): Promise<AudienceQuizState> {
+    const existing = this.sessions.get(sessionId);
+    if (!existing) {
+      throw new Error(`updateQuizState: sessionId ${sessionId} not found`);
+    }
+    const nextState = audienceQuizStateSchema.parse(mutator(existing.quizState));
+    const nextDoc: AudienceSessionDoc = audienceSessionDocSchema.parse({
+      ...existing,
+      quizState: nextState,
+    });
+    this.sessions.set(sessionId, nextDoc);
+    return nextState;
   }
 
   /**

@@ -25,6 +25,7 @@ import type { AudienceResultsStore, AudienceSessionDoc } from '@stageflip/storag
 import { WebSocket, WebSocketServer } from 'ws';
 
 import { type ServerAudienceLossFlagCode, emitAudienceLossFlag } from './audience-loss-flags.js';
+import type { QuizQuestion, QuizStateManager } from './audience-quiz-state.js';
 import { VoterRateLimiter } from './audience-rate-limit.js';
 
 // ----------------------------------------------------------------------------
@@ -84,11 +85,43 @@ export type WsPrincipal =
 // Dispatcher (pure)
 // ----------------------------------------------------------------------------
 
+/**
+ * Per-session quiz configuration resolver (T-473). Returns the question
+ * array + per-question timer + `questionStartedAtMs` (server clock at
+ * the moment the active question advanced) for live-quiz sessions; or
+ * `undefined` for any other clip-kind. The resolver is injected so the
+ * WS layer remains decoupled from the editor's document store; the
+ * production wiring binds it to the live-quiz clip element pulled out
+ * of the active document at session-open time.
+ */
+export interface LiveQuizConfig {
+  readonly questions: readonly QuizQuestion[];
+  readonly timerMs: number;
+  /** Server-side ms-since-epoch at which the active question advanced. */
+  readonly questionStartedAtMs: number;
+  /** 0-based index of the active question. */
+  readonly currentQuestionIndex: number;
+}
+
 export interface DispatchDeps {
   readonly sessionId: string;
   readonly principal: WsPrincipal;
   readonly audienceResultsStore: AudienceResultsStore;
   readonly voterRateLimiter: VoterRateLimiter;
+  /**
+   * T-473 — quiz state manager for live-quiz scoring. Optional; when
+   * absent, live-quiz votes route through the generic vote acceptor.
+   */
+  readonly quizStateManager?: QuizStateManager;
+  /**
+   * T-473 — per-session quiz configuration resolver. Optional; required
+   * for live-quiz scoring. Returns `undefined` for non-live-quiz sessions
+   * + when the resolver has no entry for `sessionId` (the WS handler
+   * falls through to the generic vote acceptor in that case).
+   */
+  resolveLiveQuizConfig?(sessionId: string): Promise<LiveQuizConfig | undefined>;
+  /** ms-since-epoch clock — used by T-473 latency computation. */
+  readonly nowMs?: () => number;
   /** ISO timestamp source. */
   now(): string;
   /** ID source for new event docs. */
@@ -197,6 +230,72 @@ async function handleVote(frame: VoteFrame, deps: DispatchDeps): Promise<void> {
     });
     return;
   }
+  // T-473 — route live-quiz votes through the quiz state machine for
+  // scoring + late-joiner gating. The vote is still appended to the
+  // event log (so result-export sees it); we ALSO bump per-voter
+  // cumulative score on the session doc + emit a loss-flag if the
+  // late-joiner lock rejects.
+  if (parsed.data.kind === 'live-quiz' && deps.quizStateManager && deps.resolveLiveQuizConfig) {
+    const config = await deps.resolveLiveQuizConfig(deps.sessionId);
+    if (config) {
+      const nowMs = deps.nowMs ? deps.nowMs() : Date.now();
+      const latencyMs = Math.max(0, nowMs - config.questionStartedAtMs);
+      const voterTokenHash = hashVoterTokenForSession(
+        deps.audienceResultsStore,
+        deps.principal.voterToken,
+      );
+      const decision = await deps.quizStateManager.recordVote({
+        sessionId: deps.sessionId,
+        voterTokenHash,
+        questionId: parsed.data.questionId,
+        optionIndex: parsed.data.optionIndex,
+        latencyMs,
+        timerMs: config.timerMs,
+        currentQuestionIndex: config.currentQuestionIndex,
+        questions: config.questions,
+      });
+      if (!decision.accepted && decision.rejectReason === 'late-joiner-lock') {
+        emitAudienceLossFlag({
+          code: 'LF-AUDIENCE-VOTER-RATE-LIMITED',
+          message: `voter ${deps.principal.voterToken.slice(0, 6)} rejected: late-joiner-lock`,
+          location: { slideId: deps.sessionId },
+        });
+        deps.send({
+          type: 'error',
+          code: 'LF-AUDIENCE-VOTER-RATE-LIMITED',
+          message: 'late-joiner-lock — vote not scored',
+        });
+        // Persist the rejected event for audit; do not bump voterCount.
+        await deps.audienceResultsStore.appendEvent({
+          sessionId: deps.sessionId,
+          eventId: deps.mintEventId(),
+          voterToken: deps.principal.voterToken,
+          serverTimestamp: deps.now(),
+          clientTimestamp: frame.clientTimestamp,
+          payload: parsed.data,
+          accepted: false,
+          rejectReason: 'late-joiner-lock',
+        });
+        return;
+      }
+      // Accepted (incl. score=0 incorrect / past-timer) OR
+      // unknown-question — append the event either way; the
+      // unknown-question rejection is recorded as an `accepted: false`
+      // audit row.
+      const acceptedForLog = decision.accepted;
+      await deps.audienceResultsStore.appendEvent({
+        sessionId: deps.sessionId,
+        eventId: deps.mintEventId(),
+        voterToken: deps.principal.voterToken,
+        serverTimestamp: deps.now(),
+        clientTimestamp: frame.clientTimestamp,
+        payload: parsed.data,
+        accepted: acceptedForLog,
+        ...(decision.rejectReason !== undefined ? { rejectReason: decision.rejectReason } : {}),
+      });
+      return;
+    }
+  }
   await deps.audienceResultsStore.appendEvent({
     sessionId: deps.sessionId,
     eventId: deps.mintEventId(),
@@ -206,6 +305,24 @@ async function handleVote(frame: VoteFrame, deps: DispatchDeps): Promise<void> {
     payload: parsed.data,
     accepted: true,
   });
+}
+
+/**
+ * Compute the voter-token-hash used by the quiz state machine. The
+ * `InMemoryAudienceResultsStore` exposes `hashVoterToken`; the
+ * Firestore-backed store (T-474) will mirror the contract. The
+ * type-guard keeps the cast scoped — if a future store impl omits the
+ * method we fall back to the plaintext token (still hashed at rest by
+ * `appendEvent` — the quiz state map just wouldn't share the key).
+ */
+function hashVoterTokenForSession(store: AudienceResultsStore, voterToken: string): string {
+  const hashable = store as AudienceResultsStore & {
+    hashVoterToken?: (plaintext: string) => string;
+  };
+  if (typeof hashable.hashVoterToken === 'function') {
+    return hashable.hashVoterToken(voterToken);
+  }
+  return voterToken;
 }
 
 async function handleAdminCommand(frame: AdminCommandFrame, deps: DispatchDeps): Promise<void> {
@@ -382,10 +499,25 @@ export interface AudienceWebSocketServerDeps extends HandshakeDeps {
   readonly audienceResultsStore: AudienceResultsStore;
   readonly voterRateLimiter?: VoterRateLimiter;
   readonly reconnectBudget?: ReconnectBudget;
+  /**
+   * T-473 — optional quiz state manager. When supplied (with
+   * `resolveLiveQuizConfig`), live-quiz votes route through it for
+   * scoring + late-joiner gating.
+   */
+  readonly quizStateManager?: QuizStateManager;
+  /**
+   * T-473 — optional per-session live-quiz config resolver. See
+   * `LiveQuizConfig` for the shape. When the resolver returns
+   * `undefined`, live-quiz votes fall through to the generic vote
+   * acceptor.
+   */
+  resolveLiveQuizConfig?(sessionId: string): Promise<LiveQuizConfig | undefined>;
   /** Path prefix the multiplexer listens on. Default `/v1/audience/ws`. */
   readonly pathPrefix?: string;
   /** Inject for tests. */
   now?(): string;
+  /** T-473 — ms-since-epoch clock used by latency computation. */
+  nowMs?(): number;
   mintEventId?(): string;
 }
 
@@ -416,6 +548,7 @@ export function createAudienceWebSocketServer(
     voterRateLimiter.setClipKindOverride('reaction-stream', 10);
   }
   const now = deps.now ?? (() => new Date().toISOString());
+  const nowMs = deps.nowMs ?? (() => Date.now());
   const mintEventId = deps.mintEventId ?? defaultMintEventId;
 
   const wss = new WebSocketServer({ noServer: true });
@@ -482,6 +615,11 @@ export function createAudienceWebSocketServer(
         principal,
         audienceResultsStore: deps.audienceResultsStore,
         voterRateLimiter,
+        ...(deps.quizStateManager !== undefined ? { quizStateManager: deps.quizStateManager } : {}),
+        ...(deps.resolveLiveQuizConfig !== undefined
+          ? { resolveLiveQuizConfig: deps.resolveLiveQuizConfig }
+          : {}),
+        nowMs,
         now,
         mintEventId,
         send,

@@ -316,6 +316,98 @@ describe('InMemoryAudienceResultsStore — listEvents (T-459)', () => {
   });
 });
 
+describe('InMemoryAudienceResultsStore — updateQuizState (T-473)', () => {
+  const liveQuizOpen: OpenSessionInput = {
+    ...baseOpenInput,
+    clipKind: 'live-quiz',
+  };
+
+  it('initializes quizState from undefined on first call', async () => {
+    const store = makeStore();
+    await store.openSession(liveQuizOpen);
+    const result = await store.updateQuizState(liveQuizOpen.sessionId, (current) => {
+      expect(current).toBeUndefined();
+      return { activeQuestionIndex: 0, scores: {}, joinedAt: {} };
+    });
+    expect(result).toEqual({ activeQuestionIndex: 0, scores: {}, joinedAt: {} });
+    const snap = await store.readSnapshot(liveQuizOpen.sessionId);
+    expect(snap?.quizState).toEqual({ activeQuestionIndex: 0, scores: {}, joinedAt: {} });
+  });
+
+  it('mutates the existing state across multiple calls', async () => {
+    const store = makeStore();
+    await store.openSession(liveQuizOpen);
+    await store.updateQuizState(liveQuizOpen.sessionId, () => ({
+      activeQuestionIndex: 0,
+      scores: { 'voter-a': 1000 },
+      joinedAt: { 'voter-a': 0 },
+    }));
+    const second = await store.updateQuizState(liveQuizOpen.sessionId, (current) => {
+      expect(current).toEqual({
+        activeQuestionIndex: 0,
+        scores: { 'voter-a': 1000 },
+        joinedAt: { 'voter-a': 0 },
+      });
+      return {
+        activeQuestionIndex: 1,
+        scores: { 'voter-a': 1750 },
+        joinedAt: { 'voter-a': 0 },
+      };
+    });
+    expect(second).toEqual({
+      activeQuestionIndex: 1,
+      scores: { 'voter-a': 1750 },
+      joinedAt: { 'voter-a': 0 },
+    });
+  });
+
+  it('throws if the session does not exist', async () => {
+    const store = makeStore();
+    await expect(
+      store.updateQuizState('unknown', () => ({
+        activeQuestionIndex: 0,
+        scores: {},
+        joinedAt: {},
+      })),
+    ).rejects.toThrow(/not found/);
+  });
+
+  it('throws when the mutator returns an invalid shape (negative score)', async () => {
+    const store = makeStore();
+    await store.openSession(liveQuizOpen);
+    await expect(
+      store.updateQuizState(liveQuizOpen.sessionId, () => ({
+        activeQuestionIndex: 0,
+        scores: { 'voter-a': -1 },
+        joinedAt: {},
+      })),
+    ).rejects.toThrow();
+  });
+
+  it('preserves the rest of the session doc (voterCount + adapterDescriptor)', async () => {
+    const store = makeStore();
+    await store.openSession(liveQuizOpen);
+    await store.appendEvent({
+      sessionId: liveQuizOpen.sessionId,
+      eventId: 'evt-x',
+      voterToken: 'voter-1',
+      serverTimestamp: '2026-05-11T00:00:01.000Z',
+      clientTimestamp: '2026-05-11T00:00:00.500Z',
+      payload: { kind: 'live-quiz', questionId: 'q1', optionIndex: 0 },
+      accepted: true,
+    });
+    await store.updateQuizState(liveQuizOpen.sessionId, () => ({
+      activeQuestionIndex: 0,
+      scores: { 'voter-hash-a': 500 },
+      joinedAt: { 'voter-hash-a': 0 },
+    }));
+    const snap = await store.readSnapshot(liveQuizOpen.sessionId);
+    expect(snap?.voterCount).toBe(1);
+    expect(snap?.adapterDescriptor).toEqual(liveQuizOpen.adapterDescriptor);
+    expect(snap?.clipKind).toBe('live-quiz');
+  });
+});
+
 describe('InMemoryAudienceResultsStore — readSnapshot + setTtl', () => {
   it('returns null for an unknown session', async () => {
     const store = makeStore();

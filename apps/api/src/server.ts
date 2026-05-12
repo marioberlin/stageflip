@@ -20,10 +20,12 @@ import {
 import { createFirebaseVerifier } from './auth/firebase.js';
 import { type AuthVariables, authMiddleware } from './auth/middleware.js';
 import { createPrincipalVerifier } from './auth/verify.js';
+import { QuizStateManager } from './routes/audience-quiz-state.js';
 import { VoterRateLimiter } from './routes/audience-rate-limit.js';
 import { createAudienceSessionsRoute } from './routes/audience-sessions.js';
 import {
   type AudienceWebSocketServer,
+  type LiveQuizConfig,
   createAudienceWebSocketServer,
 } from './routes/audience-ws.js';
 import { type PrincipalResolution, createMcpSessionRoute } from './routes/mcp-session.js';
@@ -65,6 +67,17 @@ export interface ServerConfig {
    * impl from `@stageflip/storage-firebase` when T-474 lands.
    */
   abuseTrackingStore?: AbuseTrackingStore;
+  /**
+   * T-473 — per-session live-quiz config resolver. Optional; required
+   * for the live-quiz scoring path. The resolver pulls the question
+   * array + per-question timer + `questionStartedAtMs` for the
+   * supplied `sessionId`. The default in-memory binding here is a
+   * no-op (`undefined`) — live-quiz votes fall through to the generic
+   * vote acceptor. Production wiring binds it to the document store
+   * (where the LiveQuizClipElement lives) once T-474 + downstream
+   * presenter-side wiring lands.
+   */
+  resolveLiveQuizConfig?: (sessionId: string) => Promise<LiveQuizConfig | undefined>;
 }
 
 /**
@@ -167,10 +180,19 @@ export function startServer(options: StartServerOptions): { close: () => Promise
     const abuseTrackingStore = options.abuseTrackingStore ?? new InMemoryAbuseTrackingStore();
     const voterRateLimiter = new VoterRateLimiter({ abuseStore: abuseTrackingStore });
     voterRateLimiter.setClipKindOverride('reaction-stream', 10);
+    // T-473 — quiz state machine scopes live-quiz vote scoring.
+    const quizStateManager = new QuizStateManager({
+      audienceResultsStore,
+      now: () => Date.now(),
+    });
     audienceWs = createAudienceWebSocketServer({
       httpServer: server as unknown as import('node:http').Server,
       audienceResultsStore,
       voterRateLimiter,
+      quizStateManager,
+      ...(options.resolveLiveQuizConfig !== undefined
+        ? { resolveLiveQuizConfig: options.resolveLiveQuizConfig }
+        : {}),
       verifyPresenterToken: async (token) => {
         // Bridge to the existing principal verifier; on success the
         // presenter's org is the source of cross-tenant gating.
