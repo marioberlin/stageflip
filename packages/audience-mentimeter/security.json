@@ -1,0 +1,36 @@
+{
+  "adapterId": "audience-mentimeter",
+  "perimeter": "remote-network",
+  "dataLeavingPerimeter": {
+    "prompt": false,
+    "inputBytes": false,
+    "tenantId": true,
+    "cacheKey": false
+  },
+  "pii": {
+    "voiceClone": false,
+    "userContent": false
+  },
+  "networkEndpoint": {
+    "hostname": "api.mentimeter.com",
+    "protocol": "https",
+    "authMethod": "bearer-token"
+  },
+  "dataRetention": {
+    "providerRetainsInput": true,
+    "providerRetainsOutput": true,
+    "retentionPolicy": "provider-default"
+  },
+  "auditSignal": {
+    "relevantAuditEvents": ["start", "complete", "failed"],
+    "relevantUsageFields": [
+      "tenantId",
+      "adapterId",
+      "modality",
+      "latencyMs",
+      "outcome",
+      "timestamp"
+    ]
+  },
+  "lastReviewedAt": "2026-05-12"
+}
