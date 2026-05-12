@@ -26,13 +26,14 @@ import {
   type LivePollRatingClipElement,
   livePollRatingClipElementSchema,
 } from './live-poll-rating.js';
+import { type LiveQAClipElement, liveQAClipElementSchema } from './live-qa.js';
 import { type ShapeElement, shapeElementSchema } from './shape.js';
 import { type TableElement, tableElementSchema } from './table.js';
 import { type TextElement, textElementSchema } from './text.js';
 import { type VideoElement, videoElementSchema } from './video.js';
 
 /**
- * Discriminated union of all 11 element types. `GroupElement` is declared
+ * Discriminated union of all element types. `GroupElement` is declared
  * explicitly because it recursively contains `Element[]`; TS cannot infer a
  * self-referential shape from `z.infer` alone.
  */
@@ -58,7 +59,8 @@ export type Element =
   | InteractiveClip
   | LivePollMultipleChoiceClipElement
   | LivePollOpenTextClipElement
-  | LivePollRatingClipElement;
+  | LivePollRatingClipElement
+  | LiveQAClipElement;
 
 /**
  * Group schema with recursive `children: Element[]`. Uses `z.lazy` and an
@@ -113,6 +115,7 @@ export const elementSchema = z.union([
   livePollMultipleChoiceClipElementSchema,
   livePollOpenTextClipElementSchema,
   livePollRatingClipElementSchema,
+  liveQAClipElementSchema,
   groupElementSchema,
 ]) as unknown as z.ZodType<Element>;
 
@@ -137,6 +140,7 @@ export const ELEMENT_TYPES = [
   'live-poll-multiple-choice',
   'live-poll-open-text',
   'live-poll-rating',
+  'live-qa',
 ] as const;
 export type ElementType = (typeof ELEMENT_TYPES)[number];
 
@@ -155,6 +159,7 @@ export * from './image.js';
 export * from './live-poll-multiple-choice.js';
 export * from './live-poll-open-text.js';
 export * from './live-poll-rating.js';
+export * from './live-qa.js';
 export * from './media-provenance.js';
 export * from './shape.js';
 export * from './table.js';
