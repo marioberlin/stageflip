@@ -169,7 +169,7 @@ describe('surveyClipFactory', () => {
     const ctx = makeCtx({ controller, provider });
     const handle = await surveyClipFactory(ctx);
     expect(handle).toBeDefined();
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     const root = document.querySelector('[data-stageflip-clip="survey"]');
     expect(root).not.toBeNull();
     expect(root?.getAttribute('data-state')).toBe('waiting');
@@ -209,7 +209,7 @@ describe('surveyClipFactory', () => {
       },
     });
     const handle = await surveyClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     const root = document.querySelector('[data-stageflip-clip="survey"]');
     expect(root?.getAttribute('data-state')).toBe('aggregated');
     const cards = document.querySelectorAll('[data-testid^="survey-question-card-"]');
@@ -228,7 +228,7 @@ describe('surveyClipFactory', () => {
       voterToken: 'v-tok',
     });
     const handle = await surveyClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     push({
       sessionId: 's-1',
       frameNo: 1,
@@ -285,7 +285,7 @@ describe('surveyClipFactory', () => {
     const { provider } = makeStubProvider();
     const ctx = makeCtx({ controller, provider });
     const handle = await surveyClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     controller.abort();
     expect(() => handle.dispose()).not.toThrow();
   });

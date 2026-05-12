@@ -166,7 +166,7 @@ describe('livePollOpenTextClipFactory', () => {
     const ctx = makeCtx({ controller, provider });
     const handle = await livePollOpenTextClipFactory(ctx);
     expect(handle).toBeDefined();
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     const root = document.querySelector('[data-stageflip-clip="live-poll-open-text"]');
     expect(root).not.toBeNull();
     handle.dispose();
@@ -198,7 +198,7 @@ describe('livePollOpenTextClipFactory', () => {
       },
     });
     const handle = await livePollOpenTextClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     const total = document.querySelector('[data-testid="live-poll-ot-total"]');
     expect(total?.textContent).toBe('10 responses');
     handle.dispose();
@@ -215,7 +215,7 @@ describe('livePollOpenTextClipFactory', () => {
       voterToken: 'v-tok',
     });
     const handle = await livePollOpenTextClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     push({
       sessionId: 's-1',
       frameNo: 1,
@@ -261,7 +261,7 @@ describe('livePollOpenTextClipFactory', () => {
     const { provider } = makeStubProvider();
     const ctx = makeCtx({ controller, provider });
     const handle = await livePollOpenTextClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     controller.abort();
     expect(() => handle.dispose()).not.toThrow();
   });

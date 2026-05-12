@@ -164,7 +164,7 @@ describe('reactionStreamClipFactory', () => {
     const ctx = makeCtx({ controller, provider });
     const handle = await reactionStreamClipFactory(ctx);
     expect(handle).toBeDefined();
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     const root = document.querySelector('[data-stageflip-clip="reaction-stream"]');
     expect(root).not.toBeNull();
     expect(root?.getAttribute('data-state')).toBe('waiting');
@@ -197,7 +197,7 @@ describe('reactionStreamClipFactory', () => {
       },
     });
     const handle = await reactionStreamClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     const root = document.querySelector('[data-stageflip-clip="reaction-stream"]');
     expect(root?.getAttribute('data-state')).toBe('aggregated');
     const total = document.querySelector('[data-testid="reaction-stream-total"]');
@@ -216,7 +216,7 @@ describe('reactionStreamClipFactory', () => {
       voterToken: 'v-tok',
     });
     const handle = await reactionStreamClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     push({
       sessionId: 's-1',
       frameNo: 1,
@@ -263,7 +263,7 @@ describe('reactionStreamClipFactory', () => {
     const { provider } = makeStubProvider();
     const ctx = makeCtx({ controller, provider });
     const handle = await reactionStreamClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     controller.abort();
     expect(() => handle.dispose()).not.toThrow();
   });

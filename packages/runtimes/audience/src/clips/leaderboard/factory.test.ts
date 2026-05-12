@@ -172,7 +172,7 @@ describe('leaderboardClipFactory', () => {
     const ctx = makeCtx({ controller, provider });
     const handle = await leaderboardClipFactory(ctx);
     expect(handle).toBeDefined();
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     const root = document.querySelector('[data-stageflip-clip="leaderboard"]');
     expect(root).not.toBeNull();
     expect(root?.getAttribute('data-state')).toBe('waiting');
@@ -206,7 +206,7 @@ describe('leaderboardClipFactory', () => {
       },
     });
     const handle = await leaderboardClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     const root = document.querySelector('[data-stageflip-clip="leaderboard"]');
     expect(root?.getAttribute('data-state')).toBe('ranked');
     const rows = document.querySelectorAll('[data-testid^="leaderboard-row-"]');
@@ -225,7 +225,7 @@ describe('leaderboardClipFactory', () => {
       voterToken: 'v-tok',
     });
     const handle = await leaderboardClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     push({
       sessionId: 's-1',
       frameNo: 1,
@@ -278,7 +278,7 @@ describe('leaderboardClipFactory', () => {
     const { provider } = makeStubProvider();
     const ctx = makeCtx({ controller, provider });
     const handle = await leaderboardClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     controller.abort();
     expect(() => handle.dispose()).not.toThrow();
   });

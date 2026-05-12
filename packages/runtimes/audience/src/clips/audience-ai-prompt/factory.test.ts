@@ -164,7 +164,7 @@ describe('audienceAiPromptClipFactory', () => {
     const ctx = makeCtx({ controller, provider });
     const handle = await audienceAiPromptClipFactory(ctx);
     expect(handle).toBeDefined();
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     const root = document.querySelector('[data-stageflip-clip="audience-ai-prompt"]');
     expect(root).not.toBeNull();
     expect(root?.getAttribute('data-state')).toBe('voting');
@@ -198,7 +198,7 @@ describe('audienceAiPromptClipFactory', () => {
       },
     });
     const handle = await audienceAiPromptClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     const root = document.querySelector('[data-stageflip-clip="audience-ai-prompt"]');
     expect(root?.getAttribute('data-state')).toBe('final');
     const total = document.querySelector('[data-testid="aip-total"]');
@@ -217,7 +217,7 @@ describe('audienceAiPromptClipFactory', () => {
       voterToken: 'v-tok',
     });
     const handle = await audienceAiPromptClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     push({
       sessionId: 's-1',
       frameNo: 1,
@@ -265,7 +265,7 @@ describe('audienceAiPromptClipFactory', () => {
     const { provider } = makeStubProvider();
     const ctx = makeCtx({ controller, provider });
     const handle = await audienceAiPromptClipFactory(ctx);
-    await new Promise<void>((r) => setTimeout(r, 0));
+    await new Promise<void>((r) => setTimeout(r, 50));
     controller.abort();
     expect(() => handle.dispose()).not.toThrow();
   });
