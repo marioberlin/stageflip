@@ -191,7 +191,7 @@ describe('dispatchAudienceMessage — vote frames', () => {
     await dispatchAudienceMessage(raw, deps);
     expect(closes).toHaveLength(0);
     expect(sent).toHaveLength(0);
-    const events = store.listEvents(SESSION_ID);
+    const events = await store.listEvents(SESSION_ID);
     expect(events).toHaveLength(1);
     expect(events[0]?.accepted).toBe(true);
   });

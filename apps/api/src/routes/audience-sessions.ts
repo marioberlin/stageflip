@@ -26,6 +26,7 @@ import { z } from 'zod';
 import { AUDIENCE_CLIP_KINDS, type AudienceClipKind } from '@stageflip/audience-contract';
 import type {
   AbuseTrackingStore,
+  AudienceEventDoc,
   AudienceFeatureSettings,
   AudienceResultsStore,
   TenantSettingsStore,
@@ -33,12 +34,29 @@ import type {
 
 import type { AuthVariables } from '../auth/middleware.js';
 import type { Principal } from '../auth/verify.js';
+import { encodeAudienceEventsCsv } from './audience-export-csv.js';
 import { emitAudienceLossFlag } from './audience-loss-flags.js';
 import {
   IpJoinRateLimiter,
   TenantRateLimiter,
   type VoterRateLimiter,
 } from './audience-rate-limit.js';
+
+// ----------------------------------------------------------------------------
+// Export endpoint constants (T-459)
+// ----------------------------------------------------------------------------
+
+/** Paging window used by `GET /:id/export` when reading from `listEvents`. */
+const EXPORT_PAGE_SIZE = 10000;
+
+/** Accepted values for the `?format=` query string. */
+const EXPORT_FORMATS = ['json', 'csv'] as const;
+type ExportFormat = (typeof EXPORT_FORMATS)[number];
+type AudienceEventSlice = AudienceEventDoc;
+
+function isExportFormat(s: string): s is ExportFormat {
+  return (EXPORT_FORMATS as readonly string[]).includes(s);
+}
 
 // ----------------------------------------------------------------------------
 // Defaults (ADR-009 §D3 / §D5)
@@ -304,6 +322,105 @@ export function createAudienceSessionsRoute(
     const tenantGuard = denyIfCrossTenant(principal, doc.tenantId);
     if (tenantGuard) return c.json(tenantGuard.body, tenantGuard.status);
     return c.json({ session: doc });
+  });
+
+  // --------------------------------------------------------------------------
+  // GET /:sessionId/export — post-event analytics download (T-459)
+  //
+  // Presenter-authenticated; tenant-rate-limited (reuses the same
+  // `TenantRateLimiter` axis as openSession). `?format=json` (default)
+  // returns `{ session, events }`; `?format=csv` returns RFC 4180 CSV
+  // with `Content-Disposition: attachment`. Unknown format → 400.
+  //
+  // The events sub-collection is paged through via `listEvents` with the
+  // `EXPORT_PAGE_SIZE` window; per ADR-009 §D5 voter-token-hashing-at-rest,
+  // the `voterTokenHash` column emits the stored hash directly (NEVER
+  // un-hashed).
+  //
+  // `Vary: format` is set so HTTP caches treat `?format=csv` and
+  // `?format=json` as distinct responses.
+  // --------------------------------------------------------------------------
+  app.get('/:sessionId/export', async (c) => {
+    const sessionId = c.req.param('sessionId');
+    if (!sessionId) {
+      return c.json({ error: 'invalid_request', message: 'missing sessionId' }, 400);
+    }
+    const formatRaw = c.req.query('format');
+    if (formatRaw !== undefined && !isExportFormat(formatRaw)) {
+      return c.json(
+        {
+          error: 'invalid_format',
+          message: `format must be one of: ${EXPORT_FORMATS.join(', ')}`,
+        },
+        400,
+      );
+    }
+    const format: ExportFormat = (formatRaw as ExportFormat | undefined) ?? 'json';
+
+    const doc = await deps.audienceResultsStore.readSnapshot(sessionId);
+    if (!doc) {
+      return c.json({ error: 'not_found', message: 'session not found' }, 404);
+    }
+
+    const principal = c.var.principal;
+    const tenantGuard = denyIfCrossTenant(principal, doc.tenantId);
+    if (tenantGuard) return c.json(tenantGuard.body, tenantGuard.status);
+
+    // Tenant rate-limit the export (the call may page through a large
+    // events collection; rate-cap protects upstream tenants from
+    // download-storm starvation).
+    const tenantDecision = await tenantRateLimiter.tryConsume(doc.tenantId);
+    if (!tenantDecision.accepted) {
+      const flag = emitAudienceLossFlag({
+        code: 'LF-AUDIENCE-TENANT-RATE-LIMITED',
+        message: `tenant ${doc.tenantId} export rate cap exceeded`,
+        location: { slideId: sessionId },
+      });
+      return c.json(
+        {
+          error: 'rate_limited',
+          message: 'tenant-level audience rate cap exceeded',
+          lossFlag: flag,
+          ...(tenantDecision.flagLevel !== undefined
+            ? { abuseLevel: tenantDecision.flagLevel }
+            : {}),
+          ...(tenantDecision.rejectReason !== undefined
+            ? { rejectReason: tenantDecision.rejectReason }
+            : {}),
+        },
+        429,
+      );
+    }
+
+    // Page through events: keep calling listEvents until a page returns
+    // fewer than EXPORT_PAGE_SIZE rows (signal of exhaustion).
+    const events: AudienceEventSlice[] = [];
+    let cursor: string | undefined;
+    // Bound the loop defensively (1000 pages × 10k = 10M rows; far past
+    // the per-session cap). The break condition is the standard signal.
+    for (let page = 0; page < 1000; page++) {
+      const opts: { limit: number; after?: string } =
+        cursor !== undefined
+          ? { limit: EXPORT_PAGE_SIZE, after: cursor }
+          : { limit: EXPORT_PAGE_SIZE };
+      const slice = await deps.audienceResultsStore.listEvents(sessionId, opts);
+      events.push(...slice);
+      if (slice.length < EXPORT_PAGE_SIZE) break;
+      const last = slice.at(-1);
+      if (!last) break;
+      cursor = last.serverTimestamp;
+    }
+
+    if (format === 'csv') {
+      const csv = encodeAudienceEventsCsv(events);
+      c.header('content-type', 'text/csv; charset=utf-8');
+      c.header('content-disposition', `attachment; filename="audience-${sessionId}.csv"`);
+      c.header('vary', 'format');
+      return c.body(csv, 200);
+    }
+
+    c.header('vary', 'format');
+    return c.json({ session: doc, events });
   });
 
   // --------------------------------------------------------------------------

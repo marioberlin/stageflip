@@ -224,6 +224,98 @@ describe('InMemoryAudienceResultsStore — appendEvent', () => {
   });
 });
 
+describe('InMemoryAudienceResultsStore — listEvents (T-459)', () => {
+  async function seed(store: InMemoryAudienceResultsStore) {
+    await store.openSession(baseOpenInput);
+    await store.appendEvent({
+      sessionId: baseOpenInput.sessionId,
+      eventId: 'evt-1',
+      voterToken: 'voter-a',
+      serverTimestamp: '2026-05-11T00:00:01.000Z',
+      clientTimestamp: '2026-05-11T00:00:00.500Z',
+      payload: { kind: 'live-poll-multiple-choice', optionIndex: 0 },
+      accepted: true,
+    });
+    await store.appendEvent({
+      sessionId: baseOpenInput.sessionId,
+      eventId: 'evt-2',
+      voterToken: 'voter-b',
+      serverTimestamp: '2026-05-11T00:00:02.000Z',
+      clientTimestamp: '2026-05-11T00:00:01.500Z',
+      payload: { kind: 'live-poll-multiple-choice', optionIndex: 1 },
+      accepted: true,
+    });
+    await store.appendEvent({
+      sessionId: baseOpenInput.sessionId,
+      eventId: 'evt-3',
+      voterToken: 'voter-c',
+      serverTimestamp: '2026-05-11T00:00:03.000Z',
+      clientTimestamp: '2026-05-11T00:00:02.500Z',
+      payload: { kind: 'live-poll-multiple-choice', optionIndex: 0 },
+      accepted: true,
+    });
+  }
+
+  it('returns [] for an unknown session', async () => {
+    const store = makeStore();
+    expect(await store.listEvents('unknown')).toEqual([]);
+  });
+
+  it('returns all events for a session ordered by serverTimestamp asc', async () => {
+    const store = makeStore();
+    await seed(store);
+    const events = await store.listEvents(baseOpenInput.sessionId);
+    expect(events.map((e) => e.eventId)).toEqual(['evt-1', 'evt-2', 'evt-3']);
+  });
+
+  it('honours opts.after — returns only events strictly newer than the cursor', async () => {
+    const store = makeStore();
+    await seed(store);
+    const events = await store.listEvents(baseOpenInput.sessionId, {
+      after: '2026-05-11T00:00:01.000Z',
+    });
+    expect(events.map((e) => e.eventId)).toEqual(['evt-2', 'evt-3']);
+  });
+
+  it('honours opts.limit — caps the number of returned rows', async () => {
+    const store = makeStore();
+    await seed(store);
+    const events = await store.listEvents(baseOpenInput.sessionId, { limit: 2 });
+    expect(events.map((e) => e.eventId)).toEqual(['evt-1', 'evt-2']);
+  });
+
+  it('honours opts.after + opts.limit together (pagination)', async () => {
+    const store = makeStore();
+    await seed(store);
+    const page1 = await store.listEvents(baseOpenInput.sessionId, { limit: 2 });
+    expect(page1.map((e) => e.eventId)).toEqual(['evt-1', 'evt-2']);
+    const page2 = await store.listEvents(baseOpenInput.sessionId, {
+      limit: 2,
+      after: page1.at(-1)?.serverTimestamp,
+    });
+    expect(page2.map((e) => e.eventId)).toEqual(['evt-3']);
+  });
+
+  it('default limit is 10000 (large session is returned in one call)', async () => {
+    const store = makeStore();
+    await store.openSession(baseOpenInput);
+    // Append 50 events; default limit is well above this.
+    for (let i = 0; i < 50; i++) {
+      await store.appendEvent({
+        sessionId: baseOpenInput.sessionId,
+        eventId: `evt-${String(i).padStart(3, '0')}`,
+        voterToken: `voter-${i}`,
+        serverTimestamp: new Date(Date.UTC(2026, 4, 11, 0, 0, i)).toISOString(),
+        clientTimestamp: new Date(Date.UTC(2026, 4, 11, 0, 0, i)).toISOString(),
+        payload: {},
+        accepted: true,
+      });
+    }
+    const events = await store.listEvents(baseOpenInput.sessionId);
+    expect(events).toHaveLength(50);
+  });
+});
+
 describe('InMemoryAudienceResultsStore — readSnapshot + setTtl', () => {
   it('returns null for an unknown session', async () => {
     const store = makeStore();

@@ -84,6 +84,7 @@ export {
   type AppendEventInput,
   type AudienceResultsStore,
   type CloseSessionInput,
+  type ListEventsOptions,
   type OpenSessionInput,
 } from './audience-results-store.js';
 

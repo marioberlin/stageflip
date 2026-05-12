@@ -335,6 +335,191 @@ describe('GET /v1/audience/sessions/:id/state — current snapshot', () => {
   });
 });
 
+describe('GET /v1/audience/sessions/:id/export — result-export (T-459)', () => {
+  async function seedSessionWithEvents(args: {
+    tenantId: string;
+    sessionId: string;
+  }) {
+    const { app, tenantSettingsStore, audienceResultsStore } = buildEnv();
+    await enableAudience(tenantSettingsStore, args.tenantId);
+    await audienceResultsStore.openSession({
+      tenantId: args.tenantId,
+      projectId: 'p',
+      sessionId: args.sessionId,
+      clipKind: 'live-poll-multiple-choice',
+      adapterDescriptor: { id: 'audience-native', license: 'MIT' },
+      createdAt: '2026-05-12T00:00:00.000Z',
+      ttlAt: '2026-05-13T00:00:00.000Z',
+    });
+    await audienceResultsStore.appendEvent({
+      sessionId: args.sessionId,
+      eventId: 'evt-1',
+      voterToken: 'voter-a',
+      serverTimestamp: '2026-05-12T00:00:01.000Z',
+      clientTimestamp: '2026-05-12T00:00:00.500Z',
+      payload: { kind: 'live-poll-multiple-choice', optionIndex: 0 },
+      accepted: true,
+    });
+    await audienceResultsStore.appendEvent({
+      sessionId: args.sessionId,
+      eventId: 'evt-2',
+      voterToken: 'voter-b',
+      serverTimestamp: '2026-05-12T00:00:02.000Z',
+      clientTimestamp: '2026-05-12T00:00:01.500Z',
+      payload: { kind: 'live-poll-multiple-choice', optionIndex: 1 },
+      accepted: true,
+    });
+    return { app, audienceResultsStore };
+  }
+
+  it('401s unauthenticated', async () => {
+    const { app } = buildEnv();
+    const res = await app.request('/v1/audience/sessions/anything/export');
+    expect(res.status).toBe(401);
+  });
+
+  it('404s an unknown session', async () => {
+    const { app, tenantSettingsStore } = buildEnv();
+    await enableAudience(tenantSettingsStore, 'tenant-a');
+    const token = await mcpToken({ org: 'tenant-a', role: 'editor' });
+    const res = await app.request('/v1/audience/sessions/unknown/export', {
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.status).toBe(404);
+  });
+
+  it('400s on an unknown ?format=', async () => {
+    const { app } = await seedSessionWithEvents({
+      tenantId: 'tenant-a',
+      sessionId: 's-export-bad',
+    });
+    const token = await mcpToken({ org: 'tenant-a', role: 'editor' });
+    const res = await app.request('/v1/audience/sessions/s-export-bad/export?format=xlsx', {
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toBe('invalid_format');
+  });
+
+  it('returns JSON by default with { session, events } ordered by appendedAt asc', async () => {
+    const { app } = await seedSessionWithEvents({
+      tenantId: 'tenant-a',
+      sessionId: 's-export-json',
+    });
+    const token = await mcpToken({ org: 'tenant-a', role: 'editor' });
+    const res = await app.request('/v1/audience/sessions/s-export-json/export', {
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toContain('application/json');
+    expect(res.headers.get('vary')?.toLowerCase()).toContain('format');
+    const body = (await res.json()) as {
+      session: { sessionId: string };
+      events: { eventId: string; voterTokenHash: string }[];
+    };
+    expect(body.session.sessionId).toBe('s-export-json');
+    expect(body.events.map((e) => e.eventId)).toEqual(['evt-1', 'evt-2']);
+    // Voter-token hashing posture preserved — only hashes, no plaintext.
+    for (const e of body.events) {
+      expect(e.voterTokenHash).toMatch(/^[0-9a-f]{64}$/);
+    }
+  });
+
+  it('returns JSON when ?format=json is explicit', async () => {
+    const { app } = await seedSessionWithEvents({
+      tenantId: 'tenant-a',
+      sessionId: 's-export-json2',
+    });
+    const token = await mcpToken({ org: 'tenant-a', role: 'editor' });
+    const res = await app.request('/v1/audience/sessions/s-export-json2/export?format=json', {
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toContain('application/json');
+  });
+
+  it('returns CSV with attachment Content-Disposition when ?format=csv', async () => {
+    const { app } = await seedSessionWithEvents({
+      tenantId: 'tenant-a',
+      sessionId: 's-export-csv',
+    });
+    const token = await mcpToken({ org: 'tenant-a', role: 'editor' });
+    const res = await app.request('/v1/audience/sessions/s-export-csv/export?format=csv', {
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toContain('text/csv');
+    expect(res.headers.get('content-disposition')).toContain(
+      'attachment; filename="audience-s-export-csv.csv"',
+    );
+    expect(res.headers.get('vary')?.toLowerCase()).toContain('format');
+    const body = await res.text();
+    const lines = body.split('\n').filter((l) => l.length > 0);
+    expect(lines[0]).toBe('eventId,sessionId,clipKind,voterTokenHash,kind,appendedAt,payload');
+    expect(lines).toHaveLength(3); // header + 2 events
+    expect(lines[1]?.startsWith('evt-1,s-export-csv,')).toBe(true);
+  });
+
+  it('403s a cross-tenant export read', async () => {
+    const { app } = await seedSessionWithEvents({
+      tenantId: 'tenant-a',
+      sessionId: 's-export-xt',
+    });
+    const token = await mcpToken({ org: 'other-tenant', role: 'editor' });
+    const res = await app.request('/v1/audience/sessions/s-export-xt/export', {
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.status).toBe(403);
+  });
+
+  it('429s when the tenant rate cap is exhausted', async () => {
+    const tenantSettingsStore = new InMemoryTenantSettingsStore();
+    await enableAudience(tenantSettingsStore, 'tenant-a', { maxIngestRateHz: 1 });
+    const { createAudienceSessionsRoute } = await import('./audience-sessions.js');
+    const { TenantRateLimiter } = await import('./audience-rate-limit.js');
+    const { InMemoryAudienceResultsStore: Mem } = await import('@stageflip/storage');
+    const t = 1_000_000;
+    const audienceResultsStore = new Mem({ pepper: 'p'.repeat(32) });
+    await audienceResultsStore.openSession({
+      tenantId: 'tenant-a',
+      projectId: 'p',
+      sessionId: 's-export-rate',
+      clipKind: 'live-poll-multiple-choice',
+      adapterDescriptor: { id: 'audience-native', license: 'MIT' },
+      createdAt: '2026-05-12T00:00:00.000Z',
+      ttlAt: '2026-05-13T00:00:00.000Z',
+    });
+    const route = createAudienceSessionsRoute({
+      tenantSettingsStore,
+      audienceResultsStore,
+      now: () => t,
+      tenantRateLimiter: new TenantRateLimiter({ maxIngestRateHz: 1, now: () => t }),
+    });
+    const direct = (await import('hono')).Hono;
+    const wrapper = new direct<{ Variables: import('../auth/middleware.js').AuthVariables }>();
+    wrapper.use('*', async (c, next) => {
+      c.set('principal', {
+        kind: 'mcp-session',
+        sub: 'alice',
+        org: 'tenant-a',
+        role: 'editor',
+        allowedBundles: [],
+      });
+      await next();
+    });
+    wrapper.route('/', route);
+
+    // burst = 2; third request must be refused.
+    expect((await wrapper.request('/s-export-rate/export')).status).toBe(200);
+    expect((await wrapper.request('/s-export-rate/export')).status).toBe(200);
+    const r3 = await wrapper.request('/s-export-rate/export');
+    expect(r3.status).toBe(429);
+    const refused = (await r3.json()) as { lossFlag: { code: string } };
+    expect(refused.lossFlag.code).toBe('LF-AUDIENCE-TENANT-RATE-LIMITED');
+  });
+});
+
 describe('POST /v1/audience/sessions/:id/join — mint voter token', () => {
   it('404s an unknown session', async () => {
     const { app, tenantSettingsStore } = buildEnv();

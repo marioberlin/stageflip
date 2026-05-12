@@ -56,6 +56,25 @@ export interface CloseSessionInput {
 }
 
 /**
+ * Options to `listEvents`. Pagination is by `appendedAt` (the event's
+ * `serverTimestamp`); `after` returns events strictly newer than the
+ * supplied ISO 8601 cursor. T-459.
+ */
+export interface ListEventsOptions {
+  /**
+   * Maximum number of events to return. Default 10000. The export
+   * endpoint pages through repeatedly until `listEvents` returns fewer
+   * than `limit` rows.
+   */
+  readonly limit?: number;
+  /**
+   * Exclusive ISO 8601 cursor; only events with `serverTimestamp > after`
+   * are returned. Omit to start from the beginning.
+   */
+  readonly after?: string;
+}
+
+/**
  * Input to `appendEvent`. The store hashes `voterToken` with the
  * configured pepper before persisting (ADR-009 §D5 hashing-at-rest).
  */
@@ -111,6 +130,27 @@ export interface AudienceResultsStore {
    * exist.
    */
   setTtl(sessionId: string, ttlAt: string): Promise<void>;
+
+  /**
+   * List the events recorded against `sessionId` ordered by
+   * `serverTimestamp` ascending. T-459 — used by the result-export
+   * endpoint to assemble the CSV / JSON download.
+   *
+   * Returns `[]` for an unknown session (a permissive read; the export
+   * endpoint already verifies the session exists via `readSnapshot`
+   * before paging).
+   *
+   * Pagination is by ISO 8601 cursor:
+   *   - `opts.after` (exclusive): only events with
+   *     `serverTimestamp > after` are returned.
+   *   - `opts.limit` (default 10000): caps the number of rows returned.
+   *     The export endpoint pages until `listEvents` returns fewer than
+   *     `limit` rows.
+   *
+   * The Firestore-backed implementation (T-474) reads the `events/`
+   * sub-collection with the same pagination semantics.
+   */
+  listEvents(sessionId: string, opts?: ListEventsOptions): Promise<readonly AudienceEventDoc[]>;
 }
 
 /**
@@ -230,9 +270,27 @@ export class InMemoryAudienceResultsStore implements AudienceResultsStore {
     this.sessions.set(sessionId, next);
   }
 
-  /** Test-only hook: read raw events for a session. */
-  listEvents(sessionId: string): readonly AudienceEventDoc[] {
-    return this.events.get(sessionId) ?? [];
+  /**
+   * T-459 — list events for a session ordered by `serverTimestamp`
+   * ascending. Returns `[]` for an unknown session. Supports cursor-based
+   * pagination via `opts.after` (exclusive ISO 8601) + `opts.limit`
+   * (default 10000).
+   */
+  async listEvents(
+    sessionId: string,
+    opts?: ListEventsOptions,
+  ): Promise<readonly AudienceEventDoc[]> {
+    const stored = this.events.get(sessionId) ?? [];
+    // Sort a defensive copy ascending by serverTimestamp; the in-memory
+    // append path pushes in insertion order, but the contract is "sorted
+    // ascending" so we sort to be explicit.
+    const sorted = [...stored].sort((a, b) =>
+      a.serverTimestamp < b.serverTimestamp ? -1 : a.serverTimestamp > b.serverTimestamp ? 1 : 0,
+    );
+    const after = opts?.after;
+    const filtered = after !== undefined ? sorted.filter((e) => e.serverTimestamp > after) : sorted;
+    const limit = opts?.limit ?? 10000;
+    return filtered.slice(0, limit);
   }
 
   /** Test-only hook to clear all rows. */
