@@ -118,3 +118,8 @@ export type {
   AudienceLossFlagSpec,
   LossFlagAudienceCode,
 } from './loss-flags.js';
+
+// ----------------------------------------------------------------------------
+// Quiz-fairness primitives (T-473)
+// ----------------------------------------------------------------------------
+export { applyLateJoinerLock, computeQuizScore } from './quiz-fairness.js';

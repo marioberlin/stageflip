@@ -31,6 +31,31 @@ export type AudienceSessionAdapterDescriptor = z.infer<
 >;
 
 /**
+ * Per-session quiz-state snapshot (T-473). Optional sub-document attached
+ * to `AudienceSessionDoc.quizState` when the session's `clipKind` is
+ * `'live-quiz'`. Tracks:
+ *   - `activeQuestionIndex` — the question the session is currently
+ *     scoring (0-based; advanced via presenter admin-command).
+ *   - `scores`              — voter-token-hash → cumulative score
+ *     (integer; never negative per Kahoot canon).
+ *   - `joinedAt`            — voter-token-hash → question index the
+ *     voter first joined on; used by the late-joiner lock so voters
+ *     don't retroactively score on questions that already advanced.
+ *
+ * Stored as `Record<string, number>` (not `Map`) so the doc serializes
+ * cleanly through Firestore JSON when the persistent impl lands in T-474.
+ */
+export const audienceQuizStateSchema = z
+  .object({
+    activeQuestionIndex: z.number().int().nonnegative(),
+    scores: z.record(z.string().min(1), z.number().int().nonnegative()),
+    joinedAt: z.record(z.string().min(1), z.number().int().nonnegative()),
+  })
+  .strict();
+
+export type AudienceQuizState = z.infer<typeof audienceQuizStateSchema>;
+
+/**
  * Root session document shape. Per ADR-009 §D5 verbatim:
  *
  *   /tenants/{tenantId}/projects/{projectId}/audience-sessions/{sessionId}
@@ -44,6 +69,9 @@ export type AudienceSessionAdapterDescriptor = z.infer<
  *
  * `snapshot` (optional) holds the most recent aggregation surface for fast
  * presenter reads; the authoritative history lives in `snapshots/{frameNo}`.
+ *
+ * T-473 — optional `quizState?` field for live-quiz sessions. Absent for
+ * every other clip-kind + for pre-T-473 sessions (non-breaking).
  */
 export const audienceSessionDocSchema = z
   .object({
@@ -57,6 +85,7 @@ export const audienceSessionDocSchema = z
     snapshotFrame: z.number().int().nonnegative().nullable(),
     adapterDescriptor: audienceSessionAdapterDescriptorSchema,
     ttlAt: z.string().datetime(),
+    quizState: audienceQuizStateSchema.optional(),
   })
   .strict();
 

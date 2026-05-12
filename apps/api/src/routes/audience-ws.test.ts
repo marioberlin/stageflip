@@ -13,9 +13,11 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { InMemoryAudienceResultsStore } from '@stageflip/storage';
 
+import { QuizStateManager } from './audience-quiz-state.js';
 import { VoterRateLimiter } from './audience-rate-limit.js';
 import {
   type DispatchDeps,
+  type LiveQuizConfig,
   ReconnectBudget,
   type ServerOutboundFrame,
   authenticateHandshake,
@@ -404,6 +406,222 @@ describe('dispatchAudienceMessage — bad frames', () => {
     const { deps, sent } = makeDispatchHarness(store);
     await dispatchAudienceMessage(JSON.stringify({ type: 'whatever' }), deps);
     expect(sent[0]).toMatchObject({ code: 'BAD-FRAME' });
+  });
+});
+
+describe('dispatchAudienceMessage — live-quiz scoring (T-473)', () => {
+  const QUIZ_SESSION_ID = '01J0AB3F8R3RTKZQ9X4HMRZQQZ';
+
+  async function seedQuizSession(store: InMemoryAudienceResultsStore): Promise<void> {
+    await store.openSession({
+      tenantId: 'tenant-a',
+      projectId: 'p',
+      sessionId: QUIZ_SESSION_ID,
+      clipKind: 'live-quiz',
+      adapterDescriptor: { id: 'audience-native', license: 'MIT' },
+      createdAt: '2026-05-11T00:00:00.000Z',
+      ttlAt: '2026-05-12T00:00:00.000Z',
+    });
+  }
+
+  function makeQuizDeps(
+    store: InMemoryAudienceResultsStore,
+    config: LiveQuizConfig,
+    voterToken = 'voter-q1',
+  ): {
+    deps: DispatchDeps;
+    sent: ServerOutboundFrame[];
+  } {
+    const sent: ServerOutboundFrame[] = [];
+    const limiter = new VoterRateLimiter({ now: () => 1_000_000 });
+    const quizStateManager = new QuizStateManager({
+      audienceResultsStore: store,
+      now: () => 1_000_000,
+    });
+    const deps: DispatchDeps = {
+      sessionId: QUIZ_SESSION_ID,
+      principal: { kind: 'voter', voterToken },
+      audienceResultsStore: store,
+      voterRateLimiter: limiter,
+      quizStateManager,
+      resolveLiveQuizConfig: async () => config,
+      nowMs: () => config.questionStartedAtMs + 2_000, // 2s latency
+      now: () => '2026-05-11T00:00:02.000Z',
+      mintEventId: () => `evt-${Math.random().toString(36).slice(2, 8)}`,
+      send: (f) => sent.push(f),
+      closeWith: () => undefined,
+    };
+    return { deps, sent };
+  }
+
+  it('scores a correct live-quiz vote (1000 pts at zero latency)', async () => {
+    const store = makeStore();
+    await seedQuizSession(store);
+    const config: LiveQuizConfig = {
+      questions: [{ questionId: 'q-0', correctOptionIndex: 0 }],
+      timerMs: 10_000,
+      questionStartedAtMs: 1_000_000,
+      currentQuestionIndex: 0,
+    };
+    const { deps, sent } = makeQuizDeps(store, config);
+    deps as { nowMs: () => number } satisfies { nowMs: () => number };
+    // Override nowMs for this test → 0 latency.
+    const depsZeroLatency: DispatchDeps = { ...deps, nowMs: () => 1_000_000 };
+    await dispatchAudienceMessage(
+      JSON.stringify({
+        type: 'vote',
+        clientTimestamp: '2026-05-11T00:00:00.500Z',
+        payload: { kind: 'live-quiz', questionId: 'q-0', optionIndex: 0 },
+      }),
+      depsZeroLatency,
+    );
+    expect(sent.filter((f) => f.type === 'error')).toHaveLength(0);
+    const snap = await store.readSnapshot(QUIZ_SESSION_ID);
+    const hash = store.hashVoterToken('voter-q1');
+    expect(snap?.quizState?.scores[hash]).toBe(1000);
+  });
+
+  it('records 0 for an incorrect live-quiz vote but still admits it', async () => {
+    const store = makeStore();
+    await seedQuizSession(store);
+    const config: LiveQuizConfig = {
+      questions: [{ questionId: 'q-0', correctOptionIndex: 0 }],
+      timerMs: 10_000,
+      questionStartedAtMs: 1_000_000,
+      currentQuestionIndex: 0,
+    };
+    const { deps, sent } = makeQuizDeps(store, config);
+    await dispatchAudienceMessage(
+      JSON.stringify({
+        type: 'vote',
+        clientTimestamp: '2026-05-11T00:00:00.500Z',
+        payload: { kind: 'live-quiz', questionId: 'q-0', optionIndex: 1 },
+      }),
+      deps,
+    );
+    expect(sent.filter((f) => f.type === 'error')).toHaveLength(0);
+    const snap = await store.readSnapshot(QUIZ_SESSION_ID);
+    const hash = store.hashVoterToken('voter-q1');
+    expect(snap?.quizState?.scores[hash]).toBe(0);
+  });
+
+  it('rejects a late-joiner vote with LF-AUDIENCE-VOTER-RATE-LIMITED', async () => {
+    const store = makeStore();
+    await seedQuizSession(store);
+    // First: voter joins at question 3.
+    const cfg3: LiveQuizConfig = {
+      questions: [
+        { questionId: 'q-0', correctOptionIndex: 0 },
+        { questionId: 'q-1', correctOptionIndex: 1 },
+        { questionId: 'q-2', correctOptionIndex: 2 },
+        { questionId: 'q-3', correctOptionIndex: 3 },
+      ],
+      timerMs: 10_000,
+      questionStartedAtMs: 1_000_000,
+      currentQuestionIndex: 3,
+    };
+    const { deps: deps3 } = makeQuizDeps(store, cfg3, 'voter-late');
+    await dispatchAudienceMessage(
+      JSON.stringify({
+        type: 'vote',
+        clientTimestamp: '2026-05-11T00:00:00.500Z',
+        payload: { kind: 'live-quiz', questionId: 'q-3', optionIndex: 3 },
+      }),
+      deps3,
+    );
+    // Now a later WS frame comes through at the earlier question 1.
+    // The state machine REJECTS via late-joiner-lock.
+    const cfg1: LiveQuizConfig = { ...cfg3, currentQuestionIndex: 1 };
+    const { deps: deps1, sent } = makeQuizDeps(store, cfg1, 'voter-late');
+    await dispatchAudienceMessage(
+      JSON.stringify({
+        type: 'vote',
+        clientTimestamp: '2026-05-11T00:00:00.500Z',
+        payload: { kind: 'live-quiz', questionId: 'q-1', optionIndex: 1 },
+      }),
+      deps1,
+    );
+    const err = sent.find((f) => f.type === 'error');
+    expect(err).toMatchObject({ code: 'LF-AUDIENCE-VOTER-RATE-LIMITED' });
+  });
+
+  it('falls through to the generic vote acceptor when no quiz config is resolved', async () => {
+    const store = makeStore();
+    await seedQuizSession(store);
+    const sent: ServerOutboundFrame[] = [];
+    const limiter = new VoterRateLimiter({ now: () => 1_000_000 });
+    const quizStateManager = new QuizStateManager({
+      audienceResultsStore: store,
+      now: () => 1_000_000,
+    });
+    const deps: DispatchDeps = {
+      sessionId: QUIZ_SESSION_ID,
+      principal: { kind: 'voter', voterToken: 'voter-fall' },
+      audienceResultsStore: store,
+      voterRateLimiter: limiter,
+      quizStateManager,
+      resolveLiveQuizConfig: async () => undefined,
+      nowMs: () => 1_000_000,
+      now: () => '2026-05-11T00:00:00.000Z',
+      mintEventId: () => 'evt-fall',
+      send: (f) => sent.push(f),
+      closeWith: () => undefined,
+    };
+    await dispatchAudienceMessage(
+      JSON.stringify({
+        type: 'vote',
+        clientTimestamp: '2026-05-11T00:00:00.500Z',
+        payload: { kind: 'live-quiz', questionId: 'q-0', optionIndex: 0 },
+      }),
+      deps,
+    );
+    expect(sent.filter((f) => f.type === 'error')).toHaveLength(0);
+    const events = await store.listEvents(QUIZ_SESSION_ID);
+    expect(events).toHaveLength(1);
+    expect(events[0]?.accepted).toBe(true);
+    // No quizState was created (fall-through path).
+    const snap = await store.readSnapshot(QUIZ_SESSION_ID);
+    expect(snap?.quizState).toBeUndefined();
+  });
+
+  it('preserves cumulative score across simulated disconnect/reconnect (fresh deps)', async () => {
+    const store = makeStore();
+    await seedQuizSession(store);
+    const cfg0: LiveQuizConfig = {
+      questions: [
+        { questionId: 'q-0', correctOptionIndex: 0 },
+        { questionId: 'q-1', correctOptionIndex: 1 },
+      ],
+      timerMs: 10_000,
+      questionStartedAtMs: 1_000_000,
+      currentQuestionIndex: 0,
+    };
+    const { deps: deps0 } = makeQuizDeps(store, cfg0, 'voter-rc');
+    const depsZero: DispatchDeps = { ...deps0, nowMs: () => 1_000_000 };
+    await dispatchAudienceMessage(
+      JSON.stringify({
+        type: 'vote',
+        clientTimestamp: '2026-05-11T00:00:00.500Z',
+        payload: { kind: 'live-quiz', questionId: 'q-0', optionIndex: 0 },
+      }),
+      depsZero,
+    );
+    // Simulate disconnect+reconnect: a fresh deps object (new quizStateManager),
+    // same store. Voter's cumulative score must round-trip.
+    const cfg1: LiveQuizConfig = { ...cfg0, currentQuestionIndex: 1 };
+    const { deps: deps1 } = makeQuizDeps(store, cfg1, 'voter-rc');
+    const depsZeroAgain: DispatchDeps = { ...deps1, nowMs: () => 1_000_000 };
+    await dispatchAudienceMessage(
+      JSON.stringify({
+        type: 'vote',
+        clientTimestamp: '2026-05-11T00:00:00.500Z',
+        payload: { kind: 'live-quiz', questionId: 'q-1', optionIndex: 1 },
+      }),
+      depsZeroAgain,
+    );
+    const snap = await store.readSnapshot(QUIZ_SESSION_ID);
+    const hash = store.hashVoterToken('voter-rc');
+    expect(snap?.quizState?.scores[hash]).toBe(2000);
   });
 });
 

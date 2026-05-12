@@ -8,8 +8,10 @@ import { describe, expect, it } from 'vitest';
 
 import {
   type AudienceEventDoc,
+  type AudienceQuizState,
   type AudienceSessionDoc,
   audienceEventDocSchema,
+  audienceQuizStateSchema,
   audienceSessionDocSchema,
 } from './audience-results.js';
 
@@ -138,5 +140,74 @@ describe('audienceEventDocSchema', () => {
       payload: { kind: 'whatever', anything: ['goes', 'here'] },
     });
     expect(parsed.payload).toEqual({ kind: 'whatever', anything: ['goes', 'here'] });
+  });
+});
+
+describe('audienceQuizStateSchema (T-473)', () => {
+  const validQuizState: AudienceQuizState = {
+    activeQuestionIndex: 2,
+    scores: { 'voter-hash-a': 1500, 'voter-hash-b': 0 },
+    joinedAt: { 'voter-hash-a': 0, 'voter-hash-b': 2 },
+  };
+
+  it('round-trips a valid quiz state', () => {
+    expect(audienceQuizStateSchema.parse(validQuizState)).toEqual(validQuizState);
+  });
+
+  it('round-trips an empty quiz state at question 0', () => {
+    const empty: AudienceQuizState = { activeQuestionIndex: 0, scores: {}, joinedAt: {} };
+    expect(audienceQuizStateSchema.parse(empty)).toEqual(empty);
+  });
+
+  it('rejects a negative activeQuestionIndex', () => {
+    expect(() =>
+      audienceQuizStateSchema.parse({ ...validQuizState, activeQuestionIndex: -1 }),
+    ).toThrow();
+  });
+
+  it('rejects a negative score', () => {
+    expect(() =>
+      audienceQuizStateSchema.parse({ ...validQuizState, scores: { 'voter-hash-a': -1 } }),
+    ).toThrow();
+  });
+
+  it('rejects unknown keys (strict)', () => {
+    expect(() =>
+      audienceQuizStateSchema.parse({ ...validQuizState, extra: 'no' } as unknown),
+    ).toThrow(/unrecognized/i);
+  });
+});
+
+describe('audienceSessionDocSchema — quizState extension (T-473)', () => {
+  it('round-trips a session doc WITHOUT quizState (non-breaking)', () => {
+    // Re-verify the pre-T-473 shape still parses cleanly.
+    expect(audienceSessionDocSchema.parse(validSession)).toEqual(validSession);
+  });
+
+  it('round-trips a session doc WITH quizState present', () => {
+    const withQuiz: AudienceSessionDoc = {
+      ...validSession,
+      clipKind: 'live-quiz',
+      quizState: {
+        activeQuestionIndex: 1,
+        scores: { 'voter-a': 1000, 'voter-b': 750 },
+        joinedAt: { 'voter-a': 0, 'voter-b': 1 },
+      },
+    };
+    expect(audienceSessionDocSchema.parse(withQuiz)).toEqual(withQuiz);
+  });
+
+  it('rejects a malformed quizState (negative score)', () => {
+    expect(() =>
+      audienceSessionDocSchema.parse({
+        ...validSession,
+        clipKind: 'live-quiz',
+        quizState: {
+          activeQuestionIndex: 0,
+          scores: { 'voter-a': -5 },
+          joinedAt: {},
+        },
+      }),
+    ).toThrow();
   });
 });
