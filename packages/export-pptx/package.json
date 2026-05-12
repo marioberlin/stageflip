@@ -21,7 +21,9 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@stageflip/audience-contract": "workspace:^",
     "@stageflip/loss-flags": "workspace:^",
+    "@stageflip/runtimes-audience": "workspace:^",
     "@stageflip/schema": "workspace:^",
     "fflate": "0.8.2"
   },

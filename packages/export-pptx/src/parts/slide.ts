@@ -7,6 +7,7 @@
 import type { LossFlag } from '@stageflip/loss-flags';
 import type { Element, Slide, SlideLayout, SlideMaster } from '@stageflip/schema';
 import type { CollectedAsset } from '../assets/collect.js';
+import { emitAudienceClipElement, isAudienceClipElement } from '../elements/audience-clip.js';
 import { emitGroupElement } from '../elements/group.js';
 import { emitImageElement, parseAssetId } from '../elements/image.js';
 import { emitShapeElement } from '../elements/shape.js';
@@ -186,15 +187,6 @@ function renderElement(
       return emitShapeElement(el, ctx);
     case 'group':
       return emitGroupElement(el, ctx, (child, c) => renderElement(child, c, resolved, missing));
-    case 'video':
-    case 'audio':
-    case 'chart':
-    case 'table':
-    case 'clip':
-    case 'embed':
-    case 'code':
-    case 'blender-clip':
-    case 'interactive-clip':
     case 'live-poll-multiple-choice':
     case 'live-poll-open-text':
     case 'live-poll-rating':
@@ -205,7 +197,24 @@ function renderElement(
     case 'survey':
     case 'heatmap':
     case 'reaction-stream':
-    case 'audience-ai-prompt':
+    case 'audience-ai-prompt': {
+      // T-472: audience-clip elements dispatch to the per-kind SVG
+      // export-frame emitter; no loss flag is raised for these element
+      // types.
+      if (isAudienceClipElement(el)) {
+        return emitAudienceClipElement(el, ctx);
+      }
+      return '';
+    }
+    case 'video':
+    case 'audio':
+    case 'chart':
+    case 'table':
+    case 'clip':
+    case 'embed':
+    case 'code':
+    case 'blender-clip':
+    case 'interactive-clip':
       // T-305: InteractiveClip routes to its `staticFallback` for `pptx-flat`
       // per ADR-003 §D3. The actual fallback rendering is wired by a
       // follow-up exporter task; for now, flag as unsupported.
