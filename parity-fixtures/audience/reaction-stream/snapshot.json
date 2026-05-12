@@ -1,0 +1,21 @@
+{
+  "kind": "reaction-stream",
+  "emojiCounts": [
+    {
+      "emojiId": "heart",
+      "count": 42,
+      "recentBurst": 8
+    },
+    {
+      "emojiId": "thumbs-up",
+      "count": 35,
+      "recentBurst": 5
+    },
+    {
+      "emojiId": "fire",
+      "count": 17,
+      "recentBurst": 12
+    }
+  ],
+  "totalReactions": 94
+}

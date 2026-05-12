@@ -1,0 +1,43 @@
+{
+  "kind": "survey",
+  "questionAggregations": [
+    {
+      "questionId": "q1",
+      "type": "multiple-choice",
+      "aggregation": {
+        "kind": "live-poll-multiple-choice",
+        "optionCounts": [8, 5, 2],
+        "totalVotes": 15
+      }
+    },
+    {
+      "questionId": "q2",
+      "type": "open-text",
+      "aggregation": {
+        "kind": "live-poll-open-text",
+        "entries": [
+          {
+            "text": "great",
+            "count": 4
+          },
+          {
+            "text": "meh",
+            "count": 2
+          }
+        ],
+        "totalVotes": 6
+      }
+    },
+    {
+      "questionId": "q3",
+      "type": "rating",
+      "aggregation": {
+        "kind": "live-poll-rating",
+        "scoreCounts": [1, 3, 5, 4, 2],
+        "totalVotes": 15,
+        "mean": 3.2
+      }
+    }
+  ],
+  "totalResponses": 15
+}

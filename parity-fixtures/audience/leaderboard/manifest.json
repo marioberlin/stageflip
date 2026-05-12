@@ -1,0 +1,18 @@
+{
+  "name": "leaderboard",
+  "cluster": "audience",
+  "kind": "leaderboard",
+  "description": "Parity fixture for audience clip 'leaderboard' (static-fallback path)",
+  "composition": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 30,
+    "durationInFrames": 150
+  },
+  "referenceFrames": [75],
+  "goldens": {
+    "dir": ".",
+    "pattern": "golden-frame-${frame}.png"
+  },
+  "auditTagged": "T-476: Cluster I parity fixtures; unsigned awaiting PO ratification"
+}
