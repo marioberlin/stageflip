@@ -982,9 +982,15 @@ importers:
 
   packages/export-pptx:
     dependencies:
+      '@stageflip/audience-contract':
+        specifier: workspace:^
+        version: link:../audience-contract
       '@stageflip/loss-flags':
         specifier: workspace:^
         version: link:../loss-flags
+      '@stageflip/runtimes-audience':
+        specifier: workspace:^
+        version: link:../runtimes/audience
       '@stageflip/schema':
         specifier: workspace:^
         version: link:../schema

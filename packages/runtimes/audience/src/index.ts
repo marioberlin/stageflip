@@ -70,3 +70,12 @@ export {
   type ThreeStateHandlers,
   type ThreeStateMountResult,
 } from './three-state-router.js';
+export {
+  type AudienceExportFrame,
+  DEFAULT_EXPORT_FRAME_HEIGHT,
+  DEFAULT_EXPORT_FRAME_WIDTH,
+  escapeSvgText,
+  renderAudienceExportFrame,
+  resolveExportFrameDimensions,
+  UnsupportedAudienceClipKindError,
+} from './export-frame.js';

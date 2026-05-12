@@ -7,8 +7,13 @@
 // Image placeholders are not yet supported at the template tier (round-trip
 // closure through `parsePptx` doesn't yet read them either); they fall back
 // to LF-PPTX-EXPORT-UNSUPPORTED-ELEMENT semantics — see notes inline.
+//
+// T-472: the eleven `audience-*` element types are no longer caught by the
+// fallthrough. They route to `emitAudienceClipElement` which embeds a real
+// per-kind SVG export-frame inside the emitted `<p:sp>`.
 
 import type { Element } from '@stageflip/schema';
+import { emitAudienceClipElement, isAudienceClipElement } from '../elements/audience-clip.js';
 import { emitGroupElement } from '../elements/group.js';
 import { emitShapeElement } from '../elements/shape.js';
 import type { SlideEmitContext } from '../elements/shared.js';
@@ -36,16 +41,6 @@ function renderTemplateElement(el: Element, ctx: SlideEmitContext): string {
       return emitShapeElement(el, ctx);
     case 'group':
       return emitGroupElement(el, ctx, (child, c) => renderTemplateElement(child, c));
-    case 'image':
-    case 'video':
-    case 'audio':
-    case 'chart':
-    case 'table':
-    case 'clip':
-    case 'embed':
-    case 'code':
-    case 'blender-clip':
-    case 'interactive-clip':
     case 'live-poll-multiple-choice':
     case 'live-poll-open-text':
     case 'live-poll-rating':
@@ -57,6 +52,26 @@ function renderTemplateElement(el: Element, ctx: SlideEmitContext): string {
     case 'heatmap':
     case 'reaction-stream':
     case 'audience-ai-prompt': {
+      // T-472: audience-clip placeholders dispatch to the per-kind SVG
+      // export-frame emitter; no loss flag is raised for these element
+      // types.
+      if (isAudienceClipElement(el)) {
+        return emitAudienceClipElement(el, ctx);
+      }
+      // Unreachable — the switch above narrows `el` to an audience-clip
+      // variant. Defensive fallthrough keeps the function total.
+      return '';
+    }
+    case 'image':
+    case 'video':
+    case 'audio':
+    case 'chart':
+    case 'table':
+    case 'clip':
+    case 'embed':
+    case 'code':
+    case 'blender-clip':
+    case 'interactive-clip': {
       // Template-tier image / video / etc. placeholders are uncommon; emit
       // a minimal `<p:sp>` stub so the part stays structurally valid, plus
       // a loss flag so the consumer can surface the gap. Future T-253

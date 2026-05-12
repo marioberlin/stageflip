@@ -186,6 +186,49 @@ describe('exportPptx — loss flags', () => {
     expect(codes.length).toBe(7);
   });
 
+  it('T-472 does NOT emit LF-PPTX-EXPORT-UNSUPPORTED-ELEMENT for audience-* element types', async () => {
+    const doc = buildDoc({
+      slides: [
+        {
+          id: 's1',
+          elements: [
+            {
+              id: 'a1',
+              type: 'live-poll-multiple-choice',
+              transform: TRANSFORM,
+              permissions: ['audience-network'],
+              props: { question: 'Q?', options: ['A', 'B'] },
+            },
+            {
+              id: 'a2',
+              type: 'leaderboard',
+              transform: TRANSFORM,
+              permissions: ['audience-network'],
+              props: { quizId: 'q1' },
+            },
+            {
+              id: 'a3',
+              type: 'word-cloud',
+              transform: TRANSFORM,
+              permissions: ['audience-network'],
+              props: { prompt: 'P' },
+            },
+            {
+              id: 'a4',
+              type: 'audience-ai-prompt',
+              transform: TRANSFORM,
+              permissions: ['audience-network'],
+              props: { prompt: 'P', targetModality: 'image-gen' },
+            },
+          ],
+        },
+      ],
+    });
+    const { lossFlags } = await exportPptx(doc);
+    const codes = lossFlags.map((f) => f.code);
+    expect(codes).not.toContain('LF-PPTX-EXPORT-UNSUPPORTED-ELEMENT');
+  });
+
   it('AC #19 emits LF-PPTX-EXPORT-ASSET-MISSING when AssetReader.get returns undefined', async () => {
     const reader: AssetReader = { get: async () => undefined };
     const doc = buildDoc({
