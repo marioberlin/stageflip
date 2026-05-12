@@ -1,0 +1,98 @@
+# .github/workflows/audience-sla-loadtest.yml
+# T-477 — Manual-trigger workflow for the audience-backend SLA load test
+# (1000-voter K6 run per ADR-009 §D4). NOT triggered on PRs: the run is
+# expensive (40 min wall clock + 1000 concurrent VUs) and requires a
+# deployed target. Treat as a pre-release gate, invoked by ops or by
+# leads via `gh workflow run`.
+#
+# Operator notes:
+#   1. Provision the target (`scripts/loadtest/audience-sla-README.md`
+#      §1). The runner needs network access to BACKEND_URL.
+#   2. Tenant prep (README §2) — rate-limit caps + open session.
+#   3. Trigger:
+#        gh workflow run audience-sla-loadtest.yml \
+#          -f backend_url=https://audience-staging.example.com \
+#          -f vu_target=1000
+#   4. Inspect the uploaded `results.json` artifact when the run
+#      finishes. K6 exits non-zero on any threshold breach.
+#
+# Security note: workflow_dispatch inputs are bound to env vars (never
+# interpolated directly into `run:` blocks) so a hostile input string
+# cannot escape shell quoting.
+
+name: audience-sla-loadtest
+
+on:
+  workflow_dispatch:
+    inputs:
+      backend_url:
+        description: "Full https URL to the deployed audience-backend (e.g. https://audience-staging.example.com)"
+        required: true
+        type: string
+      vu_target:
+        description: "Peak VU count (default 1000 per ADR-009 §D4)"
+        required: false
+        default: "1000"
+        type: string
+      session_id:
+        description: "Pre-opened audience session ID the VUs join (default load-test-session)"
+        required: false
+        default: "load-test-session"
+        type: string
+
+concurrency:
+  group: audience-sla-loadtest
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  loadtest:
+    name: K6 1000-voter SLA run
+    runs-on: ubuntu-latest
+    # Full run is ~40 min wall clock; allow buffer for setup + artifact upload.
+    timeout-minutes: 60
+    env:
+      BACKEND_URL: ${{ inputs.backend_url }}
+      SESSION_ID: ${{ inputs.session_id }}
+      VU_TARGET: ${{ inputs.vu_target }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup K6 (grafana/setup-k6-action)
+        uses: grafana/setup-k6-action@v1
+
+      - name: Verify K6 install
+        run: k6 version
+
+      - name: Pre-flight — confirm backend reachable
+        run: |
+          set -euo pipefail
+          echo "Checking session state at ${BACKEND_URL}/v1/audience/sessions/${SESSION_ID}/state"
+          curl -fsS "${BACKEND_URL}/v1/audience/sessions/${SESSION_ID}/state" \
+            | head -c 512 \
+            || (echo "Pre-flight failed — session not reachable or not open" && exit 1)
+
+      - name: Run audience-sla.k6.ts (1000 VU ramping)
+        run: |
+          set -euo pipefail
+          k6 run scripts/loadtest/audience-sla.k6.ts \
+            --env BACKEND_URL="${BACKEND_URL}" \
+            --env SESSION_ID="${SESSION_ID}" \
+            --env VU_TARGET="${VU_TARGET}" \
+            --out json=results.json \
+            --summary-export=summary.json
+
+      - name: Upload K6 results
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audience-sla-results-${{ github.sha }}
+          path: |
+            results.json
+            summary.json
+          retention-days: 30
+          if-no-files-found: warn

@@ -83,6 +83,15 @@
           "suspicious": { "noConsoleLog": "off" }
         }
       }
+    },
+    {
+      "include": ["scripts/loadtest/*.k6.ts"],
+      "linter": {
+        "rules": {
+          "style": { "noDefaultExport": "off" },
+          "suspicious": { "noConsoleLog": "off" }
+        }
+      }
     }
   ]
 }

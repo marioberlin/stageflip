@@ -19,7 +19,7 @@ importers:
         version: 1.59.1
       '@size-limit/preset-big-lib':
         specifier: 11.2.0
-        version: 11.2.0(size-limit@11.2.0)
+        version: 11.2.0(esbuild@0.27.7)(size-limit@11.2.0)
       '@types/node':
         specifier: 22.19.17
         version: 22.19.17
@@ -2093,6 +2093,9 @@ importers:
       '@stageflip/adapters-core':
         specifier: workspace:*
         version: link:../packages/adapters-core
+      '@stageflip/audience-contract':
+        specifier: workspace:*
+        version: link:../packages/audience-contract
       '@stageflip/cdp-host-bundle':
         specifier: workspace:*
         version: link:../packages/cdp-host-bundle
@@ -2118,6 +2121,9 @@ importers:
         specifier: workspace:*
         version: link:../packages/testing
     devDependencies:
+      '@types/k6':
+        specifier: 2.0.0
+        version: 2.0.0
       '@types/node':
         specifier: 22.19.17
         version: 22.19.17
@@ -3918,6 +3924,9 @@ packages:
 
   '@types/jsonwebtoken@9.0.10':
     resolution: {integrity: sha512-asx5hIG9Qmf/1oStypjanR7iKTv0gXQ1Ov/jfrX6kS/EO0OFni8orbmGCn0672NHR3kXHwpAwR+B368ZGN/2rA==}
+
+  '@types/k6@2.0.0':
+    resolution: {integrity: sha512-ztO2fVOAQxtCpF6VWTn8O6FW6Z4DpjhY+XvD2GpCe/+fAfekD45bQ+vrM0B0C0c5ajLpVgWTMlLu9dKZ1nI+wg==}
 
   '@types/long@4.0.2':
     resolution: {integrity: sha512-MqTGEo5bj5t157U6fA/BiDynNkn0YknVdh48CMPkTSpFTVmvao5UQmm7uEF6xBEo7qIMAlY/JSleYaE6VOdpaA==}
@@ -9795,11 +9804,11 @@ snapshots:
     dependencies:
       size-limit: 11.2.0
 
-  '@size-limit/preset-big-lib@11.2.0(size-limit@11.2.0)':
+  '@size-limit/preset-big-lib@11.2.0(esbuild@0.27.7)(size-limit@11.2.0)':
     dependencies:
       '@size-limit/file': 11.2.0(size-limit@11.2.0)
       '@size-limit/time': 11.2.0(size-limit@11.2.0)
-      '@size-limit/webpack': 11.2.0(size-limit@11.2.0)
+      '@size-limit/webpack': 11.2.0(esbuild@0.27.7)(size-limit@11.2.0)
       size-limit: 11.2.0
     transitivePeerDependencies:
       - '@swc/core'
@@ -9825,11 +9834,11 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@size-limit/webpack@11.2.0(size-limit@11.2.0)':
+  '@size-limit/webpack@11.2.0(esbuild@0.27.7)(size-limit@11.2.0)':
     dependencies:
       nanoid: 5.1.9
       size-limit: 11.2.0
-      webpack: 5.106.2
+      webpack: 5.106.2(esbuild@0.27.7)
     transitivePeerDependencies:
       - '@swc/core'
       - esbuild
@@ -9977,6 +9986,8 @@ snapshots:
     dependencies:
       '@types/ms': 2.1.0
       '@types/node': 22.19.17
+
+  '@types/k6@2.0.0': {}
 
   '@types/long@4.0.2':
     optional: true
@@ -14306,13 +14317,15 @@ snapshots:
 
   term-size@2.2.1: {}
 
-  terser-webpack-plugin@5.4.0(webpack@5.106.2):
+  terser-webpack-plugin@5.4.0(esbuild@0.27.7)(webpack@5.106.2(esbuild@0.27.7)):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       jest-worker: 27.5.1
       schema-utils: 4.3.3
       terser: 5.46.2
-      webpack: 5.106.2
+      webpack: 5.106.2(esbuild@0.27.7)
+    optionalDependencies:
+      esbuild: 0.27.7
 
   terser@5.46.2:
     dependencies:
@@ -14848,7 +14861,7 @@ snapshots:
 
   webpack-sources@3.3.4: {}
 
-  webpack@5.106.2:
+  webpack@5.106.2(esbuild@0.27.7):
     dependencies:
       '@types/eslint-scope': 3.7.7
       '@types/estree': 1.0.8
@@ -14871,7 +14884,7 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 4.3.3
       tapable: 2.3.2
-      terser-webpack-plugin: 5.4.0(webpack@5.106.2)
+      terser-webpack-plugin: 5.4.0(esbuild@0.27.7)(webpack@5.106.2(esbuild@0.27.7))
       watchpack: 2.5.1
       webpack-sources: 3.3.4
     transitivePeerDependencies:
