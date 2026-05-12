@@ -323,6 +323,21 @@ function toRIRContent(el: Element): RIRElementContent {
           ...(el.provenance !== undefined ? { provenance: el.provenance } : {}),
         },
       };
+    case 'live-qa':
+      // T-464: Fourth audience-clip element variant (first non-LivePoll
+      // family). Same lowering as T-461..T-463 — `runtime: 'audience'` +
+      // `clipName: 'live-qa'` so `@stageflip/runtimes-audience`
+      // `audienceRuntime` picks it up.
+      return {
+        type: 'clip',
+        runtime: 'audience',
+        clipName: 'live-qa',
+        params: {
+          props: el.props,
+          permissions: el.permissions,
+          ...(el.provenance !== undefined ? { provenance: el.provenance } : {}),
+        },
+      };
     default: {
       const never: never = el;
       return never;

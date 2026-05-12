@@ -20,13 +20,14 @@ afterEach(() => {
 });
 
 describe('defaultVoterInputRegistry', () => {
-  it('contains the live-poll-multiple-choice + live-poll-open-text + live-poll-rating entries (T-461 + T-462 + T-463)', () => {
-    // T-461 added the first entry; T-462 added the second; T-463 added the third.
-    // Bumped 2 → 3. Closes the LivePoll family.
-    expect(defaultVoterInputRegistry.size).toBe(3);
+  it('contains the live-poll-multiple-choice + live-poll-open-text + live-poll-rating + live-qa entries (T-461..T-464)', () => {
+    // T-461 added the first entry; T-462 added the second; T-463 added the third;
+    // T-464 added the fourth (first non-LivePoll family). Bumped 3 → 4.
+    expect(defaultVoterInputRegistry.size).toBe(4);
     expect(defaultVoterInputRegistry.has('live-poll-multiple-choice')).toBe(true);
     expect(defaultVoterInputRegistry.has('live-poll-open-text')).toBe(true);
     expect(defaultVoterInputRegistry.has('live-poll-rating')).toBe(true);
+    expect(defaultVoterInputRegistry.has('live-qa')).toBe(true);
   });
 });
 
@@ -36,7 +37,8 @@ describe('<VoterInputDispatcher>', () => {
       (k) =>
         k !== 'live-poll-multiple-choice' &&
         k !== 'live-poll-open-text' &&
-        k !== 'live-poll-rating',
+        k !== 'live-poll-rating' &&
+        k !== 'live-qa',
     ),
   )('falls back to UnregisteredKindFallback for unregistered kind %s', (kind) => {
     render(<VoterInputDispatcher sessionId="s" clipKind={kind} />);
@@ -65,6 +67,14 @@ describe('<VoterInputDispatcher>', () => {
     const wrapper = screen.getByTestId('voter-input-live-poll-rating-wrapper');
     expect(wrapper.getAttribute('data-session-id')).toBe('sess-rating');
     expect(wrapper.getAttribute('data-clip-kind')).toBe('live-poll-rating');
+    expect(screen.queryByTestId('voter-input-unregistered')).toBeNull();
+  });
+
+  it('resolves live-qa to the LiveQAVoterInput (T-464)', () => {
+    render(<VoterInputDispatcher sessionId="sess-qa" clipKind="live-qa" />);
+    const wrapper = screen.getByTestId('voter-input-live-qa-wrapper');
+    expect(wrapper.getAttribute('data-session-id')).toBe('sess-qa');
+    expect(wrapper.getAttribute('data-clip-kind')).toBe('live-qa');
     expect(screen.queryByTestId('voter-input-unregistered')).toBeNull();
   });
 
