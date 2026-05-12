@@ -22,6 +22,7 @@ export const PRESET_CLUSTERS = [
   'captions',
   'ctas',
   'ar',
+  'audience',
 ] as const;
 export type PresetCluster = (typeof PRESET_CLUSTERS)[number];
 
@@ -30,7 +31,13 @@ export type PresetCluster = (typeof PRESET_CLUSTERS)[number];
  * Mirrors ADR-003 §D2; widening this list is a coordinated change with that
  * ADR and the runtime's permission gate.
  */
-export const PRESET_PERMISSIONS = ['network', 'mic', 'camera', 'geolocation'] as const;
+export const PRESET_PERMISSIONS = [
+  'network',
+  'mic',
+  'camera',
+  'geolocation',
+  'audience-network',
+] as const;
 export type PresetPermission = (typeof PRESET_PERMISSIONS)[number];
 
 const idSlugSchema = z.string().regex(/^[a-z0-9][a-z0-9-]*[a-z0-9]$/, {

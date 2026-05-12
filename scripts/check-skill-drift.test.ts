@@ -188,7 +188,7 @@ describe('T-310 AC #4 — preset-cluster-coverage PASS at HEAD', () => {
       presetsRoot: REAL_PRESETS_ROOT,
     });
     expect(result.errors).toEqual([]);
-    expect(result.scannedClusters).toBe(8);
+    expect(result.scannedClusters).toBe(9);
     expect(result.scannedPresets).toBeGreaterThanOrEqual(40);
   });
 });
