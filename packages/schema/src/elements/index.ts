@@ -33,6 +33,7 @@ import { type ShapeElement, shapeElementSchema } from './shape.js';
 import { type TableElement, tableElementSchema } from './table.js';
 import { type TextElement, textElementSchema } from './text.js';
 import { type VideoElement, videoElementSchema } from './video.js';
+import { type WordCloudClipElement, wordCloudClipElementSchema } from './word-cloud.js';
 
 /**
  * Discriminated union of all element types. `GroupElement` is declared
@@ -64,7 +65,8 @@ export type Element =
   | LivePollRatingClipElement
   | LiveQAClipElement
   | LiveQuizClipElement
-  | LeaderboardClipElement;
+  | LeaderboardClipElement
+  | WordCloudClipElement;
 
 /**
  * Group schema with recursive `children: Element[]`. Uses `z.lazy` and an
@@ -122,6 +124,7 @@ export const elementSchema = z.union([
   liveQAClipElementSchema,
   liveQuizClipElementSchema,
   leaderboardClipElementSchema,
+  wordCloudClipElementSchema,
   groupElementSchema,
 ]) as unknown as z.ZodType<Element>;
 
@@ -149,6 +152,7 @@ export const ELEMENT_TYPES = [
   'live-qa',
   'live-quiz',
   'leaderboard',
+  'word-cloud',
 ] as const;
 export type ElementType = (typeof ELEMENT_TYPES)[number];
 
@@ -175,3 +179,4 @@ export * from './shape.js';
 export * from './table.js';
 export * from './text.js';
 export * from './video.js';
+export * from './word-cloud.js';

@@ -20,6 +20,7 @@ import { LivePollOpenTextVoterInput } from './live-poll-open-text-voter-input';
 import { LivePollRatingVoterInput } from './live-poll-rating-voter-input';
 import { LiveQAVoterInput } from './live-qa-voter-input';
 import { LiveQuizVoterInput } from './live-quiz-voter-input';
+import { WordCloudVoterInput } from './word-cloud-voter-input';
 
 /**
  * Props handed to every per-kind voter input. The dispatcher itself is
@@ -53,7 +54,10 @@ export type VoterInputRegistry = ReadonlyMap<AudienceClipKind, ComponentType<Vot
  * view-only clip kind (per ADR-010 §D2 `LeaderboardVote = never`; the
  * registered component is a results-display notice that NEVER invokes
  * `onSubmit`, setting the precedent for future view-only siblings);
- * T-467..T-471 add the remaining sibling kinds. Exported so the voter
+ * T-467 adds `word-cloud` as the seventh entry (live aggregating word
+ * weights — voter UI parses a comma-separated list, slices to
+ * `maxWordsPerVoter`, truncates over-long words client-side);
+ * T-468..T-471 add the remaining sibling kinds. Exported so the voter
  * app's `<VoterAppClient>` can pass it in, and so tests can verify the
  * registered + unregistered code paths.
  *
@@ -87,6 +91,11 @@ export const defaultVoterInputRegistry: VoterInputRegistry = new Map<
   // and NEVER emits a vote. Sets the precedent for future view-only
   // siblings (e.g., future results-only display kinds).
   ['leaderboard', LeaderboardViewOnly],
+  // T-467 — seventh audience clip family. Live aggregating word weights
+  // — voters submit one or more words; the server aggregates per-word
+  // frequency. Voter UI parses a comma-separated textarea, slices to
+  // `maxWordsPerVoter`, truncates over-long words client-side.
+  ['word-cloud', WordCloudVoterInput],
 ]);
 
 /**

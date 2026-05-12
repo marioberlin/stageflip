@@ -252,8 +252,10 @@ describe('elementSchema (discriminated union)', () => {
     // Bumped from 18 to 19 in T-466 to add 'leaderboard' — sixth audience-clip
     // variant on the union (ADR-010 §D2; first DERIVED clip — paired with
     // live-quiz; `LeaderboardVote = never`).
-    expect(ELEMENT_TYPES).toHaveLength(19);
-    expect(new Set(ELEMENT_TYPES).size).toBe(19);
+    // Bumped from 19 to 20 in T-467 to add 'word-cloud' — seventh audience-clip
+    // variant on the union (ADR-010 §D2; live aggregating word weights).
+    expect(ELEMENT_TYPES).toHaveLength(20);
+    expect(new Set(ELEMENT_TYPES).size).toBe(20);
   });
 
   it('elementSchema accepts a live-poll-multiple-choice element via the union (T-461)', () => {
@@ -366,6 +368,24 @@ describe('elementSchema (discriminated union)', () => {
     if (el.type === 'leaderboard') {
       expect(el.props.quizId).toBe('quiz-1');
       expect(el.props.topN).toBe(10);
+      expect(el.permissions).toEqual(['audience-network']);
+    }
+  });
+
+  it('elementSchema accepts a word-cloud element via the union (T-467)', () => {
+    const el = elementSchema.parse({
+      ...BASE,
+      type: 'word-cloud',
+      permissions: ['audience-network'],
+      props: {
+        prompt: 'Describe the talk in three words',
+      },
+    });
+    expect(el.type).toBe('word-cloud');
+    if (el.type === 'word-cloud') {
+      expect(el.props.prompt).toBe('Describe the talk in three words');
+      expect(el.props.maxWords).toBe(100);
+      expect(el.props.maxWordsPerVoter).toBe(3);
       expect(el.permissions).toEqual(['audience-network']);
     }
   });
