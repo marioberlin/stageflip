@@ -25,6 +25,7 @@
     "@stageflip/loss-flags": "workspace:*",
     "@stageflip/runtimes-contract": "workspace:*",
     "@stageflip/runtimes-interactive": "workspace:*",
+    "@stageflip/runtimes-shader": "workspace:*",
     "@stageflip/schema": "workspace:*",
     "zod": "3.25.76"
   },

@@ -30,6 +30,10 @@ import {
 } from './live-poll-rating.js';
 import { type LiveQAClipElement, liveQAClipElementSchema } from './live-qa.js';
 import { type LiveQuizClipElement, liveQuizClipElementSchema } from './live-quiz.js';
+import {
+  type ReactionStreamClipElement,
+  reactionStreamClipElementSchema,
+} from './reaction-stream.js';
 import { type ShapeElement, shapeElementSchema } from './shape.js';
 import { type SurveyClipElement, surveyClipElementSchema } from './survey.js';
 import { type TableElement, tableElementSchema } from './table.js';
@@ -70,7 +74,8 @@ export type Element =
   | LeaderboardClipElement
   | WordCloudClipElement
   | SurveyClipElement
-  | HeatmapClipElement;
+  | HeatmapClipElement
+  | ReactionStreamClipElement;
 
 /**
  * Group schema with recursive `children: Element[]`. Uses `z.lazy` and an
@@ -131,6 +136,7 @@ export const elementSchema = z.union([
   wordCloudClipElementSchema,
   surveyClipElementSchema,
   heatmapClipElementSchema,
+  reactionStreamClipElementSchema,
   groupElementSchema,
 ]) as unknown as z.ZodType<Element>;
 
@@ -161,6 +167,7 @@ export const ELEMENT_TYPES = [
   'word-cloud',
   'survey',
   'heatmap',
+  'reaction-stream',
 ] as const;
 export type ElementType = (typeof ELEMENT_TYPES)[number];
 
@@ -184,6 +191,7 @@ export * from './live-poll-rating.js';
 export * from './live-qa.js';
 export * from './live-quiz.js';
 export * from './media-provenance.js';
+export * from './reaction-stream.js';
 export * from './shape.js';
 export * from './survey.js';
 export * from './table.js';

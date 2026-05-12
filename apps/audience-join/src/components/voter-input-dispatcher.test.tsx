@@ -20,7 +20,7 @@ afterEach(() => {
 });
 
 describe('defaultVoterInputRegistry', () => {
-  it('contains the live-poll-multiple-choice + live-poll-open-text + live-poll-rating + live-qa + live-quiz + leaderboard + word-cloud + survey + heatmap entries (T-461..T-469)', () => {
+  it('contains the live-poll-multiple-choice + live-poll-open-text + live-poll-rating + live-qa + live-quiz + leaderboard + word-cloud + survey + heatmap + reaction-stream entries (T-461..T-470)', () => {
     // T-461 added the first entry; T-462 added the second; T-463 added the third;
     // T-464 added the fourth (first non-LivePoll family); T-465 added the fifth
     // (competitive multi-question quiz); T-466 added the sixth — first view-only
@@ -30,8 +30,10 @@ describe('defaultVoterInputRegistry', () => {
     // T-468 added the eighth — survey (multi-question pre/post survey;
     // closes the standard-family v1 set);
     // T-469 added the ninth — heatmap (FIRST marquee differentiator;
-    // spatial input via tap on an underlying image). Bumped 8 → 9.
-    expect(defaultVoterInputRegistry.size).toBe(9);
+    // spatial input via tap on an underlying image).
+    // T-470 added the tenth — reaction-stream (SECOND marquee differentiator;
+    // emoji particle storm via the T-383 ShaderClip). Bumped 9 → 10.
+    expect(defaultVoterInputRegistry.size).toBe(10);
     expect(defaultVoterInputRegistry.has('live-poll-multiple-choice')).toBe(true);
     expect(defaultVoterInputRegistry.has('live-poll-open-text')).toBe(true);
     expect(defaultVoterInputRegistry.has('live-poll-rating')).toBe(true);
@@ -41,6 +43,7 @@ describe('defaultVoterInputRegistry', () => {
     expect(defaultVoterInputRegistry.has('word-cloud')).toBe(true);
     expect(defaultVoterInputRegistry.has('survey')).toBe(true);
     expect(defaultVoterInputRegistry.has('heatmap')).toBe(true);
+    expect(defaultVoterInputRegistry.has('reaction-stream')).toBe(true);
   });
 });
 
@@ -56,7 +59,8 @@ describe('<VoterInputDispatcher>', () => {
         k !== 'leaderboard' &&
         k !== 'word-cloud' &&
         k !== 'survey' &&
-        k !== 'heatmap',
+        k !== 'heatmap' &&
+        k !== 'reaction-stream',
     ),
   )('falls back to UnregisteredKindFallback for unregistered kind %s', (kind) => {
     render(<VoterInputDispatcher sessionId="s" clipKind={kind} />);
@@ -128,6 +132,14 @@ describe('<VoterInputDispatcher>', () => {
     expect(screen.queryByTestId('voter-input-unregistered')).toBeNull();
   });
 
+  it('resolves reaction-stream to the ReactionStreamVoterInput (T-470)', () => {
+    render(<VoterInputDispatcher sessionId="sess-rs" clipKind="reaction-stream" />);
+    const wrapper = screen.getByTestId('voter-input-reaction-stream-wrapper');
+    expect(wrapper.getAttribute('data-session-id')).toBe('sess-rs');
+    expect(wrapper.getAttribute('data-clip-kind')).toBe('reaction-stream');
+    expect(screen.queryByTestId('voter-input-unregistered')).toBeNull();
+  });
+
   it('resolves leaderboard to the LeaderboardViewOnly (T-466 — view-only)', () => {
     render(<VoterInputDispatcher sessionId="sess-lb" clipKind="leaderboard" />);
     const wrapper = screen.getByTestId('voter-input-leaderboard-wrapper');
@@ -166,7 +178,7 @@ describe('<VoterInputDispatcher>', () => {
 
 describe('<UnregisteredKindFallback>', () => {
   it('mentions the clip kind in the body', () => {
-    render(<UnregisteredKindFallback sessionId="s" clipKind="reaction-stream" />);
-    expect(screen.getByText(/reaction-stream/)).toBeDefined();
+    render(<UnregisteredKindFallback sessionId="s" clipKind="audience-ai-prompt" />);
+    expect(screen.getByText(/audience-ai-prompt/)).toBeDefined();
   });
 });

@@ -21,6 +21,7 @@ import { LivePollOpenTextVoterInput } from './live-poll-open-text-voter-input';
 import { LivePollRatingVoterInput } from './live-poll-rating-voter-input';
 import { LiveQAVoterInput } from './live-qa-voter-input';
 import { LiveQuizVoterInput } from './live-quiz-voter-input';
+import { ReactionStreamVoterInput } from './reaction-stream-voter-input';
 import { SurveyVoterInput } from './survey-voter-input';
 import { WordCloudVoterInput } from './word-cloud-voter-input';
 
@@ -117,6 +118,13 @@ export const defaultVoterInputRegistry: VoterInputRegistry = new Map<
   // rect; voters may tap up to `maxIntensity` times before the target
   // disables.
   ['heatmap', HeatmapVoterInput],
+  // T-470 — tenth audience clip family. SECOND marquee differentiator:
+  // emoji particle storm rendered via the T-383 ShaderClip. Voter UI is
+  // a row of emoji buttons (one per `palette` entry); tap emits
+  // `{ kind: 'reaction-stream', emojiId }`. NO client-side disable —
+  // multi-tap permitted; server-side 10 Hz rate-limit per ADR-009 §D3
+  // line 231 override bounds spam.
+  ['reaction-stream', ReactionStreamVoterInput],
 ]);
 
 /**

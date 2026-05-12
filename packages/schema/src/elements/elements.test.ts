@@ -260,8 +260,11 @@ describe('elementSchema (discriminated union)', () => {
     // Bumped from 21 to 22 in T-469 to add 'heatmap' — ninth audience-clip
     // variant on the union (ADR-010 §D2; FIRST marquee differentiator;
     // spatial input via tap on an underlying image).
-    expect(ELEMENT_TYPES).toHaveLength(22);
-    expect(new Set(ELEMENT_TYPES).size).toBe(22);
+    // Bumped from 22 to 23 in T-470 to add 'reaction-stream' — tenth
+    // audience-clip variant on the union (ADR-010 §D2; SECOND marquee
+    // differentiator; emoji particle storm via the T-383 ShaderClip).
+    expect(ELEMENT_TYPES).toHaveLength(23);
+    expect(new Set(ELEMENT_TYPES).size).toBe(23);
   });
 
   it('elementSchema accepts a live-poll-multiple-choice element via the union (T-461)', () => {
@@ -442,6 +445,28 @@ describe('elementSchema (discriminated union)', () => {
       expect(el.props.prompt).toBe('Tap where you focus');
       expect(el.props.maxIntensity).toBe(1);
       expect(el.props.gridResolution).toEqual({ w: 32, h: 32 });
+      expect(el.permissions).toEqual(['audience-network']);
+    }
+  });
+
+  it('elementSchema accepts a reaction-stream element via the union (T-470)', () => {
+    const el = elementSchema.parse({
+      ...BASE,
+      type: 'reaction-stream',
+      permissions: ['audience-network'],
+      props: {
+        prompt: 'React to the talk',
+        palette: [
+          { emojiId: 'heart', glyph: '❤️' },
+          { emojiId: 'fire', glyph: '🔥' },
+        ],
+      },
+    });
+    expect(el.type).toBe('reaction-stream');
+    if (el.type === 'reaction-stream') {
+      expect(el.props.prompt).toBe('React to the talk');
+      expect(el.props.palette).toHaveLength(2);
+      expect(el.props.palette[0]?.emojiId).toBe('heart');
       expect(el.permissions).toEqual(['audience-network']);
     }
   });
