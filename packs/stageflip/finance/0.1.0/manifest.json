@@ -15,12 +15,12 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "hash": "dd43bcf1448125bdd009dc96634f1dc9b99748179fcc81ad710fe9baab5e6e8d"
+    "hash": "b4d478a3900d6b7d96c989f6ad61d5d8d03b3acd2f5c0cde8af360a6117ebdb4"
   },
   "contributes": {
     "presets": [
       {
-        "id": "earnings-call-template-placeholder",
+        "id": "earnings-call-template",
         "cluster": "cluster-finance"
       },
       {
