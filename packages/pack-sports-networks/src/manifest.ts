@@ -7,10 +7,11 @@
 // The skeleton ships with `integrity.hash` as 64 zeroes; the
 // orchestrator-run `scripts/build-pack.ts` rewrites the `integrity.hash`
 // to match SHA-256 over the synthesized archive bytes before signing.
-// Four placeholder cluster-B preset contributions reserve register slots
-// for NBA Pro (T-512), NFL Pro (T-513), MLB (T-514), and F1 Pro
-// (T-515). The skeleton is buildable + signable end-to-end so the
-// pack-integrity gate exercises the real pipeline from day one.
+// Four cluster-B preset contributions: NBA Pro is the first substantive
+// fill (T-512); NFL Pro (T-513), MLB (T-514), and F1 Pro (T-515) remain
+// placeholders awaiting their respective fills. The skeleton is buildable +
+// signable end-to-end so the pack-integrity gate exercises the real
+// pipeline from day one.
 //
 // Determinism perimeter: `@stageflip/pack-sports-networks` lives
 // OUTSIDE per CLAUDE.md §3 — content packages are NOT in the
@@ -51,7 +52,7 @@ export const MANIFEST_SKELETON: PackManifest = {
   },
   contributes: {
     presets: [
-      { id: 'nba-pro-register-placeholder', cluster: 'cluster-b' },
+      { id: 'nba-pro-register', cluster: 'cluster-b' },
       { id: 'nfl-pro-register-placeholder', cluster: 'cluster-b' },
       { id: 'mlb-register-placeholder', cluster: 'cluster-b' },
       { id: 'f1-pro-register-placeholder', cluster: 'cluster-b' },
