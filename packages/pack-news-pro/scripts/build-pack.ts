@@ -6,7 +6,14 @@
 // computes the SHA-256 integrity hash, materializes the final
 // `manifest.json` with the correct hash, and emits
 // `archive.sfpack` + `signature.bin` + `manifest.json` to the
-// configured output directory (default `packs/stageflip/news-pro/0.1.0/`).
+// configured output directory (default
+// `packs/stageflip/news-pro/<MANIFEST_SKELETON.version>/`).
+//
+// T-510 — outDir default is now derived from `MANIFEST_SKELETON.version`
+// rather than the hard-coded `0.1.0/` literal so the default output
+// directory tracks the manifest version automatically on each minor /
+// patch bump. Operators pinning a non-default outDir continue to set
+// `STAGEFLIP_NEWS_PRO_OUT`.
 //
 // Auditable + reproducible: this script encodes the signing workflow
 // in code rather than relying on out-of-band manual steps. The
@@ -23,7 +30,7 @@ import { fileURLToPath } from 'node:url';
 import { ED25519_SIGNATURE_LENGTH, signPackArchive } from '@stageflip/pack-format';
 import { type ArchiveFile, synthesizeArchive } from '@stageflip/pack-signing';
 
-import { withIntegrityHash } from '../src/manifest.js';
+import { MANIFEST_SKELETON, withIntegrityHash } from '../src/manifest.js';
 
 /** Options for `buildPack`. */
 export interface BuildPackOptions {
@@ -179,7 +186,7 @@ if (isMainModule) {
     : resolve(packageRoot, 'packs');
   const outDir = process.env.STAGEFLIP_NEWS_PRO_OUT
     ? resolve(process.env.STAGEFLIP_NEWS_PRO_OUT)
-    : resolve(packageRoot, '../../packs/stageflip/news-pro/0.1.0');
+    : resolve(packageRoot, `../../packs/stageflip/news-pro/${MANIFEST_SKELETON.version}`);
   const privateKeyPem = readFileSync(keyPath, 'utf-8');
   const result = buildPack({ sourceDir, outDir, privateKeyPem });
   process.stdout.write(

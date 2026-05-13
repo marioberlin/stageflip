@@ -6,8 +6,10 @@
 // The skeleton ships with `integrity.hash` as 64 zeroes; the
 // orchestrator-run `scripts/build-pack.ts` rewrites the `integrity.hash`
 // to match SHA-256 over the synthesized archive bytes before signing.
-// Three placeholder preset contributions reserve the cluster-A entries
-// that T-507 / T-508 / T-509 fill in.
+// Four substantive preset contributions cover the cluster-A News Pro
+// pack v0.2.0 contributions: three register lower-thirds (Sky News
+// T-507, ITV T-508, RAI T-509) + the closing premium news-ticker
+// (T-510). All slots are substantive — no placeholders remain.
 //
 // Determinism perimeter: `@stageflip/pack-news-pro` lives OUTSIDE per
 // CLAUDE.md §3 — content packages are NOT in the perimeter, and this
@@ -30,7 +32,7 @@ export const MANIFEST_SKELETON: PackManifest = {
   manifestVersion: '1',
   id: 'news-pro',
   name: 'News Pro',
-  version: '0.1.0',
+  version: '0.2.0',
   publisher: {
     id: 'stageflip',
     displayName: 'StageFlip',
@@ -50,13 +52,23 @@ export const MANIFEST_SKELETON: PackManifest = {
       { id: 'sky-news-pro-register', cluster: 'cluster-a' },
       { id: 'itv-pro-register', cluster: 'cluster-a' },
       { id: 'rai-pro-register', cluster: 'cluster-a' },
+      { id: 'premium-news-ticker', cluster: 'cluster-a' },
     ],
   },
   description:
-    'Premium broadcast-news templates extending Cluster A — register variants for Sky News, ITV, RAI plus premium news-ticker preset (filled in by T-507..T-510).',
+    'Premium broadcast-news templates extending Cluster A — register variants for Sky News, ITV, RAI lower-thirds plus the premium flipper news-ticker companion (BBC humanist canon; comprehension > density).',
   homepage: 'https://stageflip.dev/packs/news-pro',
   repository: 'https://github.com/marioberlin/stageflip/tree/main/packages/pack-news-pro',
-  keywords: ['news', 'broadcast', 'ticker', 'cluster-a', 'stageflip-first-party'],
+  keywords: [
+    'news',
+    'broadcast',
+    'ticker',
+    'flipper',
+    'news-ticker',
+    'lower-third',
+    'cluster-a',
+    'stageflip-first-party',
+  ],
 };
 
 /**
