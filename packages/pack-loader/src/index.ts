@@ -29,3 +29,13 @@ export {
 } from './load-pack.js';
 
 export { satisfiesRange } from './semver-range.js';
+
+export {
+  type CataloguePackVersion,
+  type PackUpgradeRow,
+  type PackUpgradeStatus,
+  type UpgradePlan,
+  type UpgradePlanInput,
+  catalogueKey,
+  planUpgrade,
+} from './upgrade-planner.js';
