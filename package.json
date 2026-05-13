@@ -33,6 +33,7 @@
     "check-remotion-imports": "tsx scripts/check-remotion-imports.ts",
     "check-skill-drift": "tsx scripts/check-skill-drift.ts",
     "check-determinism": "tsx scripts/check-determinism.ts",
+    "check-pack-integrity": "tsx scripts/check-pack-integrity.ts",
     "check-preset-integrity": "tsx scripts/check-preset-integrity.ts",
     "check-export-parity": "tsx scripts/check-export-parity.ts",
     "invoke-type-design-consultant": "tsx scripts/invoke-type-design-consultant.ts",
