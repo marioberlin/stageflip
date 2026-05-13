@@ -1003,6 +1003,12 @@ importers:
       '@stageflip/llm-abstraction':
         specifier: workspace:*
         version: link:../llm-abstraction
+      '@stageflip/pack-format':
+        specifier: workspace:*
+        version: link:../pack-format
+      '@stageflip/pack-loader':
+        specifier: workspace:*
+        version: link:../pack-loader
       '@stageflip/schema':
         specifier: workspace:*
         version: link:../schema
