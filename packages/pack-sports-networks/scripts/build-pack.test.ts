@@ -8,6 +8,10 @@
 // (f) missing presets/ dir throws, and (g) the CLI default outDir
 // tracks `MANIFEST_SKELETON.version` (regression coverage for the T-510
 // hard-coded-version bug carried into the sports-networks skeleton).
+// T-515 — version bumped 0.1.0 → 0.2.0 + manifest preset-count assertion
+// updated from 4 to 5 (closes the pack at GA: NBA Pro / NFL Pro / MLB /
+// F1 Pro register variants + closing F1 AR Grid Lineup arOverlay
+// integration).
 
 import { createHash, generateKeyPairSync } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -213,27 +217,27 @@ describe('buildPack', () => {
     });
   });
 
-  it('the manifest contributes exactly four cluster-b placeholder presets (T-511 — NBA Pro / NFL Pro / MLB / F1 Pro register slots reserved for T-512..T-515)', () => {
+  it('the manifest contributes exactly five cluster-b presets (T-515 — four register variants NBA Pro T-512 / NFL Pro T-513 / MLB T-514 / F1 Pro T-515 plus closing F1 AR Grid Lineup arOverlay integration T-515)', () => {
     const result = buildPack({
       sourceDir: fx.sourceDir,
       outDir: fx.outDir,
       privateKeyPem: fx.privateKeyPem,
     });
     const manifest = JSON.parse(readFileSync(result.manifestPath, 'utf-8'));
-    expect(manifest.contributes.presets).toHaveLength(4);
+    expect(manifest.contributes.presets).toHaveLength(5);
     for (const p of manifest.contributes.presets) {
       expect(p.cluster).toBe('cluster-b');
     }
   });
 
-  it('the manifest declares version 0.1.0 (skeleton release)', () => {
+  it('the manifest declares version 0.2.0 (T-515 minor bump — closes the pack at GA)', () => {
     const result = buildPack({
       sourceDir: fx.sourceDir,
       outDir: fx.outDir,
       privateKeyPem: fx.privateKeyPem,
     });
     const manifest = JSON.parse(readFileSync(result.manifestPath, 'utf-8'));
-    expect(manifest.version).toBe('0.1.0');
+    expect(manifest.version).toBe('0.2.0');
     expect(manifest.version).toBe(MANIFEST_SKELETON.version);
   });
 });
@@ -248,8 +252,8 @@ describe('build-pack CLI default outDir (T-511 — version-templated, per T-510 
   // is a sufficient regression for the bug T-510 fixed in news-pro and that
   // we carry forward into this skeleton.
 
-  it('MANIFEST_SKELETON.version is 0.1.0 — the value the CLI default outDir interpolates', () => {
-    expect(MANIFEST_SKELETON.version).toBe('0.1.0');
+  it('MANIFEST_SKELETON.version is 0.2.0 — the value the CLI default outDir interpolates (T-515 bumps to GA)', () => {
+    expect(MANIFEST_SKELETON.version).toBe('0.2.0');
   });
 
   it('build-pack.ts CLI source uses ${MANIFEST_SKELETON.version} (NOT a hard-coded 0.1.0 literal) in the default outDir expression', () => {
@@ -274,7 +278,7 @@ describe('build-pack CLI default outDir (T-511 — version-templated, per T-510 
     expect(expected.endsWith(`/packs/stageflip/sports-networks/${MANIFEST_SKELETON.version}`)).toBe(
       true,
     );
-    expect(expected).toContain('/packs/stageflip/sports-networks/0.1.0');
+    expect(expected).toContain('/packs/stageflip/sports-networks/0.2.0');
   });
 });
 

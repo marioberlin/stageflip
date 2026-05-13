@@ -7,11 +7,12 @@
 // The skeleton ships with `integrity.hash` as 64 zeroes; the
 // orchestrator-run `scripts/build-pack.ts` rewrites the `integrity.hash`
 // to match SHA-256 over the synthesized archive bytes before signing.
-// Four cluster-B preset contributions: NBA Pro (T-512), NFL Pro
-// (T-513) and MLB (T-514) are substantive fills; F1 Pro (T-515) remains
-// a placeholder awaiting its fill. The skeleton is buildable +
-// signable end-to-end so the pack-integrity gate exercises the real
-// pipeline from day one.
+// Five substantive preset contributions cover the cluster-B Sports
+// Networks pack v0.2.0 contributions: four register variants — NBA Pro
+// (T-512), NFL Pro (T-513), MLB (T-514), F1 Pro (T-515) — plus the
+// closing AR formations grid-lineup integration (T-515; arOverlay
+// clipKind, AR-bundle companion to the F1 Pro register). All slots are
+// substantive — no placeholders remain after T-515.
 //
 // Determinism perimeter: `@stageflip/pack-sports-networks` lives
 // OUTSIDE per CLAUDE.md §3 — content packages are NOT in the
@@ -35,7 +36,7 @@ export const MANIFEST_SKELETON: PackManifest = {
   manifestVersion: '1',
   id: 'sports-networks',
   name: 'Sports Networks',
-  version: '0.1.0',
+  version: '0.2.0',
   publisher: {
     id: 'stageflip',
     displayName: 'StageFlip',
@@ -55,14 +56,26 @@ export const MANIFEST_SKELETON: PackManifest = {
       { id: 'nba-pro-register', cluster: 'cluster-b' },
       { id: 'nfl-pro-register', cluster: 'cluster-b' },
       { id: 'mlb-register', cluster: 'cluster-b' },
-      { id: 'f1-pro-register-placeholder', cluster: 'cluster-b' },
+      { id: 'f1-pro-register', cluster: 'cluster-b' },
+      { id: 'f1-ar-grid-lineup', cluster: 'cluster-b' },
     ],
   },
   description:
-    'Premium sports-broadcast templates extending Cluster B — register variants for NBA Pro (T-512), NFL Pro (T-513), MLB (T-514), F1 Pro (T-515) plus AR formations bundle. F1 Pro register fills in T-515.',
+    'Premium sports-broadcast templates extending Cluster B — register variants for NBA Pro, NFL Pro, MLB, F1 Pro (driver-position timing tower) plus the F1 AR grid-lineup overlay (pre-race grid-walk AR-bundle integration). Closes the Sports Networks pack at v0.2.0 GA.',
   homepage: 'https://stageflip.dev/packs/sports-networks',
   repository: 'https://github.com/marioberlin/stageflip/tree/main/packages/pack-sports-networks',
-  keywords: ['sports', 'broadcast', 'cluster-b', 'stageflip-first-party'],
+  keywords: [
+    'sports',
+    'broadcast',
+    'score-bug',
+    'ar-overlay',
+    'f1',
+    'nba',
+    'nfl',
+    'mlb',
+    'cluster-b',
+    'stageflip-first-party',
+  ],
 };
 
 /**
