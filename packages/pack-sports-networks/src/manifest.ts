@@ -7,8 +7,8 @@
 // The skeleton ships with `integrity.hash` as 64 zeroes; the
 // orchestrator-run `scripts/build-pack.ts` rewrites the `integrity.hash`
 // to match SHA-256 over the synthesized archive bytes before signing.
-// Four cluster-B preset contributions: NBA Pro is the first substantive
-// fill (T-512); NFL Pro (T-513), MLB (T-514), and F1 Pro (T-515) remain
+// Four cluster-B preset contributions: NBA Pro (T-512) and NFL Pro
+// (T-513) are substantive fills; MLB (T-514) and F1 Pro (T-515) remain
 // placeholders awaiting their respective fills. The skeleton is buildable +
 // signable end-to-end so the pack-integrity gate exercises the real
 // pipeline from day one.
@@ -53,13 +53,13 @@ export const MANIFEST_SKELETON: PackManifest = {
   contributes: {
     presets: [
       { id: 'nba-pro-register', cluster: 'cluster-b' },
-      { id: 'nfl-pro-register-placeholder', cluster: 'cluster-b' },
+      { id: 'nfl-pro-register', cluster: 'cluster-b' },
       { id: 'mlb-register-placeholder', cluster: 'cluster-b' },
       { id: 'f1-pro-register-placeholder', cluster: 'cluster-b' },
     ],
   },
   description:
-    'Premium sports-broadcast templates extending Cluster B — register variants for NBA Pro, NFL Pro, MLB, F1 Pro plus AR formations bundle (T-515). Registers fill in T-512..T-515.',
+    'Premium sports-broadcast templates extending Cluster B — register variants for NBA Pro (T-512), NFL Pro (T-513), MLB (T-514), F1 Pro (T-515) plus AR formations bundle. Registers fill in T-512..T-515.',
   homepage: 'https://stageflip.dev/packs/sports-networks',
   repository: 'https://github.com/marioberlin/stageflip/tree/main/packages/pack-sports-networks',
   keywords: ['sports', 'broadcast', 'cluster-b', 'stageflip-first-party'],

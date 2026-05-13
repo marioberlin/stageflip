@@ -2,8 +2,8 @@
 // T-511 — Verifies `MANIFEST_SKELETON` is a structurally valid
 // `PackManifest` under `parsePackManifest` (once a real integrity hash
 // is supplied), the license claim is the expected commercial tier, the
-// four preset contributions are present (T-512 fills the NBA Pro slot
-// substantively; T-513 NFL Pro / T-514 MLB / T-515 F1 Pro still
+// four preset contributions are present (T-512 + T-513 fill NBA Pro +
+// NFL Pro slots substantively; T-514 MLB / T-515 F1 Pro still
 // placeholders awaiting their respective fills), and keywords are
 // lowercase. Version stays 0.1.0 until T-515 closes the pack at v0.2.0.
 
@@ -33,12 +33,12 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('contributes exactly four cluster-b preset entries — NBA Pro filled in T-512; NFL Pro / MLB / F1 Pro still placeholders for T-513..T-515', () => {
+  it('contributes exactly four cluster-b preset entries — NBA Pro + NFL Pro filled in T-512 + T-513; MLB / F1 Pro still placeholders for T-514..T-515', () => {
     const presets = MANIFEST_SKELETON.contributes.presets ?? [];
     expect(presets).toHaveLength(4);
     expect(presets.map((p) => p.id)).toEqual([
       'nba-pro-register',
-      'nfl-pro-register-placeholder',
+      'nfl-pro-register',
       'mlb-register-placeholder',
       'f1-pro-register-placeholder',
     ]);

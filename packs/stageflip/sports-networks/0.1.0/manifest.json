@@ -15,7 +15,7 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "hash": "b79ee0669e3f2e70f08466868653dfe5a9894c48d4ec55ac8c5e55482145bd4e"
+    "hash": "8714e1b24ef17fda7528f9ab92e3ce3e61c5be01ada8c1d6e2996b9ef4ce84eb"
   },
   "contributes": {
     "presets": [
@@ -24,7 +24,7 @@
         "cluster": "cluster-b"
       },
       {
-        "id": "nfl-pro-register-placeholder",
+        "id": "nfl-pro-register",
         "cluster": "cluster-b"
       },
       {
@@ -37,7 +37,7 @@
       }
     ]
   },
-  "description": "Premium sports-broadcast templates extending Cluster B — register variants for NBA Pro, NFL Pro, MLB, F1 Pro plus AR formations bundle (T-515). Registers fill in T-512..T-515.",
+  "description": "Premium sports-broadcast templates extending Cluster B — register variants for NBA Pro (T-512), NFL Pro (T-513), MLB (T-514), F1 Pro (T-515) plus AR formations bundle. Registers fill in T-512..T-515.",
   "homepage": "https://stageflip.dev/packs/sports-networks",
   "repository": "https://github.com/marioberlin/stageflip/tree/main/packages/pack-sports-networks",
   "keywords": [
