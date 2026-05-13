@@ -5,13 +5,21 @@
 // the four preset contributions are present (T-522 earnings-call
 // template + T-523 investor-deck template + T-524 Bloomberg-pro
 // adapter + T-525 finance-domain semantic tools), and keywords are
-// lowercase. Version is 0.1.0 (skeleton release).
+// lowercase.
 //
 // T-524 — Flipped the third preset id from
 // `bloomberg-pro-adapter-placeholder` to `bloomberg-pro-adapter`
 // (substantive) AND seeded `contributes.adapters` with the reserved
 // `{ id: 'bloomberg-pro', modality: 'data-source' }` entry per
 // ADR-012 §D5.
+//
+// T-525 — Flipped the fourth preset id from
+// `finance-semantic-tools-placeholder` to `finance-semantic-tools`
+// (substantive) AND seeded `contributes.tools` with the reserved
+// `finance-domain` semantic-tool bundle entry per ADR-012 §D5.
+// Bumped version 0.1.0 → 0.2.0 (additive — new tools contribution +
+// final placeholder slot filled). Closes the Earnings & Investor
+// launch pack at v0.2.0 GA.
 
 import { parsePackManifest } from '@stageflip/pack-format';
 import { describe, expect, it } from 'vitest';
@@ -39,14 +47,14 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('contributes exactly four cluster-finance preset entries — earnings-call template (T-522; substantive) + investor-deck template (T-523; substantive) + Bloomberg-pro adapter (T-524; substantive) + finance-domain semantic tools (T-525; placeholder)', () => {
+  it('contributes exactly four cluster-finance preset entries — earnings-call template (T-522) + investor-deck template (T-523) + Bloomberg-pro adapter (T-524) + finance-domain semantic tools (T-525), all substantive', () => {
     const presets = MANIFEST_SKELETON.contributes.presets ?? [];
     expect(presets).toHaveLength(4);
     expect(presets.map((p) => p.id)).toEqual([
       'earnings-call-template',
       'investor-deck-template',
       'bloomberg-pro-adapter',
-      'finance-semantic-tools-placeholder',
+      'finance-semantic-tools',
     ]);
     for (const p of presets) {
       expect(p.cluster).toBe('cluster-finance');
@@ -69,6 +77,49 @@ describe('MANIFEST_SKELETON', () => {
     ]);
   });
 
+  it('contributes exactly one tools entry — the reserved finance-domain semantic-tool bundle with five tool names (T-525)', () => {
+    const tools = MANIFEST_SKELETON.contributes.tools ?? [];
+    expect(tools).toHaveLength(1);
+    expect(tools[0]).toEqual({
+      bundleName: 'finance-domain',
+      tools: [
+        'finance.format_currency',
+        'finance.compute_growth_rate',
+        'finance.bullet_safe_harbor',
+        'finance.lookup_ticker',
+        'finance.normalize_eps',
+      ],
+    });
+  });
+
+  it('the tools contribution survives the withIntegrityHash clone (deep-clone discipline)', () => {
+    const out = withIntegrityHash(VALID_HASH);
+    expect(out.contributes.tools).toEqual([
+      {
+        bundleName: 'finance-domain',
+        tools: [
+          'finance.format_currency',
+          'finance.compute_growth_rate',
+          'finance.bullet_safe_harbor',
+          'finance.lookup_ticker',
+          'finance.normalize_eps',
+        ],
+      },
+    ]);
+    // Mutating the cloned tools array does not affect the skeleton.
+    out.contributes.tools?.[0]?.tools.push('finance.mutated');
+    expect(MANIFEST_SKELETON.contributes.tools?.[0]?.tools).toEqual([
+      'finance.format_currency',
+      'finance.compute_growth_rate',
+      'finance.bullet_safe_harbor',
+      'finance.lookup_ticker',
+      'finance.normalize_eps',
+    ]);
+    // Mutating the cloned tools list (the outer array) does not affect the skeleton.
+    out.contributes.tools?.push({ bundleName: 'mutated', tools: ['x'] });
+    expect(MANIFEST_SKELETON.contributes.tools).toHaveLength(1);
+  });
+
   it('keywords are all lowercase', () => {
     const keywords = MANIFEST_SKELETON.keywords ?? [];
     expect(keywords.length).toBeGreaterThan(0);
@@ -77,11 +128,13 @@ describe('MANIFEST_SKELETON', () => {
     }
   });
 
-  it('keywords include the finance-vertical-cluster discriminant + the stageflip-first-party tag', () => {
+  it('keywords include the finance-vertical-cluster discriminant + the stageflip-first-party tag + the tools / semantic-tools markers (T-525)', () => {
     const keywords = MANIFEST_SKELETON.keywords ?? [];
     expect(keywords).toContain('cluster-finance');
     expect(keywords).toContain('stageflip-first-party');
     expect(keywords).toContain('finance');
+    expect(keywords).toContain('tools');
+    expect(keywords).toContain('semantic-tools');
   });
 
   it('publisher is the first-party StageFlip identity', () => {
@@ -91,9 +144,9 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('id is lowercase kebab-case + version is 0.1.0 (skeleton release; T-522..T-525 bump on substantive fills)', () => {
+  it('id is lowercase kebab-case + version is 0.2.0 (T-525 bumps from 0.1.0 — additive: new tools contribution + final placeholder slot filled)', () => {
     expect(MANIFEST_SKELETON.id).toBe('finance');
-    expect(MANIFEST_SKELETON.version).toBe('0.1.0');
+    expect(MANIFEST_SKELETON.version).toBe('0.2.0');
   });
 
   it('name is the human-readable Earnings & Investor label (NOT the kebab-case id)', () => {

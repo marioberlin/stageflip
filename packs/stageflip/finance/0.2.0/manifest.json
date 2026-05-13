@@ -2,7 +2,7 @@
   "manifestVersion": "1",
   "id": "finance",
   "name": "Earnings & Investor",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": {
     "id": "stageflip",
     "displayName": "StageFlip"
@@ -15,7 +15,7 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "hash": "95b71fd1af21704f329e97cfdea4e9702dd191eef13c389a66adbeac74dd596e"
+    "hash": "ce740c6dad61663b14d38c32b424f68b52e157b791cae880d4835967c0bb50ce"
   },
   "contributes": {
     "presets": [
@@ -32,7 +32,7 @@
         "cluster": "cluster-finance"
       },
       {
-        "id": "finance-semantic-tools-placeholder",
+        "id": "finance-semantic-tools",
         "cluster": "cluster-finance"
       }
     ],
@@ -41,9 +41,21 @@
         "id": "bloomberg-pro",
         "modality": "data-source"
       }
+    ],
+    "tools": [
+      {
+        "bundleName": "finance-domain",
+        "tools": [
+          "finance.format_currency",
+          "finance.compute_growth_rate",
+          "finance.bullet_safe_harbor",
+          "finance.lookup_ticker",
+          "finance.normalize_eps"
+        ]
+      }
     ]
   },
-  "description": "Premium financial-communication templates extending a new finance-vertical cluster — earnings-call + investor-deck composition templates, Bloomberg-pro adapter premium-tier contribution slot, finance-domain semantic-tool extensions (filled in T-522..T-525).",
+  "description": "Premium financial-communication templates extending the finance-vertical cluster — earnings-call composition template (T-522), investor-deck composition template (T-523), Bloomberg-pro premium-tier data-source adapter contribution slot (T-524), and finance-domain semantic-tool bundle reservation (T-525). v0.2.0 GA.",
   "homepage": "https://stageflip.dev/packs/finance",
   "repository": "https://github.com/marioberlin/stageflip/tree/main/packages/pack-finance",
   "keywords": [
@@ -52,6 +64,8 @@
     "investor",
     "bloomberg",
     "cluster-finance",
+    "tools",
+    "semantic-tools",
     "stageflip-first-party"
   ]
 }
