@@ -5,8 +5,8 @@
   "type": "module",
   "description": "StageFlip docs site — Astro Starlight over skills/stageflip/** (T-228).",
   "scripts": {
-    "prebuild": "tsx scripts/build-skill-pages.ts",
-    "predev": "tsx scripts/build-skill-pages.ts",
+    "prebuild": "tsx scripts/build-skill-pages.ts && tsx scripts/build-marketplace-pages.ts",
+    "predev": "tsx scripts/build-skill-pages.ts && tsx scripts/build-marketplace-pages.ts",
     "build": "astro build",
     "dev": "astro dev --port 3400",
     "preview": "astro preview --port 3400",
@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@astrojs/starlight": "0.31.0",
+    "@stageflip/pack-format": "workspace:*",
     "astro": "5.1.5"
   },
   "devDependencies": {
