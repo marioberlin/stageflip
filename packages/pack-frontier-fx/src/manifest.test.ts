@@ -1,14 +1,14 @@
 // packages/pack-frontier-fx/src/manifest.test.ts
-// T-531 / T-532 / T-533 — Verifies `MANIFEST_SKELETON` is a structurally
-// valid `PackManifest` under `parsePackManifest` (once a real integrity
-// hash is supplied), the license claim is the expected commercial tier,
-// the eight preset contributions are present (five substantive shaders
-// from T-532 + the substantive 3D asset library from T-533 + two
-// remaining placeholders for T-534 ReactionStream physics + T-535
-// premium TitleSequence templates), the assets array reserves eight
-// pre-licensed 3D asset references (T-533), and keywords are lowercase.
-// Version remains 0.1.0 (T-535 carries the GA bump that closes the
-// pack at v0.2.0).
+// T-531 / T-532 / T-533 / T-534 — Verifies `MANIFEST_SKELETON` is a
+// structurally valid `PackManifest` under `parsePackManifest` (once a
+// real integrity hash is supplied), the license claim is the expected
+// commercial tier, the twelve preset contributions are present (five
+// substantive shaders from T-532 + the substantive 3D asset library
+// from T-533 + five substantive ReactionStream physics presets from
+// T-534 + one remaining placeholder for T-535 premium TitleSequence
+// templates), the assets array reserves eight pre-licensed 3D asset
+// references (T-533), and keywords are lowercase. Version remains
+// 0.1.0 (T-535 carries the GA bump that closes the pack at v0.2.0).
 
 import { parsePackManifest } from '@stageflip/pack-format';
 import { describe, expect, it } from 'vitest';
@@ -47,9 +47,9 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('contributes 8 cluster-i preset entries — 5 substantive shaders (T-532) + substantive 3D asset library (T-533) + 2 remaining placeholders (T-534/T-535)', () => {
+  it('contributes 12 cluster-i preset entries — 5 substantive shaders (T-532) + substantive 3D asset library (T-533) + 5 substantive ReactionStream physics presets (T-534) + 1 remaining placeholder (T-535)', () => {
     const presets = MANIFEST_SKELETON.contributes.presets ?? [];
-    expect(presets).toHaveLength(8);
+    expect(presets).toHaveLength(12);
     expect(presets.map((p) => p.id)).toEqual([
       'shader-aurora-borealis',
       'shader-cosmic-nebula',
@@ -57,7 +57,11 @@ describe('MANIFEST_SKELETON', () => {
       'shader-fire-portal',
       'shader-data-stream',
       '3d-asset-library',
-      'reactionstream-physics-placeholder',
+      'reaction-fireworks-burst',
+      'reaction-snow-fall',
+      'reaction-vortex-swirl',
+      'reaction-bubble-rise',
+      'reaction-magnetic-orbit',
       'titlesequence-premium-placeholder',
     ]);
     for (const p of presets) {
@@ -110,7 +114,7 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('id is lowercase kebab-case + version remains 0.1.0 (T-533 — T-535 carries the GA bump that closes the pack at v0.2.0)', () => {
+  it('id is lowercase kebab-case + version remains 0.1.0 (T-534 — T-535 carries the GA bump that closes the pack at v0.2.0)', () => {
     expect(MANIFEST_SKELETON.id).toBe('frontier-fx');
     expect(MANIFEST_SKELETON.version).toBe('0.1.0');
   });

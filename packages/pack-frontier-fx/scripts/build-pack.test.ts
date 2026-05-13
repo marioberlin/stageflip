@@ -1,17 +1,19 @@
 // packages/pack-frontier-fx/scripts/build-pack.test.ts
-// T-531 / T-532 / T-533 — Drives `buildPack` against a temp-dir source
-// layout using a freshly-generated Ed25519 keypair. Verifies (a)
-// outputs land on disk, (b) the integrity hash on the manifest matches
-// SHA-256 over the archive bytes WITHOUT the manifest, (c) the emitted
-// manifest parses under `parsePackManifest`, (d) the archive verifies
-// against the corresponding public key, (e) dot-files in the source
-// are skipped, (f) missing presets/ dir throws, and (g) the CLI default
-// outDir tracks `MANIFEST_SKELETON.version` (regression coverage for
-// the T-510 hard-coded-version bug carried into the frontier-fx
-// skeleton). T-533 flipped the `3d-asset-library-placeholder` slot to
-// the substantive `3d-asset-library` preset and seeded
-// `contributes.assets` with the eight pre-licensed commercial-OK 3D
-// asset references (.glb / model/gltf-binary).
+// T-531 / T-532 / T-533 / T-534 — Drives `buildPack` against a
+// temp-dir source layout using a freshly-generated Ed25519 keypair.
+// Verifies (a) outputs land on disk, (b) the integrity hash on the
+// manifest matches SHA-256 over the archive bytes WITHOUT the
+// manifest, (c) the emitted manifest parses under `parsePackManifest`,
+// (d) the archive verifies against the corresponding public key,
+// (e) dot-files in the source are skipped, (f) missing presets/ dir
+// throws, and (g) the CLI default outDir tracks
+// `MANIFEST_SKELETON.version` (regression coverage for the T-510
+// hard-coded-version bug carried into the frontier-fx skeleton).
+// T-534 flipped the `reactionstream-physics-placeholder` slot to FIVE
+// substantive ReactionStream particle physics presets
+// (reaction-fireworks-burst / reaction-snow-fall /
+// reaction-vortex-swirl / reaction-bubble-rise /
+// reaction-magnetic-orbit) — `contributes.presets` count is now 12.
 
 import { createHash, generateKeyPairSync } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -71,8 +73,24 @@ function createFixture(opts?: { skipPresetsDir?: boolean; withDotFile?: boolean 
       '---\nid: 3d-asset-library\n---\n# substantive\n',
     );
     writeFileSync(
-      join(presetsDir, 'reactionstream-physics-placeholder.md'),
-      '---\nid: reactionstream-physics-placeholder\n---\n# placeholder\n',
+      join(presetsDir, 'reaction-fireworks-burst.md'),
+      '---\nid: reaction-fireworks-burst\n---\n# substantive\n',
+    );
+    writeFileSync(
+      join(presetsDir, 'reaction-snow-fall.md'),
+      '---\nid: reaction-snow-fall\n---\n# substantive\n',
+    );
+    writeFileSync(
+      join(presetsDir, 'reaction-vortex-swirl.md'),
+      '---\nid: reaction-vortex-swirl\n---\n# substantive\n',
+    );
+    writeFileSync(
+      join(presetsDir, 'reaction-bubble-rise.md'),
+      '---\nid: reaction-bubble-rise\n---\n# substantive\n',
+    );
+    writeFileSync(
+      join(presetsDir, 'reaction-magnetic-orbit.md'),
+      '---\nid: reaction-magnetic-orbit\n---\n# substantive\n',
     );
     writeFileSync(
       join(presetsDir, 'titlesequence-premium-placeholder.md'),
@@ -139,10 +157,24 @@ describe('buildPack', () => {
         content: readFileSync(join(fx.sourceDir, 'presets', '3d-asset-library.md')),
       },
       {
-        path: 'presets/reactionstream-physics-placeholder.md',
-        content: readFileSync(
-          join(fx.sourceDir, 'presets', 'reactionstream-physics-placeholder.md'),
-        ),
+        path: 'presets/reaction-bubble-rise.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'reaction-bubble-rise.md')),
+      },
+      {
+        path: 'presets/reaction-fireworks-burst.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'reaction-fireworks-burst.md')),
+      },
+      {
+        path: 'presets/reaction-magnetic-orbit.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'reaction-magnetic-orbit.md')),
+      },
+      {
+        path: 'presets/reaction-snow-fall.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'reaction-snow-fall.md')),
+      },
+      {
+        path: 'presets/reaction-vortex-swirl.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'reaction-vortex-swirl.md')),
       },
       {
         path: 'presets/shader-aurora-borealis.md',
@@ -253,20 +285,25 @@ describe('buildPack', () => {
     });
   });
 
-  it('the manifest contributes exactly eight cluster-i presets (T-533 — 5 substantive shaders + substantive 3D asset library + 2 remaining placeholders for T-534/T-535)', () => {
+  it('the manifest contributes exactly twelve cluster-i presets (T-534 — 5 substantive shaders + substantive 3D asset library + 5 substantive ReactionStream physics presets + 1 remaining placeholder for T-535)', () => {
     const result = buildPack({
       sourceDir: fx.sourceDir,
       outDir: fx.outDir,
       privateKeyPem: fx.privateKeyPem,
     });
     const manifest = JSON.parse(readFileSync(result.manifestPath, 'utf-8'));
-    expect(manifest.contributes.presets).toHaveLength(8);
+    expect(manifest.contributes.presets).toHaveLength(12);
     for (const p of manifest.contributes.presets) {
       expect(p.cluster).toBe('cluster-i');
     }
-    expect(manifest.contributes.presets.map((p: { id: string }) => p.id)).toContain(
-      '3d-asset-library',
-    );
+    const ids = manifest.contributes.presets.map((p: { id: string }) => p.id);
+    expect(ids).toContain('3d-asset-library');
+    expect(ids).toContain('reaction-fireworks-burst');
+    expect(ids).toContain('reaction-snow-fall');
+    expect(ids).toContain('reaction-vortex-swirl');
+    expect(ids).toContain('reaction-bubble-rise');
+    expect(ids).toContain('reaction-magnetic-orbit');
+    expect(ids).not.toContain('reactionstream-physics-placeholder');
   });
 
   it('the manifest contributes exactly eight pre-licensed 3D asset entries (T-533 — commercial-OK .glb / model/gltf-binary under 3d/)', () => {
@@ -288,7 +325,7 @@ describe('buildPack', () => {
     ]);
   });
 
-  it('the manifest declares version 0.1.0 (T-533 does NOT bump — T-535 carries the v0.2.0 GA bump that closes the pack)', () => {
+  it('the manifest declares version 0.1.0 (T-534 does NOT bump — T-535 carries the v0.2.0 GA bump that closes the pack)', () => {
     const result = buildPack({
       sourceDir: fx.sourceDir,
       outDir: fx.outDir,
@@ -300,7 +337,7 @@ describe('buildPack', () => {
   });
 });
 
-describe('build-pack CLI default outDir (T-533 — version-templated, per T-510 fix)', () => {
+describe('build-pack CLI default outDir (T-534 — version-templated, per T-510 fix)', () => {
   // The CLI's `isMainModule` branch is gated on `process.argv[1]` matching the
   // script path so the module under test runs as a library here, NOT as a CLI.
   // We assert the contract by checking the runtime literal: the default outDir
