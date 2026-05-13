@@ -1,13 +1,17 @@
 // packages/pack-frontier-fx/scripts/build-pack.test.ts
-// T-531 — Drives `buildPack` against a temp-dir source layout using a
-// freshly-generated Ed25519 keypair. Verifies (a) outputs land on disk,
-// (b) the integrity hash on the manifest matches SHA-256 over the
-// archive bytes WITHOUT the manifest, (c) the emitted manifest parses
-// under `parsePackManifest`, (d) the archive verifies against the
-// corresponding public key, (e) dot-files in the source are skipped,
-// (f) missing presets/ dir throws, and (g) the CLI default outDir
-// tracks `MANIFEST_SKELETON.version` (regression coverage for the T-510
-// hard-coded-version bug carried into the frontier-fx skeleton).
+// T-531 / T-532 / T-533 — Drives `buildPack` against a temp-dir source
+// layout using a freshly-generated Ed25519 keypair. Verifies (a)
+// outputs land on disk, (b) the integrity hash on the manifest matches
+// SHA-256 over the archive bytes WITHOUT the manifest, (c) the emitted
+// manifest parses under `parsePackManifest`, (d) the archive verifies
+// against the corresponding public key, (e) dot-files in the source
+// are skipped, (f) missing presets/ dir throws, and (g) the CLI default
+// outDir tracks `MANIFEST_SKELETON.version` (regression coverage for
+// the T-510 hard-coded-version bug carried into the frontier-fx
+// skeleton). T-533 flipped the `3d-asset-library-placeholder` slot to
+// the substantive `3d-asset-library` preset and seeded
+// `contributes.assets` with the eight pre-licensed commercial-OK 3D
+// asset references (.glb / model/gltf-binary).
 
 import { createHash, generateKeyPairSync } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -63,8 +67,8 @@ function createFixture(opts?: { skipPresetsDir?: boolean; withDotFile?: boolean 
       '---\nid: shader-data-stream\n---\n# substantive\n',
     );
     writeFileSync(
-      join(presetsDir, '3d-asset-library-placeholder.md'),
-      '---\nid: 3d-asset-library-placeholder\n---\n# placeholder\n',
+      join(presetsDir, '3d-asset-library.md'),
+      '---\nid: 3d-asset-library\n---\n# substantive\n',
     );
     writeFileSync(
       join(presetsDir, 'reactionstream-physics-placeholder.md'),
@@ -131,8 +135,8 @@ describe('buildPack', () => {
       { path: 'LICENSE.md', content: readFileSync(join(fx.sourceDir, 'LICENSE.md')) },
       { path: 'NOTICE.md', content: readFileSync(join(fx.sourceDir, 'NOTICE.md')) },
       {
-        path: 'presets/3d-asset-library-placeholder.md',
-        content: readFileSync(join(fx.sourceDir, 'presets', '3d-asset-library-placeholder.md')),
+        path: 'presets/3d-asset-library.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', '3d-asset-library.md')),
       },
       {
         path: 'presets/reactionstream-physics-placeholder.md',
@@ -249,7 +253,7 @@ describe('buildPack', () => {
     });
   });
 
-  it('the manifest contributes exactly four cluster-i placeholder presets (T-531 — premium shaders / 3D asset library / ReactionStream physics / premium TitleSequence templates slots reserved for T-532..T-535)', () => {
+  it('the manifest contributes exactly eight cluster-i presets (T-533 — 5 substantive shaders + substantive 3D asset library + 2 remaining placeholders for T-534/T-535)', () => {
     const result = buildPack({
       sourceDir: fx.sourceDir,
       outDir: fx.outDir,
@@ -260,9 +264,31 @@ describe('buildPack', () => {
     for (const p of manifest.contributes.presets) {
       expect(p.cluster).toBe('cluster-i');
     }
+    expect(manifest.contributes.presets.map((p: { id: string }) => p.id)).toContain(
+      '3d-asset-library',
+    );
   });
 
-  it('the manifest declares version 0.1.0 (skeleton release)', () => {
+  it('the manifest contributes exactly eight pre-licensed 3D asset entries (T-533 — commercial-OK .glb / model/gltf-binary under 3d/)', () => {
+    const result = buildPack({
+      sourceDir: fx.sourceDir,
+      outDir: fx.outDir,
+      privateKeyPem: fx.privateKeyPem,
+    });
+    const manifest = JSON.parse(readFileSync(result.manifestPath, 'utf-8'));
+    expect(manifest.contributes.assets).toEqual([
+      { path: '3d/podium-classic.glb', mimeType: 'model/gltf-binary' },
+      { path: '3d/stage-spotlight-set.glb', mimeType: 'model/gltf-binary' },
+      { path: '3d/data-cube-rotating.glb', mimeType: 'model/gltf-binary' },
+      { path: '3d/sphere-particles.glb', mimeType: 'model/gltf-binary' },
+      { path: '3d/celebration-confetti-burst.glb', mimeType: 'model/gltf-binary' },
+      { path: '3d/handshake-icon-3d.glb', mimeType: 'model/gltf-binary' },
+      { path: '3d/award-trophy.glb', mimeType: 'model/gltf-binary' },
+      { path: '3d/ribbon-cut-scissors.glb', mimeType: 'model/gltf-binary' },
+    ]);
+  });
+
+  it('the manifest declares version 0.1.0 (T-533 does NOT bump — T-535 carries the v0.2.0 GA bump that closes the pack)', () => {
     const result = buildPack({
       sourceDir: fx.sourceDir,
       outDir: fx.outDir,
@@ -274,7 +300,7 @@ describe('buildPack', () => {
   });
 });
 
-describe('build-pack CLI default outDir (T-531 — version-templated, per T-510 fix)', () => {
+describe('build-pack CLI default outDir (T-533 — version-templated, per T-510 fix)', () => {
   // The CLI's `isMainModule` branch is gated on `process.argv[1]` matching the
   // script path so the module under test runs as a library here, NOT as a CLI.
   // We assert the contract by checking the runtime literal: the default outDir

@@ -15,7 +15,7 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "hash": "bf80997c7bd669241ed7a26ee62eecc2540191e169b4804f3a271cedd69b1a8d"
+    "hash": "700d794a8d64c5ba9f2fb1bc6b725b654f7a7dd5d68a4c58d1a8b530fd93e3b1"
   },
   "contributes": {
     "presets": [
@@ -40,7 +40,7 @@
         "cluster": "cluster-i"
       },
       {
-        "id": "3d-asset-library-placeholder",
+        "id": "3d-asset-library",
         "cluster": "cluster-i"
       },
       {
@@ -51,9 +51,43 @@
         "id": "titlesequence-premium-placeholder",
         "cluster": "cluster-i"
       }
+    ],
+    "assets": [
+      {
+        "path": "3d/podium-classic.glb",
+        "mimeType": "model/gltf-binary"
+      },
+      {
+        "path": "3d/stage-spotlight-set.glb",
+        "mimeType": "model/gltf-binary"
+      },
+      {
+        "path": "3d/data-cube-rotating.glb",
+        "mimeType": "model/gltf-binary"
+      },
+      {
+        "path": "3d/sphere-particles.glb",
+        "mimeType": "model/gltf-binary"
+      },
+      {
+        "path": "3d/celebration-confetti-burst.glb",
+        "mimeType": "model/gltf-binary"
+      },
+      {
+        "path": "3d/handshake-icon-3d.glb",
+        "mimeType": "model/gltf-binary"
+      },
+      {
+        "path": "3d/award-trophy.glb",
+        "mimeType": "model/gltf-binary"
+      },
+      {
+        "path": "3d/ribbon-cut-scissors.glb",
+        "mimeType": "model/gltf-binary"
+      }
     ]
   },
-  "description": "Premium frontier-effects pack extending Cluster I with premium shaders (T-532), pre-licensed commercial-OK 3D asset library (T-533), premium ReactionStream particle physics presets (T-534), and premium TitleSequence templates (T-535).",
+  "description": "Premium frontier-effects pack extending Cluster I with five substantive premium shader presets from T-532 (shader-aurora-borealis / shader-cosmic-nebula / shader-liquid-metal / shader-fire-portal / shader-data-stream binding the T-383 ShaderClip primitive) + a pre-licensed commercial-OK 3D asset library from T-533 (eight pre-licensed .glb assets declared in contributes.assets — classical podium, stage spotlight rig, rotating glass data cube, particle sphere with bloom, celebration confetti burst, corporate handshake icon, award trophy, opening-ceremony ribbon-cut scissors — with actual .glb bytes delivered per-tenant externally under commercial-3D licensing terms, NOT shipped in the pack archive) + premium ReactionStream particle physics presets (T-534) + premium TitleSequence templates (T-535).",
   "homepage": "https://stageflip.dev/packs/frontier-fx",
   "repository": "https://github.com/marioberlin/stageflip/tree/main/packages/pack-frontier-fx",
   "keywords": [
