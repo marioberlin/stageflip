@@ -1,0 +1,98 @@
+{
+  "manifestVersion": "1",
+  "id": "wedding-events",
+  "name": "Wedding & Events",
+  "version": "0.2.0",
+  "publisher": {
+    "id": "stageflip",
+    "displayName": "StageFlip"
+  },
+  "platformCompatibility": "^2.0.0",
+  "license": {
+    "kind": "paid-per-tenant",
+    "sku": "wedding-events-1y",
+    "entitlementType": "subscription"
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "hash": "7631913f157fa500333f76fc1a5f5d90d989d9232cbec3a9a79b0f7c971619a0"
+  },
+  "contributes": {
+    "presets": [
+      {
+        "id": "rustic-theme",
+        "cluster": "cluster-wedding-events"
+      },
+      {
+        "id": "modern-theme",
+        "cluster": "cluster-wedding-events"
+      },
+      {
+        "id": "classic-theme",
+        "cluster": "cluster-wedding-events"
+      },
+      {
+        "id": "wedding-ceremony-template",
+        "cluster": "cluster-wedding-events"
+      },
+      {
+        "id": "wedding-reception-template",
+        "cluster": "cluster-wedding-events"
+      },
+      {
+        "id": "petal-cross-fade-transition",
+        "cluster": "cluster-wedding-events"
+      },
+      {
+        "id": "lace-wipe-transition",
+        "cluster": "cluster-wedding-events"
+      },
+      {
+        "id": "wedding-bumper-card",
+        "cluster": "cluster-wedding-events"
+      },
+      {
+        "id": "wedding-final-card",
+        "cluster": "cluster-wedding-events"
+      },
+      {
+        "id": "audio-bed-library",
+        "cluster": "cluster-wedding-events"
+      }
+    ],
+    "assets": [
+      {
+        "path": "audio/processional-strings-instrumental.mp3",
+        "mimeType": "audio/mpeg"
+      },
+      {
+        "path": "audio/recessional-uptempo-instrumental.mp3",
+        "mimeType": "audio/mpeg"
+      },
+      {
+        "path": "audio/reception-jazz-ambient.mp3",
+        "mimeType": "audio/mpeg"
+      },
+      {
+        "path": "audio/first-dance-acoustic-instrumental.mp3",
+        "mimeType": "audio/mpeg"
+      },
+      {
+        "path": "audio/closing-piano-instrumental.mp3",
+        "mimeType": "audio/mpeg"
+      }
+    ]
+  },
+  "description": "Premium wedding & events templates extending the cluster-wedding-events vertical cluster — three substantive theme variants from T-527 (rustic / modern / classic, all wiring the T-183 LowerThird primitive), two substantive composition templates from T-528 (wedding-ceremony-template + wedding-reception-template, both binding cluster-D titleSequence + cluster-A lowerThird via PRESET_ID_BINDINGS Pattern C cross-cluster register reuse — same model T-520 / T-522 / T-523 established), four substantive transition / bumper presets from T-529 (petal-cross-fade-transition + lace-wipe-transition forward-reference a candidate `transition` clipKind; wedding-bumper-card + wedding-final-card bind cluster-D titleSequence), and a pre-licensed audio bed library from T-530 (five pre-licensed instrumental tracks declared in contributes.assets — processional strings, uptempo recessional, jazz reception ambient, acoustic first-dance, piano closing — with actual audio bytes delivered per-tenant externally under mechanical-licensing terms, NOT shipped in the pack archive). v0.2.0 GA.",
+  "homepage": "https://stageflip.dev/packs/wedding-events",
+  "repository": "https://github.com/marioberlin/stageflip/tree/main/packages/pack-wedding-events",
+  "keywords": [
+    "wedding",
+    "events",
+    "lifecycle",
+    "audio",
+    "audio-bed",
+    "cluster-wedding-events",
+    "stageflip-first-party"
+  ]
+}
