@@ -33,11 +33,11 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('contributes exactly three placeholder presets in cluster-a', () => {
+  it('contributes exactly three cluster-a preset entries (sky-news substantive per T-507; itv + rai still placeholders pending T-508/T-509)', () => {
     const presets = MANIFEST_SKELETON.contributes.presets ?? [];
     expect(presets).toHaveLength(3);
     expect(presets.map((p) => p.id)).toEqual([
-      'sky-news-register-placeholder',
+      'sky-news-pro-register',
       'itv-register-placeholder',
       'rai-register-placeholder',
     ]);

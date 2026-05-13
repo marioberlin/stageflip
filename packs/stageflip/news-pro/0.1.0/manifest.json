@@ -15,12 +15,12 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "hash": "9527425057830aa5734c59d5783a12a0ff3dc98109ada760db83c77cbfb4841f"
+    "hash": "269e4ed7e26a87e636478884c1928d0ed5308db2ec593d06ec9748c7a36ccc9c"
   },
   "contributes": {
     "presets": [
       {
-        "id": "sky-news-register-placeholder",
+        "id": "sky-news-pro-register",
         "cluster": "cluster-a"
       },
       {
