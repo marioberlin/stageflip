@@ -25,6 +25,11 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { ED25519_SIGNATURE_LENGTH, parsePackManifest } from '../packages/pack-format/src/index.js';
+import {
+  ARCHIVE_MAGIC,
+  parseArchive,
+  synthesizeArchive,
+} from '../packages/pack-signing/src/archive.js';
 
 // ---------- types ----------
 
@@ -357,12 +362,39 @@ function checkOnePack(packPath: string, fs: FsShim, violations: Violation[]): vo
         });
         return;
       }
-      const computed = sha256Hex(archiveBytes);
+      // Hash domain semantics per ADR-012 §D3 + pack-signing T-498:
+      // integrity.hash covers the archive bytes EXCLUDING the manifest
+      // entry itself (so signing can compute the hash before the manifest
+      // it must embed). For SFPACK1 archives we parseArchive, strip the
+      // manifest entry, re-synthesize, and hash that. For unknown archive
+      // formats (currently none) we fall back to hashing the raw bytes —
+      // this is the T-498 placeholder; replace when tar+zstd lands.
+      const isSfpack =
+        archiveBytes.length >= ARCHIVE_MAGIC.length &&
+        ARCHIVE_MAGIC.every((b, i) => archiveBytes[i] === b);
+      let hashedBytes: Uint8Array;
+      if (isSfpack) {
+        try {
+          const entries = parseArchive(new Uint8Array(archiveBytes));
+          const withoutManifest = entries.filter((e) => e.path !== 'manifest.json');
+          hashedBytes = synthesizeArchive(withoutManifest);
+        } catch (err) {
+          violations.push({
+            packPath,
+            invariant: 'integrity-hash-mismatch',
+            detail: `failed to parse SFPACK1 archive at ${archivePath} for hash recomputation: ${err instanceof Error ? err.message : String(err)}`,
+          });
+          return;
+        }
+      } else {
+        hashedBytes = new Uint8Array(archiveBytes);
+      }
+      const computed = sha256Hex(Buffer.from(hashedBytes));
       if (computed !== claimedHash) {
         violations.push({
           packPath,
           invariant: 'integrity-hash-mismatch',
-          detail: `manifest 'integrity.hash' = ${claimedHash}, computed SHA-256 of ${archivePath} = ${computed}`,
+          detail: `manifest 'integrity.hash' = ${claimedHash}, computed SHA-256 of ${archivePath} (manifest excluded per ADR-012 §D3) = ${computed}`,
         });
       }
     }
