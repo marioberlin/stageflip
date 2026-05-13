@@ -10,6 +10,7 @@
 //
 // Determinism perimeter: this package lives OUTSIDE.
 
+import { runLicense } from './commands/license.js';
 import { runPublish } from './commands/publish.js';
 import { runSign } from './commands/sign.js';
 import { runValidateCommand } from './commands/validate.js';
@@ -21,6 +22,7 @@ USAGE
   stageflip-pack-publish validate <pack-dir>
   stageflip-pack-publish sign <pack-dir> --key <private.pem> --out <archive-path>
   stageflip-pack-publish publish <archive-path> --registry <url> [--token <env-var-name>] [--publisher-key <pem-path>]
+  stageflip-pack-publish license <tier-id> [--out-dir <dir>] [--var k=v]... [--force]
   stageflip-pack-publish --help
 
 SUBCOMMANDS
@@ -38,6 +40,13 @@ SUBCOMMANDS
             HTTP step is skipped and the intent is printed instead.
             Marketplace registry contract lands in T-536+; today this
             subcommand operates in dry-run mode for pipeline testing.
+  license   Emit canned LICENSE.md / NOTICE.md / MANIFEST_LICENSE_SNIPPET.json
+            boilerplate for one of four canonical license tiers:
+            commercial-subscription | attribution-required |
+            non-commercial-only | public-domain. Defaults to
+            ./license-templates/. Refuses to overwrite without --force.
+            Variables (packName, publisherDisplayName, contactEmail,
+            sku, year) are substituted via --var k=v.
 
 EXIT CODES
   0   success / dry-run
@@ -66,6 +75,8 @@ export async function runPublishCli(
       return runSign(rest, deps);
     case 'publish':
       return runPublish(rest, deps);
+    case 'license':
+      return runLicense(rest, deps);
     default:
       deps.logger.error(`stageflip-pack-publish: unknown subcommand: ${sub}`);
       deps.logger.error(HELP_TEXT);

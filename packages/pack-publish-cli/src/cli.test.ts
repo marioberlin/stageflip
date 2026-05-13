@@ -108,5 +108,17 @@ describe('runPublishCli — dispatcher', () => {
     expect(HELP_BANNER).toContain('validate');
     expect(HELP_BANNER).toContain('sign');
     expect(HELP_BANNER).toContain('publish');
+    expect(HELP_BANNER).toContain('license');
+  });
+
+  it('routes `license` to its handler', async () => {
+    const deps = makeRecorderDeps();
+    const outDir = join(tmp.path, 'lic-out');
+    const exit = await runPublishCli(
+      ['license', 'attribution-required', '--out-dir', outDir],
+      deps,
+    );
+    expect(exit).toBe(0);
+    expect(deps.logger.joined()).toContain('license: emitted');
   });
 });
