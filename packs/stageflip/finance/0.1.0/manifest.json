@@ -1,0 +1,51 @@
+{
+  "manifestVersion": "1",
+  "id": "finance",
+  "name": "Earnings & Investor",
+  "version": "0.1.0",
+  "publisher": {
+    "id": "stageflip",
+    "displayName": "StageFlip"
+  },
+  "platformCompatibility": "^2.0.0",
+  "license": {
+    "kind": "paid-per-tenant",
+    "sku": "finance-1y",
+    "entitlementType": "subscription"
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "hash": "dd43bcf1448125bdd009dc96634f1dc9b99748179fcc81ad710fe9baab5e6e8d"
+  },
+  "contributes": {
+    "presets": [
+      {
+        "id": "earnings-call-template-placeholder",
+        "cluster": "cluster-finance"
+      },
+      {
+        "id": "investor-deck-template-placeholder",
+        "cluster": "cluster-finance"
+      },
+      {
+        "id": "bloomberg-pro-adapter-placeholder",
+        "cluster": "cluster-finance"
+      },
+      {
+        "id": "finance-semantic-tools-placeholder",
+        "cluster": "cluster-finance"
+      }
+    ]
+  },
+  "description": "Premium financial-communication templates extending a new finance-vertical cluster — earnings-call + investor-deck composition templates, Bloomberg-pro adapter premium tier, finance-domain semantic-tool extensions (filled in T-522..T-525).",
+  "homepage": "https://stageflip.dev/packs/finance",
+  "repository": "https://github.com/marioberlin/stageflip/tree/main/packages/pack-finance",
+  "keywords": [
+    "finance",
+    "earnings",
+    "investor",
+    "bloomberg",
+    "cluster-finance",
+    "stageflip-first-party"
+  ]
+}
