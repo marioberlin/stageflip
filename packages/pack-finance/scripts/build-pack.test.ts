@@ -244,14 +244,35 @@ describe('buildPack', () => {
     ]);
   });
 
-  it('the manifest declares version 0.1.0 (skeleton release)', () => {
+  it('the manifest contributes exactly one tools bundle — the reserved finance-domain semantic-tool bundle with five tool names (T-525)', () => {
     const result = buildPack({
       sourceDir: fx.sourceDir,
       outDir: fx.outDir,
       privateKeyPem: fx.privateKeyPem,
     });
     const manifest = JSON.parse(readFileSync(result.manifestPath, 'utf-8'));
-    expect(manifest.version).toBe('0.1.0');
+    expect(manifest.contributes.tools).toEqual([
+      {
+        bundleName: 'finance-domain',
+        tools: [
+          'finance.format_currency',
+          'finance.compute_growth_rate',
+          'finance.bullet_safe_harbor',
+          'finance.lookup_ticker',
+          'finance.normalize_eps',
+        ],
+      },
+    ]);
+  });
+
+  it('the manifest declares version 0.2.0 (T-525 bumps from 0.1.0; closes Earnings & Investor at v0.2.0 GA)', () => {
+    const result = buildPack({
+      sourceDir: fx.sourceDir,
+      outDir: fx.outDir,
+      privateKeyPem: fx.privateKeyPem,
+    });
+    const manifest = JSON.parse(readFileSync(result.manifestPath, 'utf-8'));
+    expect(manifest.version).toBe('0.2.0');
     expect(manifest.version).toBe(MANIFEST_SKELETON.version);
   });
 });
@@ -266,8 +287,8 @@ describe('build-pack CLI default outDir (T-521 — version-templated, per T-510 
   // is a sufficient regression for the bug T-510 fixed in news-pro and that
   // we carry forward into this skeleton.
 
-  it('MANIFEST_SKELETON.version is 0.1.0 — the value the CLI default outDir interpolates', () => {
-    expect(MANIFEST_SKELETON.version).toBe('0.1.0');
+  it('MANIFEST_SKELETON.version is 0.2.0 — the value the CLI default outDir interpolates (T-525 bump)', () => {
+    expect(MANIFEST_SKELETON.version).toBe('0.2.0');
   });
 
   it('build-pack.ts CLI source uses ${MANIFEST_SKELETON.version} (NOT a hard-coded 0.1.0 literal) in the default outDir expression', () => {
@@ -278,6 +299,8 @@ describe('build-pack CLI default outDir (T-521 — version-templated, per T-510 
     // Negative: no hard-coded version literal remains in the default outDir.
     expect(cliSource).not.toContain("'../../packs/stageflip/finance/0.1.0'");
     expect(cliSource).not.toContain('"../../packs/stageflip/finance/0.1.0"');
+    expect(cliSource).not.toContain("'../../packs/stageflip/finance/0.2.0'");
+    expect(cliSource).not.toContain('"../../packs/stageflip/finance/0.2.0"');
   });
 
   it('package-relative default outDir resolves under packs/stageflip/finance/<manifest-version>/', () => {
@@ -288,7 +311,7 @@ describe('build-pack CLI default outDir (T-521 — version-templated, per T-510 
       `../../packs/stageflip/finance/${MANIFEST_SKELETON.version}`,
     );
     expect(expected.endsWith(`/packs/stageflip/finance/${MANIFEST_SKELETON.version}`)).toBe(true);
-    expect(expected).toContain('/packs/stageflip/finance/0.1.0');
+    expect(expected).toContain('/packs/stageflip/finance/0.2.0');
   });
 
   it('build-pack.ts CLI uses STAGEFLIP_FINANCE_{KEY,SRC,OUT} env-var prefix (NOT the news-pro / sports-networks / creator-style prefix)', () => {
