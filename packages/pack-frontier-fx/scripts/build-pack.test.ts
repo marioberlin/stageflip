@@ -1,5 +1,5 @@
 // packages/pack-frontier-fx/scripts/build-pack.test.ts
-// T-531 / T-532 / T-533 / T-534 — Drives `buildPack` against a
+// T-531 / T-532 / T-533 / T-534 / T-535 — Drives `buildPack` against a
 // temp-dir source layout using a freshly-generated Ed25519 keypair.
 // Verifies (a) outputs land on disk, (b) the integrity hash on the
 // manifest matches SHA-256 over the archive bytes WITHOUT the
@@ -9,11 +9,13 @@
 // throws, and (g) the CLI default outDir tracks
 // `MANIFEST_SKELETON.version` (regression coverage for the T-510
 // hard-coded-version bug carried into the frontier-fx skeleton).
-// T-534 flipped the `reactionstream-physics-placeholder` slot to FIVE
-// substantive ReactionStream particle physics presets
-// (reaction-fireworks-burst / reaction-snow-fall /
-// reaction-vortex-swirl / reaction-bubble-rise /
-// reaction-magnetic-orbit) — `contributes.presets` count is now 12.
+// T-535 flipped the `titlesequence-premium-placeholder` slot to FIVE
+// substantive premium TitleSequence templates
+// (titlesequence-noir-cinema / titlesequence-scifi-glow /
+// titlesequence-action-bold / titlesequence-doc-minimal /
+// titlesequence-trailer-cinematic) — `contributes.presets` count is
+// now 16. **T-535 also carries the v0.2.0 GA bump that closes the
+// Frontier Effects launch pack AND closes P16 γ entirely.**
 
 import { createHash, generateKeyPairSync } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -93,8 +95,24 @@ function createFixture(opts?: { skipPresetsDir?: boolean; withDotFile?: boolean 
       '---\nid: reaction-magnetic-orbit\n---\n# substantive\n',
     );
     writeFileSync(
-      join(presetsDir, 'titlesequence-premium-placeholder.md'),
-      '---\nid: titlesequence-premium-placeholder\n---\n# placeholder\n',
+      join(presetsDir, 'titlesequence-noir-cinema.md'),
+      '---\nid: titlesequence-noir-cinema\n---\n# substantive\n',
+    );
+    writeFileSync(
+      join(presetsDir, 'titlesequence-scifi-glow.md'),
+      '---\nid: titlesequence-scifi-glow\n---\n# substantive\n',
+    );
+    writeFileSync(
+      join(presetsDir, 'titlesequence-action-bold.md'),
+      '---\nid: titlesequence-action-bold\n---\n# substantive\n',
+    );
+    writeFileSync(
+      join(presetsDir, 'titlesequence-doc-minimal.md'),
+      '---\nid: titlesequence-doc-minimal\n---\n# substantive\n',
+    );
+    writeFileSync(
+      join(presetsDir, 'titlesequence-trailer-cinematic.md'),
+      '---\nid: titlesequence-trailer-cinematic\n---\n# substantive\n',
     );
     writeFileSync(join(sourceDir, 'LICENSE.md'), '# LICENSE placeholder\n');
     writeFileSync(join(sourceDir, 'NOTICE.md'), '# NOTICE placeholder\n');
@@ -197,10 +215,24 @@ describe('buildPack', () => {
         content: readFileSync(join(fx.sourceDir, 'presets', 'shader-liquid-metal.md')),
       },
       {
-        path: 'presets/titlesequence-premium-placeholder.md',
-        content: readFileSync(
-          join(fx.sourceDir, 'presets', 'titlesequence-premium-placeholder.md'),
-        ),
+        path: 'presets/titlesequence-action-bold.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'titlesequence-action-bold.md')),
+      },
+      {
+        path: 'presets/titlesequence-doc-minimal.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'titlesequence-doc-minimal.md')),
+      },
+      {
+        path: 'presets/titlesequence-noir-cinema.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'titlesequence-noir-cinema.md')),
+      },
+      {
+        path: 'presets/titlesequence-scifi-glow.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'titlesequence-scifi-glow.md')),
+      },
+      {
+        path: 'presets/titlesequence-trailer-cinematic.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'titlesequence-trailer-cinematic.md')),
       },
     ]);
     const expectedHash = createHash('sha256').update(archiveBytes).digest('hex');
@@ -285,14 +317,14 @@ describe('buildPack', () => {
     });
   });
 
-  it('the manifest contributes exactly twelve cluster-i presets (T-534 — 5 substantive shaders + substantive 3D asset library + 5 substantive ReactionStream physics presets + 1 remaining placeholder for T-535)', () => {
+  it('the manifest contributes exactly sixteen cluster-i presets (T-535 — 5 substantive shaders + substantive 3D asset library + 5 substantive ReactionStream physics presets + 5 substantive TitleSequence templates; closes the pack at v0.2.0 GA)', () => {
     const result = buildPack({
       sourceDir: fx.sourceDir,
       outDir: fx.outDir,
       privateKeyPem: fx.privateKeyPem,
     });
     const manifest = JSON.parse(readFileSync(result.manifestPath, 'utf-8'));
-    expect(manifest.contributes.presets).toHaveLength(12);
+    expect(manifest.contributes.presets).toHaveLength(16);
     for (const p of manifest.contributes.presets) {
       expect(p.cluster).toBe('cluster-i');
     }
@@ -303,7 +335,13 @@ describe('buildPack', () => {
     expect(ids).toContain('reaction-vortex-swirl');
     expect(ids).toContain('reaction-bubble-rise');
     expect(ids).toContain('reaction-magnetic-orbit');
+    expect(ids).toContain('titlesequence-noir-cinema');
+    expect(ids).toContain('titlesequence-scifi-glow');
+    expect(ids).toContain('titlesequence-action-bold');
+    expect(ids).toContain('titlesequence-doc-minimal');
+    expect(ids).toContain('titlesequence-trailer-cinematic');
     expect(ids).not.toContain('reactionstream-physics-placeholder');
+    expect(ids).not.toContain('titlesequence-premium-placeholder');
   });
 
   it('the manifest contributes exactly eight pre-licensed 3D asset entries (T-533 — commercial-OK .glb / model/gltf-binary under 3d/)', () => {
@@ -325,19 +363,19 @@ describe('buildPack', () => {
     ]);
   });
 
-  it('the manifest declares version 0.1.0 (T-534 does NOT bump — T-535 carries the v0.2.0 GA bump that closes the pack)', () => {
+  it('the manifest declares version 0.2.0 (T-535 carries the v0.2.0 GA bump that closes the Frontier Effects launch pack AND closes P16 γ entirely)', () => {
     const result = buildPack({
       sourceDir: fx.sourceDir,
       outDir: fx.outDir,
       privateKeyPem: fx.privateKeyPem,
     });
     const manifest = JSON.parse(readFileSync(result.manifestPath, 'utf-8'));
-    expect(manifest.version).toBe('0.1.0');
+    expect(manifest.version).toBe('0.2.0');
     expect(manifest.version).toBe(MANIFEST_SKELETON.version);
   });
 });
 
-describe('build-pack CLI default outDir (T-534 — version-templated, per T-510 fix)', () => {
+describe('build-pack CLI default outDir (T-535 — version-templated, per T-510 fix)', () => {
   // The CLI's `isMainModule` branch is gated on `process.argv[1]` matching the
   // script path so the module under test runs as a library here, NOT as a CLI.
   // We assert the contract by checking the runtime literal: the default outDir
@@ -347,16 +385,18 @@ describe('build-pack CLI default outDir (T-534 — version-templated, per T-510 
   // is a sufficient regression for the bug T-510 fixed in news-pro and that
   // we carry forward into this skeleton.
 
-  it('MANIFEST_SKELETON.version is 0.1.0 — the value the CLI default outDir interpolates', () => {
-    expect(MANIFEST_SKELETON.version).toBe('0.1.0');
+  it('MANIFEST_SKELETON.version is 0.2.0 — the value the CLI default outDir interpolates (T-535 GA bump that closes the pack)', () => {
+    expect(MANIFEST_SKELETON.version).toBe('0.2.0');
   });
 
-  it('build-pack.ts CLI source uses ${MANIFEST_SKELETON.version} (NOT a hard-coded 0.1.0 literal) in the default outDir expression', () => {
+  it('build-pack.ts CLI source uses ${MANIFEST_SKELETON.version} (NOT a hard-coded 0.2.0 literal) in the default outDir expression', () => {
     const here = dirname(fileURLToPath(import.meta.url));
     const cliSource = readFileSync(resolve(here, 'build-pack.ts'), 'utf-8');
     // Positive: the templated form is present.
     expect(cliSource).toContain('`../../packs/stageflip/frontier-fx/${MANIFEST_SKELETON.version}`');
     // Negative: no hard-coded version literal remains in the default outDir.
+    expect(cliSource).not.toContain("'../../packs/stageflip/frontier-fx/0.2.0'");
+    expect(cliSource).not.toContain('"../../packs/stageflip/frontier-fx/0.2.0"');
     expect(cliSource).not.toContain("'../../packs/stageflip/frontier-fx/0.1.0'");
     expect(cliSource).not.toContain('"../../packs/stageflip/frontier-fx/0.1.0"');
   });
@@ -371,7 +411,7 @@ describe('build-pack CLI default outDir (T-534 — version-templated, per T-510 
     expect(expected.endsWith(`/packs/stageflip/frontier-fx/${MANIFEST_SKELETON.version}`)).toBe(
       true,
     );
-    expect(expected).toContain('/packs/stageflip/frontier-fx/0.1.0');
+    expect(expected).toContain('/packs/stageflip/frontier-fx/0.2.0');
   });
 
   it('build-pack.ts CLI uses STAGEFLIP_FRONTIER_FX_{KEY,SRC,OUT} env-var prefix (NOT the news-pro / sports-networks / creator-style / finance / wedding-events prefix)', () => {
