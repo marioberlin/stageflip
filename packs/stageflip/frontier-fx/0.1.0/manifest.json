@@ -1,0 +1,52 @@
+{
+  "manifestVersion": "1",
+  "id": "frontier-fx",
+  "name": "Frontier Effects",
+  "version": "0.1.0",
+  "publisher": {
+    "id": "stageflip",
+    "displayName": "StageFlip"
+  },
+  "platformCompatibility": "^2.0.0",
+  "license": {
+    "kind": "paid-per-tenant",
+    "sku": "frontier-fx-1y",
+    "entitlementType": "subscription"
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "hash": "63d66b23164211877286d5f2ad12570ee72c9f890ca8340f7f19fa8b3db0873f"
+  },
+  "contributes": {
+    "presets": [
+      {
+        "id": "premium-shaders-placeholder",
+        "cluster": "cluster-i"
+      },
+      {
+        "id": "3d-asset-library-placeholder",
+        "cluster": "cluster-i"
+      },
+      {
+        "id": "reactionstream-physics-placeholder",
+        "cluster": "cluster-i"
+      },
+      {
+        "id": "titlesequence-premium-placeholder",
+        "cluster": "cluster-i"
+      }
+    ]
+  },
+  "description": "Premium frontier-effects pack extending Cluster I with premium shaders (T-532), pre-licensed commercial-OK 3D asset library (T-533), premium ReactionStream particle physics presets (T-534), and premium TitleSequence templates (T-535).",
+  "homepage": "https://stageflip.dev/packs/frontier-fx",
+  "repository": "https://github.com/marioberlin/stageflip/tree/main/packages/pack-frontier-fx",
+  "keywords": [
+    "frontier",
+    "shaders",
+    "3d",
+    "particles",
+    "effects",
+    "cluster-i",
+    "stageflip-first-party"
+  ]
+}
