@@ -3,7 +3,7 @@ title: Pack Discovery
 id: skills/stageflip/concepts/pack-discovery
 tier: concept
 status: substantive
-last_updated: 2026-05-13
+last_updated: 2026-05-14
 owner_task: T-504
 related:
   - skills/stageflip/concepts/bundles/SKILL.md
@@ -112,6 +112,58 @@ contribution (cluster match > keyword match > license bonus).
 Rationale for the license weighting: absent any other signal, prefer
 the lowest-friction pack for the editor's user. The values are small
 enough that any cluster signal dominates.
+
+## Editor surface (T-546)
+
+The library also ships an editor-side observation + ranking + caching
+surface that adapts the T-504 base recommender to the editor's signals
+WITHOUT reimplementing the scorer. The four pieces:
+
+```ts
+// 1. Observe the editor document.
+const usage = new ClusterUsageTracker();
+usage.recordClipAdded('text', 'cluster-a', Date.now());
+usage.recordClipAdded('lower-third', 'cluster-d', Date.now());
+usage.recordClipRemoved('cluster-a');           // pops most-recent row
+const report = usage.reportByCluster();          // sorted count DESC, clusterId ASC
+const inUse = usage.clustersInUse();             // distinct, insertion-ordered
+
+// 2. Rank — wraps `recommendPacks` from T-504 unchanged.
+const recs = await rankRecommendationsForEditor(catalogue, {
+  usage,
+  installed: new Set(['acme/already-have-it']),
+  limit: 5,
+});
+
+// 3. Cache to avoid re-ranking on every keystroke.
+const cache = new RecommendationCache({ ttlMs: 5_000 });
+cache.set(cacheKey, recs);
+cache.get(cacheKey);                              // null after ttlMs
+cache.size();                                     // lazily evicts expired
+
+// 4. Emit typed telemetry events the editor flushes to pack-telemetry.
+const ev = makeDiscoveryEvent({
+  kind: 'click',
+  packIdHash: 'sha256-...',
+  position: 0,
+});
+```
+
+Design rules:
+
+- **The ranker MUST NOT fork the scorer.** `rankRecommendationsForEditor`
+  derives `clustersInUse` from the tracker and forwards `installed` +
+  `limit` through to `recommendPacks`. If future editor work needs
+  recency weighting or other nuance, widen the base recommender's
+  input — don't duplicate the scoring math.
+- **The cache is keyed by caller-supplied strings.** Callers typically
+  hash `(clustersInUse, installed)` deterministically. The cache
+  injects a `now()` source so tests stay deterministic.
+- **Discovery events carry `packIdHash`, not raw IDs.** The editor
+  hashes one-way before constructing the event; raw publisher / pack
+  identifiers never leave the device through this channel.
+- **Rendering the surface is a future apps/* task.** This module is
+  the typed library only — no React, no DOM, no Vue.
 
 ## What this is NOT
 
