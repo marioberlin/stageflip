@@ -15,12 +15,12 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "hash": "f7cf315d446eac73561ad8aa8f8e328157cd6eb74df6f356a11cf67b98a3b9bc"
+    "hash": "b79ee0669e3f2e70f08466868653dfe5a9894c48d4ec55ac8c5e55482145bd4e"
   },
   "contributes": {
     "presets": [
       {
-        "id": "nba-pro-register-placeholder",
+        "id": "nba-pro-register",
         "cluster": "cluster-b"
       },
       {
