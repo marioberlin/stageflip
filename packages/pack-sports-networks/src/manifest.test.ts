@@ -2,10 +2,10 @@
 // T-511 — Verifies `MANIFEST_SKELETON` is a structurally valid
 // `PackManifest` under `parsePackManifest` (once a real integrity hash
 // is supplied), the license claim is the expected commercial tier, the
-// four preset contributions are present (T-512 + T-513 fill NBA Pro +
-// NFL Pro slots substantively; T-514 MLB / T-515 F1 Pro still
-// placeholders awaiting their respective fills), and keywords are
-// lowercase. Version stays 0.1.0 until T-515 closes the pack at v0.2.0.
+// four preset contributions are present (T-512 + T-513 + T-514 fill
+// NBA Pro + NFL Pro + MLB slots substantively; T-515 F1 Pro still
+// placeholder awaiting its fill), and keywords are lowercase. Version
+// stays 0.1.0 until T-515 closes the pack at v0.2.0.
 
 import { parsePackManifest } from '@stageflip/pack-format';
 import { describe, expect, it } from 'vitest';
@@ -33,13 +33,13 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('contributes exactly four cluster-b preset entries — NBA Pro + NFL Pro filled in T-512 + T-513; MLB / F1 Pro still placeholders for T-514..T-515', () => {
+  it('contributes exactly four cluster-b preset entries — NBA Pro + NFL Pro + MLB filled in T-512 + T-513 + T-514; F1 Pro still placeholder for T-515', () => {
     const presets = MANIFEST_SKELETON.contributes.presets ?? [];
     expect(presets).toHaveLength(4);
     expect(presets.map((p) => p.id)).toEqual([
       'nba-pro-register',
       'nfl-pro-register',
-      'mlb-register-placeholder',
+      'mlb-register',
       'f1-pro-register-placeholder',
     ]);
     for (const p of presets) {
@@ -62,7 +62,7 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('id is lowercase kebab-case + version is 0.1.0 (skeleton release; T-512..T-515 bump on register fills)', () => {
+  it('id is lowercase kebab-case + version is 0.1.0 (skeleton release; T-515 bumps to v0.2.0 GA on F1 Pro fill)', () => {
     expect(MANIFEST_SKELETON.id).toBe('sports-networks');
     expect(MANIFEST_SKELETON.version).toBe('0.1.0');
   });
