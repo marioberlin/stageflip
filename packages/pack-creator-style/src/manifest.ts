@@ -8,10 +8,11 @@
 // orchestrator-run `scripts/build-pack.ts` rewrites the `integrity.hash`
 // to match SHA-256 over the synthesized archive bytes before signing.
 // Four cluster-F preset contributions: the MKBHD-pro register (T-517,
-// substantive) plus three placeholders reserved for Vox-deluxe (T-518),
-// Linus-Tech-Tips-pro (T-519), and the prestige-creator composition
-// preset (T-520). The skeleton is buildable + signable end-to-end so
-// the pack-integrity gate exercises the real pipeline from day one.
+// substantive) + Vox-deluxe register (T-518, substantive) plus two
+// placeholders reserved for Linus-Tech-Tips-pro (T-519) and the
+// prestige-creator composition preset (T-520). The skeleton is
+// buildable + signable end-to-end so the pack-integrity gate exercises
+// the real pipeline from day one.
 //
 // Determinism perimeter: `@stageflip/pack-creator-style` lives
 // OUTSIDE per CLAUDE.md §3 — content packages are NOT in the
@@ -53,13 +54,13 @@ export const MANIFEST_SKELETON: PackManifest = {
   contributes: {
     presets: [
       { id: 'mkbhd-pro-register', cluster: 'cluster-f' },
-      { id: 'vox-deluxe-register-placeholder', cluster: 'cluster-f' },
+      { id: 'vox-deluxe-register', cluster: 'cluster-f' },
       { id: 'linus-tech-tips-pro-register-placeholder', cluster: 'cluster-f' },
       { id: 'prestige-creator-placeholder', cluster: 'cluster-f' },
     ],
   },
   description:
-    'Premium creator-economy templates extending Cluster F — substantive MKBHD-pro register (T-517) plus register variants for Vox-deluxe, Linus-Tech-Tips-pro and the prestige-creator composition preset (filled in T-518..T-520).',
+    'Premium creator-economy templates extending Cluster F — substantive MKBHD-pro register (T-517) + Vox-deluxe register (T-518) plus register variants for Linus-Tech-Tips-pro and the prestige-creator composition preset (filled in T-519..T-520).',
   homepage: 'https://stageflip.dev/packs/creator-style',
   repository: 'https://github.com/marioberlin/stageflip/tree/main/packages/pack-creator-style',
   keywords: ['creator', 'youtube', 'creator-economy', 'cluster-f', 'stageflip-first-party'],

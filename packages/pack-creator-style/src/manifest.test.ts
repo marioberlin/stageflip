@@ -1,12 +1,12 @@
 // packages/pack-creator-style/src/manifest.test.ts
-// T-516 / T-517 — Verifies `MANIFEST_SKELETON` is a structurally valid
-// `PackManifest` under `parsePackManifest` (once a real integrity hash
-// is supplied), the license claim is the expected commercial tier, the
-// four cluster-F preset contributions are present (T-517 MKBHD-pro
-// substantive + T-518 Vox-deluxe / T-519 Linus-Tech-Tips-pro placeholder
-// register fills + T-520 prestige-creator placeholder composition
-// preset), and keywords are lowercase. Version is 0.1.0 (skeleton
-// release; T-520 closes the pack to GA).
+// T-516 / T-517 / T-518 — Verifies `MANIFEST_SKELETON` is a structurally
+// valid `PackManifest` under `parsePackManifest` (once a real integrity
+// hash is supplied), the license claim is the expected commercial tier,
+// the four cluster-F preset contributions are present (T-517 MKBHD-pro
+// substantive + T-518 Vox-deluxe substantive + T-519 Linus-Tech-Tips-pro
+// placeholder register fill + T-520 prestige-creator placeholder
+// composition preset), and keywords are lowercase. Version is 0.1.0
+// (skeleton release; T-520 closes the pack to GA).
 
 import { parsePackManifest } from '@stageflip/pack-format';
 import { describe, expect, it } from 'vitest';
@@ -34,12 +34,12 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('contributes exactly four cluster-f preset entries — T-517 MKBHD-pro substantive register + three placeholders (T-518 Vox-deluxe / T-519 Linus-Tech-Tips-pro register fills + T-520 prestige-creator composition preset)', () => {
+  it('contributes exactly four cluster-f preset entries — T-517 MKBHD-pro + T-518 Vox-deluxe substantive registers + two placeholders (T-519 Linus-Tech-Tips-pro register fill + T-520 prestige-creator composition preset)', () => {
     const presets = MANIFEST_SKELETON.contributes.presets ?? [];
     expect(presets).toHaveLength(4);
     expect(presets.map((p) => p.id)).toEqual([
       'mkbhd-pro-register',
-      'vox-deluxe-register-placeholder',
+      'vox-deluxe-register',
       'linus-tech-tips-pro-register-placeholder',
       'prestige-creator-placeholder',
     ]);
@@ -63,7 +63,7 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('id is lowercase kebab-case + version is 0.1.0 (skeleton release; T-517..T-520 bump on preset fills)', () => {
+  it('id is lowercase kebab-case + version is 0.1.0 (skeleton release; T-517..T-520 bump on preset fills; T-520 closes the pack to GA)', () => {
     expect(MANIFEST_SKELETON.id).toBe('creator-style');
     expect(MANIFEST_SKELETON.version).toBe('0.1.0');
   });
