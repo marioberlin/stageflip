@@ -1,0 +1,51 @@
+{
+  "manifestVersion": "1",
+  "id": "wedding-events",
+  "name": "Wedding & Events",
+  "version": "0.1.0",
+  "publisher": {
+    "id": "stageflip",
+    "displayName": "StageFlip"
+  },
+  "platformCompatibility": "^2.0.0",
+  "license": {
+    "kind": "paid-per-tenant",
+    "sku": "wedding-events-1y",
+    "entitlementType": "subscription"
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "hash": "2007b9f96009dd72c78083c2708bf08dbf30fe31e73c38075507492c95bc411f"
+  },
+  "contributes": {
+    "presets": [
+      {
+        "id": "rustic-theme-placeholder",
+        "cluster": "cluster-wedding-events"
+      },
+      {
+        "id": "wedding-composition-templates-placeholder",
+        "cluster": "cluster-wedding-events"
+      },
+      {
+        "id": "wedding-transitions-placeholder",
+        "cluster": "cluster-wedding-events"
+      },
+      {
+        "id": "audio-bed-library-placeholder",
+        "cluster": "cluster-wedding-events"
+      }
+    ]
+  },
+  "description": "Premium wedding & events templates extending a new wedding-events-vertical cluster — theme variants (rustic / modern / classic from T-527), composition templates (T-528), wedding-specific transitions + bumpers (T-529), and a pre-licensed audio bed library (T-530).",
+  "homepage": "https://stageflip.dev/packs/wedding-events",
+  "repository": "https://github.com/marioberlin/stageflip/tree/main/packages/pack-wedding-events",
+  "keywords": [
+    "wedding",
+    "events",
+    "lifecycle",
+    "audio",
+    "cluster-wedding-events",
+    "stageflip-first-party"
+  ]
+}

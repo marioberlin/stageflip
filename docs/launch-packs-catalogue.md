@@ -22,6 +22,7 @@ Updates land in the same PR as the task that materializes the change.
 | `sports-networks` | `stageflip` | `0.2.0` | `sports-networks-1y` | `paid-per-tenant` (commercial-subscription) | `cluster-b` | v0.2.0 GA — skeleton T-511; NBA Pro register T-512; NFL Pro register T-513; MLB register T-514; F1 Pro register + F1 AR Grid Lineup arOverlay integration T-515 (closes the pack). |
 | `creator-style` | `stageflip` | `0.2.0` | `creator-style-1y` | `paid-per-tenant` (commercial-subscription) | `cluster-f` | v0.2.0 GA — skeleton T-516; MKBHD Pro register T-517; Vox Deluxe register T-518; Linus Tech Tips Pro register T-519; prestige-creator cinematic title-card composition preset T-520 (closes the pack). |
 | `finance` | `stageflip` | `0.2.0` | `finance-1y` | `paid-per-tenant` (commercial-subscription) | `cluster-finance` | v0.2.0 GA — skeleton T-521; earnings-call template T-522; investor-deck template T-523; Bloomberg-pro adapter premium-tier contribution slot T-524; finance-domain semantic-tool bundle reservation T-525 (closes the pack). |
+| `wedding-events` | `stageflip` | `0.1.0` | `wedding-events-1y` | `paid-per-tenant` (commercial-subscription) | `cluster-wedding-events` | skeleton landed in T-526, filled T-527..T-530. |
 
 ## Schema notes
 
