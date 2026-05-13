@@ -1,5 +1,5 @@
 // packages/pack-wedding-events/scripts/build-pack.test.ts
-// T-527 — Drives `buildPack` against a temp-dir source layout using a
+// T-528 — Drives `buildPack` against a temp-dir source layout using a
 // freshly-generated Ed25519 keypair. Verifies (a) outputs land on disk,
 // (b) the integrity hash on the manifest matches SHA-256 over the
 // archive bytes WITHOUT the manifest, (c) the emitted manifest parses
@@ -8,10 +8,12 @@
 // (f) missing presets/ dir throws, and (g) the CLI default outDir
 // tracks `MANIFEST_SKELETON.version` (regression coverage for the T-510
 // hard-coded-version bug carried into the wedding-events skeleton).
-// T-527 grew the preset count from four to six (three substantive theme
-// variants — rustic / modern / classic — replacing the original
-// rustic-theme-placeholder, plus the three remaining placeholders for
-// T-528 / T-529 / T-530).
+// T-528 grew the preset count from six to seven (three substantive
+// theme variants — rustic / modern / classic — from T-527 plus two
+// substantive composition templates — wedding-ceremony-template +
+// wedding-reception-template — replacing the original
+// wedding-composition-templates-placeholder, plus the two remaining
+// placeholders for T-529 / T-530).
 
 import { createHash, generateKeyPairSync } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -59,8 +61,12 @@ function createFixture(opts?: { skipPresetsDir?: boolean; withDotFile?: boolean 
       '---\nid: classic-theme\n---\n# substantive\n',
     );
     writeFileSync(
-      join(presetsDir, 'wedding-composition-templates-placeholder.md'),
-      '---\nid: wedding-composition-templates-placeholder\n---\n# placeholder\n',
+      join(presetsDir, 'wedding-ceremony-template.md'),
+      '---\nid: wedding-ceremony-template\n---\n# substantive\n',
+    );
+    writeFileSync(
+      join(presetsDir, 'wedding-reception-template.md'),
+      '---\nid: wedding-reception-template\n---\n# substantive\n',
     );
     writeFileSync(
       join(presetsDir, 'wedding-transitions-placeholder.md'),
@@ -143,10 +149,12 @@ describe('buildPack', () => {
         content: readFileSync(join(fx.sourceDir, 'presets', 'rustic-theme.md')),
       },
       {
-        path: 'presets/wedding-composition-templates-placeholder.md',
-        content: readFileSync(
-          join(fx.sourceDir, 'presets', 'wedding-composition-templates-placeholder.md'),
-        ),
+        path: 'presets/wedding-ceremony-template.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'wedding-ceremony-template.md')),
+      },
+      {
+        path: 'presets/wedding-reception-template.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'wedding-reception-template.md')),
       },
       {
         path: 'presets/wedding-transitions-placeholder.md',
@@ -235,14 +243,14 @@ describe('buildPack', () => {
     });
   });
 
-  it('the manifest contributes exactly six cluster-wedding-events presets (T-527 — three substantive theme variants rustic / modern / classic + three placeholders for T-528 / T-529 / T-530)', () => {
+  it('the manifest contributes exactly seven cluster-wedding-events presets (T-528 — three substantive theme variants rustic / modern / classic + two substantive composition templates wedding-ceremony-template + wedding-reception-template + two placeholders for T-529 / T-530)', () => {
     const result = buildPack({
       sourceDir: fx.sourceDir,
       outDir: fx.outDir,
       privateKeyPem: fx.privateKeyPem,
     });
     const manifest = JSON.parse(readFileSync(result.manifestPath, 'utf-8'));
-    expect(manifest.contributes.presets).toHaveLength(6);
+    expect(manifest.contributes.presets).toHaveLength(7);
     for (const p of manifest.contributes.presets) {
       expect(p.cluster).toBe('cluster-wedding-events');
     }
@@ -260,7 +268,7 @@ describe('buildPack', () => {
   });
 });
 
-describe('build-pack CLI default outDir (T-527 — version-templated, per T-510 fix)', () => {
+describe('build-pack CLI default outDir (T-528 — version-templated, per T-510 fix)', () => {
   // The CLI's `isMainModule` branch is gated on `process.argv[1]` matching the
   // script path so the module under test runs as a library here, NOT as a CLI.
   // We assert the contract by checking the runtime literal: the default outDir

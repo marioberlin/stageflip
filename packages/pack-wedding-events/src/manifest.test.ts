@@ -1,12 +1,14 @@
 // packages/pack-wedding-events/src/manifest.test.ts
-// T-527 — Verifies `MANIFEST_SKELETON` is a structurally valid
+// T-528 — Verifies `MANIFEST_SKELETON` is a structurally valid
 // `PackManifest` under `parsePackManifest` (once a real integrity hash
 // is supplied), the license claim is the expected commercial tier,
-// the six preset contributions are present (three substantive theme
-// variants from T-527 — rustic / modern / classic — plus three
-// placeholders for T-528 composition templates + T-529 wedding
-// transitions + T-530 audio bed library), and keywords are lowercase.
-// Version is 0.1.0 (skeleton release; T-530 closes the pack at v0.2.0).
+// the seven preset contributions are present (three substantive theme
+// variants from T-527 — rustic / modern / classic — plus two
+// substantive composition templates from T-528 —
+// wedding-ceremony-template + wedding-reception-template — plus two
+// placeholders for T-529 wedding transitions + T-530 audio bed
+// library), and keywords are lowercase. Version is 0.1.0 (skeleton
+// release; T-530 closes the pack at v0.2.0).
 
 import { parsePackManifest } from '@stageflip/pack-format';
 import { describe, expect, it } from 'vitest';
@@ -34,14 +36,15 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('contributes exactly six cluster-wedding-events preset entries — three substantive theme variants from T-527 (rustic / modern / classic) + three placeholders for T-528 / T-529 / T-530', () => {
+  it('contributes exactly seven cluster-wedding-events preset entries — three substantive theme variants from T-527 (rustic / modern / classic) + two substantive composition templates from T-528 (wedding-ceremony-template + wedding-reception-template) + two placeholders for T-529 / T-530', () => {
     const presets = MANIFEST_SKELETON.contributes.presets ?? [];
-    expect(presets).toHaveLength(6);
+    expect(presets).toHaveLength(7);
     expect(presets.map((p) => p.id)).toEqual([
       'rustic-theme',
       'modern-theme',
       'classic-theme',
-      'wedding-composition-templates-placeholder',
+      'wedding-ceremony-template',
+      'wedding-reception-template',
       'wedding-transitions-placeholder',
       'audio-bed-library-placeholder',
     ]);
@@ -75,7 +78,7 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('id is lowercase kebab-case + version is 0.1.0 (T-527 lands theme variants without a version bump; T-530 closes the pack at v0.2.0)', () => {
+  it('id is lowercase kebab-case + version is 0.1.0 (T-528 lands composition templates without a version bump; T-530 closes the pack at v0.2.0)', () => {
     expect(MANIFEST_SKELETON.id).toBe('wedding-events');
     expect(MANIFEST_SKELETON.version).toBe('0.1.0');
   });

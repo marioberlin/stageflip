@@ -1,5 +1,5 @@
 // packages/pack-wedding-events/src/manifest.ts
-// T-527 — `Wedding & Events` pack manifest. Single source of truth for
+// T-528 — `Wedding & Events` pack manifest. Single source of truth for
 // the `@stageflip/pack-wedding-events` content package per ADR-012 §D2
 // (manifest schema) + ADR-013 §D3 (paid-per-tenant commercial-
 // subscription tier).
@@ -7,11 +7,14 @@
 // The skeleton ships with `integrity.hash` as 64 zeroes; the
 // orchestrator-run `scripts/build-pack.ts` rewrites the `integrity.hash`
 // to match SHA-256 over the synthesized archive bytes before signing.
-// Six preset contributions: three substantive theme variants from T-527
-// (rustic / modern / classic) + three placeholder slots reserved for
-// the remaining wedding-events-vertical content extensions (T-528
-// composition templates, T-529 wedding-specific transitions + bumpers,
-// T-530 pre-licensed audio bed library). All six entries declare the
+// Seven preset contributions: three substantive theme variants from
+// T-527 (rustic / modern / classic) + two substantive composition
+// templates from T-528 (wedding-ceremony-template +
+// wedding-reception-template, both binding cluster-D `titleSequence`
+// + cluster-A `lowerThird` via PRESET_ID_BINDINGS Pattern C) + two
+// placeholder slots reserved for the remaining wedding-events-vertical
+// content extensions (T-529 wedding-specific transitions + bumpers,
+// T-530 pre-licensed audio bed library). All seven entries declare the
 // `cluster-wedding-events` vertical-use-case cluster — `cluster` is a
 // free-form string in the manifest schema (`z.string().min(1)`), so
 // declaring a new vertical-use-case cluster is purely a content-side
@@ -71,13 +74,14 @@ export const MANIFEST_SKELETON: PackManifest = {
       { id: 'rustic-theme', cluster: 'cluster-wedding-events' },
       { id: 'modern-theme', cluster: 'cluster-wedding-events' },
       { id: 'classic-theme', cluster: 'cluster-wedding-events' },
-      { id: 'wedding-composition-templates-placeholder', cluster: 'cluster-wedding-events' },
+      { id: 'wedding-ceremony-template', cluster: 'cluster-wedding-events' },
+      { id: 'wedding-reception-template', cluster: 'cluster-wedding-events' },
       { id: 'wedding-transitions-placeholder', cluster: 'cluster-wedding-events' },
       { id: 'audio-bed-library-placeholder', cluster: 'cluster-wedding-events' },
     ],
   },
   description:
-    'Premium wedding & events templates extending a new wedding-events-vertical cluster — three substantive theme variants from T-527 (rustic / modern / classic, all wiring the T-183 LowerThird primitive), composition templates (T-528), wedding-specific transitions + bumpers (T-529), and a pre-licensed audio bed library (T-530).',
+    'Premium wedding & events templates extending a new wedding-events-vertical cluster — three substantive theme variants from T-527 (rustic / modern / classic, all wiring the T-183 LowerThird primitive), two substantive composition templates from T-528 (wedding-ceremony-template + wedding-reception-template, both binding cluster-D titleSequence + cluster-A lowerThird via PRESET_ID_BINDINGS Pattern C cross-cluster register reuse — same model T-520 / T-522 / T-523 established), wedding-specific transitions + bumpers (T-529), and a pre-licensed audio bed library (T-530).',
   homepage: 'https://stageflip.dev/packs/wedding-events',
   repository: 'https://github.com/marioberlin/stageflip/tree/main/packages/pack-wedding-events',
   keywords: [
