@@ -20,6 +20,11 @@ import {
 import { createFirebaseVerifier } from './auth/firebase.js';
 import { type AuthVariables, authMiddleware } from './auth/middleware.js';
 import { createPrincipalVerifier } from './auth/verify.js';
+import {
+  InMemoryTenantPackInventoryStore,
+  type TenantPackInventoryStore,
+  createAdminPackInventoryRoute,
+} from './routes/admin-pack-inventory.js';
 import { QuizStateManager } from './routes/audience-quiz-state.js';
 import { VoterRateLimiter } from './routes/audience-rate-limit.js';
 import { createAudienceSessionsRoute } from './routes/audience-sessions.js';
@@ -78,6 +83,15 @@ export interface ServerConfig {
    * presenter-side wiring lands.
    */
   resolveLiveQuizConfig?: (sessionId: string) => Promise<LiveQuizConfig | undefined>;
+  /**
+   * T-542 — concrete TenantPackInventoryStore powering the admin
+   * pack-inventory route (`GET /admin/tenants/:tenantId/packs`).
+   * Defaults to a process-local in-memory store; production deployments
+   * inject a Firestore-backed adapter (deferred to T-550). The route is
+   * read-only at v1 — mutation (revoke / force-uninstall) lands in a
+   * future task.
+   */
+  tenantPackInventoryStore?: TenantPackInventoryStore;
 }
 
 /**
@@ -139,6 +153,15 @@ export function createApp(config: ServerConfig): Hono<{ Variables: AuthVariables
       abuseTrackingStore,
     }),
   );
+
+  // T-542 — Admin pack-inventory surface (read-only). Sits behind the
+  // same Bearer-token auth as `/v1/*`; the route handler enforces the
+  // admin-role check inline. Default store is in-memory; production
+  // wiring (T-550) injects the Firestore-backed adapter.
+  const tenantPackInventoryStore =
+    config.tenantPackInventoryStore ?? new InMemoryTenantPackInventoryStore();
+  app.use('/admin/*', authMiddleware({ verify }));
+  app.route('/admin', createAdminPackInventoryRoute({ store: tenantPackInventoryStore }));
 
   return app;
 }
