@@ -15,7 +15,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@astrojs/starlight": "0.31.0",
+    "@astrojs/starlight": "0.39.2",
     "@stageflip/pack-format": "workspace:*",
     "astro": "5.1.5"
   },
