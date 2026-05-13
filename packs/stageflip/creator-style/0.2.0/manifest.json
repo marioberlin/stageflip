@@ -2,7 +2,7 @@
   "manifestVersion": "1",
   "id": "creator-style",
   "name": "Creator Style",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": {
     "id": "stageflip",
     "displayName": "StageFlip"
@@ -15,7 +15,7 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "hash": "97732abe9f9f8b8d3a8e19c19ec038644f1ac046978795ac1df3f8b865076059"
+    "hash": "562b242a2d4526c93fde7d5abb8bbca5a14832e96d7a8b70f823793edd387eb5"
   },
   "contributes": {
     "presets": [
@@ -32,18 +32,20 @@
         "cluster": "cluster-f"
       },
       {
-        "id": "prestige-creator-placeholder",
+        "id": "prestige-creator",
         "cluster": "cluster-f"
       }
     ]
   },
-  "description": "Premium creator-economy templates extending Cluster F — substantive MKBHD-pro register (T-517) + Vox-deluxe register (T-518) + Linus-Tech-Tips-pro register (T-519) plus the prestige-creator composition preset placeholder (filled in T-520).",
+  "description": "Premium creator-economy templates extending Cluster F — substantive MKBHD-pro register (T-517) + Vox-deluxe register (T-518) + Linus-Tech-Tips-pro register (T-519) lower-thirds plus the prestige-creator cinematic title-card composition preset (T-520; bespoke GT Sectra proprietary + Cormorant Garamond OFL fallback; deep-black editorial-magazine canon — Vanity Fair / The Atlantic / Apple TV+ documentary title-card register).",
   "homepage": "https://stageflip.dev/packs/creator-style",
   "repository": "https://github.com/marioberlin/stageflip/tree/main/packages/pack-creator-style",
   "keywords": [
     "creator",
     "youtube",
     "creator-economy",
+    "prestige",
+    "cinematic",
     "cluster-f",
     "stageflip-first-party"
   ]

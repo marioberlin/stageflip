@@ -1,12 +1,13 @@
 // packages/pack-creator-style/src/manifest.test.ts
-// T-516 / T-517 / T-518 / T-519 — Verifies `MANIFEST_SKELETON` is a
-// structurally valid `PackManifest` under `parsePackManifest` (once a
-// real integrity hash is supplied), the license claim is the expected
-// commercial tier, the four cluster-F preset contributions are present
-// (T-517 MKBHD-pro substantive + T-518 Vox-deluxe substantive +
-// T-519 Linus-Tech-Tips-pro substantive + T-520 prestige-creator
-// placeholder composition preset), and keywords are lowercase. Version
-// is 0.1.0 (skeleton release; T-520 closes the pack to GA).
+// T-516 / T-517 / T-518 / T-519 / T-520 — Verifies `MANIFEST_SKELETON`
+// is a structurally valid `PackManifest` under `parsePackManifest`
+// (once a real integrity hash is supplied), the license claim is the
+// expected commercial tier, the four cluster-F preset contributions
+// are present (all substantive post-T-520: three register lower-thirds
+// T-517/T-518/T-519 plus the closing prestige-creator cinematic title-
+// card composition preset T-520), and keywords are lowercase. Version
+// is bumped to 0.2.0 by T-520 (minor; additive feature — prestige-
+// creator preset closes the pack).
 
 import { parsePackManifest } from '@stageflip/pack-format';
 import { describe, expect, it } from 'vitest';
@@ -34,14 +35,14 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('contributes exactly four cluster-f preset entries — T-517 MKBHD-pro + T-518 Vox-deluxe + T-519 Linus-Tech-Tips-pro substantive registers + one placeholder (T-520 prestige-creator composition preset)', () => {
+  it('contributes exactly four cluster-f preset entries — three substantive register lower-thirds (T-517 MKBHD-pro + T-518 Vox-deluxe + T-519 Linus-Tech-Tips-pro) plus the closing T-520 prestige-creator cinematic title-card composition preset (all substantive; no placeholders remain)', () => {
     const presets = MANIFEST_SKELETON.contributes.presets ?? [];
     expect(presets).toHaveLength(4);
     expect(presets.map((p) => p.id)).toEqual([
       'mkbhd-pro-register',
       'vox-deluxe-register',
       'linus-tech-tips-pro-register',
-      'prestige-creator-placeholder',
+      'prestige-creator',
     ]);
     for (const p of presets) {
       expect(p.cluster).toBe('cluster-f');
@@ -63,9 +64,9 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('id is lowercase kebab-case + version is 0.1.0 (skeleton release; T-517..T-519 substantive fills; T-520 closes the pack to GA)', () => {
+  it('id is lowercase kebab-case + version is 0.2.0 (T-520 minor bump for the additive prestige-creator preset; closes the Creator Style pack to GA)', () => {
     expect(MANIFEST_SKELETON.id).toBe('creator-style');
-    expect(MANIFEST_SKELETON.version).toBe('0.1.0');
+    expect(MANIFEST_SKELETON.version).toBe('0.2.0');
   });
 });
 

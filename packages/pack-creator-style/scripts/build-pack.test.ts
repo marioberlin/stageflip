@@ -55,8 +55,8 @@ function createFixture(opts?: { skipPresetsDir?: boolean; withDotFile?: boolean 
       '---\nid: linus-tech-tips-pro-register-placeholder\n---\n# placeholder\n',
     );
     writeFileSync(
-      join(presetsDir, 'prestige-creator-placeholder.md'),
-      '---\nid: prestige-creator-placeholder\n---\n# placeholder\n',
+      join(presetsDir, 'prestige-creator.md'),
+      '---\nid: prestige-creator\n---\n# placeholder\n',
     );
     writeFileSync(join(sourceDir, 'LICENSE.md'), '# LICENSE placeholder\n');
     writeFileSync(join(sourceDir, 'NOTICE.md'), '# NOTICE placeholder\n');
@@ -125,8 +125,8 @@ describe('buildPack', () => {
         content: readFileSync(join(fx.sourceDir, 'presets', 'mkbhd-pro-register-placeholder.md')),
       },
       {
-        path: 'presets/prestige-creator-placeholder.md',
-        content: readFileSync(join(fx.sourceDir, 'presets', 'prestige-creator-placeholder.md')),
+        path: 'presets/prestige-creator.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'prestige-creator.md')),
       },
       {
         path: 'presets/vox-deluxe-register-placeholder.md',
@@ -215,7 +215,7 @@ describe('buildPack', () => {
     });
   });
 
-  it('the manifest contributes exactly four cluster-f placeholder presets (T-516 — MKBHD-pro / Vox-deluxe / Linus-Tech-Tips-pro register slots reserved for T-517..T-519 plus the prestige-creator preset reserved for T-520)', () => {
+  it('the manifest contributes exactly four substantive cluster-f presets (T-517 MKBHD-pro + T-518 Vox-deluxe + T-519 Linus-Tech-Tips-pro register lower-thirds + T-520 prestige-creator closing cinematic title-card composition preset)', () => {
     const result = buildPack({
       sourceDir: fx.sourceDir,
       outDir: fx.outDir,
@@ -228,33 +228,33 @@ describe('buildPack', () => {
     }
   });
 
-  it('the manifest declares version 0.1.0 (skeleton release)', () => {
+  it('the manifest declares version 0.2.0 (T-520 minor bump for the additive prestige-creator preset; closes the Creator Style pack to GA)', () => {
     const result = buildPack({
       sourceDir: fx.sourceDir,
       outDir: fx.outDir,
       privateKeyPem: fx.privateKeyPem,
     });
     const manifest = JSON.parse(readFileSync(result.manifestPath, 'utf-8'));
-    expect(manifest.version).toBe('0.1.0');
+    expect(manifest.version).toBe('0.2.0');
     expect(manifest.version).toBe(MANIFEST_SKELETON.version);
   });
 });
 
-describe('build-pack CLI default outDir (T-516 — version-templated, per T-510 fix)', () => {
+describe('build-pack CLI default outDir (T-516 — version-templated, per T-510 fix; T-520 — verified at v0.2.0)', () => {
   // The CLI's `isMainModule` branch is gated on `process.argv[1]` matching the
   // script path so the module under test runs as a library here, NOT as a CLI.
   // We assert the contract by checking the runtime literal: the default outDir
   // expression in the CLI is `resolve(packageRoot, ../../packs/stageflip/creator-style/${MANIFEST_SKELETON.version})`.
   // Verifying that MANIFEST_SKELETON.version reaches the expected value AND
-  // the CLI's source contains the templated path (NOT a hard-coded `0.1.0`)
-  // is a sufficient regression for the bug T-510 fixed in news-pro and that
-  // we carry forward into this skeleton.
+  // the CLI's source contains the templated path (NOT a hard-coded version
+  // literal) is a sufficient regression for the bug T-510 fixed in news-pro
+  // and that we carry forward into this skeleton.
 
-  it('MANIFEST_SKELETON.version is 0.1.0 — the value the CLI default outDir interpolates', () => {
-    expect(MANIFEST_SKELETON.version).toBe('0.1.0');
+  it('MANIFEST_SKELETON.version is 0.2.0 — the value the CLI default outDir interpolates after T-520 closes the pack', () => {
+    expect(MANIFEST_SKELETON.version).toBe('0.2.0');
   });
 
-  it('build-pack.ts CLI source uses ${MANIFEST_SKELETON.version} (NOT a hard-coded 0.1.0 literal) in the default outDir expression', () => {
+  it('build-pack.ts CLI source uses ${MANIFEST_SKELETON.version} (NOT a hard-coded version literal) in the default outDir expression', () => {
     const here = dirname(fileURLToPath(import.meta.url));
     const cliSource = readFileSync(resolve(here, 'build-pack.ts'), 'utf-8');
     // Positive: the templated form is present.
@@ -264,6 +264,8 @@ describe('build-pack CLI default outDir (T-516 — version-templated, per T-510 
     // Negative: no hard-coded version literal remains in the default outDir.
     expect(cliSource).not.toContain("'../../packs/stageflip/creator-style/0.1.0'");
     expect(cliSource).not.toContain('"../../packs/stageflip/creator-style/0.1.0"');
+    expect(cliSource).not.toContain("'../../packs/stageflip/creator-style/0.2.0'");
+    expect(cliSource).not.toContain('"../../packs/stageflip/creator-style/0.2.0"');
   });
 
   it('package-relative default outDir resolves under packs/stageflip/creator-style/<manifest-version>/', () => {
@@ -276,7 +278,7 @@ describe('build-pack CLI default outDir (T-516 — version-templated, per T-510 
     expect(expected.endsWith(`/packs/stageflip/creator-style/${MANIFEST_SKELETON.version}`)).toBe(
       true,
     );
-    expect(expected).toContain('/packs/stageflip/creator-style/0.1.0');
+    expect(expected).toContain('/packs/stageflip/creator-style/0.2.0');
   });
 });
 

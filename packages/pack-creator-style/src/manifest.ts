@@ -1,18 +1,19 @@
 // packages/pack-creator-style/src/manifest.ts
-// T-516 — `Creator Style` pack manifest skeleton. Single source of
-// truth for the `@stageflip/pack-creator-style` content package per
-// ADR-012 §D2 (manifest schema) + ADR-013 §D3 (paid-per-tenant
-// commercial-subscription tier).
+// T-516 — `Creator Style` pack manifest. Single source of truth for
+// the `@stageflip/pack-creator-style` content package per ADR-012 §D2
+// (manifest schema) + ADR-013 §D3 (paid-per-tenant commercial-
+// subscription tier).
 //
 // The skeleton ships with `integrity.hash` as 64 zeroes; the
 // orchestrator-run `scripts/build-pack.ts` rewrites the `integrity.hash`
 // to match SHA-256 over the synthesized archive bytes before signing.
-// Four cluster-F preset contributions: the MKBHD-pro register (T-517,
-// substantive) + Vox-deluxe register (T-518, substantive) + LTT-pro
-// register (T-519, substantive) plus a final placeholder reserved for
-// the prestige-creator composition preset (T-520). The skeleton is
-// buildable + signable end-to-end so the pack-integrity gate exercises
-// the real pipeline from day one.
+// Four substantive cluster-F preset contributions cover the
+// Creator Style pack v0.2.0 contributions: three register lower-thirds
+// (MKBHD-pro T-517, Vox-deluxe T-518, Linus-Tech-Tips-pro T-519) plus
+// the closing prestige-creator composition preset (T-520) — a
+// cinematic title-card register binding the Cluster D `titleSequence`
+// primitive cross-cluster from Cluster F. All slots are substantive;
+// no placeholders remain.
 //
 // Determinism perimeter: `@stageflip/pack-creator-style` lives
 // OUTSIDE per CLAUDE.md §3 — content packages are NOT in the
@@ -36,7 +37,7 @@ export const MANIFEST_SKELETON: PackManifest = {
   manifestVersion: '1',
   id: 'creator-style',
   name: 'Creator Style',
-  version: '0.1.0',
+  version: '0.2.0',
   publisher: {
     id: 'stageflip',
     displayName: 'StageFlip',
@@ -56,14 +57,22 @@ export const MANIFEST_SKELETON: PackManifest = {
       { id: 'mkbhd-pro-register', cluster: 'cluster-f' },
       { id: 'vox-deluxe-register', cluster: 'cluster-f' },
       { id: 'linus-tech-tips-pro-register', cluster: 'cluster-f' },
-      { id: 'prestige-creator-placeholder', cluster: 'cluster-f' },
+      { id: 'prestige-creator', cluster: 'cluster-f' },
     ],
   },
   description:
-    'Premium creator-economy templates extending Cluster F — substantive MKBHD-pro register (T-517) + Vox-deluxe register (T-518) + Linus-Tech-Tips-pro register (T-519) plus the prestige-creator composition preset placeholder (filled in T-520).',
+    'Premium creator-economy templates extending Cluster F — substantive MKBHD-pro register (T-517) + Vox-deluxe register (T-518) + Linus-Tech-Tips-pro register (T-519) lower-thirds plus the prestige-creator cinematic title-card composition preset (T-520; bespoke GT Sectra proprietary + Cormorant Garamond OFL fallback; deep-black editorial-magazine canon — Vanity Fair / The Atlantic / Apple TV+ documentary title-card register).',
   homepage: 'https://stageflip.dev/packs/creator-style',
   repository: 'https://github.com/marioberlin/stageflip/tree/main/packages/pack-creator-style',
-  keywords: ['creator', 'youtube', 'creator-economy', 'cluster-f', 'stageflip-first-party'],
+  keywords: [
+    'creator',
+    'youtube',
+    'creator-economy',
+    'prestige',
+    'cinematic',
+    'cluster-f',
+    'stageflip-first-party',
+  ],
 };
 
 /**
