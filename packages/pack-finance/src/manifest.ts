@@ -67,7 +67,7 @@ export const MANIFEST_SKELETON: PackManifest = {
   contributes: {
     presets: [
       { id: 'earnings-call-template', cluster: 'cluster-finance' },
-      { id: 'investor-deck-template-placeholder', cluster: 'cluster-finance' },
+      { id: 'investor-deck-template', cluster: 'cluster-finance' },
       { id: 'bloomberg-pro-adapter-placeholder', cluster: 'cluster-finance' },
       { id: 'finance-semantic-tools-placeholder', cluster: 'cluster-finance' },
     ],
