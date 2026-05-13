@@ -33,11 +33,15 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('contributes exactly four cluster-i placeholder preset entries — premium shaders (T-532) + 3D asset library (T-533) + ReactionStream physics (T-534) + premium TitleSequence templates (T-535)', () => {
+  it('contributes 8 cluster-i preset entries — 5 substantive shaders (T-532) + 3 remaining placeholders (T-533/T-534/T-535)', () => {
     const presets = MANIFEST_SKELETON.contributes.presets ?? [];
-    expect(presets).toHaveLength(4);
+    expect(presets).toHaveLength(8);
     expect(presets.map((p) => p.id)).toEqual([
-      'premium-shaders-placeholder',
+      'shader-aurora-borealis',
+      'shader-cosmic-nebula',
+      'shader-liquid-metal',
+      'shader-fire-portal',
+      'shader-data-stream',
       '3d-asset-library-placeholder',
       'reactionstream-physics-placeholder',
       'titlesequence-premium-placeholder',

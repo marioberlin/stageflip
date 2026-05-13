@@ -74,7 +74,11 @@ export const MANIFEST_SKELETON: PackManifest = {
   },
   contributes: {
     presets: [
-      { id: 'premium-shaders-placeholder', cluster: 'cluster-i' },
+      { id: 'shader-aurora-borealis', cluster: 'cluster-i' },
+      { id: 'shader-cosmic-nebula', cluster: 'cluster-i' },
+      { id: 'shader-liquid-metal', cluster: 'cluster-i' },
+      { id: 'shader-fire-portal', cluster: 'cluster-i' },
+      { id: 'shader-data-stream', cluster: 'cluster-i' },
       { id: '3d-asset-library-placeholder', cluster: 'cluster-i' },
       { id: 'reactionstream-physics-placeholder', cluster: 'cluster-i' },
       { id: 'titlesequence-premium-placeholder', cluster: 'cluster-i' },

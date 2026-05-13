@@ -15,12 +15,28 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "hash": "63d66b23164211877286d5f2ad12570ee72c9f890ca8340f7f19fa8b3db0873f"
+    "hash": "bf80997c7bd669241ed7a26ee62eecc2540191e169b4804f3a271cedd69b1a8d"
   },
   "contributes": {
     "presets": [
       {
-        "id": "premium-shaders-placeholder",
+        "id": "shader-aurora-borealis",
+        "cluster": "cluster-i"
+      },
+      {
+        "id": "shader-cosmic-nebula",
+        "cluster": "cluster-i"
+      },
+      {
+        "id": "shader-liquid-metal",
+        "cluster": "cluster-i"
+      },
+      {
+        "id": "shader-fire-portal",
+        "cluster": "cluster-i"
+      },
+      {
+        "id": "shader-data-stream",
         "cluster": "cluster-i"
       },
       {
