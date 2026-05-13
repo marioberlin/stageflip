@@ -1,0 +1,31 @@
+{
+  "name": "@stageflip/pack-creator-style",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "src", "packs", "keys"],
+  "scripts": {
+    "build": "tsup src/index.ts --dts --format esm --clean",
+    "build:pack": "tsx scripts/build-pack.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src scripts",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@stageflip/pack-format": "workspace:*",
+    "@stageflip/pack-signing": "workspace:*"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "2.1.9",
+    "tsx": "4.21.0",
+    "vitest": "2.1.9"
+  }
+}
