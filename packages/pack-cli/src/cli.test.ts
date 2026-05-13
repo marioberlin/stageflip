@@ -94,4 +94,18 @@ describe('runCli — dispatcher', () => {
     expect(exit).toBe(0);
     expect(deps.logger.joined()).toContain('removed');
   });
+
+  it('routes `upgrade` to runUpgrade', async () => {
+    await writePack(root, { publisher: 'pub-1', id: 'pack-a', version: '1.0.0' });
+    const deps = makeCliDeps(root);
+    const exit = await runCli(['upgrade', '--target', '2.5.0'], deps);
+    expect(exit).toBe(0);
+    expect(deps.logger.joined()).toContain('Target engine: 2.5.0');
+  });
+
+  it('includes `upgrade` in the help banner', async () => {
+    const deps = makeCliDeps(root);
+    await runCli(['--help'], deps);
+    expect(deps.logger.joined()).toContain('upgrade');
+  });
 });

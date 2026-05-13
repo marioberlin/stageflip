@@ -15,6 +15,7 @@ import { runInfo } from './commands/info.js';
 import { runInstall } from './commands/install.js';
 import { runList } from './commands/list.js';
 import { runRemove } from './commands/remove.js';
+import { runUpgrade } from './commands/upgrade.js';
 import { runVerify } from './commands/verify.js';
 import type { CliDependencies } from './deps.js';
 
@@ -26,6 +27,7 @@ USAGE
   stageflip-pack verify [<pack-id>[@<version>]]
   stageflip-pack install <path-to-pack-tar>
   stageflip-pack remove <pack-id>[@<version>] [--yes]
+  stageflip-pack upgrade --target <version>
   stageflip-pack --help
 
 SUBCOMMANDS
@@ -37,6 +39,9 @@ SUBCOMMANDS
             manually into <root>/<publisher>/<id>/<version>/ for now.
   remove    Delete the install directory for one pack. Confirms via stdin
             unless --yes / -y.
+  upgrade   Plan an engine-version upgrade. Walks installed packs and
+            reports per-pack status against --target. Exit 1 if any pack
+            is not compatible.
 
 EXIT CODES
   0   success
@@ -67,6 +72,8 @@ export async function runCli(argv: readonly string[], deps: CliDependencies): Pr
       return runInstall(rest, deps);
     case 'remove':
       return runRemove(rest, deps);
+    case 'upgrade':
+      return runUpgrade(rest, deps);
     default:
       deps.logger.error(`stageflip-pack: unknown subcommand: ${sub}`);
       deps.logger.error(HELP_TEXT);
