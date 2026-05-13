@@ -8,9 +8,9 @@
 // orchestrator-run `scripts/build-pack.ts` rewrites the `integrity.hash`
 // to match SHA-256 over the synthesized archive bytes before signing.
 // Four cluster-F preset contributions: the MKBHD-pro register (T-517,
-// substantive) + Vox-deluxe register (T-518, substantive) plus two
-// placeholders reserved for Linus-Tech-Tips-pro (T-519) and the
-// prestige-creator composition preset (T-520). The skeleton is
+// substantive) + Vox-deluxe register (T-518, substantive) + LTT-pro
+// register (T-519, substantive) plus a final placeholder reserved for
+// the prestige-creator composition preset (T-520). The skeleton is
 // buildable + signable end-to-end so the pack-integrity gate exercises
 // the real pipeline from day one.
 //
@@ -55,12 +55,12 @@ export const MANIFEST_SKELETON: PackManifest = {
     presets: [
       { id: 'mkbhd-pro-register', cluster: 'cluster-f' },
       { id: 'vox-deluxe-register', cluster: 'cluster-f' },
-      { id: 'linus-tech-tips-pro-register-placeholder', cluster: 'cluster-f' },
+      { id: 'linus-tech-tips-pro-register', cluster: 'cluster-f' },
       { id: 'prestige-creator-placeholder', cluster: 'cluster-f' },
     ],
   },
   description:
-    'Premium creator-economy templates extending Cluster F — substantive MKBHD-pro register (T-517) + Vox-deluxe register (T-518) plus register variants for Linus-Tech-Tips-pro and the prestige-creator composition preset (filled in T-519..T-520).',
+    'Premium creator-economy templates extending Cluster F — substantive MKBHD-pro register (T-517) + Vox-deluxe register (T-518) + Linus-Tech-Tips-pro register (T-519) plus the prestige-creator composition preset placeholder (filled in T-520).',
   homepage: 'https://stageflip.dev/packs/creator-style',
   repository: 'https://github.com/marioberlin/stageflip/tree/main/packages/pack-creator-style',
   keywords: ['creator', 'youtube', 'creator-economy', 'cluster-f', 'stageflip-first-party'],
