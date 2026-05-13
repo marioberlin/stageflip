@@ -20,6 +20,7 @@ Updates land in the same PR as the task that materializes the change.
 |---|---|---|---|---|---|---|
 | `news-pro` | `stageflip` | `0.2.0` | `news-pro-1y` | `paid-per-tenant` (commercial-subscription) | `cluster-a` | v0.2.0 GA — skeleton T-506; Sky News T-507; ITV T-508; RAI T-509; premium news-ticker T-510 (closes the pack). |
 | `sports-networks` | `stageflip` | `0.2.0` | `sports-networks-1y` | `paid-per-tenant` (commercial-subscription) | `cluster-b` | v0.2.0 GA — skeleton T-511; NBA Pro register T-512; NFL Pro register T-513; MLB register T-514; F1 Pro register + F1 AR Grid Lineup arOverlay integration T-515 (closes the pack). |
+| `creator-style` | `stageflip` | `0.1.0` | `creator-style-1y` | `paid-per-tenant` (commercial-subscription) | `cluster-f` | skeleton landed in T-516, registers fill T-517..T-519, prestige-creator preset T-520. |
 
 ## Schema notes
 

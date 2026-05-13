@@ -1,0 +1,50 @@
+{
+  "manifestVersion": "1",
+  "id": "creator-style",
+  "name": "Creator Style",
+  "version": "0.1.0",
+  "publisher": {
+    "id": "stageflip",
+    "displayName": "StageFlip"
+  },
+  "platformCompatibility": "^2.0.0",
+  "license": {
+    "kind": "paid-per-tenant",
+    "sku": "creator-style-1y",
+    "entitlementType": "subscription"
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "hash": "2bf354ee170510a5d75ea19b0c83d316969d284bcd8fabfb142e88a1832919f2"
+  },
+  "contributes": {
+    "presets": [
+      {
+        "id": "mkbhd-pro-register-placeholder",
+        "cluster": "cluster-f"
+      },
+      {
+        "id": "vox-deluxe-register-placeholder",
+        "cluster": "cluster-f"
+      },
+      {
+        "id": "linus-tech-tips-pro-register-placeholder",
+        "cluster": "cluster-f"
+      },
+      {
+        "id": "prestige-creator-placeholder",
+        "cluster": "cluster-f"
+      }
+    ]
+  },
+  "description": "Premium creator-economy templates extending Cluster F — register variants for MKBHD-pro, Vox-deluxe, Linus-Tech-Tips-pro plus the prestige-creator composition preset (filled in T-517..T-520).",
+  "homepage": "https://stageflip.dev/packs/creator-style",
+  "repository": "https://github.com/marioberlin/stageflip/tree/main/packages/pack-creator-style",
+  "keywords": [
+    "creator",
+    "youtube",
+    "creator-economy",
+    "cluster-f",
+    "stageflip-first-party"
+  ]
+}
