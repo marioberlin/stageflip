@@ -43,8 +43,24 @@ function createFixture(opts?: { skipPresetsDir?: boolean; withDotFile?: boolean 
     const presetsDir = join(sourceDir, 'presets');
     mkdirSync(presetsDir, { recursive: true });
     writeFileSync(
-      join(presetsDir, 'premium-shaders-placeholder.md'),
-      '---\nid: premium-shaders-placeholder\n---\n# placeholder\n',
+      join(presetsDir, 'shader-aurora-borealis.md'),
+      '---\nid: shader-aurora-borealis\n---\n# substantive\n',
+    );
+    writeFileSync(
+      join(presetsDir, 'shader-cosmic-nebula.md'),
+      '---\nid: shader-cosmic-nebula\n---\n# substantive\n',
+    );
+    writeFileSync(
+      join(presetsDir, 'shader-liquid-metal.md'),
+      '---\nid: shader-liquid-metal\n---\n# substantive\n',
+    );
+    writeFileSync(
+      join(presetsDir, 'shader-fire-portal.md'),
+      '---\nid: shader-fire-portal\n---\n# substantive\n',
+    );
+    writeFileSync(
+      join(presetsDir, 'shader-data-stream.md'),
+      '---\nid: shader-data-stream\n---\n# substantive\n',
     );
     writeFileSync(
       join(presetsDir, '3d-asset-library-placeholder.md'),
@@ -119,14 +135,30 @@ describe('buildPack', () => {
         content: readFileSync(join(fx.sourceDir, 'presets', '3d-asset-library-placeholder.md')),
       },
       {
-        path: 'presets/premium-shaders-placeholder.md',
-        content: readFileSync(join(fx.sourceDir, 'presets', 'premium-shaders-placeholder.md')),
-      },
-      {
         path: 'presets/reactionstream-physics-placeholder.md',
         content: readFileSync(
           join(fx.sourceDir, 'presets', 'reactionstream-physics-placeholder.md'),
         ),
+      },
+      {
+        path: 'presets/shader-aurora-borealis.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'shader-aurora-borealis.md')),
+      },
+      {
+        path: 'presets/shader-cosmic-nebula.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'shader-cosmic-nebula.md')),
+      },
+      {
+        path: 'presets/shader-data-stream.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'shader-data-stream.md')),
+      },
+      {
+        path: 'presets/shader-fire-portal.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'shader-fire-portal.md')),
+      },
+      {
+        path: 'presets/shader-liquid-metal.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'shader-liquid-metal.md')),
       },
       {
         path: 'presets/titlesequence-premium-placeholder.md',
@@ -224,7 +256,7 @@ describe('buildPack', () => {
       privateKeyPem: fx.privateKeyPem,
     });
     const manifest = JSON.parse(readFileSync(result.manifestPath, 'utf-8'));
-    expect(manifest.contributes.presets).toHaveLength(4);
+    expect(manifest.contributes.presets).toHaveLength(8);
     for (const p of manifest.contributes.presets) {
       expect(p.cluster).toBe('cluster-i');
     }
