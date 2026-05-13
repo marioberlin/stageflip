@@ -1,14 +1,15 @@
 // packages/pack-frontier-fx/src/manifest.test.ts
-// T-531 / T-532 / T-533 / T-534 — Verifies `MANIFEST_SKELETON` is a
-// structurally valid `PackManifest` under `parsePackManifest` (once a
-// real integrity hash is supplied), the license claim is the expected
-// commercial tier, the twelve preset contributions are present (five
-// substantive shaders from T-532 + the substantive 3D asset library
-// from T-533 + five substantive ReactionStream physics presets from
-// T-534 + one remaining placeholder for T-535 premium TitleSequence
-// templates), the assets array reserves eight pre-licensed 3D asset
-// references (T-533), and keywords are lowercase. Version remains
-// 0.1.0 (T-535 carries the GA bump that closes the pack at v0.2.0).
+// T-531 / T-532 / T-533 / T-534 / T-535 — Verifies `MANIFEST_SKELETON`
+// is a structurally valid `PackManifest` under `parsePackManifest`
+// (once a real integrity hash is supplied), the license claim is the
+// expected commercial tier, the sixteen substantive preset
+// contributions are present (five shaders from T-532 + the 3D asset
+// library from T-533 + five ReactionStream physics presets from T-534
+// + five TitleSequence templates from T-535), the assets array reserves
+// eight pre-licensed 3D asset references (T-533), and keywords are
+// lowercase. **Version is 0.2.0 — T-535 carries the v0.2.0 GA bump
+// that closes the Frontier Effects launch pack AND closes P16 γ
+// entirely.**
 
 import { parsePackManifest } from '@stageflip/pack-format';
 import { describe, expect, it } from 'vitest';
@@ -47,9 +48,9 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('contributes 12 cluster-i preset entries — 5 substantive shaders (T-532) + substantive 3D asset library (T-533) + 5 substantive ReactionStream physics presets (T-534) + 1 remaining placeholder (T-535)', () => {
+  it('contributes 16 cluster-i preset entries — 5 substantive shaders (T-532) + substantive 3D asset library (T-533) + 5 substantive ReactionStream physics presets (T-534) + 5 substantive TitleSequence templates (T-535)', () => {
     const presets = MANIFEST_SKELETON.contributes.presets ?? [];
-    expect(presets).toHaveLength(12);
+    expect(presets).toHaveLength(16);
     expect(presets.map((p) => p.id)).toEqual([
       'shader-aurora-borealis',
       'shader-cosmic-nebula',
@@ -62,7 +63,11 @@ describe('MANIFEST_SKELETON', () => {
       'reaction-vortex-swirl',
       'reaction-bubble-rise',
       'reaction-magnetic-orbit',
-      'titlesequence-premium-placeholder',
+      'titlesequence-noir-cinema',
+      'titlesequence-scifi-glow',
+      'titlesequence-action-bold',
+      'titlesequence-doc-minimal',
+      'titlesequence-trailer-cinematic',
     ]);
     for (const p of presets) {
       expect(p.cluster).toBe('cluster-i');
@@ -96,7 +101,7 @@ describe('MANIFEST_SKELETON', () => {
     }
   });
 
-  it('keywords include the cluster-i discriminant + the stageflip-first-party tag', () => {
+  it('keywords include the cluster-i discriminant + the stageflip-first-party tag + the T-535 cinematic / title-sequence tokens', () => {
     const keywords = MANIFEST_SKELETON.keywords ?? [];
     expect(keywords).toContain('cluster-i');
     expect(keywords).toContain('stageflip-first-party');
@@ -105,6 +110,8 @@ describe('MANIFEST_SKELETON', () => {
     expect(keywords).toContain('3d');
     expect(keywords).toContain('particles');
     expect(keywords).toContain('effects');
+    expect(keywords).toContain('cinematic');
+    expect(keywords).toContain('title-sequence');
   });
 
   it('publisher is the first-party StageFlip identity', () => {
@@ -114,9 +121,9 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('id is lowercase kebab-case + version remains 0.1.0 (T-534 — T-535 carries the GA bump that closes the pack at v0.2.0)', () => {
+  it('id is lowercase kebab-case + version is 0.2.0 (T-535 carries the v0.2.0 GA bump that closes the Frontier Effects launch pack AND closes P16 γ entirely)', () => {
     expect(MANIFEST_SKELETON.id).toBe('frontier-fx');
-    expect(MANIFEST_SKELETON.version).toBe('0.1.0');
+    expect(MANIFEST_SKELETON.version).toBe('0.2.0');
   });
 
   it('name is the human-readable Frontier Effects label (NOT the kebab-case id)', () => {

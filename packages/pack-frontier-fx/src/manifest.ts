@@ -1,5 +1,5 @@
 // packages/pack-frontier-fx/src/manifest.ts
-// T-531 / T-532 / T-533 / T-534 — `Frontier Effects` pack manifest.
+// T-531 / T-532 / T-533 / T-534 / T-535 — `Frontier Effects` pack manifest.
 // Single source of truth for the `@stageflip/pack-frontier-fx` content
 // package per ADR-012 §D2 (manifest schema) + ADR-013 §D3
 // (paid-per-tenant commercial-subscription tier).
@@ -7,32 +7,36 @@
 // The manifest ships with `integrity.hash` as 64 zeroes; the
 // orchestrator-run `scripts/build-pack.ts` rewrites the `integrity.hash`
 // to match SHA-256 over the synthesized archive bytes before signing.
-// Eleven of twelve preset contributions are now substantive — five
-// premium shader presets from T-532 (shader-aurora-borealis /
+// All sixteen preset contributions are now substantive — five premium
+// shader presets from T-532 (shader-aurora-borealis /
 // shader-cosmic-nebula / shader-liquid-metal / shader-fire-portal /
 // shader-data-stream binding the existing T-383 `ShaderClip`
 // primitive), the pre-licensed commercial-OK 3D asset library from
-// T-533 (`3d-asset-library`), and five premium ReactionStream particle
+// T-533 (`3d-asset-library`), five premium ReactionStream particle
 // physics presets from T-534 (reaction-fireworks-burst /
 // reaction-snow-fall / reaction-vortex-swirl / reaction-bubble-rise /
 // reaction-magnetic-orbit binding the existing T-470 `reaction-stream`
-// clip primitive). T-533 additionally seeds the manifest's
-// `contributes.assets` array with the eight pre-licensed 3D asset
-// references per ADR-012 §D5 — the actual .glb bytes are NOT shipped in
-// the pack archive (per-tenant external delivery due to commercial-3D-
-// asset licensing terms), documented as a Trade-off in the preset
-// markdown. One placeholder slot remains (T-535 premium TitleSequence
-// templates). All twelve preset entries declare the existing
-// `cluster-i` Live Audience cluster — frontier-effects builds on top
-// of cluster-i's frontier-runtime work from P15 + the Track A
-// frontier-runtime work. `cluster-i` is already in use by
-// frontier-runtime preset contributions; declaring presets against it
-// is purely a content-side metadata operation that does NOT introduce
-// a new clipKind in clip code and does NOT require allowlist updates
-// to `check-skill-drift` (which walks
-// `skills/stageflip/presets/<cluster>/` directories, not pack
-// manifests). T-534 does NOT bump the pack version — T-535 carries the
-// v0.2.0 GA bump that closes the Frontier Effects launch pack.
+// clip primitive), and FIVE premium TitleSequence templates from T-535
+// (titlesequence-noir-cinema / titlesequence-scifi-glow /
+// titlesequence-action-bold / titlesequence-doc-minimal /
+// titlesequence-trailer-cinematic — cross-cluster register reuse
+// binding the cluster-D `titleSequence` primitive (T-321) per the same
+// Pattern C used by T-520 prestige-creator). T-533 additionally seeds
+// the manifest's `contributes.assets` array with the eight pre-licensed
+// 3D asset references per ADR-012 §D5 — the actual .glb bytes are NOT
+// shipped in the pack archive (per-tenant external delivery due to
+// commercial-3D-asset licensing terms), documented as a Trade-off in
+// the preset markdown. All sixteen preset entries declare the existing
+// `cluster-i` cluster — frontier-effects builds on top of cluster-i's
+// frontier-runtime work from P15 + the Track A frontier-runtime work.
+// `cluster-i` is already in use by frontier-runtime preset
+// contributions; declaring presets against it is purely a content-side
+// metadata operation that does NOT introduce a new clipKind in clip
+// code and does NOT require allowlist updates to `check-skill-drift`
+// (which walks `skills/stageflip/presets/<cluster>/` directories, not
+// pack manifests). **T-535 carries the v0.2.0 GA bump that closes the
+// Frontier Effects launch pack AND closes Phase γ entirely** (P16 γ,
+// all 30 tasks T-506..T-535).
 //
 // Unlike News Pro (cluster-a — broadcaster-brand registers), Sports
 // Networks (cluster-b — league-brand registers), Creator Style
@@ -68,7 +72,7 @@ export const MANIFEST_SKELETON: PackManifest = {
   manifestVersion: '1',
   id: 'frontier-fx',
   name: 'Frontier Effects',
-  version: '0.1.0',
+  version: '0.2.0',
   publisher: {
     id: 'stageflip',
     displayName: 'StageFlip',
@@ -96,7 +100,11 @@ export const MANIFEST_SKELETON: PackManifest = {
       { id: 'reaction-vortex-swirl', cluster: 'cluster-i' },
       { id: 'reaction-bubble-rise', cluster: 'cluster-i' },
       { id: 'reaction-magnetic-orbit', cluster: 'cluster-i' },
-      { id: 'titlesequence-premium-placeholder', cluster: 'cluster-i' },
+      { id: 'titlesequence-noir-cinema', cluster: 'cluster-i' },
+      { id: 'titlesequence-scifi-glow', cluster: 'cluster-i' },
+      { id: 'titlesequence-action-bold', cluster: 'cluster-i' },
+      { id: 'titlesequence-doc-minimal', cluster: 'cluster-i' },
+      { id: 'titlesequence-trailer-cinematic', cluster: 'cluster-i' },
     ],
     assets: [
       {
@@ -134,7 +142,7 @@ export const MANIFEST_SKELETON: PackManifest = {
     ],
   },
   description:
-    'Premium frontier-effects pack extending Cluster I with five substantive premium shader presets from T-532 (shader-aurora-borealis / shader-cosmic-nebula / shader-liquid-metal / shader-fire-portal / shader-data-stream binding the T-383 ShaderClip primitive) + a pre-licensed commercial-OK 3D asset library from T-533 (eight pre-licensed .glb assets declared in contributes.assets — classical podium, stage spotlight rig, rotating glass data cube, particle sphere with bloom, celebration confetti burst, corporate handshake icon, award trophy, opening-ceremony ribbon-cut scissors — with actual .glb bytes delivered per-tenant externally under commercial-3D licensing terms, NOT shipped in the pack archive) + five substantive premium ReactionStream particle physics presets from T-534 (reaction-fireworks-burst / reaction-snow-fall / reaction-vortex-swirl / reaction-bubble-rise / reaction-magnetic-orbit binding the T-470 reaction-stream clip primitive — distinct particle-physics behaviors: explosive-upward / gentle-downward-drift / rotational-vortex / upward-bubble-pop / elliptical-orbit) + premium TitleSequence templates (T-535).',
+    'Premium frontier-effects pack v0.2.0 GA extending Cluster I with sixteen substantive contributions across four categories: five premium shader presets from T-532 (shader-aurora-borealis / shader-cosmic-nebula / shader-liquid-metal / shader-fire-portal / shader-data-stream binding the T-383 ShaderClip primitive) + a pre-licensed commercial-OK 3D asset library from T-533 (eight pre-licensed .glb assets declared in contributes.assets — classical podium, stage spotlight rig, rotating glass data cube, particle sphere with bloom, celebration confetti burst, corporate handshake icon, award trophy, opening-ceremony ribbon-cut scissors — with actual .glb bytes delivered per-tenant externally under commercial-3D licensing terms, NOT shipped in the pack archive) + five substantive premium ReactionStream particle physics presets from T-534 (reaction-fireworks-burst / reaction-snow-fall / reaction-vortex-swirl / reaction-bubble-rise / reaction-magnetic-orbit binding the T-470 reaction-stream clip primitive — distinct particle-physics behaviors: explosive-upward / gentle-downward-drift / rotational-vortex / upward-bubble-pop / elliptical-orbit) + five substantive premium TitleSequence templates from T-535 (titlesequence-noir-cinema / titlesequence-scifi-glow / titlesequence-action-bold / titlesequence-doc-minimal / titlesequence-trailer-cinematic — distinct cinematic title-card registers: mid-century-noir gold-on-black / sci-fi cyan-glow + scanlines / action-bold red-on-black slam-in / documentary minimal white-canvas Light-weight / movie-trailer letterboxed cream-and-burgundy — binding the cluster-D T-321 titleSequence primitive via cross-cluster register reuse). **T-535 closes the Frontier Effects launch pack at v0.2.0 GA AND closes P16 γ entirely** (all 30 tasks T-506..T-535).',
   homepage: 'https://stageflip.dev/packs/frontier-fx',
   repository: 'https://github.com/marioberlin/stageflip/tree/main/packages/pack-frontier-fx',
   keywords: [
@@ -143,6 +151,8 @@ export const MANIFEST_SKELETON: PackManifest = {
     '3d',
     'particles',
     'effects',
+    'cinematic',
+    'title-sequence',
     'cluster-i',
     'stageflip-first-party',
   ],
