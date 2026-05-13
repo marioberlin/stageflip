@@ -7,11 +7,16 @@
 // The skeleton ships with `integrity.hash` as 64 zeroes; the
 // orchestrator-run `scripts/build-pack.ts` rewrites the `integrity.hash`
 // to match SHA-256 over the synthesized archive bytes before signing.
-// Four placeholder preset contributions reserve slots for the
-// finance-vertical composition templates (T-522 earnings-call
-// template + T-523 investor-deck template), the Bloomberg-pro adapter
-// premium tier (T-524), and the finance-domain semantic-tool
-// extensions (T-525). All four placeholders declare the NEW
+// Three preset contributions are substantive (T-522 earnings-call
+// template + T-523 investor-deck template + T-524 Bloomberg-pro
+// adapter); one placeholder slot remains for the finance-domain
+// semantic-tool extensions (T-525). T-524 additionally seeds the
+// manifest's `contributes.adapters` array with the reserved
+// `bloomberg-pro` premium-tier data-source adapter id per ADR-012 §D5
+// — the actual adapter implementation lands in a post-Track-A
+// adapter-package task (T-280-family follow-up); the pack manifest
+// declares the contribution slot in advance so downstream integration
+// is unblocked. All four preset entries declare the NEW
 // `cluster-finance` vertical-use-case cluster — `cluster` is a
 // free-form string in the manifest schema (`z.string().min(1)`), so
 // declaring a new vertical-use-case cluster is purely a content-side
@@ -68,12 +73,13 @@ export const MANIFEST_SKELETON: PackManifest = {
     presets: [
       { id: 'earnings-call-template', cluster: 'cluster-finance' },
       { id: 'investor-deck-template', cluster: 'cluster-finance' },
-      { id: 'bloomberg-pro-adapter-placeholder', cluster: 'cluster-finance' },
+      { id: 'bloomberg-pro-adapter', cluster: 'cluster-finance' },
       { id: 'finance-semantic-tools-placeholder', cluster: 'cluster-finance' },
     ],
+    adapters: [{ id: 'bloomberg-pro', modality: 'data-source' }],
   },
   description:
-    'Premium financial-communication templates extending a new finance-vertical cluster — earnings-call + investor-deck composition templates, Bloomberg-pro adapter premium tier, finance-domain semantic-tool extensions (filled in T-522..T-525).',
+    'Premium financial-communication templates extending a new finance-vertical cluster — earnings-call + investor-deck composition templates, Bloomberg-pro adapter premium-tier contribution slot, finance-domain semantic-tool extensions (filled in T-522..T-525).',
   homepage: 'https://stageflip.dev/packs/finance',
   repository: 'https://github.com/marioberlin/stageflip/tree/main/packages/pack-finance',
   keywords: [
@@ -106,6 +112,12 @@ export function withIntegrityHash(hashHex: string): PackManifest {
     out.contributes = {
       ...out.contributes,
       presets: MANIFEST_SKELETON.contributes.presets.map((p) => ({ ...p })),
+    };
+  }
+  if (MANIFEST_SKELETON.contributes.adapters !== undefined) {
+    out.contributes = {
+      ...out.contributes,
+      adapters: MANIFEST_SKELETON.contributes.adapters.map((a) => ({ ...a })),
     };
   }
   if (MANIFEST_SKELETON.keywords !== undefined) {

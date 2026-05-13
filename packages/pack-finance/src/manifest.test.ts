@@ -2,10 +2,16 @@
 // T-521 — Verifies `MANIFEST_SKELETON` is a structurally valid
 // `PackManifest` under `parsePackManifest` (once a real integrity hash
 // is supplied), the license claim is the expected commercial tier,
-// the four placeholder preset contributions are present (T-522
-// earnings-call template + T-523 investor-deck template + T-524
-// Bloomberg-pro adapter + T-525 finance-domain semantic tools), and
-// keywords are lowercase. Version is 0.1.0 (skeleton release).
+// the four preset contributions are present (T-522 earnings-call
+// template + T-523 investor-deck template + T-524 Bloomberg-pro
+// adapter + T-525 finance-domain semantic tools), and keywords are
+// lowercase. Version is 0.1.0 (skeleton release).
+//
+// T-524 — Flipped the third preset id from
+// `bloomberg-pro-adapter-placeholder` to `bloomberg-pro-adapter`
+// (substantive) AND seeded `contributes.adapters` with the reserved
+// `{ id: 'bloomberg-pro', modality: 'data-source' }` entry per
+// ADR-012 §D5.
 
 import { parsePackManifest } from '@stageflip/pack-format';
 import { describe, expect, it } from 'vitest';
@@ -33,18 +39,34 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('contributes exactly four cluster-finance preset entries — earnings-call template (T-522; substantive) + investor-deck template (T-523; substantive) + Bloomberg-pro adapter (T-524; placeholder) + finance-domain semantic tools (T-525; placeholder)', () => {
+  it('contributes exactly four cluster-finance preset entries — earnings-call template (T-522; substantive) + investor-deck template (T-523; substantive) + Bloomberg-pro adapter (T-524; substantive) + finance-domain semantic tools (T-525; placeholder)', () => {
     const presets = MANIFEST_SKELETON.contributes.presets ?? [];
     expect(presets).toHaveLength(4);
     expect(presets.map((p) => p.id)).toEqual([
       'earnings-call-template',
       'investor-deck-template',
-      'bloomberg-pro-adapter-placeholder',
+      'bloomberg-pro-adapter',
       'finance-semantic-tools-placeholder',
     ]);
     for (const p of presets) {
       expect(p.cluster).toBe('cluster-finance');
     }
+  });
+
+  it('contributes exactly one adapter entry — the reserved bloomberg-pro premium-tier data-source adapter (T-524)', () => {
+    const adapters = MANIFEST_SKELETON.contributes.adapters ?? [];
+    expect(adapters).toHaveLength(1);
+    expect(adapters[0]).toEqual({ id: 'bloomberg-pro', modality: 'data-source' });
+  });
+
+  it('the adapter contribution survives the withIntegrityHash clone (deep-clone discipline)', () => {
+    const out = withIntegrityHash(VALID_HASH);
+    expect(out.contributes.adapters).toEqual([{ id: 'bloomberg-pro', modality: 'data-source' }]);
+    // Mutating the clone does not affect the skeleton.
+    out.contributes.adapters?.push({ id: 'mutated', modality: 'mutated' });
+    expect(MANIFEST_SKELETON.contributes.adapters).toEqual([
+      { id: 'bloomberg-pro', modality: 'data-source' },
+    ]);
   });
 
   it('keywords are all lowercase', () => {

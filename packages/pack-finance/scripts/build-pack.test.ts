@@ -51,8 +51,8 @@ function createFixture(opts?: { skipPresetsDir?: boolean; withDotFile?: boolean 
       '---\nid: investor-deck-template-placeholder\n---\n# placeholder\n',
     );
     writeFileSync(
-      join(presetsDir, 'bloomberg-pro-adapter-placeholder.md'),
-      '---\nid: bloomberg-pro-adapter-placeholder\n---\n# placeholder\n',
+      join(presetsDir, 'bloomberg-pro-adapter.md'),
+      '---\nid: bloomberg-pro-adapter\n---\n# placeholder\n',
     );
     writeFileSync(
       join(presetsDir, 'finance-semantic-tools-placeholder.md'),
@@ -115,10 +115,8 @@ describe('buildPack', () => {
       { path: 'LICENSE.md', content: readFileSync(join(fx.sourceDir, 'LICENSE.md')) },
       { path: 'NOTICE.md', content: readFileSync(join(fx.sourceDir, 'NOTICE.md')) },
       {
-        path: 'presets/bloomberg-pro-adapter-placeholder.md',
-        content: readFileSync(
-          join(fx.sourceDir, 'presets', 'bloomberg-pro-adapter-placeholder.md'),
-        ),
+        path: 'presets/bloomberg-pro-adapter.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'bloomberg-pro-adapter.md')),
       },
       {
         path: 'presets/earnings-call-template-placeholder.md',
@@ -221,7 +219,7 @@ describe('buildPack', () => {
     });
   });
 
-  it('the manifest contributes exactly four cluster-finance placeholder presets (T-521 — earnings-call template / investor-deck template / Bloomberg-pro adapter / finance-semantic-tools slots reserved for T-522..T-525)', () => {
+  it('the manifest contributes exactly four cluster-finance presets (T-521 — earnings-call template / investor-deck template / Bloomberg-pro adapter / finance-semantic-tools slots reserved for T-522..T-525)', () => {
     const result = buildPack({
       sourceDir: fx.sourceDir,
       outDir: fx.outDir,
@@ -232,6 +230,18 @@ describe('buildPack', () => {
     for (const p of manifest.contributes.presets) {
       expect(p.cluster).toBe('cluster-finance');
     }
+  });
+
+  it('the manifest contributes exactly one adapter — the reserved bloomberg-pro premium-tier data-source adapter (T-524)', () => {
+    const result = buildPack({
+      sourceDir: fx.sourceDir,
+      outDir: fx.outDir,
+      privateKeyPem: fx.privateKeyPem,
+    });
+    const manifest = JSON.parse(readFileSync(result.manifestPath, 'utf-8'));
+    expect(manifest.contributes.adapters).toEqual([
+      { id: 'bloomberg-pro', modality: 'data-source' },
+    ]);
   });
 
   it('the manifest declares version 0.1.0 (skeleton release)', () => {
