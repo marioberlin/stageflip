@@ -15,7 +15,7 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "hash": "cf95d0b86bbbc2d9fc8abb730367740c481bd1d57353741fbb3039edb3660753"
+    "hash": "551689ebcdc347ba073f0a0451942b41ac487c7245ca21cf18276e2f6dc31600"
   },
   "contributes": {
     "presets": [
@@ -28,7 +28,7 @@
         "cluster": "cluster-a"
       },
       {
-        "id": "rai-register-placeholder",
+        "id": "rai-pro-register",
         "cluster": "cluster-a"
       }
     ]
