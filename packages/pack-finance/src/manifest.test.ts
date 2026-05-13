@@ -33,11 +33,11 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('contributes exactly four cluster-finance placeholder preset entries — earnings-call template (T-522) + investor-deck template (T-523) + Bloomberg-pro adapter (T-524) + finance-domain semantic tools (T-525)', () => {
+  it('contributes exactly four cluster-finance preset entries — earnings-call template (T-522; substantive) + investor-deck template (T-523; placeholder) + Bloomberg-pro adapter (T-524; placeholder) + finance-domain semantic tools (T-525; placeholder)', () => {
     const presets = MANIFEST_SKELETON.contributes.presets ?? [];
     expect(presets).toHaveLength(4);
     expect(presets.map((p) => p.id)).toEqual([
-      'earnings-call-template-placeholder',
+      'earnings-call-template',
       'investor-deck-template-placeholder',
       'bloomberg-pro-adapter-placeholder',
       'finance-semantic-tools-placeholder',
