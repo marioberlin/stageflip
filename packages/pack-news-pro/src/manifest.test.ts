@@ -2,9 +2,10 @@
 // T-506 — Verifies `MANIFEST_SKELETON` is a structurally valid
 // `PackManifest` under `parsePackManifest` (once a real integrity hash
 // is supplied), the license claim is the expected commercial tier, the
-// three register preset contributions are present (all substantive
-// post-T-509; T-510 still adds the news-ticker preset), and keywords
-// are lowercase.
+// four preset contributions are present (all substantive post-T-510:
+// three register lower-thirds T-507/T-508/T-509 plus the closing
+// premium news-ticker T-510), and keywords are lowercase. Version is
+// bumped to 0.2.0 by T-510 (minor; additive feature — news-ticker).
 
 import { parsePackManifest } from '@stageflip/pack-format';
 import { describe, expect, it } from 'vitest';
@@ -35,13 +36,14 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('contributes exactly three cluster-a preset entries — all three register slots substantive per T-507/T-508/T-509 (only T-510 news-ticker remains)', () => {
+  it('contributes exactly four cluster-a preset entries — three register lower-thirds + the closing premium news-ticker (T-510)', () => {
     const presets = MANIFEST_SKELETON.contributes.presets ?? [];
-    expect(presets).toHaveLength(3);
+    expect(presets).toHaveLength(4);
     expect(presets.map((p) => p.id)).toEqual([
       'sky-news-pro-register',
       'itv-pro-register',
       'rai-pro-register',
+      'premium-news-ticker',
     ]);
     for (const p of presets) {
       expect(p.cluster).toBe('cluster-a');
@@ -63,9 +65,9 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('id is lowercase kebab-case + version is 0.1.0', () => {
+  it('id is lowercase kebab-case + version is 0.2.0 (minor bump from T-510 news-ticker addition)', () => {
     expect(MANIFEST_SKELETON.id).toBe('news-pro');
-    expect(MANIFEST_SKELETON.version).toBe('0.1.0');
+    expect(MANIFEST_SKELETON.version).toBe('0.2.0');
   });
 });
 

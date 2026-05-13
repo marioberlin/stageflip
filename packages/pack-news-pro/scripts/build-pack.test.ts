@@ -6,11 +6,16 @@
 // under `parsePackManifest`, (d) the archive verifies against the
 // corresponding public key, (e) dot-files in the source are skipped,
 // (f) missing presets/ dir throws.
+// T-510 — adds (g) CLI default outDir tracks `MANIFEST_SKELETON.version`
+// so the default output directory updates automatically on each version
+// bump (regression coverage for the bug where the build-pack CLI
+// previously hard-coded `0.1.0/` in the default outDir literal).
 
 import { createHash, generateKeyPairSync } from 'node:crypto';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   ED25519_SIGNATURE_LENGTH,
@@ -20,6 +25,7 @@ import {
 import { synthesizeArchive } from '@stageflip/pack-signing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { MANIFEST_SKELETON } from '../src/manifest.js';
 import { BuildPackError, buildPack } from './build-pack.js';
 
 interface Fixture {
@@ -201,16 +207,94 @@ describe('buildPack', () => {
     });
   });
 
-  it('the manifest contributes exactly three cluster-a presets', () => {
+  it('the manifest contributes exactly four cluster-a presets (T-510 — sky / itv / rai register lower-thirds + the closing premium news-ticker)', () => {
     const result = buildPack({
       sourceDir: fx.sourceDir,
       outDir: fx.outDir,
       privateKeyPem: fx.privateKeyPem,
     });
     const manifest = JSON.parse(readFileSync(result.manifestPath, 'utf-8'));
-    expect(manifest.contributes.presets).toHaveLength(3);
+    expect(manifest.contributes.presets).toHaveLength(4);
     for (const p of manifest.contributes.presets) {
       expect(p.cluster).toBe('cluster-a');
     }
+  });
+
+  it('the manifest declares version 0.2.0 (T-510 minor bump for the additive news-ticker preset)', () => {
+    const result = buildPack({
+      sourceDir: fx.sourceDir,
+      outDir: fx.outDir,
+      privateKeyPem: fx.privateKeyPem,
+    });
+    const manifest = JSON.parse(readFileSync(result.manifestPath, 'utf-8'));
+    expect(manifest.version).toBe('0.2.0');
+    expect(manifest.version).toBe(MANIFEST_SKELETON.version);
+  });
+});
+
+describe('build-pack CLI default outDir (T-510)', () => {
+  // The CLI's `isMainModule` branch is gated on `process.argv[1]` matching the
+  // script path so the module under test runs as a library here, NOT as a CLI.
+  // We assert the contract by checking the runtime literal: the default outDir
+  // expression in the CLI is `resolve(packageRoot, ../../packs/stageflip/news-pro/${MANIFEST_SKELETON.version})`.
+  // Verifying that MANIFEST_SKELETON.version reaches the expected value AND
+  // the CLI's source contains the templated path (NOT a hard-coded `0.1.0`)
+  // is a sufficient regression for the bug T-510 fixes.
+
+  it('MANIFEST_SKELETON.version is 0.2.0 — the value the CLI default outDir interpolates', () => {
+    expect(MANIFEST_SKELETON.version).toBe('0.2.0');
+  });
+
+  it('build-pack.ts CLI source uses ${MANIFEST_SKELETON.version} (NOT a hard-coded 0.1.0 literal) in the default outDir expression', () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const cliSource = readFileSync(resolve(here, 'build-pack.ts'), 'utf-8');
+    // Positive: the templated form is present.
+    expect(cliSource).toContain('`../../packs/stageflip/news-pro/${MANIFEST_SKELETON.version}`');
+    // Negative: no hard-coded version literal remains in the default outDir.
+    expect(cliSource).not.toContain("'../../packs/stageflip/news-pro/0.1.0'");
+    expect(cliSource).not.toContain('"../../packs/stageflip/news-pro/0.1.0"');
+  });
+
+  it('package-relative default outDir resolves under packs/stageflip/news-pro/<manifest-version>/', () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const packageRoot = resolve(here, '..');
+    const expected = resolve(
+      packageRoot,
+      `../../packs/stageflip/news-pro/${MANIFEST_SKELETON.version}`,
+    );
+    // The expected path embeds the current MANIFEST_SKELETON.version verbatim.
+    expect(expected.endsWith(`/packs/stageflip/news-pro/${MANIFEST_SKELETON.version}`)).toBe(true);
+    expect(expected).toContain('/packs/stageflip/news-pro/0.2.0');
+  });
+});
+
+describe('buildPack — outDir is honored verbatim regardless of MANIFEST_SKELETON.version (T-510 regression seam)', () => {
+  // T-510 changes the CLI's *default* outDir computation but the `buildPack`
+  // function itself takes `outDir` as a required parameter — every test in
+  // the suite above already passes an explicit outDir. This test makes the
+  // separation of concerns explicit: the function does not inspect the
+  // manifest version when choosing where to write outputs.
+  let tmpRoot: string;
+
+  beforeEach(() => {
+    tmpRoot = mkdtempSync(join(tmpdir(), 'news-pro-explicit-outdir-'));
+  });
+
+  afterEach(() => {
+    rmSync(tmpRoot, { recursive: true, force: true });
+  });
+
+  it('writes outputs to the supplied outDir even if the directory name does not match the manifest version', () => {
+    const sourceDir = join(tmpRoot, 'src');
+    const outDir = join(tmpRoot, 'arbitrary-out-dir-no-version-prefix');
+    mkdirSync(join(sourceDir, 'presets'), { recursive: true });
+    writeFileSync(join(sourceDir, 'presets', 'p.md'), '# placeholder\n');
+    const { privateKey } = generateKeyPairSync('ed25519');
+    const privateKeyPem = privateKey.export({ format: 'pem', type: 'pkcs8' }).toString();
+    const result = buildPack({ sourceDir, outDir, privateKeyPem });
+    expect(result.archivePath).toBe(join(outDir, 'archive.sfpack'));
+    expect(readdirSync(outDir).sort()).toEqual(
+      ['archive.sfpack', 'manifest.json', 'signature.bin'].sort(),
+    );
   });
 });
