@@ -8,7 +8,7 @@
 
 import { join } from 'node:path';
 
-import { parsePackManifest } from '@stageflip/pack-format';
+import { COMPATIBILITY_MATRIX, parsePackManifest } from '@stageflip/pack-format';
 
 import type { CliPublishDependencies, PublishFs } from '../deps.js';
 
@@ -153,6 +153,31 @@ export async function runValidate(packDir: string, fs: PublishFs): Promise<Valid
       level: 'warn',
       detail: `'keywords' is empty`,
     });
+  }
+
+  // T-502 — compatibility-matrix advisory. Warns (never fails) when the
+  // pack's `manifestVersion` does not appear in any row of the
+  // workspace compatibility matrix. Warning-only because the publisher
+  // does not know which engine versions consumers will run, and the
+  // matrix can lag behind the schema literal.
+  const rawManifestVersion = rawObj.manifestVersion;
+  if (typeof rawManifestVersion === 'string' && rawManifestVersion.length > 0) {
+    const matchingRow = COMPATIBILITY_MATRIX.find((row) =>
+      row.manifestVersions.includes(rawManifestVersion),
+    );
+    if (matchingRow === undefined) {
+      issues.push({
+        invariant: 'compatibility-advisory',
+        level: 'warn',
+        detail: `no matching engine row for manifestVersion '${rawManifestVersion}' in the workspace compatibility matrix`,
+      });
+    } else if (matchingRow.note !== undefined) {
+      issues.push({
+        invariant: 'compatibility-advisory',
+        level: 'warn',
+        detail: `manifestVersion '${rawManifestVersion}' matches matrix row: ${matchingRow.note}`,
+      });
+    }
   }
 
   const ok = !issues.some((i) => i.level === 'fail');

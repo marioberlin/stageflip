@@ -1,4 +1,6 @@
-// packages/pack-loader/src/semver-range.test.ts
+// packages/pack-format/src/semver-range.test.ts
+// T-502 — moved from `@stageflip/pack-loader` so the compatibility
+// matrix module can consume `satisfiesRange` without a circular dep.
 
 import { describe, expect, it } from 'vitest';
 

@@ -6,7 +6,8 @@
 //
 // Gate order (each gate short-circuits on failure):
 //   1. manifest.json read + Zod parse        → LF-PACK-MANIFEST-PARSE-ERROR
-//   2. platformCompatibility semver-range    → LF-PACK-INCOMPATIBLE-VERSION
+//   2a. platformCompatibility semver-range   → LF-PACK-INCOMPATIBLE-VERSION
+//   2b. compatibility-matrix lookup (T-502)  → LF-PACK-INCOMPATIBLE-VERSION
 //   3. archive.tar.zst + signature.bin read  → LF-PACK-MANIFEST-PARSE-ERROR
 //                                              (missing archive treated as
 //                                              malformed install)
@@ -23,12 +24,13 @@ import {
   ED25519_SIGNATURE_LENGTH,
   type PackFormatLossFlagCode,
   type PackManifest,
+  isCompatible,
   parsePackManifest,
+  satisfiesRange,
   verifyPackArchive,
 } from '@stageflip/pack-format';
 
 import { type PackLoaderDependencies, requiresEntitlement } from './dependencies.js';
-import { satisfiesRange } from './semver-range.js';
 
 /**
  * Layout of an installed pack on disk per ADR-012 §D8:
@@ -87,11 +89,28 @@ export async function loadPack(
     };
   }
 
-  // ── Gate 2: platformCompatibility semver-range
+  // ── Gate 2a: platformCompatibility semver-range (manifest-declared)
   if (!satisfiesRange(deps.platformVersion, manifest.platformCompatibility)) {
     return {
       reason: 'LF-PACK-INCOMPATIBLE-VERSION',
-      detail: `platform ${deps.platformVersion} does not satisfy ${manifest.platformCompatibility}`,
+      detail: `platform ${deps.platformVersion} does not satisfy manifest platformCompatibility ${manifest.platformCompatibility}`,
+    };
+  }
+
+  // ── Gate 2b: workspace compatibility-matrix lookup (T-502).
+  // The matrix is the workspace-wide authoritative table of which
+  // engine versions support which `manifestVersion` schemas. Even if a
+  // pack's manifest-declared `platformCompatibility` admits the host
+  // engine, the matrix is an additional check: if the engine doesn't
+  // appear in any row that lists this `manifestVersion`, the runtime
+  // can't safely load the pack. Currently dormant — `manifestVersion`
+  // is constrained to `'1'` by `packManifestSchema`'s `z.literal('1')`,
+  // and the single matrix row covers `>=2.0.0 → ['1']`, so no real
+  // input can fail this gate. Active when `manifestVersion: '2'` ships.
+  if (!isCompatible(deps.platformVersion, manifest.manifestVersion)) {
+    return {
+      reason: 'LF-PACK-INCOMPATIBLE-VERSION',
+      detail: `engine ${deps.platformVersion} does not list manifestVersion ${manifest.manifestVersion} in the workspace compatibility matrix`,
     };
   }
 
