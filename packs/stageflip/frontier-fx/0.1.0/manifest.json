@@ -15,7 +15,7 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "hash": "700d794a8d64c5ba9f2fb1bc6b725b654f7a7dd5d68a4c58d1a8b530fd93e3b1"
+    "hash": "41dfe4af2285321490212edfe3a434f8185fe94ce72abec7d5fc2057ad2fb6c4"
   },
   "contributes": {
     "presets": [
@@ -44,7 +44,23 @@
         "cluster": "cluster-i"
       },
       {
-        "id": "reactionstream-physics-placeholder",
+        "id": "reaction-fireworks-burst",
+        "cluster": "cluster-i"
+      },
+      {
+        "id": "reaction-snow-fall",
+        "cluster": "cluster-i"
+      },
+      {
+        "id": "reaction-vortex-swirl",
+        "cluster": "cluster-i"
+      },
+      {
+        "id": "reaction-bubble-rise",
+        "cluster": "cluster-i"
+      },
+      {
+        "id": "reaction-magnetic-orbit",
         "cluster": "cluster-i"
       },
       {
@@ -87,7 +103,7 @@
       }
     ]
   },
-  "description": "Premium frontier-effects pack extending Cluster I with five substantive premium shader presets from T-532 (shader-aurora-borealis / shader-cosmic-nebula / shader-liquid-metal / shader-fire-portal / shader-data-stream binding the T-383 ShaderClip primitive) + a pre-licensed commercial-OK 3D asset library from T-533 (eight pre-licensed .glb assets declared in contributes.assets — classical podium, stage spotlight rig, rotating glass data cube, particle sphere with bloom, celebration confetti burst, corporate handshake icon, award trophy, opening-ceremony ribbon-cut scissors — with actual .glb bytes delivered per-tenant externally under commercial-3D licensing terms, NOT shipped in the pack archive) + premium ReactionStream particle physics presets (T-534) + premium TitleSequence templates (T-535).",
+  "description": "Premium frontier-effects pack extending Cluster I with five substantive premium shader presets from T-532 (shader-aurora-borealis / shader-cosmic-nebula / shader-liquid-metal / shader-fire-portal / shader-data-stream binding the T-383 ShaderClip primitive) + a pre-licensed commercial-OK 3D asset library from T-533 (eight pre-licensed .glb assets declared in contributes.assets — classical podium, stage spotlight rig, rotating glass data cube, particle sphere with bloom, celebration confetti burst, corporate handshake icon, award trophy, opening-ceremony ribbon-cut scissors — with actual .glb bytes delivered per-tenant externally under commercial-3D licensing terms, NOT shipped in the pack archive) + five substantive premium ReactionStream particle physics presets from T-534 (reaction-fireworks-burst / reaction-snow-fall / reaction-vortex-swirl / reaction-bubble-rise / reaction-magnetic-orbit binding the T-470 reaction-stream clip primitive — distinct particle-physics behaviors: explosive-upward / gentle-downward-drift / rotational-vortex / upward-bubble-pop / elliptical-orbit) + premium TitleSequence templates (T-535).",
   "homepage": "https://stageflip.dev/packs/frontier-fx",
   "repository": "https://github.com/marioberlin/stageflip/tree/main/packages/pack-frontier-fx",
   "keywords": [
