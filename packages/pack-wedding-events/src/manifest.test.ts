@@ -1,11 +1,12 @@
 // packages/pack-wedding-events/src/manifest.test.ts
-// T-526 — Verifies `MANIFEST_SKELETON` is a structurally valid
+// T-527 — Verifies `MANIFEST_SKELETON` is a structurally valid
 // `PackManifest` under `parsePackManifest` (once a real integrity hash
 // is supplied), the license claim is the expected commercial tier,
-// the four placeholder preset contributions are present (T-527 rustic
-// theme variant + T-528 composition templates + T-529 wedding
+// the six preset contributions are present (three substantive theme
+// variants from T-527 — rustic / modern / classic — plus three
+// placeholders for T-528 composition templates + T-529 wedding
 // transitions + T-530 audio bed library), and keywords are lowercase.
-// Version is 0.1.0 (skeleton release).
+// Version is 0.1.0 (skeleton release; T-530 closes the pack at v0.2.0).
 
 import { parsePackManifest } from '@stageflip/pack-format';
 import { describe, expect, it } from 'vitest';
@@ -33,11 +34,13 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('contributes exactly four cluster-wedding-events placeholder preset entries — rustic theme (T-527) + composition templates (T-528) + transitions (T-529) + audio bed library (T-530)', () => {
+  it('contributes exactly six cluster-wedding-events preset entries — three substantive theme variants from T-527 (rustic / modern / classic) + three placeholders for T-528 / T-529 / T-530', () => {
     const presets = MANIFEST_SKELETON.contributes.presets ?? [];
-    expect(presets).toHaveLength(4);
+    expect(presets).toHaveLength(6);
     expect(presets.map((p) => p.id)).toEqual([
-      'rustic-theme-placeholder',
+      'rustic-theme',
+      'modern-theme',
+      'classic-theme',
       'wedding-composition-templates-placeholder',
       'wedding-transitions-placeholder',
       'audio-bed-library-placeholder',
@@ -72,7 +75,7 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('id is lowercase kebab-case + version is 0.1.0 (skeleton release; T-527..T-530 bump on substantive fills)', () => {
+  it('id is lowercase kebab-case + version is 0.1.0 (T-527 lands theme variants without a version bump; T-530 closes the pack at v0.2.0)', () => {
     expect(MANIFEST_SKELETON.id).toBe('wedding-events');
     expect(MANIFEST_SKELETON.version).toBe('0.1.0');
   });
