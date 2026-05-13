@@ -15,12 +15,20 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "hash": "2007b9f96009dd72c78083c2708bf08dbf30fe31e73c38075507492c95bc411f"
+    "hash": "ad02a2490abc46fb17b290c9a805bb0f352a7dcf0715c1e3c523ff675626117d"
   },
   "contributes": {
     "presets": [
       {
-        "id": "rustic-theme-placeholder",
+        "id": "rustic-theme",
+        "cluster": "cluster-wedding-events"
+      },
+      {
+        "id": "modern-theme",
+        "cluster": "cluster-wedding-events"
+      },
+      {
+        "id": "classic-theme",
         "cluster": "cluster-wedding-events"
       },
       {
@@ -37,7 +45,7 @@
       }
     ]
   },
-  "description": "Premium wedding & events templates extending a new wedding-events-vertical cluster — theme variants (rustic / modern / classic from T-527), composition templates (T-528), wedding-specific transitions + bumpers (T-529), and a pre-licensed audio bed library (T-530).",
+  "description": "Premium wedding & events templates extending a new wedding-events-vertical cluster — three substantive theme variants from T-527 (rustic / modern / classic, all wiring the T-183 LowerThird primitive), composition templates (T-528), wedding-specific transitions + bumpers (T-529), and a pre-licensed audio bed library (T-530).",
   "homepage": "https://stageflip.dev/packs/wedding-events",
   "repository": "https://github.com/marioberlin/stageflip/tree/main/packages/pack-wedding-events",
   "keywords": [

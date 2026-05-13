@@ -1,5 +1,5 @@
 // packages/pack-wedding-events/scripts/build-pack.test.ts
-// T-526 — Drives `buildPack` against a temp-dir source layout using a
+// T-527 — Drives `buildPack` against a temp-dir source layout using a
 // freshly-generated Ed25519 keypair. Verifies (a) outputs land on disk,
 // (b) the integrity hash on the manifest matches SHA-256 over the
 // archive bytes WITHOUT the manifest, (c) the emitted manifest parses
@@ -8,6 +8,10 @@
 // (f) missing presets/ dir throws, and (g) the CLI default outDir
 // tracks `MANIFEST_SKELETON.version` (regression coverage for the T-510
 // hard-coded-version bug carried into the wedding-events skeleton).
+// T-527 grew the preset count from four to six (three substantive theme
+// variants — rustic / modern / classic — replacing the original
+// rustic-theme-placeholder, plus the three remaining placeholders for
+// T-528 / T-529 / T-530).
 
 import { createHash, generateKeyPairSync } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -43,8 +47,16 @@ function createFixture(opts?: { skipPresetsDir?: boolean; withDotFile?: boolean 
     const presetsDir = join(sourceDir, 'presets');
     mkdirSync(presetsDir, { recursive: true });
     writeFileSync(
-      join(presetsDir, 'rustic-theme-placeholder.md'),
-      '---\nid: rustic-theme-placeholder\n---\n# placeholder\n',
+      join(presetsDir, 'rustic-theme.md'),
+      '---\nid: rustic-theme\n---\n# substantive\n',
+    );
+    writeFileSync(
+      join(presetsDir, 'modern-theme.md'),
+      '---\nid: modern-theme\n---\n# substantive\n',
+    );
+    writeFileSync(
+      join(presetsDir, 'classic-theme.md'),
+      '---\nid: classic-theme\n---\n# substantive\n',
     );
     writeFileSync(
       join(presetsDir, 'wedding-composition-templates-placeholder.md'),
@@ -119,8 +131,16 @@ describe('buildPack', () => {
         content: readFileSync(join(fx.sourceDir, 'presets', 'audio-bed-library-placeholder.md')),
       },
       {
-        path: 'presets/rustic-theme-placeholder.md',
-        content: readFileSync(join(fx.sourceDir, 'presets', 'rustic-theme-placeholder.md')),
+        path: 'presets/classic-theme.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'classic-theme.md')),
+      },
+      {
+        path: 'presets/modern-theme.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'modern-theme.md')),
+      },
+      {
+        path: 'presets/rustic-theme.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'rustic-theme.md')),
       },
       {
         path: 'presets/wedding-composition-templates-placeholder.md',
@@ -215,14 +235,14 @@ describe('buildPack', () => {
     });
   });
 
-  it('the manifest contributes exactly four cluster-wedding-events placeholder presets (T-526 — rustic theme / wedding composition templates / wedding transitions / audio bed library slots reserved for T-527..T-530)', () => {
+  it('the manifest contributes exactly six cluster-wedding-events presets (T-527 — three substantive theme variants rustic / modern / classic + three placeholders for T-528 / T-529 / T-530)', () => {
     const result = buildPack({
       sourceDir: fx.sourceDir,
       outDir: fx.outDir,
       privateKeyPem: fx.privateKeyPem,
     });
     const manifest = JSON.parse(readFileSync(result.manifestPath, 'utf-8'));
-    expect(manifest.contributes.presets).toHaveLength(4);
+    expect(manifest.contributes.presets).toHaveLength(6);
     for (const p of manifest.contributes.presets) {
       expect(p.cluster).toBe('cluster-wedding-events');
     }
@@ -240,7 +260,7 @@ describe('buildPack', () => {
   });
 });
 
-describe('build-pack CLI default outDir (T-526 — version-templated, per T-510 fix)', () => {
+describe('build-pack CLI default outDir (T-527 — version-templated, per T-510 fix)', () => {
   // The CLI's `isMainModule` branch is gated on `process.argv[1]` matching the
   // script path so the module under test runs as a library here, NOT as a CLI.
   // We assert the contract by checking the runtime literal: the default outDir
