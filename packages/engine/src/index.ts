@@ -215,3 +215,6 @@ export {
   type ClusterIPresetId,
   registerClusterIComposeBundle,
 } from './handlers/cluster-i-compose/register.js';
+
+// T-496 — Clip-mount license gate (ADR-012 §D6 point 2).
+export * from './license/index.js';

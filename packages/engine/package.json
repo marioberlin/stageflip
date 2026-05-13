@@ -24,6 +24,8 @@
     "@stageflip/asset-cache": "workspace:*",
     "@stageflip/audience-contract": "workspace:*",
     "@stageflip/llm-abstraction": "workspace:*",
+    "@stageflip/pack-format": "workspace:*",
+    "@stageflip/pack-loader": "workspace:*",
     "@stageflip/schema": "workspace:*",
     "@stageflip/variant-gen": "workspace:*",
     "zod": "3.25.76"
