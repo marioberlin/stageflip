@@ -1,0 +1,37 @@
+{
+  "name": "@stageflip/pack-cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "stageflip-pack": "./bin/stageflip-pack.js"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --dts --format esm --clean",
+    "dev": "tsup src/index.ts --dts --format esm --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@stageflip/pack-format": "workspace:*",
+    "@stageflip/pack-loader": "workspace:*"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "2.1.9",
+    "vitest": "2.1.9"
+  }
+}
