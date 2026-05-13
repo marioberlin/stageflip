@@ -177,6 +177,23 @@ export async function loadPack(
         detail: `no entitlement for sku ${license.sku}`,
       };
     }
+    // T-505: 'trial' admits the pack at install time, but only if it
+    // has not yet expired. An expired trial denies install via
+    // LF-LICENSE-PACK-DENIED (the runtime LF-LICENSE-TRIAL-EXPIRED
+    // fires at clip-mount time for the not-yet-restarted case).
+    if (entitlement.status === 'trial') {
+      if (entitlement.expiresAt !== undefined) {
+        const expiresMs = Date.parse(entitlement.expiresAt);
+        if (!Number.isNaN(expiresMs) && Date.now() >= expiresMs) {
+          return {
+            reason: 'LF-LICENSE-PACK-DENIED',
+            detail: `trial entitlement for sku ${license.sku} expired at ${entitlement.expiresAt}`,
+          };
+        }
+      }
+      // active trial → admit
+      return { manifest, installPath, archiveBytes };
+    }
     if (entitlement.status !== 'active') {
       return {
         reason: 'LF-LICENSE-PACK-DENIED',

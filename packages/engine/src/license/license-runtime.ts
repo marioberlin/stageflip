@@ -9,6 +9,11 @@
 
 import type { LicenseClaim, PackFormatLossFlagCode, PackManifest } from '@stageflip/pack-format';
 import type { TenantEntitlement, TenantEntitlementsLike } from '@stageflip/pack-loader';
+import {
+  evaluateTrialPolicy,
+  trialActiveLossFlag,
+  trialExpiredLossFlag,
+} from '@stageflip/pack-trial';
 
 /**
  * A clip's license provenance — captured at `registerPack` time and
@@ -32,6 +37,15 @@ export interface LicenseMountResult {
   readonly ok: boolean;
   readonly reason?: PackFormatLossFlagCode;
   readonly detail?: string;
+  /**
+   * Optional warning to emit even when `ok: true` (e.g. trial mode).
+   * T-505 — populated with `LF-LICENSE-TRIAL-ACTIVE` when a clip is
+   * mounted on a non-expired trial entitlement.
+   */
+  readonly warning?: {
+    readonly code: PackFormatLossFlagCode;
+    readonly detail: string;
+  };
 }
 
 export interface LicenseRuntimeDependencies {
@@ -92,6 +106,14 @@ export class LicenseRuntime {
    *   - clips contributed by paid / enterprise packs whose entitlement
    *     status is currently `'active'`
    *
+   * Returns `{ok:true, warning:{code:'LF-LICENSE-TRIAL-ACTIVE',...}}`
+   * for clips whose entitlement is in `'trial'` status and not yet
+   * expired (T-505 — the host applies the watermark and surfaces the
+   * trial badge).
+   *
+   * Returns `{ok:false, reason:'LF-LICENSE-TRIAL-EXPIRED'}` when a
+   * trial entitlement's `expiresAt` is in the past (T-505).
+   *
    * Returns `{ok:false, reason:'LF-LICENSE-CLIP-REVOKED', detail}` for
    * paid / enterprise clips whose entitlement is null / lapsed /
    * revoked / pending.
@@ -119,6 +141,36 @@ export class LicenseRuntime {
         ok: false,
         reason: 'LF-LICENSE-CLIP-REVOKED',
         detail: `no entitlement on file for sku '${sku}' (clip '${clipKind}' from pack '${record.packId}')`,
+      };
+    }
+
+    // T-505: trial entitlements branch through the trial-policy state
+    // machine. Active-trial → ok:true + warning; expired-trial → deny
+    // with LF-LICENSE-TRIAL-EXPIRED (distinct from the install-time
+    // PACK-DENIED so the runtime LF telemetry can distinguish them).
+    if (entitlement.status === 'trial') {
+      const state = evaluateTrialPolicy({
+        entitlement: {
+          status: entitlement.status,
+          ...(entitlement.expiresAt !== undefined ? { expiresAt: entitlement.expiresAt } : {}),
+        },
+        nowMs: Date.now(),
+      });
+      if (state === 'trial-expired') {
+        const expiredFlag = trialExpiredLossFlag(record.packId, entitlement.expiresAt ?? '');
+        return {
+          ok: false,
+          reason: expiredFlag.code,
+          detail: expiredFlag.detail,
+        };
+      }
+      const activeFlag = trialActiveLossFlag(record.packId);
+      return {
+        ok: true,
+        warning: {
+          code: activeFlag.code,
+          detail: activeFlag.detail,
+        },
       };
     }
 

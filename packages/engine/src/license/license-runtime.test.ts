@@ -320,4 +320,100 @@ describe('LicenseRuntime', () => {
       ),
     ).not.toThrow();
   });
+
+  // T-505 — trial-mode behaviour
+
+  it('T-505: trial entitlement → ok:true + LF-LICENSE-TRIAL-ACTIVE warning', async () => {
+    entitlements = entitlementsShim({
+      'sku-1': {
+        sku: 'sku-1',
+        entitlementType: 'subscription',
+        status: 'trial',
+        issuedAt: '2026-01-01T00:00:00Z',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    });
+    const runtime = new LicenseRuntime({ entitlements });
+    runtime.registerPack(
+      baseManifest({
+        id: 'trial-pack',
+        license: { kind: 'paid-per-tenant', sku: 'sku-1', entitlementType: 'subscription' },
+        contributes: { clipKinds: [{ kind: 'trial.bar', module: './bar.js' }] },
+      }),
+    );
+
+    const result = await runtime.canMountClip('trial.bar');
+    expect(result.ok).toBe(true);
+    expect(result.warning?.code).toBe('LF-LICENSE-TRIAL-ACTIVE');
+    expect(result.warning?.detail).toContain('trial-pack');
+  });
+
+  it('T-505: trial entitlement with no expiresAt → ok:true + warning (perpetual trial)', async () => {
+    entitlements = entitlementsShim({
+      'sku-1': {
+        sku: 'sku-1',
+        entitlementType: 'subscription',
+        status: 'trial',
+        issuedAt: '2026-01-01T00:00:00Z',
+      },
+    });
+    const runtime = new LicenseRuntime({ entitlements });
+    runtime.registerPack(
+      baseManifest({
+        license: { kind: 'paid-per-tenant', sku: 'sku-1', entitlementType: 'subscription' },
+        contributes: { clipKinds: [{ kind: 'trial.perp', module: './perp.js' }] },
+      }),
+    );
+
+    const result = await runtime.canMountClip('trial.perp');
+    expect(result.ok).toBe(true);
+    expect(result.warning?.code).toBe('LF-LICENSE-TRIAL-ACTIVE');
+  });
+
+  it('T-505: expired trial entitlement → ok:false + LF-LICENSE-TRIAL-EXPIRED', async () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-05-13T12:00:00Z'));
+      entitlements = entitlementsShim({
+        'sku-1': {
+          sku: 'sku-1',
+          entitlementType: 'subscription',
+          status: 'trial',
+          issuedAt: '2024-01-01T00:00:00Z',
+          expiresAt: '2024-02-01T00:00:00Z',
+        },
+      });
+      const runtime = new LicenseRuntime({ entitlements });
+      runtime.registerPack(
+        baseManifest({
+          id: 'expired-pack',
+          license: { kind: 'paid-per-tenant', sku: 'sku-1', entitlementType: 'subscription' },
+          contributes: { clipKinds: [{ kind: 'expired.bar', module: './bar.js' }] },
+        }),
+      );
+
+      const result = await runtime.canMountClip('expired.bar');
+      expect(result.ok).toBe(false);
+      expect(result.reason).toBe('LF-LICENSE-TRIAL-EXPIRED');
+      expect(result.detail).toContain('expired-pack');
+      expect(result.detail).toContain('2024-02-01');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('T-505: active (non-trial) entitlement still returns plain {ok:true} with no warning', async () => {
+    entitlements = entitlementsShim({ 'sku-1': activeEntitlement('sku-1') });
+    const runtime = new LicenseRuntime({ entitlements });
+    runtime.registerPack(
+      baseManifest({
+        license: { kind: 'paid-per-tenant', sku: 'sku-1', entitlementType: 'subscription' },
+        contributes: { clipKinds: [{ kind: 'paid.bar', module: './bar.js' }] },
+      }),
+    );
+
+    const result = await runtime.canMountClip('paid.bar');
+    expect(result.ok).toBe(true);
+    expect(result.warning).toBeUndefined();
+  });
 });
