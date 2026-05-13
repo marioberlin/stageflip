@@ -15,7 +15,7 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "hash": "b4d478a3900d6b7d96c989f6ad61d5d8d03b3acd2f5c0cde8af360a6117ebdb4"
+    "hash": "46f1b19e2c9d11b6a504a4d27f5ee07c7889b7b5bd6bfd1984c869ebb222ca93"
   },
   "contributes": {
     "presets": [
@@ -24,7 +24,7 @@
         "cluster": "cluster-finance"
       },
       {
-        "id": "investor-deck-template-placeholder",
+        "id": "investor-deck-template",
         "cluster": "cluster-finance"
       },
       {
