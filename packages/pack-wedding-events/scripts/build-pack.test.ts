@@ -1,5 +1,5 @@
 // packages/pack-wedding-events/scripts/build-pack.test.ts
-// T-528 — Drives `buildPack` against a temp-dir source layout using a
+// T-529 — Drives `buildPack` against a temp-dir source layout using a
 // freshly-generated Ed25519 keypair. Verifies (a) outputs land on disk,
 // (b) the integrity hash on the manifest matches SHA-256 over the
 // archive bytes WITHOUT the manifest, (c) the emitted manifest parses
@@ -8,12 +8,13 @@
 // (f) missing presets/ dir throws, and (g) the CLI default outDir
 // tracks `MANIFEST_SKELETON.version` (regression coverage for the T-510
 // hard-coded-version bug carried into the wedding-events skeleton).
-// T-528 grew the preset count from six to seven (three substantive
-// theme variants — rustic / modern / classic — from T-527 plus two
-// substantive composition templates — wedding-ceremony-template +
-// wedding-reception-template — replacing the original
-// wedding-composition-templates-placeholder, plus the two remaining
-// placeholders for T-529 / T-530).
+// T-529 grew the preset count from seven to ten (three substantive
+// theme variants from T-527 + two substantive composition templates
+// from T-528 + four substantive transition / bumper presets from T-529
+// — petal-cross-fade-transition + lace-wipe-transition +
+// wedding-bumper-card + wedding-final-card — replacing the original
+// wedding-transitions-placeholder, plus the one remaining placeholder
+// for T-530).
 
 import { createHash, generateKeyPairSync } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -69,8 +70,20 @@ function createFixture(opts?: { skipPresetsDir?: boolean; withDotFile?: boolean 
       '---\nid: wedding-reception-template\n---\n# substantive\n',
     );
     writeFileSync(
-      join(presetsDir, 'wedding-transitions-placeholder.md'),
-      '---\nid: wedding-transitions-placeholder\n---\n# placeholder\n',
+      join(presetsDir, 'petal-cross-fade-transition.md'),
+      '---\nid: petal-cross-fade-transition\n---\n# substantive\n',
+    );
+    writeFileSync(
+      join(presetsDir, 'lace-wipe-transition.md'),
+      '---\nid: lace-wipe-transition\n---\n# substantive\n',
+    );
+    writeFileSync(
+      join(presetsDir, 'wedding-bumper-card.md'),
+      '---\nid: wedding-bumper-card\n---\n# substantive\n',
+    );
+    writeFileSync(
+      join(presetsDir, 'wedding-final-card.md'),
+      '---\nid: wedding-final-card\n---\n# substantive\n',
     );
     writeFileSync(
       join(presetsDir, 'audio-bed-library-placeholder.md'),
@@ -141,24 +154,36 @@ describe('buildPack', () => {
         content: readFileSync(join(fx.sourceDir, 'presets', 'classic-theme.md')),
       },
       {
+        path: 'presets/lace-wipe-transition.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'lace-wipe-transition.md')),
+      },
+      {
         path: 'presets/modern-theme.md',
         content: readFileSync(join(fx.sourceDir, 'presets', 'modern-theme.md')),
+      },
+      {
+        path: 'presets/petal-cross-fade-transition.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'petal-cross-fade-transition.md')),
       },
       {
         path: 'presets/rustic-theme.md',
         content: readFileSync(join(fx.sourceDir, 'presets', 'rustic-theme.md')),
       },
       {
+        path: 'presets/wedding-bumper-card.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'wedding-bumper-card.md')),
+      },
+      {
         path: 'presets/wedding-ceremony-template.md',
         content: readFileSync(join(fx.sourceDir, 'presets', 'wedding-ceremony-template.md')),
       },
       {
-        path: 'presets/wedding-reception-template.md',
-        content: readFileSync(join(fx.sourceDir, 'presets', 'wedding-reception-template.md')),
+        path: 'presets/wedding-final-card.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'wedding-final-card.md')),
       },
       {
-        path: 'presets/wedding-transitions-placeholder.md',
-        content: readFileSync(join(fx.sourceDir, 'presets', 'wedding-transitions-placeholder.md')),
+        path: 'presets/wedding-reception-template.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'wedding-reception-template.md')),
       },
     ]);
     const expectedHash = createHash('sha256').update(archiveBytes).digest('hex');
@@ -243,14 +268,14 @@ describe('buildPack', () => {
     });
   });
 
-  it('the manifest contributes exactly seven cluster-wedding-events presets (T-528 — three substantive theme variants rustic / modern / classic + two substantive composition templates wedding-ceremony-template + wedding-reception-template + two placeholders for T-529 / T-530)', () => {
+  it('the manifest contributes exactly ten cluster-wedding-events presets (T-529 — three substantive theme variants rustic / modern / classic + two substantive composition templates wedding-ceremony-template + wedding-reception-template + four substantive transition / bumper presets petal-cross-fade-transition + lace-wipe-transition + wedding-bumper-card + wedding-final-card + one placeholder for T-530)', () => {
     const result = buildPack({
       sourceDir: fx.sourceDir,
       outDir: fx.outDir,
       privateKeyPem: fx.privateKeyPem,
     });
     const manifest = JSON.parse(readFileSync(result.manifestPath, 'utf-8'));
-    expect(manifest.contributes.presets).toHaveLength(7);
+    expect(manifest.contributes.presets).toHaveLength(10);
     for (const p of manifest.contributes.presets) {
       expect(p.cluster).toBe('cluster-wedding-events');
     }
@@ -268,7 +293,7 @@ describe('buildPack', () => {
   });
 });
 
-describe('build-pack CLI default outDir (T-528 — version-templated, per T-510 fix)', () => {
+describe('build-pack CLI default outDir (T-529 — version-templated, per T-510 fix)', () => {
   // The CLI's `isMainModule` branch is gated on `process.argv[1]` matching the
   // script path so the module under test runs as a library here, NOT as a CLI.
   // We assert the contract by checking the runtime literal: the default outDir
