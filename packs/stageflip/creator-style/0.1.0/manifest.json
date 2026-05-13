@@ -15,7 +15,7 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "hash": "30e350542d8ed98136bba35eacfe19ab4840eae1edf7729ce7f514dd6b086790"
+    "hash": "02df5f9779b422ed61267db31dc573f9dc11b4db6077dd36202dcabe8ff43b47"
   },
   "contributes": {
     "presets": [
@@ -24,7 +24,7 @@
         "cluster": "cluster-f"
       },
       {
-        "id": "vox-deluxe-register-placeholder",
+        "id": "vox-deluxe-register",
         "cluster": "cluster-f"
       },
       {
@@ -37,7 +37,7 @@
       }
     ]
   },
-  "description": "Premium creator-economy templates extending Cluster F — substantive MKBHD-pro register (T-517) plus register variants for Vox-deluxe, Linus-Tech-Tips-pro and the prestige-creator composition preset (filled in T-518..T-520).",
+  "description": "Premium creator-economy templates extending Cluster F — substantive MKBHD-pro register (T-517) + Vox-deluxe register (T-518) plus register variants for Linus-Tech-Tips-pro and the prestige-creator composition preset (filled in T-519..T-520).",
   "homepage": "https://stageflip.dev/packs/creator-style",
   "repository": "https://github.com/marioberlin/stageflip/tree/main/packages/pack-creator-style",
   "keywords": [
