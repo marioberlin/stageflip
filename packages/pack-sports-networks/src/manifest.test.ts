@@ -2,10 +2,13 @@
 // T-511 — Verifies `MANIFEST_SKELETON` is a structurally valid
 // `PackManifest` under `parsePackManifest` (once a real integrity hash
 // is supplied), the license claim is the expected commercial tier, the
-// four preset contributions are present (T-512 + T-513 + T-514 fill
-// NBA Pro + NFL Pro + MLB slots substantively; T-515 F1 Pro still
-// placeholder awaiting its fill), and keywords are lowercase. Version
-// stays 0.1.0 until T-515 closes the pack at v0.2.0.
+// five preset contributions are present (all substantive post-T-515:
+// four register variants — NBA Pro T-512 / NFL Pro T-513 / MLB T-514 /
+// F1 Pro T-515 — plus the closing F1 AR Grid Lineup arOverlay
+// integration T-515), and keywords are lowercase. Version is bumped to
+// 0.2.0 by T-515 (minor; additive feature — fills the F1 Pro register
+// placeholder + adds the AR grid-lineup integration; closes the pack at
+// GA).
 
 import { parsePackManifest } from '@stageflip/pack-format';
 import { describe, expect, it } from 'vitest';
@@ -33,14 +36,15 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('contributes exactly four cluster-b preset entries — NBA Pro + NFL Pro + MLB filled in T-512 + T-513 + T-514; F1 Pro still placeholder for T-515', () => {
+  it('contributes exactly five cluster-b preset entries — four register variants (NBA Pro T-512 / NFL Pro T-513 / MLB T-514 / F1 Pro T-515) plus the closing F1 AR Grid Lineup arOverlay integration (T-515)', () => {
     const presets = MANIFEST_SKELETON.contributes.presets ?? [];
-    expect(presets).toHaveLength(4);
+    expect(presets).toHaveLength(5);
     expect(presets.map((p) => p.id)).toEqual([
       'nba-pro-register',
       'nfl-pro-register',
       'mlb-register',
-      'f1-pro-register-placeholder',
+      'f1-pro-register',
+      'f1-ar-grid-lineup',
     ]);
     for (const p of presets) {
       expect(p.cluster).toBe('cluster-b');
@@ -62,9 +66,9 @@ describe('MANIFEST_SKELETON', () => {
     });
   });
 
-  it('id is lowercase kebab-case + version is 0.1.0 (skeleton release; T-515 bumps to v0.2.0 GA on F1 Pro fill)', () => {
+  it('id is lowercase kebab-case + version is 0.2.0 (T-515 minor bump — fills the F1 Pro register placeholder + adds the AR grid-lineup integration; closes the pack at GA)', () => {
     expect(MANIFEST_SKELETON.id).toBe('sports-networks');
-    expect(MANIFEST_SKELETON.version).toBe('0.1.0');
+    expect(MANIFEST_SKELETON.version).toBe('0.2.0');
   });
 });
 
