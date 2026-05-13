@@ -1,5 +1,5 @@
 // packages/pack-wedding-events/scripts/build-pack.test.ts
-// T-529 — Drives `buildPack` against a temp-dir source layout using a
+// T-530 — Drives `buildPack` against a temp-dir source layout using a
 // freshly-generated Ed25519 keypair. Verifies (a) outputs land on disk,
 // (b) the integrity hash on the manifest matches SHA-256 over the
 // archive bytes WITHOUT the manifest, (c) the emitted manifest parses
@@ -8,13 +8,11 @@
 // (f) missing presets/ dir throws, and (g) the CLI default outDir
 // tracks `MANIFEST_SKELETON.version` (regression coverage for the T-510
 // hard-coded-version bug carried into the wedding-events skeleton).
-// T-529 grew the preset count from seven to ten (three substantive
-// theme variants from T-527 + two substantive composition templates
-// from T-528 + four substantive transition / bumper presets from T-529
-// — petal-cross-fade-transition + lace-wipe-transition +
-// wedding-bumper-card + wedding-final-card — replacing the original
-// wedding-transitions-placeholder, plus the one remaining placeholder
-// for T-530).
+// T-530 flipped the last placeholder (`audio-bed-library-placeholder`
+// → `audio-bed-library`), seeded `contributes.assets` with the five
+// pre-licensed audio bed track references, and bumped the pack version
+// 0.1.0 → 0.2.0 (additive — new assets contribution + final placeholder
+// slot filled). Closes the Wedding & Events launch pack at v0.2.0 GA.
 
 import { createHash, generateKeyPairSync } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -86,8 +84,8 @@ function createFixture(opts?: { skipPresetsDir?: boolean; withDotFile?: boolean 
       '---\nid: wedding-final-card\n---\n# substantive\n',
     );
     writeFileSync(
-      join(presetsDir, 'audio-bed-library-placeholder.md'),
-      '---\nid: audio-bed-library-placeholder\n---\n# placeholder\n',
+      join(presetsDir, 'audio-bed-library.md'),
+      '---\nid: audio-bed-library\n---\n# substantive\n',
     );
     writeFileSync(join(sourceDir, 'LICENSE.md'), '# LICENSE placeholder\n');
     writeFileSync(join(sourceDir, 'NOTICE.md'), '# NOTICE placeholder\n');
@@ -146,8 +144,8 @@ describe('buildPack', () => {
       { path: 'LICENSE.md', content: readFileSync(join(fx.sourceDir, 'LICENSE.md')) },
       { path: 'NOTICE.md', content: readFileSync(join(fx.sourceDir, 'NOTICE.md')) },
       {
-        path: 'presets/audio-bed-library-placeholder.md',
-        content: readFileSync(join(fx.sourceDir, 'presets', 'audio-bed-library-placeholder.md')),
+        path: 'presets/audio-bed-library.md',
+        content: readFileSync(join(fx.sourceDir, 'presets', 'audio-bed-library.md')),
       },
       {
         path: 'presets/classic-theme.md',
@@ -268,7 +266,7 @@ describe('buildPack', () => {
     });
   });
 
-  it('the manifest contributes exactly ten cluster-wedding-events presets (T-529 — three substantive theme variants rustic / modern / classic + two substantive composition templates wedding-ceremony-template + wedding-reception-template + four substantive transition / bumper presets petal-cross-fade-transition + lace-wipe-transition + wedding-bumper-card + wedding-final-card + one placeholder for T-530)', () => {
+  it('the manifest contributes exactly ten cluster-wedding-events presets (T-530 — all substantive: rustic / modern / classic + wedding-ceremony-template + wedding-reception-template + petal-cross-fade-transition + lace-wipe-transition + wedding-bumper-card + wedding-final-card + audio-bed-library)', () => {
     const result = buildPack({
       sourceDir: fx.sourceDir,
       outDir: fx.outDir,
@@ -279,35 +277,54 @@ describe('buildPack', () => {
     for (const p of manifest.contributes.presets) {
       expect(p.cluster).toBe('cluster-wedding-events');
     }
+    expect(manifest.contributes.presets.map((p: { id: string }) => p.id)).toContain(
+      'audio-bed-library',
+    );
   });
 
-  it('the manifest declares version 0.1.0 (skeleton release)', () => {
+  it('the manifest contributes exactly five audio bed asset entries (T-530 — pre-licensed instrumental tracks; all audio/mpeg under audio/)', () => {
     const result = buildPack({
       sourceDir: fx.sourceDir,
       outDir: fx.outDir,
       privateKeyPem: fx.privateKeyPem,
     });
     const manifest = JSON.parse(readFileSync(result.manifestPath, 'utf-8'));
-    expect(manifest.version).toBe('0.1.0');
+    expect(manifest.contributes.assets).toEqual([
+      { path: 'audio/processional-strings-instrumental.mp3', mimeType: 'audio/mpeg' },
+      { path: 'audio/recessional-uptempo-instrumental.mp3', mimeType: 'audio/mpeg' },
+      { path: 'audio/reception-jazz-ambient.mp3', mimeType: 'audio/mpeg' },
+      { path: 'audio/first-dance-acoustic-instrumental.mp3', mimeType: 'audio/mpeg' },
+      { path: 'audio/closing-piano-instrumental.mp3', mimeType: 'audio/mpeg' },
+    ]);
+  });
+
+  it('the manifest declares version 0.2.0 (T-530 closes the pack at v0.2.0 GA — additive: new assets contribution + final placeholder slot filled)', () => {
+    const result = buildPack({
+      sourceDir: fx.sourceDir,
+      outDir: fx.outDir,
+      privateKeyPem: fx.privateKeyPem,
+    });
+    const manifest = JSON.parse(readFileSync(result.manifestPath, 'utf-8'));
+    expect(manifest.version).toBe('0.2.0');
     expect(manifest.version).toBe(MANIFEST_SKELETON.version);
   });
 });
 
-describe('build-pack CLI default outDir (T-529 — version-templated, per T-510 fix)', () => {
+describe('build-pack CLI default outDir (T-530 — version-templated, per T-510 fix)', () => {
   // The CLI's `isMainModule` branch is gated on `process.argv[1]` matching the
   // script path so the module under test runs as a library here, NOT as a CLI.
   // We assert the contract by checking the runtime literal: the default outDir
   // expression in the CLI is `resolve(packageRoot, ../../packs/stageflip/wedding-events/${MANIFEST_SKELETON.version})`.
   // Verifying that MANIFEST_SKELETON.version reaches the expected value AND
-  // the CLI's source contains the templated path (NOT a hard-coded `0.1.0`)
+  // the CLI's source contains the templated path (NOT a hard-coded `0.2.0`)
   // is a sufficient regression for the bug T-510 fixed in news-pro and that
   // we carry forward into this skeleton.
 
-  it('MANIFEST_SKELETON.version is 0.1.0 — the value the CLI default outDir interpolates', () => {
-    expect(MANIFEST_SKELETON.version).toBe('0.1.0');
+  it('MANIFEST_SKELETON.version is 0.2.0 — the value the CLI default outDir interpolates (T-530 GA bump)', () => {
+    expect(MANIFEST_SKELETON.version).toBe('0.2.0');
   });
 
-  it('build-pack.ts CLI source uses ${MANIFEST_SKELETON.version} (NOT a hard-coded 0.1.0 literal) in the default outDir expression', () => {
+  it('build-pack.ts CLI source uses ${MANIFEST_SKELETON.version} (NOT a hard-coded 0.2.0 literal) in the default outDir expression', () => {
     const here = dirname(fileURLToPath(import.meta.url));
     const cliSource = readFileSync(resolve(here, 'build-pack.ts'), 'utf-8');
     // Positive: the templated form is present.
@@ -317,6 +334,8 @@ describe('build-pack CLI default outDir (T-529 — version-templated, per T-510 
     // Negative: no hard-coded version literal remains in the default outDir.
     expect(cliSource).not.toContain("'../../packs/stageflip/wedding-events/0.1.0'");
     expect(cliSource).not.toContain('"../../packs/stageflip/wedding-events/0.1.0"');
+    expect(cliSource).not.toContain("'../../packs/stageflip/wedding-events/0.2.0'");
+    expect(cliSource).not.toContain('"../../packs/stageflip/wedding-events/0.2.0"');
   });
 
   it('package-relative default outDir resolves under packs/stageflip/wedding-events/<manifest-version>/', () => {
@@ -329,7 +348,7 @@ describe('build-pack CLI default outDir (T-529 — version-templated, per T-510 
     expect(expected.endsWith(`/packs/stageflip/wedding-events/${MANIFEST_SKELETON.version}`)).toBe(
       true,
     );
-    expect(expected).toContain('/packs/stageflip/wedding-events/0.1.0');
+    expect(expected).toContain('/packs/stageflip/wedding-events/0.2.0');
   });
 
   it('build-pack.ts CLI uses STAGEFLIP_WEDDING_EVENTS_{KEY,SRC,OUT} env-var prefix (NOT the news-pro / sports-networks / creator-style / finance prefix)', () => {
