@@ -20,3 +20,18 @@ export { type ValidateIssue, type ValidateResult, runValidate } from './commands
 export { type SignResult, runSign } from './commands/sign.js';
 
 export { type PublishResult, runPublish } from './commands/publish.js';
+
+export {
+  DEFAULT_OUT_DIR,
+  type LicenseResult,
+  runLicense,
+} from './commands/license.js';
+
+export {
+  TEMPLATES,
+  TIER_IDS,
+  type TierId,
+  type TierTemplates,
+  renderManifestSnippet,
+  substitute,
+} from './commands/license-templates.js';
