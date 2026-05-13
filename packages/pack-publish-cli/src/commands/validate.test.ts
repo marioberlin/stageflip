@@ -122,6 +122,25 @@ describe('runValidate', () => {
     expect(result.ok).toBe(false);
     expect(result.issues.some((i) => i.invariant === 'version-regex-mismatch')).toBe(true);
   });
+
+  it('valid manifestVersion 1 emits the compatibility-matrix note advisory (T-502)', async () => {
+    const deps = makeRecorderDeps();
+    const packDir = await writeMinimalPack(tmp.path, {
+      description: 'a fine open-licensed demo pack',
+      repository: 'https://example.com/repo',
+      keywords: ['demo', 'sample'],
+    });
+    const result = await runValidate(packDir, deps.fs);
+    expect(result.ok).toBe(true);
+    expect(
+      result.issues.some(
+        (i) =>
+          i.invariant === 'compatibility-advisory' &&
+          i.level === 'warn' &&
+          i.detail.includes('P16 launch'),
+      ),
+    ).toBe(true);
+  });
 });
 
 describe('runValidateCommand', () => {

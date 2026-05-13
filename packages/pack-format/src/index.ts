@@ -29,3 +29,13 @@ export {
   type PackFormatLossFlagCode,
   type PackFormatLossFlagSpec,
 } from './loss-flags.js';
+
+export {
+  COMPATIBILITY_MATRIX,
+  type CompatibilityRow,
+  isCompatible,
+  matchingRows,
+  readableManifestVersions,
+} from './compatibility.js';
+
+export { satisfiesRange } from './semver-range.js';
