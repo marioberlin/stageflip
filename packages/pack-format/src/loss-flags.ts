@@ -1,12 +1,14 @@
 // packages/pack-format/src/loss-flags.ts
-// T-494 — 5 new LF-LICENSE-* / LF-PACK-* loss flag codes per
-// ADR-012 §D10. The `@stageflip/loss-flags` package types `code` as
-// an open string (per-importer enum); this module defines the
-// pack-format-side codes consumers reference.
+// T-494 — 5 LF-LICENSE-* / LF-PACK-* loss flag codes per ADR-012 §D10.
+// T-505 — Extended with 2 trial-mode codes (LF-LICENSE-TRIAL-ACTIVE,
+// LF-LICENSE-TRIAL-EXPIRED). The `@stageflip/loss-flags` package
+// types `code` as an open string (per-importer enum); this module
+// defines the pack-format-side codes consumers reference.
 
 /**
  * Loss-flag codes the pack-format package emits / its consumers
- * (pack-loader, runtime gate) emit. Per ADR-012 §D10.
+ * (pack-loader, runtime gate, pack-trial policy) emit. Per ADR-012
+ * §D10 + T-505 trial extension.
  */
 export const PACK_FORMAT_LF_CODES = [
   'LF-LICENSE-PACK-DENIED',
@@ -14,6 +16,8 @@ export const PACK_FORMAT_LF_CODES = [
   'LF-PACK-SIGNATURE-INVALID',
   'LF-PACK-INCOMPATIBLE-VERSION',
   'LF-PACK-MANIFEST-PARSE-ERROR',
+  'LF-LICENSE-TRIAL-ACTIVE',
+  'LF-LICENSE-TRIAL-EXPIRED',
 ] as const;
 export type PackFormatLossFlagCode = (typeof PACK_FORMAT_LF_CODES)[number];
 
@@ -53,5 +57,17 @@ export const PACK_FORMAT_LF_SPECS: readonly PackFormatLossFlagSpec[] = [
     code: 'LF-PACK-MANIFEST-PARSE-ERROR',
     severity: 'error',
     trigger: 'manifest.json rejected by packManifestSchema at parse time',
+  },
+  {
+    code: 'LF-LICENSE-TRIAL-ACTIVE',
+    severity: 'warn',
+    trigger:
+      'Pack with trial entitlement mounted a clip; output is watermarked (T-505 trial-mode policy)',
+  },
+  {
+    code: 'LF-LICENSE-TRIAL-EXPIRED',
+    severity: 'error',
+    trigger:
+      'Pack with trial entitlement attempted to mount a clip after expiresAt; runtime denies (T-505)',
   },
 ];

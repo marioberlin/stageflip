@@ -10,15 +10,18 @@ import type { LicenseClaim } from '@stageflip/pack-format';
 /**
  * One tenant's entitlement record per ADR-013 §D4. Lifecycle:
  *   pending → active → lapsed → revoked
+ * The `'trial'` status (T-505) is a sibling of `'active'`: the
+ * install + clip-mount gates admit the pack, but the runtime emits
+ * `LF-LICENSE-TRIAL-ACTIVE` (warn) so the host can apply a watermark.
  * Stored by `TenantEntitlementsStore` (T-496); the loader treats it
  * read-only.
  */
 export interface TenantEntitlement {
   readonly sku: string;
   readonly entitlementType: 'subscription' | 'one-time';
-  readonly status: 'active' | 'lapsed' | 'revoked' | 'pending';
+  readonly status: 'active' | 'lapsed' | 'revoked' | 'pending' | 'trial';
   readonly issuedAt: string; // ISO 8601
-  readonly expiresAt?: string; // ISO 8601 (subscription)
+  readonly expiresAt?: string; // ISO 8601 (subscription, trial)
   readonly contractRef?: string; // enterprise tier
 }
 

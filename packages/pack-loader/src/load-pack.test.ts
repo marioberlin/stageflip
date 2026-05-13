@@ -226,6 +226,62 @@ describe('loadPack', () => {
     expect(isPackLoadFailure(result)).toBe(false);
   });
 
+  it('admits a paid pack when entitlement is trial (T-505)', async () => {
+    const signature = signPackArchive(archive, keys.privateKeyPem);
+    await writeInstall(installPath, {
+      manifest: baseManifest({
+        license: { kind: 'paid-per-tenant', sku: 'sku-1', entitlementType: 'subscription' },
+      }),
+      archive,
+      signature,
+    });
+    const result = await loadPack(
+      installPath,
+      makeDeps({
+        entitlements: entitlements({
+          'sku-1': {
+            sku: 'sku-1',
+            entitlementType: 'subscription',
+            status: 'trial',
+            issuedAt: '2026-01-01T00:00:00Z',
+            expiresAt: '2099-01-01T00:00:00Z',
+          },
+        }),
+      }),
+    );
+    expect(isPackLoadFailure(result)).toBe(false);
+  });
+
+  it('LF-LICENSE-PACK-DENIED when trial entitlement expired (T-505)', async () => {
+    const signature = signPackArchive(archive, keys.privateKeyPem);
+    await writeInstall(installPath, {
+      manifest: baseManifest({
+        license: { kind: 'paid-per-tenant', sku: 'sku-1', entitlementType: 'subscription' },
+      }),
+      archive,
+      signature,
+    });
+    const result = await loadPack(
+      installPath,
+      makeDeps({
+        entitlements: entitlements({
+          'sku-1': {
+            sku: 'sku-1',
+            entitlementType: 'subscription',
+            status: 'trial',
+            issuedAt: '2024-01-01T00:00:00Z',
+            expiresAt: '2024-02-01T00:00:00Z',
+          },
+        }),
+      }),
+    );
+    expect(result).toMatchObject({ reason: 'LF-LICENSE-PACK-DENIED' });
+    if (isPackLoadFailure(result)) {
+      expect(result.detail).toMatch(/trial/);
+      expect(result.detail).toMatch(/expired/);
+    }
+  });
+
   it('admits an enterprise pack when entitlement is active', async () => {
     const signature = signPackArchive(archive, keys.privateKeyPem);
     await writeInstall(installPath, {
