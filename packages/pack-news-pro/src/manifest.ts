@@ -49,7 +49,7 @@ export const MANIFEST_SKELETON: PackManifest = {
     presets: [
       { id: 'sky-news-pro-register', cluster: 'cluster-a' },
       { id: 'itv-pro-register', cluster: 'cluster-a' },
-      { id: 'rai-register-placeholder', cluster: 'cluster-a' },
+      { id: 'rai-pro-register', cluster: 'cluster-a' },
     ],
   },
   description:
