@@ -15,7 +15,7 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "hash": "269e4ed7e26a87e636478884c1928d0ed5308db2ec593d06ec9748c7a36ccc9c"
+    "hash": "cf95d0b86bbbc2d9fc8abb730367740c481bd1d57353741fbb3039edb3660753"
   },
   "contributes": {
     "presets": [
@@ -24,7 +24,7 @@
         "cluster": "cluster-a"
       },
       {
-        "id": "itv-register-placeholder",
+        "id": "itv-pro-register",
         "cluster": "cluster-a"
       },
       {
