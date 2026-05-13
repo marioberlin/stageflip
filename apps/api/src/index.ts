@@ -92,3 +92,14 @@ export {
   type AudienceLossFlagInput,
   type ServerAudienceLossFlagCode,
 } from './routes/audience-loss-flags.js';
+
+// T-542 — Admin pack-inventory surface. Read-only `GET /admin/tenants/:tenantId/packs`
+// with an abstracted persistence layer (`TenantPackInventoryStore`) — v1 ships the
+// in-memory implementation; Firestore adapter deferred to T-550.
+export {
+  InMemoryTenantPackInventoryStore,
+  createAdminPackInventoryRoute,
+  type AdminPackInventoryRouteDeps,
+  type TenantPackInventoryRow,
+  type TenantPackInventoryStore,
+} from './routes/admin-pack-inventory.js';
