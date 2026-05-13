@@ -5,11 +5,11 @@ import { describe, expect, it } from 'vitest';
 import { PACK_FORMAT_LF_CODES, PACK_FORMAT_LF_SPECS } from './loss-flags.js';
 
 describe('PACK_FORMAT_LF_CODES', () => {
-  it('contains 7 codes (5 ADR-012 §D10 + 2 T-505 trial)', () => {
-    expect(PACK_FORMAT_LF_CODES).toHaveLength(7);
+  it('contains 8 codes (5 ADR-012 §D10 + 2 T-505 trial + 1 T-539 npm-path)', () => {
+    expect(PACK_FORMAT_LF_CODES).toHaveLength(8);
   });
 
-  it('matches the inventory exactly (ADR-012 §D10 + T-505)', () => {
+  it('matches the inventory exactly (ADR-012 §D10 + T-505 + T-539)', () => {
     expect([...PACK_FORMAT_LF_CODES]).toEqual([
       'LF-LICENSE-PACK-DENIED',
       'LF-LICENSE-CLIP-REVOKED',
@@ -18,12 +18,17 @@ describe('PACK_FORMAT_LF_CODES', () => {
       'LF-PACK-MANIFEST-PARSE-ERROR',
       'LF-LICENSE-TRIAL-ACTIVE',
       'LF-LICENSE-TRIAL-EXPIRED',
+      'LF-NPM-TOKEN-MISSING',
     ]);
   });
 
   it('includes the two T-505 trial-mode codes', () => {
     expect(PACK_FORMAT_LF_CODES).toContain('LF-LICENSE-TRIAL-ACTIVE');
     expect(PACK_FORMAT_LF_CODES).toContain('LF-LICENSE-TRIAL-EXPIRED');
+  });
+
+  it('includes the T-539 npm-path code', () => {
+    expect(PACK_FORMAT_LF_CODES).toContain('LF-NPM-TOKEN-MISSING');
   });
 });
 
@@ -32,7 +37,7 @@ describe('PACK_FORMAT_LF_SPECS', () => {
     expect(PACK_FORMAT_LF_SPECS).toHaveLength(PACK_FORMAT_LF_CODES.length);
   });
 
-  it('declares severities consistent with ADR-012 §D10 + T-505 table', () => {
+  it('declares severities consistent with ADR-012 §D10 + T-505 + T-539 table', () => {
     const expected: Record<string, 'info' | 'warn' | 'error'> = {
       'LF-LICENSE-PACK-DENIED': 'error',
       'LF-LICENSE-CLIP-REVOKED': 'warn',
@@ -41,6 +46,7 @@ describe('PACK_FORMAT_LF_SPECS', () => {
       'LF-PACK-MANIFEST-PARSE-ERROR': 'error',
       'LF-LICENSE-TRIAL-ACTIVE': 'warn',
       'LF-LICENSE-TRIAL-EXPIRED': 'error',
+      'LF-NPM-TOKEN-MISSING': 'error',
     };
     for (const spec of PACK_FORMAT_LF_SPECS) {
       expect(spec.severity).toBe(expected[spec.code]);
@@ -54,6 +60,11 @@ describe('PACK_FORMAT_LF_SPECS', () => {
 
   it('marks LF-LICENSE-TRIAL-EXPIRED as error severity', () => {
     const spec = PACK_FORMAT_LF_SPECS.find((s) => s.code === 'LF-LICENSE-TRIAL-EXPIRED');
+    expect(spec?.severity).toBe('error');
+  });
+
+  it('marks LF-NPM-TOKEN-MISSING as error severity', () => {
+    const spec = PACK_FORMAT_LF_SPECS.find((s) => s.code === 'LF-NPM-TOKEN-MISSING');
     expect(spec?.severity).toBe('error');
   });
 });
