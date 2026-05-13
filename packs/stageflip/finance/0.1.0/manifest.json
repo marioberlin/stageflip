@@ -15,7 +15,7 @@
   },
   "integrity": {
     "algorithm": "sha256",
-    "hash": "46f1b19e2c9d11b6a504a4d27f5ee07c7889b7b5bd6bfd1984c869ebb222ca93"
+    "hash": "95b71fd1af21704f329e97cfdea4e9702dd191eef13c389a66adbeac74dd596e"
   },
   "contributes": {
     "presets": [
@@ -28,16 +28,22 @@
         "cluster": "cluster-finance"
       },
       {
-        "id": "bloomberg-pro-adapter-placeholder",
+        "id": "bloomberg-pro-adapter",
         "cluster": "cluster-finance"
       },
       {
         "id": "finance-semantic-tools-placeholder",
         "cluster": "cluster-finance"
       }
+    ],
+    "adapters": [
+      {
+        "id": "bloomberg-pro",
+        "modality": "data-source"
+      }
     ]
   },
-  "description": "Premium financial-communication templates extending a new finance-vertical cluster — earnings-call + investor-deck composition templates, Bloomberg-pro adapter premium tier, finance-domain semantic-tool extensions (filled in T-522..T-525).",
+  "description": "Premium financial-communication templates extending a new finance-vertical cluster — earnings-call + investor-deck composition templates, Bloomberg-pro adapter premium-tier contribution slot, finance-domain semantic-tool extensions (filled in T-522..T-525).",
   "homepage": "https://stageflip.dev/packs/finance",
   "repository": "https://github.com/marioberlin/stageflip/tree/main/packages/pack-finance",
   "keywords": [
