@@ -653,6 +653,115 @@ describe('check-preset-integrity invariant 15: parityFixture-non-blank (T-348b)'
   });
 });
 
+// ---------- Invariant 15: Cluster I (audience) per-clipKind path resolution ----------
+//
+// Audience presets share goldens by clipKind, not preset id. T-486/T-476
+// laid out `parity-fixtures/audience/<clipKind>/` because multiple presets
+// (e.g. `bbc-question-time` + `conference-qa-upvote`, both `live-qa`) share
+// the same static-fallback golden. The integrity check resolves the lookup
+// directory by `fm.clipKind` when `fm.cluster === 'audience'`.
+
+describe('check-preset-integrity invariant 15: Cluster I per-clipKind path resolution', () => {
+  let presetsRoot: string;
+  let parityRoot: string;
+
+  function setup(): void {
+    presetsRoot = mkdtempSync(join(tmpdir(), 'cluster-i-presets-'));
+    parityRoot = mkdtempSync(join(tmpdir(), 'cluster-i-parity-'));
+  }
+
+  function teardown(): void {
+    rmSync(presetsRoot, { recursive: true, force: true });
+    rmSync(parityRoot, { recursive: true, force: true });
+  }
+
+  it('PASSES when two audience presets share a single per-clipKind golden', () => {
+    setup();
+    try {
+      // Two presets in cluster `audience`, both clipKind `live-qa`, both
+      // signed. The integrity check must resolve BOTH to the per-clipKind
+      // golden under parity-fixtures/audience/live-qa/.
+      const audienceClusterDir = join(presetsRoot, 'audience');
+      mkdirSync(audienceClusterDir, { recursive: true });
+      writeFileSync(
+        join(audienceClusterDir, 'SKILL.md'),
+        '---\ntitle: Cluster audience\nid: skills/stageflip/presets/audience\ntier: cluster\nstatus: stub\nlast_updated: 2026-05-14\nowner_task: T-486\nrelated: []\n---\n\n# Cluster audience\n',
+      );
+      const presetA = makeFrontmatter({
+        cluster: 'audience',
+        id: 'bbc-question-time',
+        clipKind: 'live-qa',
+        permissions: ['audience-network'],
+        parityFixture: "'signed:2026-05-14'",
+        typeDesign: 'pending-cluster-batch',
+        status: 'substantive',
+      });
+      const presetB = makeFrontmatter({
+        cluster: 'audience',
+        id: 'conference-qa-upvote',
+        clipKind: 'live-qa',
+        permissions: ['audience-network'],
+        parityFixture: "'signed:2026-05-14'",
+        typeDesign: 'pending-cluster-batch',
+        status: 'substantive',
+      });
+      writeFileSync(join(audienceClusterDir, 'bbc-question-time.md'), presetA);
+      writeFileSync(join(audienceClusterDir, 'conference-qa-upvote.md'), presetB);
+      // Single golden under per-clipKind dir, two-color so non-blank gate passes.
+      const kindDir = join(parityRoot, 'audience', 'live-qa');
+      mkdirSync(kindDir, { recursive: true });
+      writeSyntheticPng({
+        dir: kindDir,
+        filename: 'golden-frame-75.png',
+        paint: (x) => (x < 640 ? [16, 64, 160, 255] : [240, 248, 255, 255]),
+      });
+      const report = runIntegrityChecks({
+        presetsRoot,
+        parityFixturesRoot: parityRoot,
+      });
+      expect(report.byInvariant['parityFixture-non-blank'].errors).toEqual([]);
+    } finally {
+      teardown();
+    }
+  });
+
+  it('FAILS with a per-clipKind path message when the audience kind dir has no goldens', () => {
+    setup();
+    try {
+      const audienceClusterDir = join(presetsRoot, 'audience');
+      mkdirSync(audienceClusterDir, { recursive: true });
+      writeFileSync(
+        join(audienceClusterDir, 'SKILL.md'),
+        '---\ntitle: Cluster audience\nid: skills/stageflip/presets/audience\ntier: cluster\nstatus: stub\nlast_updated: 2026-05-14\nowner_task: T-486\nrelated: []\n---\n\n# Cluster audience\n',
+      );
+      writeFileSync(
+        join(audienceClusterDir, 'kahoot-competitive.md'),
+        makeFrontmatter({
+          cluster: 'audience',
+          id: 'kahoot-competitive',
+          clipKind: 'live-quiz',
+          permissions: ['audience-network'],
+          parityFixture: "'signed:2026-05-14'",
+          typeDesign: 'pending-cluster-batch',
+          status: 'substantive',
+        }),
+      );
+      // No goldens under parity-fixtures/audience/live-quiz/.
+      const report = runIntegrityChecks({
+        presetsRoot,
+        parityFixturesRoot: parityRoot,
+      });
+      const errors = report.byInvariant['parityFixture-non-blank'].errors;
+      expect(errors.length).toBe(1);
+      expect(errors[0]?.message).toMatch(
+        /no golden PNGs found under parity-fixtures\/audience\/live-quiz\//,
+      );
+    } finally {
+      teardown();
+    }
+  });
+});
+
 // ---------- Invariant 7: compass anchor ----------
 
 describe('check-preset-integrity invariant 7: compass anchor (AC #9, #10)', () => {

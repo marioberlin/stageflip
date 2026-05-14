@@ -1106,17 +1106,24 @@ export function runIntegrityChecks(opts: RunOpts): IntegrityReport {
     // Invariant 15 (T-348b) — every signed parity golden is non-blank.
     // Only runs for presets where `signOff.parityFixture` matches `signed:*`;
     // pending-user-review + na are skipped (D-T348b-1).
+    //
+    // Cluster I (audience) uses a per-clipKind golden layout instead of
+    // per-preset (`parity-fixtures/audience/<clipKind>/golden-frame-*.png`)
+    // because multiple presets share a clipKind and the static-fallback
+    // renderer is keyed on kind (T-486 / T-476 design). For audience we
+    // resolve the lookup directory by `fm.clipKind`, not by preset id.
     if (/^signed:/.test(fm.signOff.parityFixture)) {
+      const goldenLookupId = fm.cluster === 'audience' ? fm.clipKind : id;
       const goldens = listGoldenPngs({
         parityFixturesRoot: opts.parityFixturesRoot ?? PARITY_FIXTURES_ROOT_DEFAULT,
         cluster: fm.cluster,
-        presetId: id,
+        presetId: goldenLookupId,
       });
       if (goldens.length === 0) {
         buckets['parityFixture-non-blank'].errors.push({
           presetId: id,
           filePath,
-          message: `signOff.parityFixture is '${fm.signOff.parityFixture}' but no golden PNGs found under parity-fixtures/${fm.cluster}/${id}/`,
+          message: `signOff.parityFixture is '${fm.signOff.parityFixture}' but no golden PNGs found under parity-fixtures/${fm.cluster}/${goldenLookupId}/`,
         });
       } else {
         for (const goldenPath of goldens) {
