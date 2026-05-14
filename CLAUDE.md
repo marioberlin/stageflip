@@ -96,6 +96,16 @@ If code and a skill file disagree, one of them is wrong. Fix the truth; never "j
 
 `pnpm check-skill-drift` enforces this.
 
+### Installed packs extend the skill tree (T-547)
+
+The skill tree is not only `skills/stageflip/`. Any first-party or third-party pack installed via `@stageflip/pack-loader` (T-495) contributes its own preset and concept skills into the tenant's effective context.
+
+- **First-party packs** ship `skills/stageflip/concepts/pack-<id>/SKILL.md` plus a preset-id-level entry per pack-shipped preset. All six v0.2.0 launch packs already follow this contract (`pack-news-pro`, `pack-sports-networks`, `pack-creator-style`, `pack-finance`, `pack-wedding-events`, `pack-frontier-fx`).
+- **Third-party packs** that publish via `@stageflip/pack-publish-cli` (T-500) are encouraged to ship the same shape under their own `pack-<publisher>-<id>/SKILL.md` namespace; the loader does not currently enforce the convention.
+- **`pnpm check-skill-drift`** is core-only (covers `skills/stageflip/**`) — per-pack skill drift is the pack's responsibility, not the workspace's. T-548 extends the gate to surface (but not fail-build on) per-pack skill drift; the tier-coverage invariant remains core-only.
+
+The skill tree IS the in-context surface the agent sees: when a pack is installed, its skills are loaded as context alongside the core ones.
+
 ---
 
 ## 6. Escalation
