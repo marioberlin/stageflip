@@ -3,7 +3,7 @@ title: Data-flow security — per-adapter SecurityManifest + CI gate + audit cad
 id: skills/stageflip/concepts/data-flow-security
 tier: concept
 status: substantive
-last_updated: 2026-05-11
+last_updated: 2026-05-15
 owner_task: T-446
 related:
   - skills/stageflip/concepts/adapter-sandbox/SKILL.md
@@ -147,6 +147,52 @@ three-d, video-gen, music-gen, sfx).
    `docs/security/data-flow-audit-YYYY-MM-DD.md` (or open one if
    the cadence calls for a fresh dated report) with per-adapter
    findings.
+
+## Phase 13 frontier-clip provider seams (R-17)
+
+Closed 2026-05-15 per PO direction (originally deferred to post-GA
+hardening sprint; greenlit early). The 5 Phase 13 frontier-clip
+provider seams now ship the same sidecar `security.json` convention
+as Phase 14 adapters, even though they are not adapter packages.
+
+**Covered families** (one manifest each, co-located with the clip
+source):
+
+| Family | Manifest path | Seam shape |
+|---|---|---|
+| `voice` | `packages/runtimes/interactive/src/clips/voice/security.json` | host-injected `TranscriptionProvider` (Web Speech API in v1; cloud TTS retroactive via Phase 14 ADR-006) |
+| `ai-chat` | `packages/runtimes/interactive/src/clips/ai-chat/security.json` | host-injected `LLMChatProvider` via `@stageflip/llm-abstraction` |
+| `live-data` | `packages/runtimes/interactive/src/clips/live-data/security.json` | host-injected `LiveDataProvider` (`globalThis.fetch` typically) |
+| `web-embed` | `packages/runtimes/interactive/src/clips/web-embed/security.json` | iframe-embedded origin (no separate provider; the iframe IS the seam) |
+| `ai-generative` | `packages/runtimes/interactive/src/clips/ai-generative/security.json` | host-injected `AiGenerativeProvider` |
+
+Each manifest uses an `adapterId` of the form `frontier-clip-<family>`
+(kebab-case, schema-compliant). All 5 declare
+`perimeter: 'remote-network'` and a placeholder `networkEndpoint`
+hostname of the form `host-injected.<seam>.local` because the actual
+destination is host-injected at mount time and not known at clip-
+authoring time.
+
+**CI gate extension** —
+`scripts/check-data-flow-security.ts` walks
+`packages/runtimes/interactive/src/clips/<family>/` for each family in
+`FRONTIER_CLIP_FAMILIES_REQUIRING_MANIFEST` and validates
+`security.json` with the same Zod parse used for adapters. Failure
+modes 1–3 (MISSING / PARSE-ERROR / INVALID) apply; failure modes 4–5
+(INCONSISTENT / ORPHAN) do not, because frontier-clip seams have no
+`AdapterDescriptor` to compare against. Source rows are tagged
+`frontier-clip:<family>` to distinguish them from adapter rows tagged
+`@stageflip/<adapter>`.
+
+**Why retrofit, not redesign** — the retrofit is verbatim against the
+Phase 14 manifest convention because audit semantics are identical:
+the question "what data leaves the StageFlip perimeter via this seam?"
+has the same shape regardless of whether the seam lives in an adapter
+package or inside `@stageflip/runtimes-interactive`. Auditability now
+scales to third-party provider plug-ins for any of the 5 families.
+
+This closes T-403 R-17 from
+`docs/security-review-track-a.md` (§5 R-17 row + §7.2 R-17 bullet).
 
 ## Related
 

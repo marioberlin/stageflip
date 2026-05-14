@@ -1,7 +1,11 @@
 // scripts/check-data-flow-security.ts
-// CI gate (T-446): every reference adapter ships a sidecar
+// CI gate (T-446 + R-17): every reference adapter ships a sidecar
 // `security.json` matching `SecurityManifest`, AND the manifest is
 // internally consistent with the adapter's `AdapterDescriptor.sandbox.kind`.
+// R-17 closure (2026-05-15): the gate ALSO discovers + validates the
+// 5 Phase 13 frontier-clip provider seams (voice / ai-chat / live-data
+// / web-embed / ai-generative); these have no `AdapterDescriptor` so
+// the descriptor-consistency step is skipped for them.
 //
 // Mirrors `scripts/check-asset-licenses.ts` in shape: discover
 // candidates → extract → validate → report → exit.
@@ -14,6 +18,9 @@
 //                       wrong type, unknown key).
 //   4. INCONSISTENT   — manifest disagrees with the descriptor.
 //   5. ORPHAN         — `security.json` present but no descriptor.
+//
+// Frontier-clip seams reuse failure modes 1–3; ORPHAN + INCONSISTENT
+// are not applicable (no descriptor).
 //
 // Determinism: pure script. Output is a deterministic function of
 // workspace state. No `Date.now()`, `Math.random()`, `fetch()`.
@@ -228,6 +235,126 @@ export async function extractFromPackage(pkg: DiscoveredAdapterPackage): Promise
 }
 
 // ---------------------------------------------------------------------------
+// Frontier-clip seam discovery (R-17)
+// ---------------------------------------------------------------------------
+
+/**
+ * Phase 13 frontier-clip families that ship a sidecar `security.json`
+ * next to the clip source. Per `docs/security-review-track-a.md` §5
+ * R-17 (closed 2026-05-15), each of these clip families has a
+ * host-injected provider seam (or, for web-embed, an iframe seam) that
+ * crosses the StageFlip trust boundary. Each ships its own manifest at
+ * `packages/runtimes/interactive/src/clips/<family>/security.json`.
+ *
+ * Discovery here is by-family-name, not by-package-prefix: the seams
+ * live INSIDE `@stageflip/runtimes-interactive`, so the
+ * `ADAPTER_PACKAGE_PREFIXES` convention doesn't apply.
+ */
+export const FRONTIER_CLIP_FAMILIES_REQUIRING_MANIFEST: ReadonlyArray<string> = [
+  'voice',
+  'ai-chat',
+  'live-data',
+  'web-embed',
+  'ai-generative',
+];
+
+interface DiscoveredFrontierClipSeam {
+  /** The clip-family name (matches the directory under clips/). */
+  readonly family: string;
+  /** Tag used in error / row output to distinguish from adapter sources. */
+  readonly tag: string;
+  /** Absolute path to the clip family directory. */
+  readonly dir: string;
+}
+
+/**
+ * Walk `packages/runtimes/interactive/src/clips/` for the configured
+ * frontier-clip family directories. Returns alphabetically-ordered
+ * candidates (deterministic). Missing directories are silently skipped
+ * (caller logs none-found state).
+ */
+export function discoverFrontierClipSeams(
+  interactiveClipsRoot: string,
+): DiscoveredFrontierClipSeam[] {
+  const out: DiscoveredFrontierClipSeam[] = [];
+  const sortedFamilies = [...FRONTIER_CLIP_FAMILIES_REQUIRING_MANIFEST].sort();
+  for (const family of sortedFamilies) {
+    const dir = join(interactiveClipsRoot, family);
+    let isDir: boolean;
+    try {
+      isDir = statSync(dir).isDirectory();
+    } catch {
+      continue;
+    }
+    if (!isDir) continue;
+    out.push({ family, tag: `frontier-clip:${family}`, dir });
+  }
+  return out;
+}
+
+interface FrontierClipExtractionResult {
+  readonly manifest: SecurityManifest | undefined;
+  readonly errors: ReadonlyArray<PerPackageError>;
+}
+
+/**
+ * Load `security.json` for a single frontier-clip family. Failure modes
+ * mirror `extractFromPackage` (MISSING / PARSE-ERROR / INVALID); ORPHAN
+ * and DESCRIPTOR-LOAD-FAILED are inapplicable because frontier-clip
+ * seams have no `AdapterDescriptor`.
+ *
+ * Pure I/O: no descriptor consistency check is run.
+ */
+export function extractFromFrontierClipSeam(
+  seam: DiscoveredFrontierClipSeam,
+): FrontierClipExtractionResult {
+  const errors: PerPackageError[] = [];
+  const manifestPath = join(seam.dir, 'security.json');
+
+  let raw: string | undefined;
+  let manifestPresent = false;
+  try {
+    raw = readFileSync(manifestPath, 'utf8');
+    manifestPresent = true;
+  } catch {
+    // file absent — captured below.
+  }
+
+  let manifest: SecurityManifest | undefined;
+  if (manifestPresent && raw !== undefined) {
+    let json: unknown;
+    try {
+      json = JSON.parse(raw);
+    } catch (err) {
+      errors.push({
+        source: seam.tag,
+        kind: 'PARSE-ERROR',
+        cause: err instanceof Error ? err.message : String(err),
+      });
+    }
+    if (json !== undefined) {
+      try {
+        manifest = parseSecurityManifest(json);
+      } catch (err) {
+        errors.push({
+          source: seam.tag,
+          kind: 'INVALID',
+          cause: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+  } else {
+    errors.push({
+      source: seam.tag,
+      kind: 'MISSING',
+      cause: `expected ${manifestPath} — no security.json found`,
+    });
+  }
+
+  return { manifest, errors };
+}
+
+// ---------------------------------------------------------------------------
 // Consistency check (pure)
 // ---------------------------------------------------------------------------
 
@@ -367,6 +494,12 @@ export interface PerAdapterRow {
 
 export interface ValidationReport {
   readonly packagesInspected: number;
+  /**
+   * Number of frontier-clip seams (R-17) inspected. Reported alongside
+   * `packagesInspected` in `formatReport` so adapter coverage and
+   * frontier-clip coverage are independently visible.
+   */
+  readonly frontierClipSeamsInspected: number;
   readonly rows: ReadonlyArray<PerAdapterRow>;
   readonly errors: ReadonlyArray<PerPackageError>;
   readonly inconsistencies: ReadonlyArray<ConsistencyIssue>;
@@ -382,6 +515,7 @@ export function formatReport(report: ValidationReport): string {
 
   if (
     report.packagesInspected === 0 &&
+    report.frontierClipSeamsInspected === 0 &&
     report.errors.length === 0 &&
     report.inconsistencies.length === 0
   ) {
@@ -389,6 +523,10 @@ export function formatReport(report: ValidationReport): string {
   } else {
     const noun = report.packagesInspected === 1 ? 'package' : 'packages';
     lines.push(`check-data-flow-security: ${report.packagesInspected} adapter ${noun} inspected`);
+    const seamNoun = report.frontierClipSeamsInspected === 1 ? 'seam' : 'seams';
+    lines.push(
+      `check-data-flow-security: ${report.frontierClipSeamsInspected} frontier-clip ${seamNoun} inspected (R-17)`,
+    );
   }
 
   if (report.rows.length > 0) {
@@ -430,6 +568,8 @@ export function formatReport(report: ValidationReport): string {
 export function buildReport(
   packages: ReadonlyArray<DiscoveredAdapterPackage>,
   extractions: ReadonlyArray<ExtractionResult>,
+  frontierClipSeams: ReadonlyArray<DiscoveredFrontierClipSeam> = [],
+  frontierClipExtractions: ReadonlyArray<FrontierClipExtractionResult> = [],
 ): ValidationReport {
   const rows: PerAdapterRow[] = [];
   const errors: PerPackageError[] = [];
@@ -486,10 +626,39 @@ export function buildReport(
     void pkgPass;
   }
 
+  // ---- frontier-clip seams (R-17) -----------------------------------------
+  for (let i = 0; i < frontierClipSeams.length; i += 1) {
+    const seam = frontierClipSeams[i];
+    const ext = frontierClipExtractions[i];
+    if (seam === undefined || ext === undefined) continue;
+
+    for (const e of ext.errors) errors.push(e);
+
+    if (ext.manifest === undefined) {
+      // Per-seam error already recorded as MISSING / PARSE-ERROR /
+      // INVALID; emit a FAIL row for visibility.
+      rows.push({
+        packageName: seam.tag,
+        adapterId: `(frontier-clip-${seam.family})`,
+        perimeter: '(none)',
+        verdict: 'FAIL',
+      });
+      continue;
+    }
+
+    rows.push({
+      packageName: seam.tag,
+      adapterId: ext.manifest.adapterId,
+      perimeter: ext.manifest.perimeter,
+      verdict: 'PASS',
+    });
+  }
+
   const exitCode: 0 | 1 = errors.length === 0 && inconsistencies.length === 0 ? 0 : 1;
 
   return {
     packagesInspected: packages.length,
+    frontierClipSeamsInspected: frontierClipSeams.length,
     rows,
     errors,
     inconsistencies,
@@ -505,14 +674,32 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const REPO_ROOT = resolve(__dirname, '..');
 const PACKAGES_ROOT_DEFAULT = resolve(REPO_ROOT, 'packages');
+const INTERACTIVE_CLIPS_ROOT_DEFAULT = resolve(
+  REPO_ROOT,
+  'packages',
+  'runtimes',
+  'interactive',
+  'src',
+  'clips',
+);
 
-export async function main(packagesRoot: string = PACKAGES_ROOT_DEFAULT): Promise<number> {
+export async function main(
+  packagesRoot: string = PACKAGES_ROOT_DEFAULT,
+  interactiveClipsRoot: string = INTERACTIVE_CLIPS_ROOT_DEFAULT,
+): Promise<number> {
   const packages = discoverAdapterPackages(packagesRoot);
   const extractions: ExtractionResult[] = [];
   for (const pkg of packages) {
     extractions.push(await extractFromPackage(pkg));
   }
-  const report = buildReport(packages, extractions);
+
+  const frontierClipSeams = discoverFrontierClipSeams(interactiveClipsRoot);
+  const frontierClipExtractions: FrontierClipExtractionResult[] = [];
+  for (const seam of frontierClipSeams) {
+    frontierClipExtractions.push(extractFromFrontierClipSeam(seam));
+  }
+
+  const report = buildReport(packages, extractions, frontierClipSeams, frontierClipExtractions);
   const out = formatReport(report);
   if (report.exitCode === 0) {
     process.stdout.write(`${out}\n`);

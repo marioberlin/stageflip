@@ -1,0 +1,29 @@
+{
+  "adapterId": "frontier-clip-web-embed",
+  "perimeter": "remote-network",
+  "dataLeavingPerimeter": {
+    "prompt": false,
+    "inputBytes": true,
+    "tenantId": false,
+    "cacheKey": false
+  },
+  "pii": {
+    "voiceClone": false,
+    "userContent": true
+  },
+  "networkEndpoint": {
+    "hostname": "host-injected.iframe-embedded-origin.local",
+    "protocol": "https",
+    "authMethod": "api-key-header"
+  },
+  "dataRetention": {
+    "providerRetainsInput": false,
+    "providerRetainsOutput": false,
+    "retentionPolicy": "unknown"
+  },
+  "auditSignal": {
+    "relevantAuditEvents": ["start", "complete", "failed"],
+    "relevantUsageFields": ["tenantId", "adapterId", "modality", "outcome", "timestamp"]
+  },
+  "lastReviewedAt": "2026-05-15"
+}
