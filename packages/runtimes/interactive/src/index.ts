@@ -76,6 +76,17 @@ export {
   type TenantFlagTarget,
   type TenantFlagValue,
 } from './host/tenant-flag-cache.js';
+// T-398 — browser live-preview React host. Per ADR-005 §D4 + §D5, the
+// `browser-live-preview` target is preview-mode eligible; GA still gated
+// on T-405 human security sign-off.
+export {
+  BrowserLivePreview,
+  type BrowserLivePreviewLifecycleEvent,
+  type BrowserLivePreviewProps,
+  type BrowserLivePreviewRefusalReason,
+  type BrowserLivePreviewTenantPolicy,
+  browserLivePreviewGatingDecision,
+} from './host/browser-live-preview.js';
 export {
   InteractiveClipFamilyAlreadyRegisteredError,
   InteractiveClipRegistry,
