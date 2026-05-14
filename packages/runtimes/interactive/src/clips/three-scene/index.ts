@@ -45,6 +45,9 @@ export {
 export { createSeededPRNG, type SeededPRNG } from './prng.js';
 export { installRAFShim, type RAFShimHandle } from './raf-shim.js';
 export {
+  SETUP_REF_TRUSTED_MODULE_PREFIXES,
+  __resetTrustedModulePrefixesForTests,
+  extendTrustedModulePrefixes,
   resolveSetupRef,
   type SetupImporter,
   type SetupModule,

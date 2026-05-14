@@ -6,7 +6,7 @@
 // up through the host's silent-bail seam (host.tsx).
 
 import type { ThreeClipHandle, ThreeClipSetup } from '@stageflip/runtimes-three';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { type ClipFactory, type MountContext, PERMISSIVE_TENANT_POLICY } from '../../contract.js';
 import { RecordModeFrameSource } from '../../frame-source-record.js';
@@ -15,6 +15,18 @@ import { InteractiveMountHarness } from '../../mount-harness.js';
 import { PermissionShim } from '../../permission-shim.js';
 import { InteractiveClipRegistry } from '../../registry.js';
 import { ThreeSceneClipFactoryBuilder } from './factory.js';
+import {
+  __resetTrustedModulePrefixesForTests,
+  extendTrustedModulePrefixes,
+} from './setup-resolver.js';
+
+// R-4: seed the setupRef trusted-publisher-prefix allowlist so the
+// factory's dynamic-import path resolves the legacy `@author/...` fixtures.
+// Mirrors the LiveData R-1 `beforeEach` seeding pattern.
+beforeEach(() => {
+  __resetTrustedModulePrefixesForTests();
+  extendTrustedModulePrefixes(['@author/']);
+});
 
 // ----- test fixtures -----
 
