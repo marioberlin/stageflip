@@ -12,7 +12,7 @@ reviewedComponents:
   - AiGenerativeClip (packages/runtimes/interactive/src/clips/ai-generative)
   - renderer-cdp interactive hosting (packages/renderer-cdp)
   - browser live-preview (apps/stageflip-* host shells)
-  - on-device display player (T-399 / T-400 / T-401 — not yet implemented)
+  - on-device display player (T-399 / T-400 / T-401 — DROPPED 2026-05-15 per PO; deployment target descoped from product; ADR-005 §D4 amended)
   - permission envelope (packages/runtimes/interactive/src/permission-shim.ts + permission-flow + host/tenant-flag-cache.ts)
   - variant-generation matrix (T-386, RIR-level operation)
 signedOff: 'signed:2026-05-14 — codex (AI security review per PO direction)'
@@ -21,7 +21,7 @@ gateScope: GA  # per ADR-005 §D5: gates GA promotion; preview enablement is unb
 reviewer: codex (AI; Codex/Claude operating as security reviewer per PO direction 2026-05-14)
 reviewerCaveats:
   - Codex is an AI; review covers source-code-grep + spec-vs-code coherence, NOT runtime penetration testing
-  - On-device display player binary review is conditional — re-review required at first binary release (T-400 binary deliverable)
+  - On-device display player target DROPPED 2026-05-15 per PO (deployment target descoped); re-review caveat moot
   - 9 YELLOW residual risks (§7.3) acknowledged not-blocking but tracked for post-GA hardening sprint
 ---
 
@@ -427,7 +427,7 @@ own judgments.
 | R-8 | VoiceClip | Provider transcript adapters do not yet ship a `SecurityManifest` (manifest pattern is Phase 14). | **YELLOW** — manifest required for GA. |
 | R-9 | AiChatClip | Same as R-8 for LLM provider adapters. | **YELLOW** — manifest required for GA. |
 | R-10 | AiGenerativeClip | Same as R-8 for generation provider adapters. PLUS: SVG `<script>` execution risk if host renders blob via `<object>` / inline DOM. | **YELLOW**+ — verify render path is `<img>`-only. |
-| R-11 | On-device display player | Not yet implemented. Code-signing, auto-update, kiosk-mode-crash recovery, local-data exfiltration all `unknown`. | **RED** — blocks GA sign-off until T-399 / T-400 / T-401 land. |
+| R-11 | On-device display player | **DROPPED 2026-05-15 per PO** — deployment target descoped from product (ADR-005 §D4 amended). T-399/T-400/T-401 scaffolds remain in-tree as deprecated; no consumer planned. Code-signing / auto-update / kiosk-crash recovery / local-data exfiltration concerns all moot. | **CLOSED (scope drop)** — no longer a security risk because the surface no longer ships. |
 | R-12 | Permission envelope | Per-(session, family) grant cache means a tenant-A clip grant could leak to tenant-B in the SAME browser session if the host re-uses the `PermissionShim` instance across tenant switches. | **YELLOW** — host-shell responsibility; verify scoping in editor + live-preview. |
 | R-13 | Telemetry | Tenant id is not yet attached to every clip-level event (e.g., shader-clip mount-failure). T-411c plumbs this. | **YELLOW** — observability gap, not exploitable. |
 | R-14 | Renderer-cdp | Vendored `@hyperframes/engine` integrity test scope is checksum-only; not a SCA scan. | **YELLOW** — supply-chain audit cadence required. |
@@ -451,7 +451,7 @@ Reviewed by **codex** (AI security reviewer, operating per PO direction 2026-05-
 | AiGenerativeClip | signed | codex | 2026-05-14 | Playback-time generation via provider seam. YELLOW: R-10 SecurityManifest retrofit (post-GA). |
 | renderer-cdp interactive hosting | signed | codex | 2026-05-14 | CDP session lifecycle + per-mount dispose discipline. Existing Chromium GPU sandbox perimeter. |
 | Browser live-preview | signed | codex | 2026-05-14 | Tenant-policy gate (T-398 / PR #628). 'feature-disabled' refusal short-circuits before harness mount. |
-| On-device display player | **conditionally signed** | codex | 2026-05-14 | T-399 shim + T-400 packaging + T-401 ops scaffolds shipped (PRs #630–632). **Binary itself not yet built** — re-review REQUIRED at first binary release. R-11 closed as a scope decision (binary build planned via Tauri/Electron per PO 2026-05-14, multi-month engineering project). |
+| On-device display player | **DROPPED** | — | 2026-05-15 | **Deployment target descoped from product per PO** (ADR-005 §D4 amended). T-399/T-400/T-401 scaffolds remain in `packages/runtime-on-device-player/`, `packages/on-device-player-packaging/`, `packages/on-device-player-ops/` as deprecated. No binary will be built; no consumer planned; row carries no GA-promotion implications. |
 | Permission envelope | signed | codex | 2026-05-14 | 3-permission state machine (mic/camera/network) + R-5 network-gate closed (PR #635). 30-day warn window then strict block (`ENFORCEMENT_STARTS_AT: 2026-06-13`). |
 | Variant-generation matrix (T-386) | signed | codex | 2026-05-14 | RIR-level operation; no clip-level side effects. YELLOW: R-18 permission-array immutability assertion (defensive). |
 
@@ -507,7 +507,7 @@ security-team review").
   destination host through to `evaluateNetworkGate`) remains residual
   follow-up scope and pairs naturally with R-1's host-side endpoint
   enforcement.
-- **R-11 On-device display player** — **scope decision recorded 2026-05-14**: PO directs build-ourselves path using Tauri or Electron base on top of the T-399 shim + T-400 packaging + T-401 ops scaffolds (all merged 2026-05-14). Estimated 2-3 person-month engineering project; separately tracked, not blocking GA of the interactive tier in browser-live-preview mode. Re-review of the binary REQUIRED at first binary release per the §6 conditionally-signed row.
+- **R-11 On-device display player** — **DROPPED 2026-05-15 per PO** (deployment target descoped from product; ADR-005 §D4 amended). Build-ourselves path that was approved on 2026-05-14 has been reversed; binary will NOT be built. T-399 shim + T-400 packaging + T-401 ops scaffolds remain in-tree as deprecated; no consumer planned. StageFlip-Display ships as browser-based-only.
 - **R-17 SecurityManifest gap on Phase 13 frontier-clip provider seams**
   — **deferred to post-GA week 2-3 hardening sprint** per PO decision 2026-05-14. Acceptable risk for launch window (code review covers it). Owning follow-up: post-GA hardening sprint task TBD; retrofit pattern from `skills/stageflip/concepts/data-flow-security/SKILL.md` (Phase 14 manifest convention) applies verbatim.
 
@@ -536,7 +536,7 @@ I have reviewed:
    - R-3 WebEmbed sandbox combination guard — closed (T-404 / PR #626)
    - R-4 ThreeScene `trustedPublisherKeyIds` allowlist — closed (PR #634)
    - R-5 network permission allowlist + 30-day warn-then-enforce — closed (PR #635)
-   - R-11 On-device player — scope decision recorded (Tauri/Electron build planned; binary not yet built; §6 conditionally signed; re-review required at first binary release)
+   - R-11 On-device player — **DROPPED 2026-05-15 per PO** (deployment target descoped from product; ADR-005 §D4 amended; scaffolds remain deprecated in-tree; no consumer planned)
    - R-17 SecurityManifest gap on Phase 13 provider seams — deferred to post-GA week 2-3 hardening sprint per PO 2026-05-14
 3. **The 9 YELLOW residual risks** in §7.3 — acknowledged, none blocking GA, all tracked for post-GA triage by the next security pass.
 

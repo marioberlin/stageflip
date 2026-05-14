@@ -751,9 +751,9 @@ phase. Renumbered / carried as T-137 / T-138 in Phase 6.
 |---|---|---|
 | T-397 | `renderer-cdp` interactive hosting | M |
 | T-398 | Browser live-preview integration | M |
-| T-399 | On-device display player — runtime shim | L |
-| T-400 | On-device display player — packaging + distribution | L |
-| T-401 | On-device display player — ops + telemetry | M |
+| T-399 | ~~On-device display player — runtime shim~~ — **DROPPED 2026-05-15 per PO** (deployment target descoped from product). Scaffolds shipped under PR #630 remain in `packages/runtime-on-device-player/` as deprecated. StageFlip-Display ships as browser-based-only. | L |
+| T-400 | ~~On-device display player — packaging + distribution~~ — **DROPPED 2026-05-15 per PO**. Scaffolds shipped under PR #631 remain in `packages/on-device-player-packaging/` as deprecated. | L |
+| T-401 | ~~On-device display player — ops + telemetry~~ — **DROPPED 2026-05-15 per PO**. Scaffolds shipped under PR #632 remain in `packages/on-device-player-ops/` as deprecated. | M |
 
 **γ-gating (flag + security)**
 

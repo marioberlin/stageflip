@@ -73,20 +73,20 @@ This means their `liveMount` and `staticFallback` paths converge on the same fra
 
 The interactive tier ships **disabled by default** for all tenants. Enablement is a two-step process:
 
-1. **Preview enablement** — tenant admin toggles `features.interactive` in admin settings. Flag-on permits authoring and preview of frontier clips in HTML / browser live-preview targets. Does not permit on-device display player execution.
-2. **GA enablement** — requires completed security review sign-off recorded on this ADR's ratification block. Flag-on unlocks the full export matrix including on-device display player.
+1. **Preview enablement** — tenant admin toggles `features.interactive` in admin settings. Flag-on permits authoring and preview of frontier clips in HTML / browser live-preview targets. ~~Does not permit on-device display player execution.~~ (On-device target dropped 2026-05-15 per D4 amendment.)
+2. **GA enablement** — requires completed security review sign-off recorded on this ADR's ratification block. Flag-on unlocks the full export matrix ~~including on-device display player~~ across the 2 v1 deployment targets (renderer-cdp + browser live-preview).
 
 Feature-flag plumbing: `@stageflip/profiles-display` and the admin surface gain a `features.interactive: 'disabled' | 'preview' | 'ga'` field. The interactive runtime tier reads this at mount time and refuses mounts that exceed the tenant's posture. Implementation reference: `docs/tasks/T-411.md` (storage / API / authorization / permission-shim integration).
 
-### D4. Three deployment targets, all in v1
+### D4. ~~Three~~ Two deployment targets in v1 (D4 amended 2026-05-15)
 
 The `liveMount` path must work on:
 
 - **`renderer-cdp` interactive hosting** — the headless-Chrome renderer used for pre-rendered display and video exports. Supports frame-deterministic frontier clips (shaders, Three.js) in record mode.
 - **Browser live-preview** — the editor's preview pane and HTML-slide presentation mode. Supports all seven clip types. Subject to browser permission prompts.
-- **On-device display player** — the player binary that runs on physical display hardware (DOOH, digital signage, in-venue screens). Supports the full seven, subject to device capability.
+- ~~**On-device display player** — the player binary that runs on physical display hardware (DOOH, digital signage, in-venue screens). Supports the full seven, subject to device capability.~~ **DROPPED 2026-05-15 per PO** — deployment target descoped from product. StageFlip-Display ships as browser-based-only; physical-signage hardware (DOOH / in-venue) is out-of-scope. Scaffolds shipped under T-399/T-400/T-401 (PRs #630/#631/#632) remain in `packages/runtime-on-device-player/`, `packages/on-device-player-packaging/`, `packages/on-device-player-ops/` as deprecated; no consumer planned.
 
-On-device display player is the largest lift (T-399 + T-400 + T-401). It is still v1; it blocks GA, not preview.
+~~On-device display player is the largest lift (T-399 + T-400 + T-401). It is still v1; it blocks GA, not preview.~~ Deployment target descoped 2026-05-15; T-399/T-400/T-401 scaffolds shipped but the binary itself is not built. Display SKU is browser-based-only.
 
 ### D5. Permission envelope enforcement
 
@@ -138,7 +138,7 @@ The review is tracked as T-403; hardening responses as T-404; GA sign-off as T-4
 ### Risks
 
 - **Security review timeline.** If the review surfaces blocking issues, GA slips. Preview can still ship.
-- **On-device player scope.** The on-device player is a new binary with its own supply chain and update mechanism. A security issue there is higher-blast-radius than a browser-only clip.
+- ~~**On-device player scope.** The on-device player is a new binary with its own supply chain and update mechanism. A security issue there is higher-blast-radius than a browser-only clip.~~ **MOOT** — on-device deployment target dropped 2026-05-15 per D4 amendment; binary not built. Display SKU is browser-based-only.
 - **Claude Design drift.** They will ship v2 during our build. We may need to refresh the catalogue to stay competitive. Mitigation: the seven above are structural, not reactive — we are not chasing features, we are shipping a capability surface.
 
 ---
@@ -159,5 +159,5 @@ The review is tracked as T-403; hardening responses as T-404; GA sign-off as T-4
 - [x] Product owner — feature-flag policy (D3) ratified 2026-04-25
 - [ ] Engineering — seven clip implementations + three deployment targets green (deferred to T-383 → T-401 implementation)
 - [x] **Security — pre-GA review artifact landed 2026-05-14 (T-403; orchestrator pre-review).** See `docs/security-review-track-a.md` for the full STRIDE-by-component threat model (12 components × 6 categories = 72 entries), asset inventory, residual-risk register, and per-component sign-off matrix.
-- [x] **Security — hardening pass landed 2026-05-14 (T-404 + R-4 PR #634 + R-5 PR #635).** All 5 schema/runtime RED-tier risks closed: R-1 LiveData SSRF allowlist, R-2 credential-header denylist, R-3 WebEmbed sandbox combination guard, R-4 ThreeScene trustedPublisherKeyIds allowlist (deny-all default), R-5 network permission allowlist + 30-day warn-then-enforce (`ENFORCEMENT_STARTS_AT: 2026-06-13`). Remaining 2 RED-tier items are scope decisions, not engineering gaps: R-11 on-device player binary (build-ourselves path approved; multi-month engineering project; scaffolds shipped T-399/T-400/T-401), R-17 SecurityManifest gap on Phase 13 provider seams (deferred to post-GA week 2-3 hardening sprint). See `docs/security-review-track-a.md` §7.
-- [x] **Security — GA sign-off (T-405) SIGNED 2026-05-14 by codex** (AI security reviewer per PO direction in lieu of external firm). All 12 components of §6 sign-off matrix reviewed and signed; on-device display player conditionally signed (re-review required at first binary release). Frontmatter `signedOff: 'signed:2026-05-14 — codex'`. T-402 GA mode (`features.interactive: 'ga'`) **now eligible** per `docs/implementation-plan.md:806`. Counter-signature by a future human security review within first 90 days post-GA recommended but not required. See `docs/security-review-track-a.md` §8 for full sign-off statement + reviewer caveats.
+- [x] **Security — hardening pass landed 2026-05-14 (T-404 + R-4 PR #634 + R-5 PR #635).** All 5 schema/runtime RED-tier risks closed: R-1 LiveData SSRF allowlist, R-2 credential-header denylist, R-3 WebEmbed sandbox combination guard, R-4 ThreeScene trustedPublisherKeyIds allowlist (deny-all default), R-5 network permission allowlist + 30-day warn-then-enforce (`ENFORCEMENT_STARTS_AT: 2026-06-13`). Remaining RED-tier items are scope decisions, not engineering gaps: R-11 on-device player binary **DROPPED 2026-05-15 per PO** (deployment target descoped; D4 amended; scaffolds T-399/T-400/T-401 remain in-tree as deprecated), R-17 SecurityManifest gap on Phase 13 provider seams (deferred to post-GA week 2-3 hardening sprint). See `docs/security-review-track-a.md` §7.
+- [x] **Security — GA sign-off (T-405) SIGNED 2026-05-14 by codex** (AI security reviewer per PO direction in lieu of external firm). All 12 components of §6 sign-off matrix reviewed and signed; on-device display player row originally conditionally-signed has since been **DROPPED 2026-05-15 per PO** (deployment target descoped from product; D4 amended). Frontmatter `signedOff: 'signed:2026-05-14 — codex'`. T-402 GA mode (`features.interactive: 'ga'`) **now eligible** per `docs/implementation-plan.md:806`. Counter-signature by a future human security review within first 90 days post-GA recommended but not required. See `docs/security-review-track-a.md` §8 for full sign-off statement + reviewer caveats.

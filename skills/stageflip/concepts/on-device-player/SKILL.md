@@ -1,9 +1,9 @@
 ---
-title: On-Device Display Player
+title: On-Device Display Player (DEPRECATED — deployment target dropped 2026-05-15)
 id: skills/stageflip/concepts/on-device-player
 tier: concept
 status: substantive
-last_updated: 2026-05-14
+last_updated: 2026-05-15
 owner_task: T-399
 related:
   - skills/stageflip/concepts/runtimes/SKILL.md
@@ -11,9 +11,17 @@ related:
   - skills/stageflip/concepts/tenant-settings/SKILL.md
 ---
 
-# On-Device Display Player
+# On-Device Display Player ⚠ DEPRECATED
 
-The on-device display player is the third deployment target for the
+> **DROPPED 2026-05-15 per PO** — on-device player deployment target descoped from the product. `ADR-005 §D4` amended to two deployment targets (`renderer-cdp` + browser live-preview). StageFlip-Display ships as **browser-based-only**.
+>
+> The 3 packages (`@stageflip/runtime-on-device-player`, `@stageflip/on-device-player-packaging`, `@stageflip/on-device-player-ops`) shipped under T-399/T-400/T-401 (PRs #630/#631/#632) **remain in-tree as deprecated scaffolds**. No binary will be built; no consumer is planned. The packages are preserved for future-option hedging — if the deployment target is ever revived, the scaffolding is ready.
+>
+> The remainder of this document describes the original design as shipped 2026-05-14, retained for archival reference. **DO NOT add new work to these packages without first reverting this deprecation.**
+
+---
+
+The on-device display player ~~is~~ **was** the third deployment target for the
 interactive runtime tier (alongside `renderer-cdp` and browser
 live-preview). It runs the StageFlip player binary on physical display
 hardware: DOOH (digital out-of-home), digital signage, in-venue screens.
