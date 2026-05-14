@@ -634,6 +634,9 @@ triggers. Publishers operating under the marketplace's default
 billing path inherit these; custom policies require operator
 coordination.
 
+For the full release checklist, semver rules, and changelog format,
+see [pack-release-process.md](./pack-release-process.md).
+
 ---
 
 ## 17. Reference: example minimal pack

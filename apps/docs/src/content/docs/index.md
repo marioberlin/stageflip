@@ -36,3 +36,6 @@ foundation, or jump straight to the [quickstart](/quickstart/).
   workspace for the end-to-end third-party pack-publisher journey
   (manifest schema, registry + npm-path distribution, signing,
   Stripe + tier policy, refunds, telemetry, loss-flag catalogue).
+- **Pack release process** — see `docs/pack-release-process.md` for
+  semver rules, changelog format, prerelease channels, and the
+  per-release publisher checklist.
