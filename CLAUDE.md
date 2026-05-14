@@ -157,6 +157,16 @@ pnpm parity                # PSNR + SSIM on fixtures (if rendering touched)
 
 Plus: PR template checklist complete, every box checked with reviewer confirmation.
 
+`pnpm check-marketplace-ga-readiness` (T-550) is the P16 δ marketplace
+GA-launch audit: it reports `pass | warn | fail` per surface
+(registry, Stripe, npm-path, browsing UI, telemetry dashboard, tier
+system, conversion flow, refunds + disputes, parity validator) plus a
+humans-only legal-review sign-off check against
+`docs/legal-review-marketplace.md`. Forward-compatible by default
+(unsigned legal clauses warn, never fail). Wire
+`--require-legal-signoff` into the GA-launch checklist runbook only —
+NOT into routine CI.
+
 ---
 
 ## 9. Commit Messages
