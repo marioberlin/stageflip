@@ -1702,7 +1702,13 @@ describe('check-preset-integrity end-to-end at HEAD (AC #11, #14, #15)', () => {
       throw new Error(`runIntegrityChecks unexpectedly failed at HEAD:\n${detail}`);
     }
     expect(report.exitCode).toBe(0);
-    // AC #15: < 10 seconds for the 50-preset corpus.
-    expect(elapsedMs).toBeLessThan(10_000);
+    // AC #15: perf budget for the now-56-preset corpus + 16 audience-fixture
+    // PNG decodes (T-554b Cluster I ratification). Originally 10 s for the
+    // 50-preset corpus; bumped to 15 s after 4 consecutive CI flakes at
+    // 10_097 / 10_253 / 10_418 / 10_459 ms (Phase-16 cluster-i + Track A
+    // work bumped both corpus size + golden-decode workload past the
+    // original margin). Still firmly within a runnable CI budget — the
+    // local-machine baseline is ~3 s.
+    expect(elapsedMs).toBeLessThan(15_000);
   });
 });
