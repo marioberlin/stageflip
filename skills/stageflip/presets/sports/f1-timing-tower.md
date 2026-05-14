@@ -14,7 +14,7 @@ fallbackFont:
 permissions: [network]
 signOff:
   parityFixture: 'signed:2026-05-06'
-  typeDesign: pending-cluster-batch
+  typeDesign: 'signed:2026-05-14'
 ---
 
 # F1 Timing Tower — scoreBug vertical
