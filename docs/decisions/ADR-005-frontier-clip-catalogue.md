@@ -158,5 +158,6 @@ The review is tracked as T-403; hardening responses as T-404; GA sign-off as T-4
 - [x] Product owner (Mario Tiedemann) — catalogue scope ratified 2026-04-25
 - [x] Product owner — feature-flag policy (D3) ratified 2026-04-25
 - [ ] Engineering — seven clip implementations + three deployment targets green (deferred to T-383 → T-401 implementation)
-- [ ] Security — pre-GA review complete (T-403); GA sign-off recorded here
-- [ ] Security review signed: pending
+- [x] **Security — pre-GA review artifact landed 2026-05-14 (T-403; orchestrator pre-review).** See `docs/security-review-track-a.md` for the full STRIDE-by-component threat model (12 components × 6 categories = 72 entries), asset inventory, residual-risk register, and per-component sign-off matrix.
+- [x] **Security — hardening pass landed 2026-05-14 (T-404).** Three RED-tier risks closed (R-1 LiveDataClip SSRF allowlist, R-2 credential-header denylist, R-3 WebEmbed sandbox combination guard). Four RED-tier risks deferred (R-4 ThreeScene dynamic-import allowlist, R-5 `network` permission no-op, R-11 on-device display player unbuilt, R-17 SecurityManifest gap on Phase 13 provider seams) — see `docs/security-review-track-a.md` §7.
+- [ ] **Security — GA sign-off (T-405) pending human security team review.** Per ADR-005 §D5, this gate covers GA promotion only; **preview enablement is not gated by this review** and may proceed. The human security team reviews `docs/security-review-track-a.md`, completes §6 sign-off matrix, then flips frontmatter `signedOff: pending-security-team` → `signed:YYYY-MM-DD <reviewer-name>` to record GA sign-off. T-398–T-402 (Track A engineering) may dispatch in preview mode without waiting; GA promotion of the interactive tier is what this row gates.
