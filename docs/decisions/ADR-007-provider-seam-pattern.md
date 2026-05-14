@@ -1,8 +1,8 @@
 # ADR-007: Provider Seam Pattern (meta)
 
 **Date**: 2026-05-11
-**Ratified**: pending (T-415 ratification PR; orchestrator approval)
-**Status**: **Proposed**
+**Ratified**: 2026-05-14 (orchestrator approval; post-Phase-16 close)
+**Status**: **Accepted**
 **Supersedes**: N/A
 **Superseded by**: N/A
 
