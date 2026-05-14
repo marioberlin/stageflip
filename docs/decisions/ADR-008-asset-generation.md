@@ -1,8 +1,8 @@
 # ADR-008: Asset Generation Contract
 
 **Date**: 2026-05-11
-**Ratified**: pending (T-416 ratification PR; orchestrator approval)
-**Status**: **Proposed**
+**Ratified**: 2026-05-14 (orchestrator approval; post-Phase-16 close)
+**Status**: **Accepted**
 **Supersedes**: N/A
 **Superseded by**: N/A
 

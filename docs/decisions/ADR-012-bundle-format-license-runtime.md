@@ -1,8 +1,8 @@
 # ADR-012: Bundle Format & License Runtime
 
 **Date**: 2026-05-13
-**Ratified**: pending (T-490 ratification PR; orchestrator approval)
-**Status**: **Proposed**
+**Ratified**: 2026-05-14 (orchestrator approval; post-Phase-16 close)
+**Status**: **Accepted**
 **Supersedes**: N/A
 **Superseded by**: N/A
 
