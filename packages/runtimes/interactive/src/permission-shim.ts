@@ -7,8 +7,11 @@
 //   1. Consults `tenantPolicy.canMount(family)` BEFORE any browser prompt.
 //   2. Iterates `clip.liveMount.permissions` and resolves each via the
 //      appropriate browser API. `mic` → `getUserMedia({audio:true})`.
-//      `camera` → `getUserMedia({video:true})`. `network` is a no-op
-//      (always granted; tracked for security review per ADR-003 §D6).
+//      `camera` → `getUserMedia({video:true})`. `network` consults the
+//      T-403 R-5 global host allowlist via `evaluateNetworkGate` —
+//      warn-mode permits silently, enforce-mode (post
+//      `ENFORCEMENT_STARTS_AT`) blocks on non-allowlisted hosts.
+//      Decision is captured on `lastNetworkGateDecision` for telemetry.
 //   3. Caches granted permissions per (session, family) so a second mount
 //      of the same family does not re-prompt the user.
 //   4. Emits `permission-denied` / `permission-denied-tenant-flag` /
@@ -38,6 +41,7 @@ import {
   type TenantFlagTarget,
   type TenantFlagValue,
 } from './host/tenant-flag-cache.js';
+import { type NetworkGateDecision, evaluateNetworkGate } from './network-allowlist.js';
 
 /** Result of `PermissionShim.mount()`. */
 export type PermissionResult =
@@ -157,6 +161,16 @@ export class PermissionShim {
    */
   private readonly grantCache = new Map<string, true>();
 
+  /**
+   * Most recent decision returned by the T-403 R-5 network gate, or
+   * `null` if no `'network'` permission has been requested since
+   * construction. Mutated only inside `requestPermission` when
+   * `permission === 'network'`. Exposed for telemetry assertions and
+   * for the future per-mount destination-host plumbing (clip-level
+   * fetch wrapper).
+   */
+  lastNetworkGateDecision: NetworkGateDecision | null = null;
+
   constructor(options: PermissionShimOptions = {}) {
     this.tenantPolicy = options.tenantPolicy ?? PERMISSIVE_TENANT_POLICY;
     this.emitTelemetry = options.emitTelemetry ?? NOOP_EMIT_TELEMETRY;
@@ -233,15 +247,35 @@ export class PermissionShim {
   }
 
   /**
-   * Request a single permission. `network` is a no-op (always granted —
-   * the runtime trusts declared egress; ADR-003 §D6 follow-up will add a
-   * tenant-level allowlist). `mic` and `camera` go through `getUserMedia`.
+   * Request a single permission. `network` consults the global host
+   * allowlist gate (T-403 R-5). During the warn window
+   * (`now < ENFORCEMENT_STARTS_AT`) the gate logs telemetry but still
+   * permits the mount; after the cutover it returns `block` for non-
+   * allowlisted hosts. v1: no per-mount destination is threaded
+   * through, so `requestPermission` invokes the gate without a host —
+   * the decision is the coarse permission-envelope-level approval that
+   * the clip MAY use network at all. Per-call host enforcement is the
+   * clip-level fetch wrapper's job (future R-5 follow-up).
+   *
+   * `mic` and `camera` go through `getUserMedia`.
    */
   private async requestPermission(
     permission: Permission,
     _family: InteractiveClip['family'],
   ): Promise<boolean> {
     if (permission === 'network') {
+      // T-403 R-5: PO decision (2026-05-14) — warn-then-enforce. Until
+      // ENFORCEMENT_STARTS_AT (2026-06-13), log non-allowlisted hosts
+      // via telemetry but permit; after, block. The clip-level fetch
+      // wrapper does the per-request enforcement; this gate is the
+      // permission-envelope-level coarse approval that the clip MAY
+      // use network at all.
+      //
+      // v1: no per-mount destination known → permit with mode-flag in
+      // telemetry. The clip's network library is responsible for per-
+      // call host enforcement (future T-404 follow-up).
+      const decision = evaluateNetworkGate({ nowIso: new Date().toISOString() });
+      this.lastNetworkGateDecision = decision;
       return true;
     }
     const constraints: MediaStreamConstraints =

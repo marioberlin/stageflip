@@ -11,6 +11,7 @@ import {
   type TenantFlagValue,
   createTenantFlagCache,
 } from './host/tenant-flag-cache.js';
+import { __resetNetworkAllowlistForTests } from './network-allowlist.js';
 import type { PermissionBrowserApi } from './permission-shim.js';
 import { PermissionShim } from './permission-shim.js';
 
@@ -206,6 +207,40 @@ describe('PermissionShim', () => {
     // acceptable for this test; we just want the call not to crash the
     // process.
     expect(typeof result.granted).toBe('boolean');
+  });
+
+  // T-403 R-5 — network gate integration: PermissionShim must still grant
+  // the `network` permission (warn-mode posture during the rollout
+  // window) and must record the decision on `lastNetworkGateDecision`.
+  it('T-403 R-5 — requestPermission("network") still returns granted:true (warn-mode posture)', async () => {
+    __resetNetworkAllowlistForTests();
+    const shim = new PermissionShim();
+    const clip = makeInteractiveClip({ permissions: ['network'] });
+    const result = await shim.mount(clip);
+    expect(result.granted).toBe(true);
+  });
+
+  it('T-403 R-5 — requestPermission("network") records a non-null lastNetworkGateDecision', async () => {
+    __resetNetworkAllowlistForTests();
+    const shim = new PermissionShim();
+    expect(shim.lastNetworkGateDecision).toBeNull();
+    await shim.mount(makeInteractiveClip({ permissions: ['network'] }));
+    expect(shim.lastNetworkGateDecision).not.toBeNull();
+    expect(shim.lastNetworkGateDecision?.outcome).toBe('permit');
+  });
+
+  it('T-403 R-5 — gate decision mode reflects the rollout window (warn before cutover)', async () => {
+    __resetNetworkAllowlistForTests();
+    vi.useFakeTimers();
+    try {
+      // Set the clock comfortably before ENFORCEMENT_STARTS_AT (2026-06-13).
+      vi.setSystemTime(new Date('2026-05-20T00:00:00.000Z'));
+      const shim = new PermissionShim();
+      await shim.mount(makeInteractiveClip({ permissions: ['network'] }));
+      expect(shim.lastNetworkGateDecision?.mode).toBe('warn');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
