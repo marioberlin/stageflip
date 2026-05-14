@@ -15,7 +15,7 @@ permissions:
   - network
 signOff:
   parityFixture: 'signed:2026-05-05'
-  typeDesign: pending-cluster-batch
+  typeDesign: 'signed:2026-05-14'
 ---
 
 # MSNBC Big Board — interactive election-night fullscreen panel

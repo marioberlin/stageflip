@@ -14,7 +14,7 @@ fallbackFont:
 permissions: []
 signOff:
   parityFixture: 'signed:2026-05-06'
-  typeDesign: pending-cluster-batch
+  typeDesign: 'signed:2026-05-14'
 ---
 
 # Fox NFL No-Chrome — scoreBug (2025 redesign)

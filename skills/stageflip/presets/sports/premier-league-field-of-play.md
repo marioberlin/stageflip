@@ -14,7 +14,7 @@ fallbackFont:
 permissions: []
 signOff:
   parityFixture: 'signed:2026-05-06'
-  typeDesign: pending-cluster-batch
+  typeDesign: 'signed:2026-05-14'
 ---
 
 # Premier League Field of Play — scoreBug
