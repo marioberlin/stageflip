@@ -36,6 +36,7 @@
     "check-pack-integrity": "tsx scripts/check-pack-integrity.ts",
     "check-preset-integrity": "tsx scripts/check-preset-integrity.ts",
     "check-export-parity": "tsx scripts/check-export-parity.ts",
+    "check-feature-flag-wiring": "tsx scripts/check-feature-flag-wiring.ts",
     "invoke-type-design-consultant": "tsx scripts/invoke-type-design-consultant.ts",
     "generate-parity-fixture": "tsx scripts/generate-preset-parity-fixture.ts",
     "generate-audience-clip-parity-fixture": "tsx scripts/generate-audience-clip-parity-fixture.ts",
