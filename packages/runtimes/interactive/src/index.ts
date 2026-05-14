@@ -62,6 +62,19 @@ export {
   type PermissionShimOptions,
   type TenantFlagGateInput,
 } from './permission-shim.js';
+// T-403 R-5 — global network host allowlist surface (warn-then-enforce
+// rollout). Host shells seed the allowlist at startup via
+// `extendNetworkAllowedHosts`; the PermissionShim consults
+// `evaluateNetworkGate` on every `'network'` request.
+export {
+  ENFORCEMENT_STARTS_AT,
+  NETWORK_ALLOWED_HOST_PATTERNS,
+  __resetNetworkAllowlistForTests,
+  evaluateNetworkGate,
+  extendNetworkAllowedHosts,
+  isNetworkHostAllowed,
+  type NetworkGateDecision,
+} from './network-allowlist.js';
 // T-411c — tenant-flag cache surface (host-shell wiring point for the
 // interactive-runtime tenant-frontier-flag matrix; see
 // `docs/tasks/T-411c.md`).

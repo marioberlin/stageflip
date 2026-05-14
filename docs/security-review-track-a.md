@@ -416,7 +416,7 @@ own judgments.
 | R-2 | LiveDataClip | Credential headers MUST NOT be in `headers` per docstring, but schema does not enforce. `X-Custom-Auth` would slip through. | **MITIGATED (T-404)** — `headers` keys are now refined against `FORBIDDEN_REQUEST_HEADER_PATTERNS` (case-insensitive: `Authorization`, `Proxy-Authorization`, `Cookie`, `X-Api-Key`, `X-Auth`, `X-Access-Token`, `X-Csrf-Token`, `Bearer`). The previous "real defence is at the network gate" posture is preserved as the architectural chokepoint; the schema refine is the belt-AND-braces complement for canonical names. See `packages/schema/src/clips/interactive/live-data-props.ts`. |
 | R-3 | WebEmbedClip | Schema does NOT block `allow-scripts allow-same-origin` combination (equivalent to no sandbox). Web-embed-props.ts:53-60 explicitly defers token allowlist to T-403. | **MITIGATED (T-404)** — `webEmbedClipPropsSchema.sandbox` now rejects any value containing BOTH `allow-scripts` AND `allow-same-origin` (`FORBIDDEN_SANDBOX_COMBINATIONS`). Order-independent + extra-token-bypass tested. See `packages/schema/src/clips/interactive/web-embed-props.ts`. A broader tenant-level token allowlist remains future work. |
 | R-4 | ThreeSceneClip | Dynamic `import()` of pack-supplied `setupRef` package executes arbitrary JS in renderer page context. No setup-symbol allowlist. | **MITIGATED (T-404 follow-up — R-4 closure PR)** — `resolveSetupRef` now refuses any `modulePath` not matching a prefix in `SETUP_REF_TRUSTED_MODULE_PREFIXES` (default `[]` — deny-all, fail-closed). Hosts/tenants seed via `extendTrustedModulePrefixes(prefixes)`. The allowlist gate runs BEFORE the dynamic `import()` call so untrusted paths never reach the importer. Mirrors T-404 R-1's LiveData SSRF allowlist convention per PO decision (cheapest engineering path; matches npm/marketplace pack-signing posture). See `packages/runtimes/interactive/src/clips/three-scene/setup-resolver.ts` and the R-4 describe in `packages/runtimes/interactive/src/clips/three-scene/setup-resolver.test.ts`. |
-| R-5 | All network-using clips (`ai-chat`, `live-data`, `web-embed`, `ai-generative`) | `'network'` permission is a no-op grant (`permission-shim.ts:244-246`); no per-tenant destination allowlist. | **RED** — load-bearing for any future tenant-allowlist work. |
+| R-5 | All network-using clips (`ai-chat`, `live-data`, `web-embed`, `ai-generative`) | `'network'` permission is a no-op grant (`permission-shim.ts:244-246`); no per-tenant destination allowlist. | **MITIGATED (R-5 closure PR)** — `permission-shim.ts` now consults `evaluateNetworkGate` from `packages/runtimes/interactive/src/network-allowlist.ts` on every `'network'` request. Global allowlist (deny-all default); hosts seed via `extendNetworkAllowedHosts(patterns)`. PO decision (2026-05-14): global scope (not per-tenant); warn-then-enforce rollout with `ENFORCEMENT_STARTS_AT = 2026-06-13` (30-day grace). Each network request records the decision on `PermissionShim.lastNetworkGateDecision` for telemetry. Per-mount destination plumbing + clip-level fetch wrapper enforcement remain residual follow-up scope. |
 | R-6 | ShaderClip | No GPU frame-budget kill-switch (ADR-005 §D7 lists this as in-scope). | **YELLOW** — DoS scope only; not data-exfiltration. |
 | R-7 | ThreeSceneClip | No per-clip memory ceiling. | **YELLOW** — DoS scope. |
 | R-8 | VoiceClip | Provider transcript adapters do not yet ship a `SecurityManifest` (manifest pattern is Phase 14). | **YELLOW** — manifest required for GA. |
@@ -488,11 +488,16 @@ security-team review").
   untrusted paths never reach the importer. Deeper symbol-level pinning,
   integrity check at resolve time, and interaction with the `pack-loader`
   trust chain remain future security-team scope.
-- **R-5 `'network'` permission no-op grant** — runtime fix in
-  `packages/runtimes/interactive/src/permission-shim.ts:244-246`.
-  Coupled to R-1 once host-side destination allowlist is implemented;
-  R-1 closes the schema-layer entry point, R-5 closes the runtime
-  enforcement layer. Owning follow-up task: TBD.
+- **R-5 `'network'` permission no-op grant** — closed via global
+  allowlist + 30-day warn-then-enforce rollout; PO decision logged here.
+  `ENFORCEMENT_STARTS_AT: 2026-06-13` (30 days from PO decision
+  2026-05-14). Runtime gate lives in
+  `packages/runtimes/interactive/src/network-allowlist.ts`; consumed by
+  `permission-shim.ts` `requestPermission('network')`. Per-mount
+  destination plumbing (clip-level fetch wrapper threading the
+  destination host through to `evaluateNetworkGate`) remains residual
+  follow-up scope and pairs naturally with R-1's host-side endpoint
+  enforcement.
 - **R-11 On-device display player** — not yet implemented (T-399 /
   T-400 / T-401). Re-review post-implementation per §2.10.
 - **R-17 SecurityManifest gap on Phase 13 frontier-clip provider seams**

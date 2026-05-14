@@ -250,7 +250,7 @@ harness.mount(clip, root, signal):
        b. for permission in liveMount.permissions:
             mic    → getUserMedia({audio:true})
             camera → getUserMedia({video:true})
-            network → no-op (assumed granted)
+            network → consults network-allowlist (T-403 R-5 gate)
             → denied: emit 'permission-denied'; route to staticFallback
        c. cache successful grants per-(session, family); skip re-prompt
   2. registry.resolve(family) || throw InteractiveClipNotRegisteredError
@@ -273,6 +273,43 @@ harness.mount(clip, root, signal):
 - Permission cache is session-scoped (instance lifetime). A page reload
   resets it; the user's browser-level permission state persists
   independently.
+
+### Network gate (T-403 R-5)
+
+The `'network'` permission was a no-op grant before R-5 closure. It now
+consults a GLOBAL host allowlist via `evaluateNetworkGate` (pure
+function in `packages/runtimes/interactive/src/network-allowlist.ts`).
+
+PO decision (2026-05-14):
+
+- **Scope** — global (not per-tenant). Per-tenant overlay is future work.
+- **Rollout** — warn-then-enforce. `ENFORCEMENT_STARTS_AT = 2026-06-13`
+  (30-day grace from the PO decision). Before the cutover the gate logs
+  decisions via `PermissionShim.lastNetworkGateDecision` but still
+  permits the mount; from the cutover onward, non-allowlisted hosts are
+  blocked.
+
+```ts
+import {
+  ENFORCEMENT_STARTS_AT,
+  extendNetworkAllowedHosts,
+  evaluateNetworkGate,
+} from '@stageflip/runtimes-interactive';
+
+// Host shell at boot:
+extendNetworkAllowedHosts([
+  /^api\.stageflip\.com$/,
+  /^(.+\.)?my-tenant\.example\.com$/,
+]);
+```
+
+The deny-all default keeps the tier safe even if a consumer forgets to
+seed. `PermissionShim.requestPermission('network')` invokes
+`evaluateNetworkGate({ nowIso: new Date().toISOString() })` and records
+the result on `lastNetworkGateDecision` (telemetry hook). v1 does NOT
+yet thread per-mount destination hosts — the gate is the coarse
+permission-envelope-level approval; per-call host enforcement is the
+clip-level fetch wrapper's job (residual R-5 follow-up).
 
 ### Determinism posture
 
