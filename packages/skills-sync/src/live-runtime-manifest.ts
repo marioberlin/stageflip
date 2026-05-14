@@ -351,6 +351,16 @@ export const LIVE_RUNTIME_MANIFEST: ClipsCatalogPkg = {
         // acceptable-evidence option 3, pixel verification
         // deferred to PR2 (T-375 sky-sports-ar-formations).
         'arOverlay',
+        // T-320 — var-banner primitive (sports breaking sub-type).
+        // Two-stage entrance: pending stage (frame-derived 3-dot
+        // loader) → decision stage (one of 4 enum values:
+        // goal-confirmed / goal-disallowed / penalty-awarded /
+        // no-foul). Auto-derived accent register per decision;
+        // explicit accentColor / backgroundColor / slideDirection /
+        // insetBottomPx / pendingDurationFrames overrides. Unblocks
+        // Cluster B sports presets needing the VAR sub-type per
+        // docs/implementation-plan.md line 801.
+        'var-banner',
       ],
     },
   ],
