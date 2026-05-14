@@ -574,6 +574,15 @@ standard cluster-D posture (4 of 6 presets ship with similar
 proprietary-BYO-deferred-to-OFL postures). Orchestrator routes for
 explicit ratification.
 
+**RESOLVED 2026-05-14 — PO chose path (a):** "let's use Cormorant
+Garamond for everyone." stranger-things-benguiat ships with Cormorant
+Garamond 700 OFL as the documented soft fallback. typeDesign sign-off
+flipped to `signed:2026-05-14`. The recognition gap remains documented
+in this section as a known divergence; a future Benguiat-equivalent
+OFL face (or commercial-byo whitelist amendment) can upgrade the
+fallback without re-triaging the preset. The §6 below has been
+updated to reflect the new posture.
+
 **Escalation 2 — Trajan-fallback adequacy flag (got-trajan-clockwork).**
 ITC Trajan Pro is a CLASSICAL-REVIVAL CAPS-ONLY serif whose authority
 signal depends on a 1900-year-old monumental-inscription proportion
@@ -618,14 +627,17 @@ is a register-quality upgrade, not a blocker.
 - severance-surreal-3d → `signed:2026-05-14`.
 - squid-game-geometric → `signed:2026-05-14` (register-faithful-not-
   glyph-faithful posture acknowledged; no escalation required).
-- stranger-things-benguiat → **remain `pending-cluster-batch`**
-  pending Orchestrator routing on Benguiat adequacy. Per the
-  preset's own rule line 41 + consultant SKILL §"Anti-patterns", the
-  consultant cannot silently sign off this preset.
+- stranger-things-benguiat → `signed:2026-05-14` per PO resolution
+  2026-05-14 (path (a) accepted; Cormorant Garamond 700 OFL ships as
+  documented soft fallback for everyone; recognition gap acknowledged
+  in §Escalations).
 - succession-home-video → `signed:2026-05-14`.
 - true-detective-double-exposure → `signed:2026-05-14`.
 
-Five of six Cluster D presets are sign-offable at 2026-05-14; one
-(stranger-things-benguiat) remains at `pending-cluster-batch` per the
-preset's own escalation-trigger language and the consultant SKILL's
-anti-pattern prohibition on silent weak-fallback sign-off.
+All six Cluster D presets sign-offable at 2026-05-14 after PO
+resolution of the Benguiat escalation. Two documented register-
+recognition divergences (got-trajan-clockwork EB Garamond ↔ Trajan;
+stranger-things-benguiat Cormorant Garamond ↔ Benguiat) are
+captured in §Escalations for future register-quality upgrades
+(Cinzel registry-population for Trajan; commercial-byo amendment for
+Benguiat) but are not GA blockers.
