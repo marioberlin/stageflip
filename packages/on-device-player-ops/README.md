@@ -1,4 +1,8 @@
-# @stageflip/on-device-player-ops
+# @stageflip/on-device-player-ops ⚠ DEPRECATED 2026-05-15
+
+> **Deployment target dropped per PO 2026-05-15.** On-device player removed from the StageFlip product roadmap; binary will NOT be built; no consumer is planned. This package remains in-tree as a deprecated scaffold. See `ADR-005 §D4` (amended) + `skills/stageflip/concepts/on-device-player/SKILL.md`. **Do NOT add new work here without first reverting the deprecation.**
+
+---
 
 Ops + telemetry pipeline for the on-device display player. Implements
 T-401 of the Phase 13 / γ-deploy block; closes the Track A on-device-
