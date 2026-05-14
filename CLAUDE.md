@@ -149,7 +149,7 @@ pnpm test                  # Vitest, ≥85% coverage on changed code
 pnpm check-licenses        # whitelist only
 pnpm check-remotion-imports # zero matches
 pnpm check-determinism     # ESLint scoped rule
-pnpm check-skill-drift     # skills ↔ source
+pnpm check-skill-drift     # skills ↔ source (core); per-pack skill drift surfaces as warnings, never fails the build (T-548)
 pnpm gen:tool-skills:check # tool skills regenerated when handler bundles change
 pnpm size-limit            # bundle budgets (if applicable)
 pnpm parity                # PSNR + SSIM on fixtures (if rendering touched)
