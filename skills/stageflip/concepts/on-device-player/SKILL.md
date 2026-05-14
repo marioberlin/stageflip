@@ -30,7 +30,7 @@ browser-only mode).
 |---|---|---|---|
 | Binary packaging + distribution | `@stageflip/on-device-player-packaging` | **T-400** | **This skill** |
 | **Runtime shim** | `@stageflip/runtime-on-device-player` | **T-399** | **This skill** |
-| Telemetry + ops dashboard | `@stageflip/marketplace-telemetry-dashboard` | T-401 | Future |
+| Ops + telemetry pipeline | `@stageflip/on-device-player-ops` | **T-401** | **This skill** |
 
 The shim is the abstraction layer the binary calls into. It is **purely
 orchestration**: it owns no render loop, draws no pixels. The binary
@@ -246,6 +246,73 @@ The scaffold itself does NOT construct the `InteractiveMountHarness` —
 that's binary-specific (different devices may enable different
 registries). The production binary wires the harness via
 `createShim`.
+
+## Ops + telemetry (T-401)
+
+`@stageflip/on-device-player-ops` ships the **pure design surface** the
+binary wires together at runtime. No HTTP server, no real-network
+sink, and no Prometheus / Grafana / Datadog exporter live in this
+package — those are downstream of the workspace. The pipeline:
+
+```
+TelemetryEvent (from runtime-on-device-player)
+       │
+       ├──► MetricsAggregator.ingest()
+       │        │
+       │        └──► snapshot() → PlayerMetrics (window-bucketed counters)
+       │
+       ├──► OpsEventSink.send() ──► (downstream ingestion)
+       │
+       └──► HealthProbeReport (from packaging) ──► buildHealthHandler ──► HTTP /health
+                                                    │
+                                                    ▼
+                                                  FleetRollupRow ──► buildFleetRollup
+```
+
+### `MetricsAggregator` — window-bucketed counters
+
+- `ingest(event, clock)` — O(1) append; records the caller's clock at
+  ingest time.
+- `snapshot(clock, windowDurationSec = 600)` — returns a
+  `PlayerMetrics` covering events inside `[now - windowDurationSec,
+  now]`. Events outside the window are excluded from every counter.
+- Counters: `bootCount`, `shutdownCount`, `mountAttempts`,
+  `mountSuccesses`, `mountRefusals`, `mountSuccessRate`,
+  `refusalsByReason` (histogram across the 5 refusal reasons),
+  `errorsByClipFamily`, `uptimePctSinceBoot`, `currentlyMounted`
+  (clamped at 0).
+- **Uptime simplification**: 1.0 when continuously up, 0.0 when no
+  boot in window, `bootCount / (bootCount + shutdownCount)` otherwise.
+  The real fleet binary computes wall-clock ratios; this surface is
+  for smoke checks.
+
+### `buildHealthHandler` — HTTP-shape probe
+
+- `GET /health` → 200 with a fresh `HealthProbeReport` from the
+  caller-supplied `probe()` callback.
+- `POST /health` → 405.
+- Other paths → 404.
+- The binary wires this to its embedded HTTP server (Node `http`,
+  Rust `hyper`, etc.); `probe()` is called at most once per request.
+
+### `FleetRollup` — cross-device aggregation
+
+`buildFleetRollup({ rows, aggregatedAtSec })` produces a `FleetRollup`
+with per-row passthrough plus `totals`:
+
+- `totalDevices`, `healthyDevices`, `degradedDevices`, `failingDevices`
+- `weightedMountSuccessRate` — per-row attempt-weighted average
+- `aggregateRefusalsByReason` — elementwise sum of every row's
+  `refusalsByReason`
+
+### `OpsEventSink` + `OnDeviceTelemetryRecorder`
+
+- `OpsEventSink` is the contract production wires for real-network
+  forwarding. `InMemoryOpsEventSink` is the test + dev-loop impl;
+  it appends to `sent[]` and `flush()` resolves immediately.
+- `OnDeviceTelemetryRecorder` is the test-only recorder. `asSink` is
+  the sink callback; `byKind(k)` returns a type-narrowed slice;
+  `clear()` empties `recorded`.
 
 ## See also
 
