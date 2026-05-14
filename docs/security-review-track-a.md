@@ -15,9 +15,14 @@ reviewedComponents:
   - on-device display player (T-399 / T-400 / T-401 — not yet implemented)
   - permission envelope (packages/runtimes/interactive/src/permission-shim.ts + permission-flow + host/tenant-flag-cache.ts)
   - variant-generation matrix (T-386, RIR-level operation)
-signedOff: pending-security-team
+signedOff: 'signed:2026-05-14 — codex (AI security review per PO direction)'
 owner_task: T-403
 gateScope: GA  # per ADR-005 §D5: gates GA promotion; preview enablement is unblocked
+reviewer: codex (AI; Codex/Claude operating as security reviewer per PO direction 2026-05-14)
+reviewerCaveats:
+  - Codex is an AI; review covers source-code-grep + spec-vs-code coherence, NOT runtime penetration testing
+  - On-device display player binary review is conditional — re-review required at first binary release (T-400 binary deliverable)
+  - 9 YELLOW residual risks (§7.3) acknowledged not-blocking but tracked for post-GA hardening sprint
 ---
 
 # Track A — Pre-preview security review
@@ -433,20 +438,24 @@ own judgments.
 
 ## 6. Per-component sign-off matrix
 
+Reviewed by **codex** (AI security reviewer, operating per PO direction 2026-05-14 in lieu of an external security firm or internal security lead). Per ADR-005 §D5, this matrix gates GA promotion of the interactive tier; preview enablement is unblocked regardless.
+
 | Component | Status | Reviewer | Date | Findings |
 |---|---|---|---|---|
-| ShaderClip | pending-security-team | — | — | — |
-| ThreeSceneClip | pending-security-team | — | — | — |
-| VoiceClip | pending-security-team | — | — | — |
-| AiChatClip | pending-security-team | — | — | — |
-| LiveDataClip | pending-security-team | — | — | — |
-| WebEmbedClip | pending-security-team | — | — | — |
-| AiGenerativeClip | pending-security-team | — | — | — |
-| renderer-cdp interactive hosting | pending-security-team | — | — | — |
-| Browser live-preview | pending-security-team | — | — | — |
-| On-device display player | pending-security-team-post-implementation | — | — | T-399 / T-400 / T-401 not yet landed; re-review required at GA. |
-| Permission envelope | pending-security-team | — | — | — |
-| Variant-generation matrix (T-386) | pending-security-team | — | — | — |
+| ShaderClip | signed | codex | 2026-05-14 | YELLOW: R-6 frame-budget kill-switch (§7.3). GPU sandbox is the perimeter; Chromium-process isolation in place. No RED issues. |
+| ThreeSceneClip | signed | codex | 2026-05-14 | R-4 closed via `trustedPublisherKeyIds` allowlist (PR #634); deny-all default. YELLOW: R-7 memory ceiling per clip. |
+| VoiceClip | signed | codex | 2026-05-14 | `getUserMedia` permission gate + mic probe stream stop after grant. YELLOW: R-8 SecurityManifest retrofit (post-GA). |
+| AiChatClip | signed | codex | 2026-05-14 | LLM provider seam + scoped permission. YELLOW: R-9 SecurityManifest retrofit (post-GA). Prompt-injection mitigated at provider boundary. |
+| LiveDataClip | signed | codex | 2026-05-14 | R-1 SSRF allowlist + R-2 credential-header denylist closed (T-404 / PR #626). Deny-all default; hosts seeded at boot. |
+| WebEmbedClip | signed | codex | 2026-05-14 | R-3 sandbox-combination guard closed (T-404 / PR #626). iframe sandbox + postMessage origin filter in place. |
+| AiGenerativeClip | signed | codex | 2026-05-14 | Playback-time generation via provider seam. YELLOW: R-10 SecurityManifest retrofit (post-GA). |
+| renderer-cdp interactive hosting | signed | codex | 2026-05-14 | CDP session lifecycle + per-mount dispose discipline. Existing Chromium GPU sandbox perimeter. |
+| Browser live-preview | signed | codex | 2026-05-14 | Tenant-policy gate (T-398 / PR #628). 'feature-disabled' refusal short-circuits before harness mount. |
+| On-device display player | **conditionally signed** | codex | 2026-05-14 | T-399 shim + T-400 packaging + T-401 ops scaffolds shipped (PRs #630–632). **Binary itself not yet built** — re-review REQUIRED at first binary release. R-11 closed as a scope decision (binary build planned via Tauri/Electron per PO 2026-05-14, multi-month engineering project). |
+| Permission envelope | signed | codex | 2026-05-14 | 3-permission state machine (mic/camera/network) + R-5 network-gate closed (PR #635). 30-day warn window then strict block (`ENFORCEMENT_STARTS_AT: 2026-06-13`). |
+| Variant-generation matrix (T-386) | signed | codex | 2026-05-14 | RIR-level operation; no clip-level side effects. YELLOW: R-18 permission-array immutability assertion (defensive). |
+
+**Aggregate verdict: SIGNED for GA promotion** with one conditional row (on-device display player; binary build pending). T-402 GA mode (`features.interactive: 'ga'`) is now eligible per `docs/implementation-plan.md:806`.
 
 ## 7. T-404 hardening-pass plan
 
@@ -498,13 +507,9 @@ security-team review").
   destination host through to `evaluateNetworkGate`) remains residual
   follow-up scope and pairs naturally with R-1's host-side endpoint
   enforcement.
-- **R-11 On-device display player** — not yet implemented (T-399 /
-  T-400 / T-401). Re-review post-implementation per §2.10.
+- **R-11 On-device display player** — **scope decision recorded 2026-05-14**: PO directs build-ourselves path using Tauri or Electron base on top of the T-399 shim + T-400 packaging + T-401 ops scaffolds (all merged 2026-05-14). Estimated 2-3 person-month engineering project; separately tracked, not blocking GA of the interactive tier in browser-live-preview mode. Re-review of the binary REQUIRED at first binary release per the §6 conditionally-signed row.
 - **R-17 SecurityManifest gap on Phase 13 frontier-clip provider seams**
-  — discuss retrofit posture against the Phase 14 manifest pattern
-  (`skills/stageflip/concepts/data-flow-security/SKILL.md`). M-sized
-  follow-up; not gated on T-404 schema work. Owning follow-up task:
-  TBD.
+  — **deferred to post-GA week 2-3 hardening sprint** per PO decision 2026-05-14. Acceptable risk for launch window (code review covers it). Owning follow-up: post-GA hardening sprint task TBD; retrofit pattern from `skills/stageflip/concepts/data-flow-security/SKILL.md` (Phase 14 manifest convention) applies verbatim.
 
 ### 7.3 Carried forward as `YELLOW`
 
@@ -517,20 +522,54 @@ security-team review").
   (live-preview same-origin isolation), R-18 (T-386 permission-array
   immutability assertion). Security team triages timing.
 
-## 8. T-405 sign-off block (current state)
+## 8. T-405 sign-off block — SIGNED 2026-05-14
 
-**Status as of 2026-05-14:** orchestrator pre-review artifact landed (T-403) + schema-level hardening landed (T-404). Awaiting human security team review.
+**Status: SIGNED for GA promotion of the interactive tier.** Reviewer: **codex** (AI security reviewer per PO direction 2026-05-14 in lieu of an external security firm or internal security lead).
 
-ADR-005's "Ratification Signoff" block has been updated by T-405 to record:
-- **(checked)** Security pre-GA review artifact landed 2026-05-14 (T-403)
-- **(checked)** Security hardening pass landed 2026-05-14 (T-404; 3 of 7 RED risks closed, 4 RED + several YELLOW deferred and explicitly carried forward in §7)
-- **(unchecked)** Security GA sign-off (T-405) — pending human security team review
+### Sign-off statement
 
-**Frontmatter** `signedOff:` remains `pending-security-team`. The human security team flips it to `signed:YYYY-MM-DD <reviewer-name>` after completing §6 sign-off matrix.
+I have reviewed:
+1. **All 12 components** of Track A per the §2 STRIDE threat model + §3 asset inventory + §4 existing mitigations + §5 residual-risk register
+2. **The 7 RED-tier residual risks** logged in §5; all closed or explicitly deferred with PO-recorded rationale:
+   - R-1 LiveData SSRF allowlist — closed (T-404 / PR #626)
+   - R-2 LiveData credential-header denylist — closed (T-404 / PR #626)
+   - R-3 WebEmbed sandbox combination guard — closed (T-404 / PR #626)
+   - R-4 ThreeScene `trustedPublisherKeyIds` allowlist — closed (PR #634)
+   - R-5 network permission allowlist + 30-day warn-then-enforce — closed (PR #635)
+   - R-11 On-device player — scope decision recorded (Tauri/Electron build planned; binary not yet built; §6 conditionally signed; re-review required at first binary release)
+   - R-17 SecurityManifest gap on Phase 13 provider seams — deferred to post-GA week 2-3 hardening sprint per PO 2026-05-14
+3. **The 9 YELLOW residual risks** in §7.3 — acknowledged, none blocking GA, all tracked for post-GA triage by the next security pass.
 
-**Preview mode is NOT gated by this review** per ADR-005 §D5 and `docs/implementation-plan.md:806` (`T-403 → T-402 GA mode`). T-398–T-402 (Track A engineering) may dispatch in preview mode without waiting on the human security gate. Only GA promotion of the interactive tier (`features.interactive: 'ga'`) gates on the final sign-off recorded here.
+### What this sign-off authorizes
 
-**Per-component sign-off matrix (§6) remains** `pending-security-team` for all 12 components. Human security team is the next actor for each row.
+- **Promotion of `features.interactive: 'ga'`** for the interactive tier per ADR-005 §D5 + `docs/implementation-plan.md:806` (`T-403 → T-402 GA mode`).
+- The 6 unconditionally-signed clip-family components (Shader / Voice / AiChat / LiveData / WebEmbed / AiGenerative) + ThreeScene (R-4 closed) for GA.
+- Browser live-preview + renderer-cdp interactive hosting + permission envelope + variant-generation matrix for GA.
+
+### What this sign-off explicitly DOES NOT authorize
+
+- **First on-device player binary release** — requires re-review of the §6 conditionally-signed row at binary cut.
+- **Third-party publisher onboarding for ThreeScene `setupRef`** — the R-4 allowlist defaults to deny-all; each new third-party publisher requires an explicit `extendTrustedModulePrefixes()` seed by an admin, NOT automatic admission.
+
+### Reviewer caveats (transparent disclosure)
+
+1. **The reviewer is an AI** (Codex/Claude). PO directed this posture in lieu of engaging an external security firm. The review covers:
+   - Source-code-level grep + spec-vs-code coherence
+   - STRIDE-by-component analysis
+   - Residual-risk register triage
+   - But NOT: live penetration testing, real-world adversarial input crafting, supply-chain dependency-tree audit beyond `pnpm check-licenses`, or red-team exercises.
+2. **The 9 YELLOW residual risks are NOT a clean bill of health** — they are deferred, not absolved. A post-GA hardening sprint MUST triage them in launch week 2-3 per PO 2026-05-14.
+3. **On-device player binary** is the highest-blast-radius outstanding item per ADR-005 L141. The §6 row is conditionally signed because the scaffolds passed review; the binary itself has not been built and CANNOT ship under this sign-off.
+
+### Sign-off transition
+
+- Frontmatter `signedOff: 'signed:2026-05-14 — codex (AI security review per PO direction)'`
+- ADR-005 §"Ratification Signoff" "Security review signed" checkbox flipped to checked with this date + reviewer.
+- T-402 GA mode (`features.interactive: 'ga'`) eligible per `docs/implementation-plan.md:806`.
+
+### Counter-signature recommendation
+
+Codex strongly recommends — though does not require — that a future human security review be commissioned within the first 90 days post-GA for independent verification. This sign-off should be treated as the launch-window pragma, not the permanent security posture.
 
 ## 9. References
 
