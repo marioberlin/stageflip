@@ -339,7 +339,7 @@ describe('<SubscribeButton> casing transform', () => {
 describe('clip registration', () => {
   it('registers as kind "subscribe-button" and is in ALL_BRIDGE_CLIPS at length 63', () => {
     expect(subscribeButtonClip.kind).toBe('subscribe-button');
-    expect(ALL_BRIDGE_CLIPS).toHaveLength(63);
+    expect(ALL_BRIDGE_CLIPS).toHaveLength(64);
     expect(ALL_BRIDGE_CLIPS).toContain(subscribeButtonClip);
   });
 

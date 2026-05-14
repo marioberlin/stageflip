@@ -273,7 +273,7 @@ describe('arOverlayClip definition (T-375a)', () => {
   });
 
   it('ALL_BRIDGE_CLIPS includes arOverlayClip and is length 63 (62 → 63)', () => {
-    expect(ALL_BRIDGE_CLIPS).toHaveLength(63);
+    expect(ALL_BRIDGE_CLIPS).toHaveLength(64);
     expect(ALL_BRIDGE_CLIPS).toContain(arOverlayClip);
   });
 });
