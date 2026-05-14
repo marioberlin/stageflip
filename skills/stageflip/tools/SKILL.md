@@ -17,7 +17,7 @@ NOT edit by hand — run `pnpm skills-sync` after registering a
 new bundle; `pnpm skills-sync:check` fails in CI if this file
 drifts.
 
-27 bundles, 148 tools total.
+28 bundles, 151 tools total.
 
 StageFlip ships tools grouped into bundles so an agent context
 rarely needs more than 30 tool definitions loaded at once
@@ -49,6 +49,7 @@ rarely needs more than 30 tool definitions loaded at once
 | [`cluster-a-compose`](./cluster-a-compose/SKILL.md) | 4 | Cluster A (News & Broadcast) composer tools — preset-binding factories for breaking-news / ongoing-update / guest-intro / documentary-title-card briefs across the 8 ratified Cluster A presets (T-331). |
 | [`cluster-b-compose`](./cluster-b-compose/SKILL.md) | 4 | Cluster B (Sports) composer tools — preset-binding factories for live-sports score / standings / VAR / player-intro briefs (T-340). |
 | [`cluster-c-compose`](./cluster-c-compose/SKILL.md) | 0 | Cluster C (Weather) composer tools — preset-binding factories for weather alerts / forecast maps / storm tracks / temperature maps across the 6 ratified Cluster C presets (T-347). |
+| [`cluster-d-compose`](./cluster-d-compose/SKILL.md) | 3 | Cluster D (Titles) composer tools — preset-binding factories for title-sequence / segment-open / end-credits briefs across the 6 ratified Cluster D presets (T-354). Caller-required `presetId`: the cluster spans 6 typographically distinct prestige-TV registers and no semantic dispatch can collapse them. |
 | [`cluster-e-compose`](./cluster-e-compose/SKILL.md) | 5 | Cluster E (Data) composer tools — preset-binding factories for live-data / market-ticker / election-board / big-number / stat-callout briefs across the 6 ratified Cluster E presets (T-361). |
 | [`cluster-f-compose`](./cluster-f-compose/SKILL.md) | 4 | Cluster F (Captions / Lyrics) composer tools — preset-binding factories for creator-caption / subtitle / lyric-video / keyword-highlight briefs (T-368). |
 | [`cluster-g-compose`](./cluster-g-compose/SKILL.md) | 4 | Cluster G (CTAs / social) composer tools — preset-binding factories for subscribe / follow / link-sticker / QR-bounce / social-handle briefs across the 5 ratified Cluster G presets (T-374). |

@@ -3,7 +3,7 @@ title: Cluster D — Titles, opens, bumpers, credits
 id: skills/stageflip/presets/titles
 tier: cluster
 status: substantive
-last_updated: 2026-04-25
+last_updated: 2026-05-14
 owner_task: T-354
 related:
   - skills/stageflip/agents/type-design-consultant/SKILL.md
@@ -34,11 +34,13 @@ Do **not** invoke for social / short-form opens — those belong in cluster F or
 - [`succession-home-video`](succession-home-video.md) — titleSequence, grainy sepia + contemporary 16:9 intercuts, piano-paced
 - [`severance-surreal-3d`](severance-surreal-3d.md) — titleSequence, CGI body-horror, mid-century corporate type
 
-## Semantic tools
+## Compose tools
 
-- `compose_title_sequence(show_brief, era, duration_seconds, brand)` — picks preset by era + tone
-- `compose_segment_open(segment_name, tone, brand)` — picks shorter-form bumper from the cluster
-- `compose_end_credits(credits, style, brand)` — routes to a cluster-matched credits variation
+The agent-facing routing surface lives in the `cluster-d-compose` bundle (T-354). All three tools are read-only (`ToolContext`) and return `(presetId, props)` — the caller mounts the resulting clip via a separate write-tier tool (e.g. `add_clip` from `create-mutate`). Per cluster posture (typography carries emotional weight; the bespoke typeface signals the register), `presetId` is **caller-required** — no semantic dispatch can collapse the 6 typographically distinct registers, so the caller picks the preset and the composer forwards the brief.
+
+- `compose_title_sequence(presetId, title, subtitle?, durationSeconds?, accentColor?)` — main "show title" entrance for a documentary / series / brand film. Composer-transparent on optional fields: omitted keys do NOT appear in the output `props` and the preset default flows through.
+- `compose_segment_open(presetId, segmentTitle, segmentNumber?, durationSeconds?)` — shorter title card for a chapter / segment break within longer-form content. Same caller-required `presetId` posture — not all 6 registers are typographically appropriate for short opens, but the contract leaves selection to the caller.
+- `compose_end_credits(presetId, credits, scrollSpeed?)` — credits roll / cast-list / "end of episode" register. `credits` is a 1–64-entry `{ role, name }` array; `scrollSpeed` is `slow | medium | fast` (omitted → preset default).
 
 ## Multi-clip composition (T-348 / T-348a)
 

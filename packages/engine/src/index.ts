@@ -161,6 +161,15 @@ export {
   registerClusterCComposeBundle,
 } from './handlers/cluster-c-compose/register.js';
 export {
+  CLUSTER_D_COMPOSE_BUNDLE_NAME,
+  CLUSTER_D_COMPOSE_HANDLERS,
+  CLUSTER_D_COMPOSE_TOOL_DEFINITIONS,
+  CLUSTER_D_PRESET_IDS,
+  type ClusterDPresetId,
+  END_CREDITS_SCROLL_SPEEDS,
+  registerClusterDComposeBundle,
+} from './handlers/cluster-d-compose/register.js';
+export {
   CLUSTER_E_COMPOSE_BUNDLE_NAME,
   CLUSTER_E_COMPOSE_HANDLERS,
   CLUSTER_E_COMPOSE_TOOL_DEFINITIONS,

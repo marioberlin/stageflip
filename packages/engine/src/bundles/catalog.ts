@@ -115,6 +115,12 @@ export const CANONICAL_BUNDLES: readonly ToolBundle[] = [
     tools: [],
   },
   {
+    name: 'cluster-d-compose',
+    description:
+      'Cluster D (Titles) composer tools — preset-binding factories for title-sequence / segment-open / end-credits briefs across the 6 ratified Cluster D presets (T-354). Caller-required `presetId`: the cluster spans 6 typographically distinct prestige-TV registers and no semantic dispatch can collapse them.',
+    tools: [],
+  },
+  {
     name: 'cluster-e-compose',
     description:
       'Cluster E (Data) composer tools — preset-binding factories for live-data / market-ticker / election-board / big-number / stat-callout briefs across the 6 ratified Cluster E presets (T-361).',
