@@ -4,8 +4,17 @@
 // pairs and assert the verdict shape. An additional integration test
 // runs `main` against the real `packages/` tree to verify the inaugural
 // 9-adapter state passes end-to-end.
+//
+// R-17 closure (2026-05-15): the gate now ALSO discovers + validates
+// the 5 Phase 13 frontier-clip provider seams. Tests exercise the
+// frontier-clip discovery + extraction code paths against a tmpdir
+// fixture (happy path + MISSING / PARSE-ERROR / INVALID).
 
-import { describe, expect, it } from 'vitest';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
   parseAdapterDescriptor,
@@ -16,7 +25,10 @@ import {
 import {
   buildReport,
   checkManifestDescriptorConsistency,
+  discoverFrontierClipSeams,
+  extractFromFrontierClipSeam,
   formatReport,
+  FRONTIER_CLIP_FAMILIES_REQUIRING_MANIFEST,
   isAdapterPackageName,
   main,
 } from './check-data-flow-security.js';
@@ -263,6 +275,7 @@ describe('formatReport', () => {
   it('emits PASS when exitCode is 0', () => {
     const out = formatReport({
       packagesInspected: 0,
+      frontierClipSeamsInspected: 0,
       rows: [],
       errors: [],
       inconsistencies: [],
@@ -274,6 +287,7 @@ describe('formatReport', () => {
   it('emits FAIL when exitCode is 1', () => {
     const out = formatReport({
       packagesInspected: 1,
+      frontierClipSeamsInspected: 0,
       rows: [],
       errors: [{ source: 'pkg', kind: 'MISSING', cause: 'missing security.json' }],
       inconsistencies: [],
@@ -290,6 +304,202 @@ describe('formatReport', () => {
 
 describe('main — real workspace (inaugural 9-adapter state)', () => {
   it('exits 0 against packages/', async () => {
+    const code = await main();
+    expect(code).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Frontier-clip seam discovery + extraction (R-17)
+// ---------------------------------------------------------------------------
+
+const validFrontierManifest = {
+  adapterId: 'frontier-clip-voice',
+  perimeter: 'remote-network',
+  dataLeavingPerimeter: {
+    prompt: false,
+    inputBytes: true,
+    tenantId: true,
+    cacheKey: false,
+  },
+  pii: { voiceClone: false, userContent: true },
+  networkEndpoint: {
+    hostname: 'host-injected.transcription-provider.local',
+    protocol: 'https',
+    authMethod: 'api-key-header',
+  },
+  dataRetention: {
+    providerRetainsInput: false,
+    providerRetainsOutput: false,
+    retentionPolicy: 'tenant-controlled',
+  },
+  auditSignal: {
+    relevantAuditEvents: ['start', 'complete', 'failed'],
+    relevantUsageFields: ['tenantId', 'adapterId', 'modality', 'outcome', 'timestamp'],
+  },
+  lastReviewedAt: '2026-05-15',
+};
+
+describe('FRONTIER_CLIP_FAMILIES_REQUIRING_MANIFEST', () => {
+  it('lists exactly the 5 Phase 13 frontier-clip families (R-17)', () => {
+    expect([...FRONTIER_CLIP_FAMILIES_REQUIRING_MANIFEST].sort()).toEqual([
+      'ai-chat',
+      'ai-generative',
+      'live-data',
+      'voice',
+      'web-embed',
+    ]);
+  });
+});
+
+describe('discoverFrontierClipSeams', () => {
+  let tmp: string;
+
+  beforeEach(() => {
+    tmp = mkdtempSync(join(tmpdir(), 'frontier-clip-seam-disc-'));
+  });
+
+  it('returns empty when no clip family directories exist', () => {
+    const seams = discoverFrontierClipSeams(tmp);
+    expect(seams).toEqual([]);
+  });
+
+  it('discovers each family that has a directory; skips missing families', () => {
+    mkdirSync(join(tmp, 'voice'));
+    mkdirSync(join(tmp, 'ai-chat'));
+    const seams = discoverFrontierClipSeams(tmp);
+    expect(seams.map((s) => s.family).sort()).toEqual(['ai-chat', 'voice']);
+    expect(seams.every((s) => s.tag.startsWith('frontier-clip:'))).toBe(true);
+  });
+
+  it('returns deterministic alphabetical order', () => {
+    for (const family of FRONTIER_CLIP_FAMILIES_REQUIRING_MANIFEST) {
+      mkdirSync(join(tmp, family));
+    }
+    const seams = discoverFrontierClipSeams(tmp);
+    expect(seams.map((s) => s.family)).toEqual([
+      'ai-chat',
+      'ai-generative',
+      'live-data',
+      'voice',
+      'web-embed',
+    ]);
+  });
+});
+
+describe('extractFromFrontierClipSeam', () => {
+  let tmp: string;
+  let seamDir: string;
+
+  beforeEach(() => {
+    tmp = mkdtempSync(join(tmpdir(), 'frontier-clip-seam-ext-'));
+    seamDir = join(tmp, 'voice');
+    mkdirSync(seamDir);
+  });
+
+  it('returns the parsed manifest on a valid security.json', () => {
+    writeFileSync(join(seamDir, 'security.json'), JSON.stringify(validFrontierManifest));
+    const result = extractFromFrontierClipSeam({
+      family: 'voice',
+      tag: 'frontier-clip:voice',
+      dir: seamDir,
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.manifest?.adapterId).toBe('frontier-clip-voice');
+  });
+
+  it('emits MISSING when security.json is absent', () => {
+    const result = extractFromFrontierClipSeam({
+      family: 'voice',
+      tag: 'frontier-clip:voice',
+      dir: seamDir,
+    });
+    expect(result.manifest).toBeUndefined();
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]?.kind).toBe('MISSING');
+    expect(result.errors[0]?.source).toBe('frontier-clip:voice');
+  });
+
+  it('emits PARSE-ERROR when security.json is malformed JSON', () => {
+    writeFileSync(join(seamDir, 'security.json'), '{not json');
+    const result = extractFromFrontierClipSeam({
+      family: 'voice',
+      tag: 'frontier-clip:voice',
+      dir: seamDir,
+    });
+    expect(result.manifest).toBeUndefined();
+    expect(result.errors.some((e) => e.kind === 'PARSE-ERROR')).toBe(true);
+  });
+
+  it('emits INVALID when JSON parses but fails Zod schema', () => {
+    const broken = { ...validFrontierManifest, perimeter: 'not-a-valid-perimeter' };
+    writeFileSync(join(seamDir, 'security.json'), JSON.stringify(broken));
+    const result = extractFromFrontierClipSeam({
+      family: 'voice',
+      tag: 'frontier-clip:voice',
+      dir: seamDir,
+    });
+    expect(result.manifest).toBeUndefined();
+    expect(result.errors.some((e) => e.kind === 'INVALID')).toBe(true);
+  });
+});
+
+describe('buildReport — frontier-clip seams (R-17)', () => {
+  it('records a PASS row for each valid frontier-clip seam', () => {
+    const manifest: SecurityManifest = validFrontierManifest as SecurityManifest;
+    const report = buildReport(
+      [],
+      [],
+      [{ family: 'voice', tag: 'frontier-clip:voice', dir: '/tmp/x' }],
+      [{ manifest, errors: [] }],
+    );
+    expect(report.exitCode).toBe(0);
+    expect(report.frontierClipSeamsInspected).toBe(1);
+    expect(report.rows).toHaveLength(1);
+    expect(report.rows[0]?.verdict).toBe('PASS');
+    expect(report.rows[0]?.packageName).toBe('frontier-clip:voice');
+  });
+
+  it('records a FAIL row + propagates MISSING error when seam manifest absent', () => {
+    const report = buildReport(
+      [],
+      [],
+      [{ family: 'voice', tag: 'frontier-clip:voice', dir: '/tmp/x' }],
+      [
+        {
+          manifest: undefined,
+          errors: [
+            {
+              source: 'frontier-clip:voice',
+              kind: 'MISSING',
+              cause: 'expected security.json',
+            },
+          ],
+        },
+      ],
+    );
+    expect(report.exitCode).toBe(1);
+    expect(report.rows).toHaveLength(1);
+    expect(report.rows[0]?.verdict).toBe('FAIL');
+    expect(report.errors.some((e) => e.kind === 'MISSING')).toBe(true);
+  });
+
+  it('keeps adapter + frontier-clip coverage independently visible in formatReport', () => {
+    const manifest: SecurityManifest = validFrontierManifest as SecurityManifest;
+    const report = buildReport(
+      [],
+      [],
+      [{ family: 'voice', tag: 'frontier-clip:voice', dir: '/tmp/x' }],
+      [{ manifest, errors: [] }],
+    );
+    const out = formatReport(report);
+    expect(out).toMatch(/0 adapter packages inspected/);
+    expect(out).toMatch(/1 frontier-clip seam inspected \(R-17\)/);
+  });
+});
+
+describe('main — real workspace (frontier-clip seams included)', () => {
+  it('still exits 0 with the 5 frontier-clip seam manifests in place (regression)', async () => {
     const code = await main();
     expect(code).toBe(0);
   });

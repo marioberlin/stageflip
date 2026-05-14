@@ -433,7 +433,7 @@ own judgments.
 | R-14 | Renderer-cdp | Vendored `@hyperframes/engine` integrity test scope is checksum-only; not a SCA scan. | **YELLOW** — supply-chain audit cadence required. |
 | R-15 | Renderer-cdp | Page console.log of clip code is exempt from CLAUDE.md §3 (interactive tier exemption) — a careless clip could log credentials to renderer logs. | **YELLOW** — verify prod log retention / redaction policy. |
 | R-16 | Live-preview | Same-origin host page; no iframe isolation between clip and editor. By design. | **YELLOW** — verify editor session credentials are not reachable from clip code. |
-| R-17 | Cross-cutting | No SecurityManifest pattern (Phase 14 T-446) is retrofitted to Phase 13 frontier clips. Phase 14 manifest validates `pnpm check-data-flow-security` only for Phase 14 adapters. | **YELLOW** — discuss retrofit posture; T-404 candidate. |
+| R-17 | Cross-cutting | No SecurityManifest pattern (Phase 14 T-446) is retrofitted to Phase 13 frontier clips. Phase 14 manifest validates `pnpm check-data-flow-security` only for Phase 14 adapters. | **MITIGATED (R-17)** — closed via sidecar SecurityManifest backfill across the 5 Phase 13 frontier-clip provider seams: `packages/runtimes/interactive/src/clips/{voice,ai-chat,live-data,web-embed,ai-generative}/security.json`. `scripts/check-data-flow-security.ts` extended to discover + validate frontier-clip seams alongside Phase 14 adapters via `FRONTIER_CLIP_FAMILIES_REQUIRING_MANIFEST`. PO decision logged here 2026-05-15. |
 | R-18 | Variant-generation matrix (T-386) | No explicit immutability assertion that `liveMount.permissions` is preserved across permutation. | **GREEN** — verify in T-386 ACs. |
 
 ## 6. Per-component sign-off matrix
@@ -509,7 +509,7 @@ security-team review").
   enforcement.
 - **R-11 On-device display player** — **DROPPED 2026-05-15 per PO** (deployment target descoped from product; ADR-005 §D4 amended). Build-ourselves path that was approved on 2026-05-14 has been reversed; binary will NOT be built. T-399 shim + T-400 packaging + T-401 ops scaffolds remain in-tree as deprecated; no consumer planned. StageFlip-Display ships as browser-based-only.
 - **R-17 SecurityManifest gap on Phase 13 frontier-clip provider seams**
-  — **deferred to post-GA week 2-3 hardening sprint** per PO decision 2026-05-14. Acceptable risk for launch window (code review covers it). Owning follow-up: post-GA hardening sprint task TBD; retrofit pattern from `skills/stageflip/concepts/data-flow-security/SKILL.md` (Phase 14 manifest convention) applies verbatim.
+  — **closed via sidecar SecurityManifest backfill across the 5 Phase 13 frontier-clip provider seams** (voice / ai-chat / live-data / web-embed / ai-generative); `check-data-flow-security` extended to discover them; PO decision logged here 2026-05-15. Originally deferred to post-GA week 2-3 hardening sprint per PO 2026-05-14; greenlit early. Sidecar manifests live next to each clip source (`packages/runtimes/interactive/src/clips/<family>/security.json`) and use `adapterId: 'frontier-clip-<family>'`. Discovery walks `packages/runtimes/interactive/src/clips/<family>/` per the new `FRONTIER_CLIP_FAMILIES_REQUIRING_MANIFEST` constant; failure modes 1–3 (MISSING / PARSE-ERROR / INVALID) apply, 4–5 (INCONSISTENT / ORPHAN) do not (no descriptors). Auditability now scales to third-party provider plug-ins. Retrofit pattern documented in `skills/stageflip/concepts/data-flow-security/SKILL.md` §"Phase 13 frontier-clip provider seams (R-17)".
 
 ### 7.3 Carried forward as `YELLOW`
 
