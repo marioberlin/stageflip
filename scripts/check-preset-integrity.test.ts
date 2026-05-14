@@ -13,7 +13,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { PNG } from 'pngjs';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
   INTERACTIVE_CLIP_KINDS,
@@ -1385,6 +1385,21 @@ describe('check-preset-integrity invariant 11: ai-chat-props (T-389 AC #5)', () 
 // ---------- Invariant 12: live-data-props (T-391 AC #5) ----------
 
 describe('check-preset-integrity invariant 12: live-data-props (T-391 AC #5)', () => {
+  // T-404 R-1 — schema's LiveData endpoint host allowlist defaults to
+  // deny-all. Seed `example.com` (the test fixture host) before each
+  // test in this suite so happy-path payloads continue to validate.
+  // Import from source path (not '@stageflip/schema') so we share the
+  // exact module instance that `checkLiveDataProps` uses internally —
+  // the dist re-export would otherwise yield a separate module-level
+  // allowlist state.
+  beforeEach(async () => {
+    const { extendAllowedHosts, __resetAllowedHostsForTests } = await import(
+      '../packages/schema/src/clips/interactive/live-data-props.js'
+    );
+    __resetAllowedHostsForTests();
+    extendAllowedHosts([/^example\.com$/]);
+  });
+
   it('passes when family is omitted', () => {
     const r = checkLiveDataProps({ presetId: 'p', raw: { clipKind: 'lowerThird' } });
     expect(r.ok).toBe(true);

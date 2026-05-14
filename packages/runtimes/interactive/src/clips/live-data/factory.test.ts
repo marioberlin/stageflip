@@ -2,14 +2,25 @@
 // T-391 ACs #6–#19, #26 — liveDataClipFactory unit tests. Uses the
 // `InMemoryLiveDataProvider` to drive scripted responses and pin
 // abort discipline + telemetry privacy.
+//
+// T-404 — the schema's R-1 endpoint allowlist defaults to deny-all, so
+// these tests seed the allowlist in `beforeEach` with the test-fixture
+// hosts. Resetting between tests prevents accidental leakage of test
+// allowlist state into other suites that run in the same process.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { __resetAllowedHostsForTests, extendAllowedHosts } from '@stageflip/schema';
 import { type ClipFactory, type MountContext, PERMISSIVE_TENANT_POLICY } from '../../contract.js';
 import { InteractiveClipRegistry } from '../../registry.js';
 import { LiveDataClipFactoryBuilder, type LiveDataClipFactoryOptions } from './factory.js';
 import { InMemoryLiveDataProvider } from './live-data-provider.js';
 import { type DataEvent, type ErrorEvent, RefreshTriggerError } from './types.js';
+
+beforeEach(() => {
+  __resetAllowedHostsForTests();
+  extendAllowedHosts([/^example\.com$/]);
+});
 
 interface MakeContextArgs {
   emit?: MountContext['emitTelemetry'];

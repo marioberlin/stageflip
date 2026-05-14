@@ -412,9 +412,9 @@ own judgments.
 
 | # | Component | Risk | Severity (pre-review) |
 |---|---|---|---|
-| R-1 | LiveDataClip | No SSRF / endpoint allowlist. Schema accepts any absolute URL. Any pack-published preset can target internal services. | **RED** — load-bearing; ADR-005 §D7 explicitly lists this as security-review scope. |
-| R-2 | LiveDataClip | Credential headers MUST NOT be in `headers` per docstring, but schema does not enforce. `X-Custom-Auth` would slip through. | **RED** — by design per the schema comment ("real defence is at the network gate, NOT implemented in v1"). |
-| R-3 | WebEmbedClip | Schema does NOT block `allow-scripts allow-same-origin` combination (equivalent to no sandbox). Web-embed-props.ts:53-60 explicitly defers token allowlist to T-403. | **RED** — security team MUST resolve. |
+| R-1 | LiveDataClip | No SSRF / endpoint allowlist. Schema accepts any absolute URL. Any pack-published preset can target internal services. | **MITIGATED (T-404)** — `liveDataClipPropsSchema.endpoint` now refines against `LIVE_DATA_ALLOWED_HOST_PATTERNS` (default `[]` — deny-all, fail-closed). Tenants/hosts seed via `extendAllowedHosts(patterns)`. See `packages/schema/src/clips/interactive/live-data-props.ts` and the R-1 describe in `packages/schema/src/clips/interactive/live-data-props.test.ts`. Network-layer destination enforcement remains residual (R-5). |
+| R-2 | LiveDataClip | Credential headers MUST NOT be in `headers` per docstring, but schema does not enforce. `X-Custom-Auth` would slip through. | **MITIGATED (T-404)** — `headers` keys are now refined against `FORBIDDEN_REQUEST_HEADER_PATTERNS` (case-insensitive: `Authorization`, `Proxy-Authorization`, `Cookie`, `X-Api-Key`, `X-Auth`, `X-Access-Token`, `X-Csrf-Token`, `Bearer`). The previous "real defence is at the network gate" posture is preserved as the architectural chokepoint; the schema refine is the belt-AND-braces complement for canonical names. See `packages/schema/src/clips/interactive/live-data-props.ts`. |
+| R-3 | WebEmbedClip | Schema does NOT block `allow-scripts allow-same-origin` combination (equivalent to no sandbox). Web-embed-props.ts:53-60 explicitly defers token allowlist to T-403. | **MITIGATED (T-404)** — `webEmbedClipPropsSchema.sandbox` now rejects any value containing BOTH `allow-scripts` AND `allow-same-origin` (`FORBIDDEN_SANDBOX_COMBINATIONS`). Order-independent + extra-token-bypass tested. See `packages/schema/src/clips/interactive/web-embed-props.ts`. A broader tenant-level token allowlist remains future work. |
 | R-4 | ThreeSceneClip | Dynamic `import()` of pack-supplied `setupRef` package executes arbitrary JS in renderer page context. No setup-symbol allowlist. | **RED** — largest code-injection surface in Track A. |
 | R-5 | All network-using clips (`ai-chat`, `live-data`, `web-embed`, `ai-generative`) | `'network'` permission is a no-op grant (`permission-shim.ts:244-246`); no per-tenant destination allowlist. | **RED** — load-bearing for any future tenant-allowlist work. |
 | R-6 | ShaderClip | No GPU frame-budget kill-switch (ADR-005 §D7 lists this as in-scope). | **YELLOW** — DoS scope only; not data-exfiltration. |
@@ -448,16 +448,62 @@ own judgments.
 | Permission envelope | pending-security-team | — | — | — |
 | Variant-generation matrix (T-386) | pending-security-team | — | — | — |
 
-## 7. T-404 hardening-pass plan (placeholder)
+## 7. T-404 hardening-pass plan
 
-> TODO: filled by security team during T-403 review.
+T-404 is the orchestrator-actionable schema-level subset of the
+hardening pass. Human security-team-driven items still land as
+additional T-404 work (item set below labelled "Deferred to
+security-team review").
 
-Expected output shape (drawn from §5 residual risks):
-- Concrete fix items per R-N, with owning task references.
-- For each `RED` item, a specific landing milestone (preview-safe vs.
-  GA-blocking).
-- For each `YELLOW` item that is `unknown`, an investigation task.
-- Cross-link to ADR-005 ratification block updates.
+### 7.1 Addressed by this T-404 PR (schema-layer, pre-emptive)
+
+- **R-1 LiveData SSRF endpoint allowlist** — closed. Schema now refines
+  `endpoint` against `LIVE_DATA_ALLOWED_HOST_PATTERNS` with deny-all
+  default and `extendAllowedHosts(patterns)` extension hook. Tests
+  cover deny-all, allowed-host accept, public-host reject after
+  partial seed, merge-not-replace semantics, and reset helper.
+- **R-2 LiveData credential-header denylist** — closed at the schema
+  layer. `headers` refine rejects canonical credential names
+  (`Authorization`, `Proxy-Authorization`, `Cookie`, `X-Api-Key`,
+  `X-Auth`, `X-Access-Token`, `X-Csrf-Token`, `Bearer`) case-
+  insensitively. The previous "real defence is at the network gate"
+  posture remains correct architecturally; the refine is belt-AND-
+  braces for the canonical-name family.
+- **R-3 WebEmbed sandbox-combination guard** — closed. Schema rejects
+  any `sandbox` array containing both `allow-scripts` AND
+  `allow-same-origin`. Order-independent; extra tokens don't bypass.
+
+### 7.2 Carried forward (still pending security-team triage)
+
+- **R-4 ThreeSceneClip dynamic-`import()` setup-symbol allowlist** —
+  largest code-injection surface in Track A. Requires design discussion
+  about package-vs-symbol pinning, integrity check at resolve time,
+  and interaction with `pack-loader` trust chain. Touches
+  `packages/runtimes/interactive/src/clips/three-scene/setup-resolver.ts`.
+  Owning follow-up task: TBD — security team to define.
+- **R-5 `'network'` permission no-op grant** — runtime fix in
+  `packages/runtimes/interactive/src/permission-shim.ts:244-246`.
+  Coupled to R-1 once host-side destination allowlist is implemented;
+  R-1 closes the schema-layer entry point, R-5 closes the runtime
+  enforcement layer. Owning follow-up task: TBD.
+- **R-11 On-device display player** — not yet implemented (T-399 /
+  T-400 / T-401). Re-review post-implementation per §2.10.
+- **R-17 SecurityManifest gap on Phase 13 frontier-clip provider seams**
+  — discuss retrofit posture against the Phase 14 manifest pattern
+  (`skills/stageflip/concepts/data-flow-security/SKILL.md`). M-sized
+  follow-up; not gated on T-404 schema work. Owning follow-up task:
+  TBD.
+
+### 7.3 Carried forward as `YELLOW`
+
+- R-6 (Shader GPU frame-budget kill-switch), R-7 (Three-scene memory
+  ceiling), R-8 / R-9 / R-10 (SecurityManifest for voice / ai-chat /
+  ai-generative adapters — subset of R-17), R-12 (per-(session,
+  family) grant cache scoping vs. tenant switching), R-13 (tenant id
+  on every clip-level event), R-14 (vendored `@hyperframes/engine` SCA
+  scan), R-15 (interactive-tier console.log exemption), R-16
+  (live-preview same-origin isolation), R-18 (T-386 permission-array
+  immutability assertion). Security team triages timing.
 
 ## 8. T-405 sign-off block (placeholder)
 

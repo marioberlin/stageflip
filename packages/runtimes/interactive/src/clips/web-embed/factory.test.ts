@@ -112,11 +112,15 @@ describe('webEmbedClipFactory — registry + frameSource (T-393 AC #6, #7, #8)',
 
 describe('webEmbedClipFactory — iframe creation (T-393 AC #9, #10)', () => {
   it('AC #9 — mount creates exactly one iframe under the root, with src + sandbox attribute', async () => {
+    // T-404 R-3: the previous fixture used the now-forbidden
+    // `['allow-scripts', 'allow-same-origin']` combination. Substitute a
+    // safe combination that still exercises >1 sandbox token to assert
+    // space-joining is correct.
     const factory = buildFactory();
     const ctx = makeContext({
       props: {
         url: 'https://example.com/embed',
-        sandbox: ['allow-scripts', 'allow-same-origin'],
+        sandbox: ['allow-scripts', 'allow-popups'],
       },
     });
     const handle = await factory(ctx);
@@ -124,7 +128,7 @@ describe('webEmbedClipFactory — iframe creation (T-393 AC #9, #10)', () => {
     expect(iframes).toHaveLength(1);
     const iframe = iframes[0] as HTMLIFrameElement;
     expect(iframe.getAttribute('src')).toBe('https://example.com/embed');
-    expect(iframe.getAttribute('sandbox')).toBe('allow-scripts allow-same-origin');
+    expect(iframe.getAttribute('sandbox')).toBe('allow-scripts allow-popups');
     handle.dispose();
   });
 

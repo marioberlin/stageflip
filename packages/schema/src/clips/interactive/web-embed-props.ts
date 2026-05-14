@@ -16,8 +16,42 @@
 // continue to validate; the field is fully optional. v1 accepts ONLY
 // `data:` URLs (the refine in `posterImageSchema` enforces this);
 // `http(s):` URLs are deferred per the out-of-scope table in the spec.
+//
+// T-404 (security hardening — addresses §5 R-3 of
+// `docs/security-review-track-a.md`): the `sandbox` field is refined to
+// reject any value containing BOTH `allow-scripts` AND
+// `allow-same-origin`. Per the HTML spec, that combination cancels the
+// sandbox — the iframe gets full same-origin DOM + script access to the
+// host page. The security-review register flagged this as RED because
+// the original schema documented (lines 53–60 below) that token policy
+// would be decided in T-403, leaving the combination at the schema
+// layer permissive. T-404 closes the lower-bound case.
 
 import { z } from 'zod';
+
+/**
+ * Sandbox-token combinations that are explicitly forbidden at the
+ * schema layer (T-404 R-3). Today the only one is the well-known
+ * `allow-scripts + allow-same-origin` pair — per the HTML spec, the
+ * combination cancels the sandbox attribute. Exported for documentation
+ * + downstream tooling (preset linters, IDE plugins).
+ */
+export const FORBIDDEN_SANDBOX_COMBINATIONS = [
+  {
+    requires: ['allow-scripts', 'allow-same-origin'],
+    reason: 'cancels sandbox (per HTML spec)',
+  },
+] as const;
+
+function sandboxCombinationIsForbidden(tokens: readonly string[]): boolean {
+  const normalized = new Set(tokens);
+  for (const combo of FORBIDDEN_SANDBOX_COMBINATIONS) {
+    if (combo.requires.every((token) => normalized.has(token))) {
+      return true;
+    }
+  }
+  return false;
+}
 
 /**
  * Captured poster screenshot for the static fallback (T-394 D-T394-1).
@@ -78,7 +112,13 @@ const posterImageSchema = z
 export const webEmbedClipPropsSchema = z
   .object({
     url: z.string().url('url must be a valid absolute URL'),
-    sandbox: z.array(z.string()).default([]),
+    sandbox: z
+      .array(z.string())
+      .refine(
+        (tokens) => !sandboxCombinationIsForbidden(tokens),
+        "WebEmbed sandbox MUST NOT combine 'allow-scripts' with 'allow-same-origin' — this combination effectively disables the sandbox (security review R-3)",
+      )
+      .default([]),
     allowedOrigins: z.array(z.string().url()).optional(),
     width: z.number().int().positive().optional(),
     height: z.number().int().positive().optional(),
