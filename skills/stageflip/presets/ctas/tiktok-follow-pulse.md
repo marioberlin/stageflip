@@ -14,7 +14,7 @@ fallbackFont:
 permissions: []
 signOff:
   parityFixture: 'signed:2026-05-07'
-  typeDesign: pending-cluster-batch
+  typeDesign: 'signed:2026-05-14'
 ---
 
 # TikTok Follow Pulse — right-thumb-zone CTA
