@@ -26,3 +26,25 @@ export {
   type RecommenderInput,
   recommendPacks,
 } from './recommender.js';
+
+// T-546 — editor-side observation + ranking + caching surface.
+export {
+  type ClusterUsageReport,
+  ClusterUsageTracker,
+  type DocumentClusterUsage,
+} from './editor/cluster-usage-tracker.js';
+export {
+  type EditorRecommendationInput,
+  rankRecommendationsForEditor,
+} from './editor/recommendation-ranker.js';
+export {
+  RecommendationCache,
+  type RecommendationCacheEntry,
+  type RecommendationCacheOptions,
+} from './editor/recommendation-cache.js';
+export {
+  type DiscoveryEvent,
+  type DiscoveryEventKind,
+  type MakeDiscoveryEventOptions,
+  makeDiscoveryEvent,
+} from './editor/discovery-event.js';
