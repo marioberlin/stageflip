@@ -505,17 +505,20 @@ security-team review").
   (live-preview same-origin isolation), R-18 (T-386 permission-array
   immutability assertion). Security team triages timing.
 
-## 8. T-405 sign-off block (placeholder)
+## 8. T-405 sign-off block (current state)
 
-> TODO: filled at T-403 completion + T-404 hardening landed.
+**Status as of 2026-05-14:** orchestrator pre-review artifact landed (T-403) + schema-level hardening landed (T-404). Awaiting human security team review.
 
-Sign-off transition:
-- Frontmatter `signedOff: pending-security-team` →
-  `signedOff: signed:YYYY-MM-DD <reviewer-name>`.
-- ADR-005 §"Ratification Signoff" "Security review signed: pending"
-  checkbox flips to checked with the same date + reviewer.
-- T-402 GA mode (`features.interactive: 'ga'`) becomes eligible per
-  `docs/implementation-plan.md:806` (`T-403 → T-402 GA mode`).
+ADR-005's "Ratification Signoff" block has been updated by T-405 to record:
+- **(checked)** Security pre-GA review artifact landed 2026-05-14 (T-403)
+- **(checked)** Security hardening pass landed 2026-05-14 (T-404; 3 of 7 RED risks closed, 4 RED + several YELLOW deferred and explicitly carried forward in §7)
+- **(unchecked)** Security GA sign-off (T-405) — pending human security team review
+
+**Frontmatter** `signedOff:` remains `pending-security-team`. The human security team flips it to `signed:YYYY-MM-DD <reviewer-name>` after completing §6 sign-off matrix.
+
+**Preview mode is NOT gated by this review** per ADR-005 §D5 and `docs/implementation-plan.md:806` (`T-403 → T-402 GA mode`). T-398–T-402 (Track A engineering) may dispatch in preview mode without waiting on the human security gate. Only GA promotion of the interactive tier (`features.interactive: 'ga'`) gates on the final sign-off recorded here.
+
+**Per-component sign-off matrix (§6) remains** `pending-security-team` for all 12 components. Human security team is the next actor for each row.
 
 ## 9. References
 
