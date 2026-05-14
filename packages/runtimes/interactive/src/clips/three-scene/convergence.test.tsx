@@ -20,11 +20,22 @@
 import { ThreeClipHost, type ThreeClipSetup } from '@stageflip/runtimes-three';
 import { render } from '@testing-library/react';
 import { createElement } from 'react';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { type MountContext, PERMISSIVE_TENANT_POLICY } from '../../contract.js';
 import { RecordModeFrameSource } from '../../frame-source-record.js';
 import { ThreeSceneClipFactoryBuilder } from './factory.js';
+import {
+  __resetTrustedModulePrefixesForTests,
+  extendTrustedModulePrefixes,
+} from './setup-resolver.js';
+
+// R-4: seed the setupRef trusted-publisher-prefix allowlist so the
+// factory's dynamic-import path resolves the legacy `@author/...` fixture.
+beforeEach(() => {
+  __resetTrustedModulePrefixesForTests();
+  extendTrustedModulePrefixes(['@author/']);
+});
 
 interface RecordedCall {
   method: string;
