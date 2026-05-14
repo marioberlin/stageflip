@@ -563,6 +563,51 @@ Those clip skills may *recommend* `prePrompt: true` but the host
 application owns the choice. See `concepts/auth/SKILL.md`
 §"Permission flow UX (T-385)" for the full surface description.
 
+### Browser live-preview host (T-398)
+
+T-398 adds the `<BrowserLivePreview>` React component — the second of
+ADR-005 §D4's three deployment targets for the interactive tier
+(`renderer-cdp` is T-397; on-device display player is T-399-401). It
+wraps `InteractiveMountHarness` with a DOM-container lifecycle and a
+tenant-policy gate that consults the D-T411-4
+(`features.interactive`, `'browser-live-preview'`) matrix cell.
+
+```ts
+import { BrowserLivePreview } from '@stageflip/runtimes-interactive';
+
+<BrowserLivePreview
+  family="shader"
+  props={shaderProps}
+  staticFallback={<MyFallback />}
+  tenantPolicy={{
+    featuresInteractive: 'preview', // 'disabled' | 'preview' | 'ga'
+    canMount: () => true,
+  }}
+  onLifecycle={(event) => {
+    // 'mounted' | 'refused' | 'unmounted' | 'error'
+  }}
+/>
+```
+
+Refusal reasons emitted on `onLifecycle({ kind: 'refused', reason })`:
+
+- `'feature-disabled'` — `featuresInteractive === 'disabled'` (or any
+  value whose matrix cell for `browser-live-preview` is
+  `'static-fallback-only'`). The harness is not invoked; the React
+  `staticFallback` prop is rendered directly.
+- `'no-factory-registered'` — `interactiveClipRegistry.resolve(family)`
+  is `undefined`. Same fallback path; consumer typically logs a missing
+  side-effect-import for the clip package.
+- `'permission-refused'` — `PermissionShim.mount()` returned
+  `{ granted: false }` (either tenant-deny or browser-permission-deny).
+  The harness's static-path render is disposed and the React fallback
+  is shown instead.
+
+Per ADR-005 §D5, browser live-preview is preview-mode eligible — the
+security gate is GA-only (T-405 records pending human review). The
+`'preview'` and `'ga'` postures both proceed to live-mount on this
+target.
+
 ### Browser-bundle posture
 
 The package is browser-side runtime. It MUST NOT import `fs`, `path`, or
