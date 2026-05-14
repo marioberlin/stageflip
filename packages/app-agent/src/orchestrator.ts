@@ -38,6 +38,7 @@ import {
   registerClusterAComposeBundle,
   registerClusterBComposeBundle,
   registerClusterCComposeBundle,
+  registerClusterDComposeBundle,
   registerClusterEComposeBundle,
   registerClusterFComposeBundle,
   registerClusterGComposeBundle,
@@ -124,6 +125,7 @@ function populate(registry: BundleRegistry, router: ToolRouter<ExecutorContext>)
   registerClusterAComposeBundle(registry, router);
   registerClusterBComposeBundle(registry, router);
   registerClusterCComposeBundle(registry, router);
+  registerClusterDComposeBundle(registry, router);
   registerClusterEComposeBundle(registry, router);
   registerClusterFComposeBundle(registry, router);
   registerClusterGComposeBundle(registry, router);

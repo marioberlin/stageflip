@@ -50,13 +50,14 @@ type ClusterName = (typeof ALL_CLUSTER_NAMES)[number];
 
 /**
  * Cluster-compose bundles expected in `CANONICAL_BUNDLES`. Cluster D
- * (titles) is excluded by design (titles ship as-is per the original
- * plan; no compose tools).
+ * (titles) was originally excluded ("titles ship as-is") but T-354
+ * filled the gap with the canonical 9th compose bundle.
  */
 const EXPECTED_COMPOSE_BUNDLES = [
   'cluster-a-compose',
   'cluster-b-compose',
   'cluster-c-compose',
+  'cluster-d-compose',
   'cluster-e-compose',
   'cluster-f-compose',
   'cluster-g-compose',
@@ -359,17 +360,17 @@ export function runCategory1(opts: CheckOpts): CategoryResult {
     }
     criteria.push({
       id: '1.3',
-      description: 'All 7 cluster-compose bundles registered in CANONICAL_BUNDLES',
+      description: 'All 8 cluster-compose bundles registered in CANONICAL_BUNDLES',
       status: catalogMissing.length === 0 ? 'PASS' : 'FAIL',
       note:
         catalogMissing.length === 0
-          ? 'all 7 present (cluster-{a,b,c,e,f,g,h}-compose; D excluded by design)'
+          ? 'all 8 present (cluster-{a,b,c,d,e,f,g,h}-compose)'
           : `missing: ${catalogMissing.join(', ')}`,
     });
   } else {
     criteria.push({
       id: '1.3',
-      description: 'All 7 cluster-compose bundles registered in CANONICAL_BUNDLES',
+      description: 'All 8 cluster-compose bundles registered in CANONICAL_BUNDLES',
       status: 'FAIL',
       note: `catalog file missing: ${catalogPath}`,
     });
@@ -380,7 +381,7 @@ export function runCategory1(opts: CheckOpts): CategoryResult {
   if (existsSync(orchestratorPath)) {
     const src = readFileSync(orchestratorPath, 'utf8');
     const missingWiring: string[] = [];
-    for (const letter of ['A', 'B', 'C', 'E', 'F', 'G', 'H']) {
+    for (const letter of ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']) {
       const fn = `registerCluster${letter}ComposeBundle`;
       if (!src.includes(fn)) missingWiring.push(fn);
     }
@@ -390,7 +391,7 @@ export function runCategory1(opts: CheckOpts): CategoryResult {
       status: missingWiring.length === 0 ? 'PASS' : 'FAIL',
       note:
         missingWiring.length === 0
-          ? 'all 7 register* calls present'
+          ? 'all 8 register* calls present'
           : `missing: ${missingWiring.join(', ')}`,
     });
   } else {

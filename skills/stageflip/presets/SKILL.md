@@ -3,7 +3,7 @@ title: Presets — Cluster index
 id: skills/stageflip/presets
 tier: cluster
 status: substantive
-last_updated: 2026-05-11
+last_updated: 2026-05-14
 owner_task: T-412
 related:
   - skills/stageflip/presets/news/SKILL.md
@@ -19,7 +19,7 @@ related:
 
 # Presets — Cluster index
 
-50 ratified presets across 8 clusters on `main`. Each cluster is a domain group with a canonical visual register and (except titles) a `cluster-*-compose` handler bundle exposing `compose_*` tools to the agent surface.
+50 ratified presets across 8 clusters on `main`. Each cluster is a domain group with a canonical visual register and a `cluster-*-compose` handler bundle exposing `compose_*` tools to the agent surface.
 
 A preset is selected by the orchestrator either via the cluster's `compose_*` tool (Pattern C — preferred for new content) or by direct preset-id binding (`PRESET_ID_BINDINGS`).
 
@@ -30,14 +30,14 @@ A preset is selected by the orchestrator either via the cluster's `compose_*` to
 | **A** | News & broadcast | 8 | `cluster-a-compose` | [`news/SKILL.md`](news/SKILL.md) |
 | **B** | Sports | 9 | `cluster-b-compose` | [`sports/SKILL.md`](sports/SKILL.md) |
 | **C** | Weather | 6 | `cluster-c-compose` | [`weather/SKILL.md`](weather/SKILL.md) |
-| **D** | Titles & main-on-end | 6 | (none — titles ship as-is) | [`titles/SKILL.md`](titles/SKILL.md) |
+| **D** | Titles & main-on-end | 6 | `cluster-d-compose` | [`titles/SKILL.md`](titles/SKILL.md) |
 | **E** | Data & finance | 6 | `cluster-e-compose` | [`data/SKILL.md`](data/SKILL.md) |
 | **F** | Captions & subtitles | 6 | `cluster-f-compose` | [`captions/SKILL.md`](captions/SKILL.md) |
 | **G** | CTAs / social | 5 | `cluster-g-compose` | [`ctas/SKILL.md`](ctas/SKILL.md) |
 | **H** | AR & environmental overlays | 4 | `cluster-h-compose` | [`ar/SKILL.md`](ar/SKILL.md) |
-| **TOTAL** | — | **50** | **7 of 7** (D excluded) | — |
+| **TOTAL** | — | **50** | **8 of 8** | — |
 
-Cluster D is the deliberate exception: title cards and main-on-end sequences are picked verbatim rather than composed; no `compose_*` tools.
+Cluster D ships compose tools (T-354) with caller-required `presetId` — the 6 typographically distinct prestige-TV registers (Benguiat, Trajan, Engravers Gothic, double-exposure photographic, home-video sepia, mid-century corporate) are not collapsible by semantic dispatch, so the caller picks the register and the composer forwards the brief.
 
 Cluster H presets render via static-fallback in v1; live-mount of the underlying `ThreeSceneClip` is gated on Track A finale (T-397..T-405) and the tenant frontier-enablement toggle (T-411).
 
