@@ -2,15 +2,25 @@
 // CI gate for invariant I-8 (CLAUDE.md §5): the skills tree is the source of
 // truth and cannot drift from the conventions every SKILL.md declares.
 //
-// Four checks run on every push (T-014 + T-310):
+// Five checks run on every push (T-014 + T-310 + T-548):
 //   1. link-integrity            — every cross-skill reference resolves.
 //   2. tier-coverage             — every tier in SKILL_TIERS has ≥1 SKILL.md.
+//                                  CORE-ONLY: pack-contributed concept skills
+//                                  do NOT count toward this invariant
+//                                  (T-548 — packs ship on their own cadence).
 //   3. preset-cluster-coverage   — every cluster directory has a SKILL.md and
 //                                  every preset's `cluster` field matches its
 //                                  parent directory (T-310 AC #1–#4).
 //   4. preset-id-coherence       — every preset's `id` matches its filename
 //                                  and every cluster skill's `id` matches its
 //                                  filesystem location (T-310 AC #5–#7).
+//   5. pack-skill-extension      — walks `concepts/pack-*/SKILL.md` (the
+//                                  pack-contributed concept-skill extension
+//                                  surface per CLAUDE.md §5 / T-547) and
+//                                  validates frontmatter. WARNINGS-ONLY:
+//                                  packs ship at their own cadence and the
+//                                  workspace gate does not fail on pack
+//                                  drift (T-548).
 //
 // Generator-output diffing arrives with @stageflip/skills-sync (T-220), which
 // will register itself here.
@@ -35,7 +45,12 @@ import {
   presetFrontmatterSchema,
 } from '../packages/schema/src/presets/index.js';
 import { loadAllPresets, resetLoaderCache } from '../packages/schema/src/presets/loader.js';
-import { SKILL_TIERS, loadSkillTree, validateTree } from '../packages/skills-core/src/index.js';
+import {
+  SKILL_TIERS,
+  loadSkillTree,
+  skillFrontmatterSchema,
+  validateTree,
+} from '../packages/skills-core/src/index.js';
 import type { SkillTree } from '../packages/skills-core/src/index.js';
 
 const SKILLS_ROOT_DEFAULT = 'skills/stageflip';
@@ -337,6 +352,100 @@ function readClusterSkillId(filePath: string): string | undefined {
   /* v8 ignore stop */
 }
 
+// ---------- T-548 — pack-skill-extension (warnings-only) ----------
+
+interface PackSkillCheckOpts {
+  /** Root of the skills tree (e.g. `skills/stageflip`). */
+  skillsRoot: string;
+}
+
+/**
+ * Walks `${skillsRoot}/concepts/pack-*​/SKILL.md` and validates each pack's
+ * concept-skill extension frontmatter against the standard skill schema.
+ *
+ * **Warnings-only by design.** Per CLAUDE.md §5 (T-547 update), installed
+ * packs ship `skills/stageflip/concepts/pack-<id>/SKILL.md` to extend the
+ * tenant's effective context. Packs ship at their own cadence; the workspace
+ * gate must surface — but not fail on — per-pack drift. The
+ * `pack-skill-extension` `CheckResult` therefore always returns `errors: []`;
+ * every issue lands in `warnings`.
+ *
+ * The tier-coverage invariant (`tierCoverageCheck`) remains core-only —
+ * pack-contributed concept skills are not consulted to satisfy the
+ * "every tier has ≥1 SKILL.md" rule. They are loaded into the tree (via the
+ * existing `loadSkillTree` walk under `skills/stageflip/`) so link-integrity
+ * still resolves cross-references into them, but a missing pack does not
+ * leave a tier uncovered.
+ *
+ * Implementation notes:
+ *   - We deliberately do NOT round-trip via `loadSkillTree` for the
+ *     pack-frontmatter check, because that loader throws on the first invalid
+ *     SKILL.md it encounters and aborts the rest of the walk. Per-pack
+ *     warnings need to aggregate across every pack-* dir in one pass, so we
+ *     read each file directly and validate via `skillFrontmatterSchema`.
+ *   - A missing `${skillsRoot}/concepts` dir is treated as zero packs (clean
+ *     PASS) — mirrors the same fault-tolerance posture as
+ *     `presetClusterCoverageCheck`.
+ */
+export function packSkillExtensionCheck(opts: PackSkillCheckOpts): CheckResult {
+  const warnings: string[] = [];
+  const conceptsRoot = join(opts.skillsRoot, 'concepts');
+
+  let dirEntries: import('node:fs').Dirent[];
+  try {
+    dirEntries = readdirSync(conceptsRoot, { withFileTypes: true });
+    /* v8 ignore start — defensive: a missing concepts dir is treated as
+       zero pack-skill extensions; the gate has nothing to warn about. */
+  } catch {
+    return { name: 'pack-skill-extension', errors: [], warnings: [] };
+  }
+  /* v8 ignore stop */
+
+  for (const entry of dirEntries) {
+    if (!entry.isDirectory()) continue;
+    if (!entry.name.startsWith('pack-')) continue;
+    const skillPath = join(conceptsRoot, entry.name, 'SKILL.md');
+
+    let raw: string;
+    try {
+      raw = readFileSync(skillPath, 'utf8');
+    } catch {
+      warnings.push(`${skillPath}: pack concept dir has no SKILL.md`);
+      continue;
+    }
+
+    if (!raw.startsWith('---')) {
+      warnings.push(
+        `${skillPath}: missing frontmatter block (file must start with '---')`,
+      );
+      continue;
+    }
+
+    let parsedData: Record<string, unknown>;
+    try {
+      const parsed = matter(raw);
+      parsedData = (parsed.data as Record<string, unknown>) ?? {};
+      /* v8 ignore start — defensive: gray-matter swallows YAML errors
+         internally and returns `data: {}`; this catch guards against an
+         upstream gray-matter behavior change. */
+    } catch (err) {
+      warnings.push(`${skillPath}: frontmatter parse failed: ${String(err)}`);
+      continue;
+    }
+    /* v8 ignore stop */
+
+    const result = skillFrontmatterSchema.safeParse(parsedData);
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        const fieldPath = issue.path.length > 0 ? issue.path.join('.') : '<root>';
+        warnings.push(`${skillPath}: frontmatter ${fieldPath}: ${issue.message}`);
+      }
+    }
+  }
+
+  return { name: 'pack-skill-extension', errors: [], warnings };
+}
+
 // ---------- aggregator ----------
 
 interface RunOpts {
@@ -383,6 +492,9 @@ export async function runChecks(opts: RunOpts = {}): Promise<DriftReport> {
   // T-310 — preset-tree drift checks. Each is self-contained.
   results.push(presetClusterCoverageCheck({ presetsRoot }));
   results.push(presetIdCoherenceCheck({ presetsRoot }));
+
+  // T-548 — pack-skill extension surface (warnings-only).
+  results.push(packSkillExtensionCheck({ skillsRoot }));
 
   // Pre-warm the loader cache to surface any aggregated parse failures the
   // gate hasn't already caught. Loader errors are advisory at this layer

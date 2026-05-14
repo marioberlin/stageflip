@@ -19,6 +19,7 @@ import type { SkillTier } from '../packages/skills-core/src/index.js';
 
 import {
   formatReport,
+  packSkillExtensionCheck,
   presetClusterCoverageCheck,
   presetIdCoherenceCheck,
   runChecks,
@@ -264,16 +265,18 @@ describe('T-310 AC #7 — preset-id-coherence PASS at HEAD', () => {
 
 // ---------- AC #8, #9, #10, #11 — runChecks aggregation + format ----------
 
-describe('T-310 AC #8, #9, #10 — runChecks aggregates 4 checks', () => {
-  it('runs all 4 checks and exits 0 on a clean tree (AC #8)', async () => {
+describe('T-310 AC #8, #9, #10 — runChecks aggregates all checks', () => {
+  it('runs all checks and exits 0 on a clean tree (AC #8)', async () => {
     const report = await runChecks({
       skillsRoot: REAL_SKILLS_ROOT,
       presetsRoot: REAL_PRESETS_ROOT,
       basePath: REPO_ROOT,
     });
     expect(report.exitCode).toBe(0);
+    // T-548 added a fifth check (`pack-skill-extension`).
     expect(report.results.map((r) => r.name).sort()).toEqual([
       'link-integrity',
+      'pack-skill-extension',
       'preset-cluster-coverage',
       'preset-id-coherence',
       'tier-coverage',
@@ -512,5 +515,211 @@ describe('formatReport — error rendering', () => {
     });
     expect(formatted.stdout).toMatch(/PASS with 1 warnings/);
     expect(formatted.stderr).toMatch(/heads up/);
+  });
+});
+
+// ---------- T-548 — pack-skill-extension (warnings-only) ----------
+
+interface PackSkillSpec {
+  /** Pack id (without the `pack-` prefix; appended to form the dir name). */
+  id: string;
+  /** Frontmatter `title` field — defaults to a sensible derivative. */
+  title?: string;
+  /** Frontmatter `owner_task` field — defaults to `T-999`. */
+  ownerTask?: string;
+  /** Skip emitting the `title` field entirely. */
+  omitTitle?: boolean;
+  /** Skip emitting the `owner_task` field entirely. */
+  omitOwnerTask?: boolean;
+  /** Override the frontmatter id. */
+  skillId?: string;
+  /** If true, omit the SKILL.md entirely (synthetic missing-file case). */
+  omitSkill?: boolean;
+}
+
+function makePackSkill(spec: PackSkillSpec): string {
+  const lines: string[] = ['---'];
+  if (!spec.omitTitle) {
+    lines.push(`title: ${spec.title ?? `Pack ${spec.id}`}`);
+  }
+  lines.push(`id: ${spec.skillId ?? `skills/stageflip/concepts/pack-${spec.id}`}`);
+  lines.push('tier: concept');
+  lines.push('status: substantive');
+  lines.push('last_updated: 2026-05-14');
+  if (!spec.omitOwnerTask) {
+    lines.push(`owner_task: ${spec.ownerTask ?? 'T-999'}`);
+  }
+  lines.push('related: []');
+  lines.push('---');
+  lines.push('');
+  lines.push(`# Pack ${spec.id}`);
+  lines.push('');
+  return lines.join('\n');
+}
+
+function writeSyntheticSkillsRoot(opts: { packs: PackSkillSpec[] }): string {
+  const root = mkdtempSync(join(tmpdir(), 'tdx-skill-drift-pack-'));
+  const conceptsDir = join(root, 'concepts');
+  mkdirSync(conceptsDir, { recursive: true });
+  for (const pack of opts.packs) {
+    const dir = join(conceptsDir, `pack-${pack.id}`);
+    mkdirSync(dir, { recursive: true });
+    if (!pack.omitSkill) {
+      writeFileSync(join(dir, 'SKILL.md'), makePackSkill(pack));
+    }
+  }
+  return root;
+}
+
+describe('T-548 — pack-skill-extension check (warnings-only)', () => {
+  it('returns 0 warnings when the concepts dir has no pack-* subdirs', () => {
+    const root = tracked(mkdtempSync(join(tmpdir(), 'tdx-skill-drift-empty-')));
+    mkdirSync(join(root, 'concepts'), { recursive: true });
+    // Drop a non-pack concept dir so we know we're filtering, not just empty.
+    mkdirSync(join(root, 'concepts', 'licensing'), { recursive: true });
+    writeFileSync(
+      join(root, 'concepts', 'licensing', 'SKILL.md'),
+      makePackSkill({ id: 'should-not-match', skillId: 'skills/stageflip/concepts/licensing' }),
+    );
+    const result = packSkillExtensionCheck({ skillsRoot: root });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('returns 0 warnings on a well-formed pack-news-pro fixture', () => {
+    const root = tracked(
+      writeSyntheticSkillsRoot({
+        packs: [{ id: 'news-pro', ownerTask: 'T-506' }],
+      }),
+    );
+    const result = packSkillExtensionCheck({ skillsRoot: root });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('surfaces a missing `title` frontmatter field as a WARNING (not error)', () => {
+    const root = tracked(
+      writeSyntheticSkillsRoot({
+        packs: [{ id: 'broken', omitTitle: true }],
+      }),
+    );
+    const result = packSkillExtensionCheck({ skillsRoot: root });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings.length).toBeGreaterThan(0);
+    const joined = result.warnings.join('\n');
+    expect(joined).toMatch(/pack-broken/);
+    expect(joined).toMatch(/title/);
+  });
+
+  it('surfaces a missing `owner_task` frontmatter field as a WARNING', () => {
+    const root = tracked(
+      writeSyntheticSkillsRoot({
+        packs: [{ id: 'broken-owner', omitOwnerTask: true }],
+      }),
+    );
+    const result = packSkillExtensionCheck({ skillsRoot: root });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings.length).toBeGreaterThan(0);
+    const joined = result.warnings.join('\n');
+    expect(joined).toMatch(/pack-broken-owner/);
+    expect(joined).toMatch(/owner_task/);
+  });
+
+  it('warns when a pack-* dir has no SKILL.md at all', () => {
+    const root = tracked(
+      writeSyntheticSkillsRoot({
+        packs: [{ id: 'no-skill', omitSkill: true }],
+      }),
+    );
+    const result = packSkillExtensionCheck({ skillsRoot: root });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings.length).toBeGreaterThan(0);
+    expect(result.warnings.some((w) => /pack-no-skill/.test(w))).toBe(true);
+  });
+
+  it('warns when a pack SKILL.md is missing the leading frontmatter block', () => {
+    const root = tracked(mkdtempSync(join(tmpdir(), 'tdx-skill-drift-no-fm-')));
+    const dir = join(root, 'concepts', 'pack-no-fm');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'SKILL.md'), '# Body without frontmatter\n');
+    const result = packSkillExtensionCheck({ skillsRoot: root });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings.length).toBeGreaterThan(0);
+    expect(result.warnings.some((w) => /missing frontmatter/.test(w))).toBe(true);
+  });
+
+  it('cross-checks the six first-party launch packs all PASS cleanly at HEAD', () => {
+    const result = packSkillExtensionCheck({ skillsRoot: REAL_SKILLS_ROOT });
+    expect(result.errors).toEqual([]);
+    // The six v0.2.0 launch packs per CLAUDE.md §5 (T-547):
+    //   pack-news-pro, pack-sports-networks, pack-creator-style,
+    //   pack-finance, pack-wedding-events, pack-frontier-fx.
+    // Plus the workspace concept skills that share the `pack-` prefix
+    // (pack-discovery, pack-telemetry, pack-trial, etc.). All must be
+    // well-formed; no warnings expected.
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('always returns errors=[] (warnings-only invariant) even with multiple bad packs', () => {
+    const root = tracked(
+      writeSyntheticSkillsRoot({
+        packs: [
+          { id: 'a-bad', omitTitle: true },
+          { id: 'b-bad', omitOwnerTask: true },
+          { id: 'c-good' },
+          { id: 'd-no-skill', omitSkill: true },
+        ],
+      }),
+    );
+    const result = packSkillExtensionCheck({ skillsRoot: root });
+    expect(result.errors).toEqual([]);
+    expect(result.warnings.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('runChecks includes pack-skill-extension and never fails the build on pack drift', async () => {
+    // Build a synthetic skills tree that's missing the core tier coverage
+    // entirely BUT whose pack-* dirs all have malformed frontmatter.
+    // The pack-skill-extension check must surface warnings; tier-coverage
+    // (core-only) must remain core-scoped — pack skills don't satisfy it.
+    const skillsRoot = tracked(
+      writeSyntheticSkillsRoot({
+        packs: [
+          { id: 'broken-1', omitTitle: true },
+          { id: 'broken-2', omitOwnerTask: true },
+        ],
+      }),
+    );
+    const presetsRoot = tracked(
+      writeSyntheticPresetsRoot({ clusters: [{ name: 'news' }], presets: [] }),
+    );
+    const report = await runChecks({ skillsRoot, presetsRoot });
+    const pack = report.results.find((r) => r.name === 'pack-skill-extension');
+    expect(pack).toBeDefined();
+    expect(pack?.errors).toEqual([]);
+    expect(pack?.warnings.length).toBeGreaterThan(0);
+  });
+
+  it('keeps the tier-coverage check unchanged (T-548 does not modify it)', async () => {
+    // T-548's invariant: the existing `tierCoverageCheck` is not extended to
+    // consult any new pack-archive surface. It computes coverage over
+    // whatever `loadSkillTree(skillsRoot)` returns — core-scoped, the same
+    // tree it walked before T-548 — and surfaces a `tier-coverage` result
+    // with the same shape. The new `pack-skill-extension` check does NOT
+    // feed into tier-coverage. Verify: real-tree run still PASSes
+    // tier-coverage and the result name + errors-shape are unchanged.
+    const report = await runChecks({
+      skillsRoot: REAL_SKILLS_ROOT,
+      presetsRoot: REAL_PRESETS_ROOT,
+      basePath: REPO_ROOT,
+    });
+    const tier = report.results.find((r) => r.name === 'tier-coverage');
+    expect(tier).toBeDefined();
+    expect(tier?.errors).toEqual([]);
+    expect(tier?.warnings).toEqual([]);
+    // And: pack-skill-extension is reported as a SEPARATE result, not
+    // collapsed into tier-coverage.
+    const pack = report.results.find((r) => r.name === 'pack-skill-extension');
+    expect(pack).toBeDefined();
+    expect(pack?.name).not.toBe(tier?.name);
   });
 });
