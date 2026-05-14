@@ -759,7 +759,7 @@ phase. Renumbered / carried as T-137 / T-138 in Phase 6.
 
 | ID | Task | Size |
 |---|---|---|
-| T-402 | Feature flag + admin toggle (`features.interactive: disabled / preview / ga`) | M |
+| T-402 | ~~Feature flag + admin toggle (`features.interactive: disabled / preview / ga`)~~ — **covered-by-T-411a..e + T-402 coherence gate** (schema T-411a, HTTP route T-411b, permission-shim T-411c, admin UI T-411e, end-to-end coherence CI gate landed T-402 as `scripts/check-feature-flag-wiring.ts`) | M |
 | T-403 | Pre-preview security review (covers all of Track A) | L |
 | T-404 | Security hardening pass (response to T-403 findings) | L |
 | T-405 | Security sign-off for GA (recorded on ADR-005 ratification block) | S |

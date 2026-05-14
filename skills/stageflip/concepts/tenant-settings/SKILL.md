@@ -3,7 +3,7 @@ title: Tenant Settings & Frontier Enablement
 id: skills/stageflip/concepts/tenant-settings
 tier: concept
 status: substantive
-last_updated: 2026-05-11
+last_updated: 2026-05-14
 owner_task: T-411
 related:
   - skills/stageflip/concepts/auth/SKILL.md
@@ -24,7 +24,11 @@ together implement ADR-005's "ships disabled by default" posture and
 the §D5 mount-time enforcement order.
 
 T-411 is the parent spec; sub-tasks T-411a / T-411b / T-411c shipped
-the four layers in order. T-411e (admin UI) is deferred.
+the four layers in order. T-411e (admin UI) shipped at
+`apps/stageflip-slide/src/app/admin/tenant-settings/` (minimal CRUD
+slice — Next 15 server component + server action; UX polish deferred
+per T-411 §D-T411-7). T-402 closed the parent row with the
+end-to-end coherence CI gate described below.
 
 ## What ships
 
@@ -409,10 +413,33 @@ incorrectly, the recovery path is: superadmin CLI flip to
 `cache.populate(tenantId)` → all subsequent mounts go to
 `staticFallback`. There is no "soft kill" intermediate posture in v1.
 
+## Coherence gate (T-402)
+
+`scripts/check-feature-flag-wiring.ts` (wired as `pnpm
+check-feature-flag-wiring`) is the cross-layer-string-equality safety
+net that closes the T-402 row. A typecheck pass does not catch a stray
+literal that bypasses the type system at a parse boundary — the gate
+verifies seven invariants across the composition:
+
+| Invariant | Owns |
+|---|---|
+| `schema-layer` | `packages/storage/src/tenant-settings.ts` exports `z.enum(['disabled','preview','ga'])`. |
+| `http-route` | `apps/api/src/routes/tenant-settings.ts` repeats the same enum on its body validator. |
+| `authorization` | `apps/api/src/auth/can-set-interactive.ts` accepts the canonical triple AND has explicit literal branches for each value. |
+| `runtime-cache` | `packages/runtimes/interactive/src/host/tenant-flag-cache.ts` accepts the triple AND defines a `TENANT_FLAG_GATING_MATRIX` entry per value. |
+| `browser-host` | `packages/runtimes/interactive/src/host/browser-live-preview.tsx` imports `TENANT_FLAG_GATING_MATRIX` + references `featuresInteractive`. |
+| `admin-ui` | `apps/stageflip-slide/src/app/admin/tenant-settings/{page.tsx,update-action.ts}` offer all 3 enum values. |
+| `cross-layer-drift` | Any other source-tree occurrence of the literal triple in `packages/` / `apps/` / `scripts/` is flagged unless inline-allowlisted (test fixtures, the CLI mirror, the auto-synced docs copy). |
+
+On failure, the gate exits `1` with per-file diagnostics. Adding a new
+allowlist entry requires a justification string captured inline next
+to the entry.
+
 ## Out of scope (deferred / future)
 
-- **Admin UI** — settings panel, change-log view, RBAC management
-  screens → T-411e (deferred per parent T-411 §D-T411-7).
+- **Admin UI UX polish** — settings panel design system, change-log
+  view, RBAC management screens (the minimal CRUD slice shipped via
+  T-411e; richer surface deferred per parent T-411 §D-T411-7).
 - **Audit log** of who-changed-what-when. Useful but separate; needs
   its own retention / privacy / region policy.
 - **`'superadmin'` added to `McpSessionRole` union** — v1's predicate
@@ -444,7 +471,9 @@ incorrectly, the recovery path is: superadmin CLI flip to
   gate).
 - Tasks: T-411 (parent spec); T-411a (storage); T-411b (API + CLI +
   authorization); T-411c (permission-shim wiring); T-411d (this
-  concept SKILL + ADR-005 cross-link); T-411e (admin UI; deferred).
+  concept SKILL + ADR-005 cross-link); T-411e (admin UI — minimal
+  CRUD slice shipped at `apps/stageflip-slide/src/app/admin/tenant-settings/`);
+  T-402 (coherence CI gate — `scripts/check-feature-flag-wiring.ts`).
 - Concept SKILLs: `concepts/auth/SKILL.md` (the role model);
   `concepts/storage-contract/SKILL.md` (sibling doc-scoped contract);
   `concepts/runtimes/SKILL.md` §"Interactive runtime tier" (the
