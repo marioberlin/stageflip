@@ -14,7 +14,7 @@ fallbackFont:
 permissions: []
 signOff:
   parityFixture: 'signed:2026-05-08'
-  typeDesign: pending-cluster-batch
+  typeDesign: 'signed:2026-05-14'
 ---
 
 # Stranger Things — Benguiat title sequence
