@@ -23,8 +23,8 @@ import {
 
 // ---------- cluster mapping ----------
 
-/** All known cluster letters (A through H). */
-export const ALL_CLUSTER_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] as const;
+/** All known cluster letters (A through I). Cluster I = audience (T-486). */
+export const ALL_CLUSTER_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'] as const;
 export type ClusterLetter = (typeof ALL_CLUSTER_LETTERS)[number];
 
 const LETTER_TO_NAME: Record<ClusterLetter, PresetCluster> = {
@@ -36,6 +36,7 @@ const LETTER_TO_NAME: Record<ClusterLetter, PresetCluster> = {
   F: 'captions',
   G: 'ctas',
   H: 'ar',
+  I: 'audience',
 };
 
 const NAME_TO_LETTER: Record<PresetCluster, ClusterLetter> = {
@@ -47,6 +48,7 @@ const NAME_TO_LETTER: Record<PresetCluster, ClusterLetter> = {
   captions: 'F',
   ctas: 'G',
   ar: 'H',
+  audience: 'I',
 };
 
 export const ALL_CLUSTER_IDENTIFIERS: readonly string[] = [

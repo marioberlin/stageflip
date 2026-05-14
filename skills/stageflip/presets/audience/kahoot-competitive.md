@@ -14,7 +14,7 @@ fallbackFont:
 permissions:
   - audience-network
 signOff:
-  parityFixture: pending-user-review
+  parityFixture: 'signed:2026-05-14'
   typeDesign: pending-cluster-batch
 ---
 
