@@ -25,11 +25,16 @@ export {
   type AiChatClipProps,
 } from './ai-chat-props.js';
 export {
+  __resetAllowedHostsForTests,
+  extendAllowedHosts,
+  FORBIDDEN_REQUEST_HEADER_PATTERNS,
+  LIVE_DATA_ALLOWED_HOST_PATTERNS,
   liveDataClipPropsSchema,
   type LiveDataCachedSnapshot,
   type LiveDataClipProps,
 } from './live-data-props.js';
 export {
+  FORBIDDEN_SANDBOX_COMBINATIONS,
   webEmbedClipPropsSchema,
   type WebEmbedClipProps,
   type WebEmbedPosterImage,

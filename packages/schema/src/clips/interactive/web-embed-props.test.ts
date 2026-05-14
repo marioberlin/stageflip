@@ -1,27 +1,32 @@
 // packages/schema/src/clips/interactive/web-embed-props.test.ts
 // T-393 ACs #1–#4 — webEmbedClipPropsSchema parsing.
 // T-394 ACs #1–#5 — posterImage optional field.
+// T-404 — security hardening: sandbox-combination guard (R-3). The
+// pre-T-404 happy-path test used the now-forbidden
+// `['allow-scripts', 'allow-same-origin']` combination; it has been
+// rewritten to use a safe combination + dedicated R-3 tests cover the
+// rejection paths.
 
 import { describe, expect, it } from 'vitest';
 
-import { webEmbedClipPropsSchema } from './web-embed-props.js';
+import { FORBIDDEN_SANDBOX_COMBINATIONS, webEmbedClipPropsSchema } from './web-embed-props.js';
 
 const validBase = {
   url: 'https://example.com/embed',
 } as const;
 
 describe('webEmbedClipPropsSchema (T-393 AC #1)', () => {
-  it('AC #1 — accepts a complete web-embed-props payload', () => {
+  it('AC #1 — accepts a complete web-embed-props payload (T-404: safe sandbox combination)', () => {
     const parsed = webEmbedClipPropsSchema.parse({
       url: 'https://example.com/embed',
-      sandbox: ['allow-scripts', 'allow-same-origin'],
+      sandbox: ['allow-scripts', 'allow-popups'],
       allowedOrigins: ['https://example.com', 'https://cdn.example.com'],
       width: 800,
       height: 600,
       posterFrame: 12,
     });
     expect(parsed.url).toBe('https://example.com/embed');
-    expect(parsed.sandbox).toEqual(['allow-scripts', 'allow-same-origin']);
+    expect(parsed.sandbox).toEqual(['allow-scripts', 'allow-popups']);
     expect(parsed.allowedOrigins).toEqual(['https://example.com', 'https://cdn.example.com']);
     expect(parsed.width).toBe(800);
     expect(parsed.height).toBe(600);
@@ -187,5 +192,80 @@ describe('webEmbedClipPropsSchema posterImage (T-394 AC #1–#5)', () => {
       posterImage: { src: dataUrl, contentType: 'image/webp' },
     });
     expect(parsed.posterImage?.contentType).toBe('image/webp');
+  });
+});
+
+describe('webEmbedClipPropsSchema — sandbox combination guard (T-404 R-3)', () => {
+  it("R-3 — string 'allow-scripts allow-same-origin' rejected (not an array; type-check fails)", () => {
+    expect(() =>
+      webEmbedClipPropsSchema.parse({
+        ...validBase,
+        sandbox: 'allow-scripts allow-same-origin',
+      }),
+    ).toThrow();
+  });
+
+  it("R-3 — ['allow-scripts', 'allow-same-origin'] rejected (cancels sandbox)", () => {
+    expect(() =>
+      webEmbedClipPropsSchema.parse({
+        ...validBase,
+        sandbox: ['allow-scripts', 'allow-same-origin'],
+      }),
+    ).toThrow(/effectively disables the sandbox/);
+  });
+
+  it("R-3 — ['allow-same-origin', 'allow-scripts'] rejected (order-independent)", () => {
+    expect(() =>
+      webEmbedClipPropsSchema.parse({
+        ...validBase,
+        sandbox: ['allow-same-origin', 'allow-scripts'],
+      }),
+    ).toThrow(/effectively disables the sandbox/);
+  });
+
+  it("R-3 — ['allow-scripts', 'allow-popups'] accepted (safe combination)", () => {
+    const parsed = webEmbedClipPropsSchema.parse({
+      ...validBase,
+      sandbox: ['allow-scripts', 'allow-popups'],
+    });
+    expect(parsed.sandbox).toEqual(['allow-scripts', 'allow-popups']);
+  });
+
+  it("R-3 — ['allow-same-origin'] alone accepted", () => {
+    const parsed = webEmbedClipPropsSchema.parse({
+      ...validBase,
+      sandbox: ['allow-same-origin'],
+    });
+    expect(parsed.sandbox).toEqual(['allow-same-origin']);
+  });
+
+  it('R-3 — empty sandbox array accepted (the default)', () => {
+    const parsed = webEmbedClipPropsSchema.parse({ ...validBase, sandbox: [] });
+    expect(parsed.sandbox).toEqual([]);
+  });
+
+  it("R-3 — ['allow-scripts'] alone accepted", () => {
+    const parsed = webEmbedClipPropsSchema.parse({
+      ...validBase,
+      sandbox: ['allow-scripts'],
+    });
+    expect(parsed.sandbox).toEqual(['allow-scripts']);
+  });
+
+  it('R-3 — FORBIDDEN_SANDBOX_COMBINATIONS exported for downstream tooling', () => {
+    expect(FORBIDDEN_SANDBOX_COMBINATIONS.length).toBeGreaterThan(0);
+    expect(FORBIDDEN_SANDBOX_COMBINATIONS[0]?.requires).toEqual([
+      'allow-scripts',
+      'allow-same-origin',
+    ]);
+  });
+
+  it("R-3 — full combination ['allow-scripts', 'allow-same-origin', 'allow-popups'] rejected (extra tokens do not bypass)", () => {
+    expect(() =>
+      webEmbedClipPropsSchema.parse({
+        ...validBase,
+        sandbox: ['allow-scripts', 'allow-same-origin', 'allow-popups'],
+      }),
+    ).toThrow(/effectively disables the sandbox/);
   });
 });

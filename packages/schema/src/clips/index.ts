@@ -25,8 +25,13 @@ export {
   type ResolvedClipPath,
 } from './export-targets.js';
 export {
+  __resetAllowedHostsForTests,
   aiChatClipPropsSchema,
   aiGenerativeClipPropsSchema,
+  extendAllowedHosts,
+  FORBIDDEN_REQUEST_HEADER_PATTERNS,
+  FORBIDDEN_SANDBOX_COMBINATIONS,
+  LIVE_DATA_ALLOWED_HOST_PATTERNS,
   liveDataClipPropsSchema,
   shaderClipPropsSchema,
   threeSceneClipPropsSchema,
