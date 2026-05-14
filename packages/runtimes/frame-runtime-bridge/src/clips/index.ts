@@ -398,6 +398,18 @@ export {
   breakingBannerPropsSchema,
 } from './breaking-banner.js';
 
+// T-320 — var-banner primitive. Sports VAR / refereeing-decision overlay
+// (two-stage entrance: "VAR CHECK" pending register with animated dot-
+// loader, then horizontal slide-in of the decision label coloured per
+// the auto-derived register for the chosen `decision` enum value).
+// Unblocks Cluster B sports presets needing the VAR sub-type.
+export {
+  VarBanner,
+  type VarBannerProps,
+  varBannerClip,
+  varBannerPropsSchema,
+} from './var-banner.js';
+
 // T-357a — standings-table primitive. Generic vertical ranked table of
 // N (1..16) rows × K (2..8) columns of mixed kind (rank/label/numeric/
 // delta/total) with per-column color tinting + delta-arrow glyphs (↑ /
@@ -883,6 +895,7 @@ import { testimonialCardClip } from './testimonial-card.js';
 import { timelineMilestonesClip } from './timeline-milestones.js';
 import { titleSequenceClip } from './title-sequence.js';
 import { typewriterClip } from './typewriter-clip.js';
+import { varBannerClip } from './var-banner.js';
 import { videoBackgroundClip } from './video-background.js';
 import { voiceoverNarrationClip } from './voiceover-narration.js';
 import { weatherMapClip } from './weather-map.js';
@@ -1306,4 +1319,18 @@ export const ALL_BRIDGE_CLIPS: readonly ClipDefinition<unknown>[] = [
   // pixel verification deferred to PR2 (T-375 sky-sports-ar-
   // formations). 62 → 63 clips.
   arOverlayClip,
+  // T-320 — var-banner primitive (Cluster B sports breaking sub-type;
+  // first 'var-banner' kind consumer). Single primitive serving VAR /
+  // refereeing-decision overlays via a sealed `decision` enum
+  // ('goal-confirmed' / 'goal-disallowed' / 'penalty-awarded' /
+  // 'no-foul'); each decision auto-derives its register colour
+  // (overridable via `accentColor`) and a canon-bound decision label.
+  // Two-stage entrance: pending "VAR CHECK" register (muted dark
+  // backdrop, animated dot-loader) for the first
+  // `pendingDurationFrames` (default 30) frames, then horizontal
+  // slide-in of the decision label per `slideDirection`. Frame-
+  // deterministic — no Date / Math.random / setTimeout / RAF / fetch.
+  // Unblocks Cluster B sports presets needing the VAR sub-type.
+  // 63 → 64 clips.
+  varBannerClip,
 ];

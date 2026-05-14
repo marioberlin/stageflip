@@ -493,7 +493,7 @@ describe('weatherMapClip definition (T-347a)', () => {
   });
 
   it('ALL_BRIDGE_CLIPS includes weatherMapClip and is length 61 (post-T-347b sibling)', () => {
-    expect(ALL_BRIDGE_CLIPS).toHaveLength(63);
+    expect(ALL_BRIDGE_CLIPS).toHaveLength(64);
     expect(ALL_BRIDGE_CLIPS).toContain(weatherMapClip);
   });
 });

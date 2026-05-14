@@ -453,7 +453,7 @@ describe('stormTrackerClip definition (T-347b)', () => {
   });
 
   it('ALL_BRIDGE_CLIPS includes stormTrackerClip and is length 61 (59 → 60)', () => {
-    expect(ALL_BRIDGE_CLIPS).toHaveLength(63);
+    expect(ALL_BRIDGE_CLIPS).toHaveLength(64);
     expect(ALL_BRIDGE_CLIPS).toContain(stormTrackerClip);
   });
 });

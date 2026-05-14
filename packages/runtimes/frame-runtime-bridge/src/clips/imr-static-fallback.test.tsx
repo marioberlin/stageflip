@@ -325,7 +325,7 @@ describe('imrStaticFallbackClip definition (T-347h)', () => {
   });
 
   it('ALL_BRIDGE_CLIPS includes imrStaticFallbackClip and is length 61 (60 → 61)', () => {
-    expect(ALL_BRIDGE_CLIPS).toHaveLength(63);
+    expect(ALL_BRIDGE_CLIPS).toHaveLength(64);
     expect(ALL_BRIDGE_CLIPS).toContain(imrStaticFallbackClip);
   });
 });
