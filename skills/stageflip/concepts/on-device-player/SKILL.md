@@ -28,7 +28,7 @@ browser-only mode).
 
 | Layer | Package | Owner task | Status |
 |---|---|---|---|
-| Binary (packaging, distribution, render loop) | (TBD) | T-400 | Future |
+| Binary packaging + distribution | `@stageflip/on-device-player-packaging` | **T-400** | **This skill** |
 | **Runtime shim** | `@stageflip/runtime-on-device-player` | **T-399** | **This skill** |
 | Telemetry + ops dashboard | `@stageflip/marketplace-telemetry-dashboard` | T-401 | Future |
 
@@ -127,6 +127,125 @@ pure-by-discipline:
   `staticFallbackElement` on refusal.
 - Binary calls `handle.unmount()` when removing a clip.
 - Binary calls `shutdown()` when terminating.
+
+## Binary packaging (T-400)
+
+`@stageflip/on-device-player-packaging` is the host-side scaffold that
+wraps the runtime shim into a deployable binary. Per ADR-005 §D4 +
+L141, the on-device player is a separate binary with its own supply
+chain and update mechanism — security blast-radius is higher than
+browser-only clips (see `docs/security-review-track-a.md` R-11). The
+package is pure-Node code; actual native binary compilation is
+downstream of this workspace.
+
+### Manifest schema (`OnDeviceBinaryManifest`)
+
+The binary reads `manifest.json` at boot:
+
+```ts
+{
+  manifestVersion: 1,
+  binaryVersion: '1.2.3' | '1.2.3-rc.4',
+  tenantId: string,
+  deviceId: string,
+  enabledPackIds: string[],
+  enabledClipFamilies: InteractiveClipFamily[],   // per-device feature gate
+  updateChannel: UpdateChannelDescriptor,
+  codeSigningPolicy: CodeSigningPolicy,
+  health: { probeIntervalSec: 15..3600 },
+}
+```
+
+`writeManifest` is atomic — write-to-temp + fsync + rename, with
+temp-file cleanup on failure. The original is left intact on rename
+failure. The tempfile tag uses `crypto.randomBytes` (not `Date.now()`)
+so the source-level determinism scan stays clean even though this
+package is outside the CLAUDE.md §3 perimeter.
+
+### Update channels
+
+Three channels: `stable`, `beta`, `canary`. Each device subscribes to
+exactly one via `updateChannel.channel`. The descriptor declares the
+discovery endpoint, the publisher key id (refs the
+`@stageflip/pack-signing` publisher-key registry), the poll cadence
+(60..86400 seconds), and an optional `rolloutPercentage` cohort tag
+for staged rollouts.
+
+`resolveUpdate({ descriptor, currentVersion, fetcher })` is a stub —
+the production binary injects a real `fetch`-backed fetcher. The
+scaffold's default fetcher throws so production callers MUST wire
+one explicitly.
+
+### Code-signing posture
+
+Mirrors `@stageflip/pack-signing`: ed25519-first (RSA-PSS-SHA256
+supported for vendor / regulatory environments mandating RSA),
+publisher keys pinned at provisioning time (TOFU). Three `enforce`
+modes:
+
+| Mode | Behaviour |
+|---|---|
+| `strict` | Required on production devices. Refuse boot on any refusal arm. |
+| `warn` | Telemetry-only; suitable for canary / beta. |
+| `off` | Developer dev-loop only. Skips all verification. Never on production devices. |
+
+`verifyBinarySignature` is pure — caller supplies the binary bytes,
+signature bytes, policy, and pinned publisher key. Returns
+`{ verified, reason }` for the five refusal arms: `signature-missing`,
+`untrusted-publisher`, `algorithm-mismatch`, `signature-invalid`, plus
+the success arm `'verified'`.
+
+### Per-OS packaging tiers
+
+Seven OS targets declared in the schema. Three are **first-class** —
+the downstream build pipeline produces artifacts for them at MVP:
+
+| Target | Format | Use case |
+|---|---|---|
+| `linux-x64` | `tar.gz` | DOOH x86 media players |
+| `linux-arm64` | `tar.gz` | DOOH ARM media players |
+| `embedded-linux-arm` | `tar.gz` | Yocto / Buildroot signage |
+
+The other four (`darwin-x64`, `darwin-arm64`, `win32-x64`,
+`android-arm64`) are declared as **stub** so the manifest stays
+forward-compatible, but produce no artifact today.
+
+### Health probe
+
+`buildHealthProbe(...)` is a pure builder. The binary exposes its
+result via a local HTTP / IPC endpoint that the operator's
+NMS / OpsRamp / fleet-monitor scrapes (T-401 wires the actual
+endpoint). Status decision rule:
+
+- failures ≥ 2× threshold → `'failing'`
+- failures ≥ threshold     → `'degraded'`
+- otherwise                → `'healthy'`
+
+Threshold is configurable; the recommended starting value is 5 mount
+failures within the last 10 minutes.
+
+### Boot scaffold
+
+`bootOnDevicePlayer({ manifestPath, device, emitTelemetry, clock, ...
+})` is the binary's `main()` entrypoint:
+
+1. **Manifest** → `readManifest`; failure → `'manifest-invalid'`.
+2. **Signature** → caller-injected `verifySignature(manifest)`; on
+   `verified: false` → `'signature-rejected'` (in production the
+   verifier wires the OS-specific download-+-verify path against the
+   manifest's `codeSigningPolicy`).
+3. **Capability coverage** → check `device` against
+   `manifest.enabledClipFamilies` (e.g. shader enabled but
+   `!device.hasGpu` → `'capability-mismatch'`).
+4. **Shim** → caller-injected `createShim()` (production: real
+   `createOnDevicePlayerShim` with a binary-built
+   `InteractiveMountHarness`); call `shim.boot({ device,
+   emitTelemetry, clock })`; return `{ status: 'booted', shim }`.
+
+The scaffold itself does NOT construct the `InteractiveMountHarness` —
+that's binary-specific (different devices may enable different
+registries). The production binary wires the harness via
+`createShim`.
 
 ## See also
 
