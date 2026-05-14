@@ -29,3 +29,10 @@ source of truth — never hand-maintained copies.
 
 See [Concepts → RIR](/skills/stageflip/concepts/rir/) for the shared
 foundation, or jump straight to the [quickstart](/quickstart/).
+
+## For pack authors
+
+- **Pack-author guide** — see `docs/pack-author-guide.md` in the
+  workspace for the end-to-end third-party pack-publisher journey
+  (manifest schema, registry + npm-path distribution, signing,
+  Stripe + tier policy, refunds, telemetry, loss-flag catalogue).
