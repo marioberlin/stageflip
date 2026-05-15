@@ -33,6 +33,7 @@
 import { type AiGenerativeClipProps, aiGenerativeClipPropsSchema } from '@stageflip/schema';
 
 import type { ClipFactory, MountContext } from '../../contract.js';
+import { tenantScopedEmitter } from '../../contract.js';
 import type { AiGenerativeProvider } from './ai-generative-provider.js';
 import type {
   AiGenerativeClipMountHandle,
@@ -95,11 +96,14 @@ async function mountAiGenerativeClip(
   options: AiGenerativeClipFactoryOptions,
 ): Promise<AiGenerativeClipMountHandle> {
   const family = ctx.clip.family;
+  // T-403 R-13 — tenant-scoped emitter; pass-through when ctx.tenantId
+  // is undefined.
+  const emit = tenantScopedEmitter(ctx);
 
   // 1. Parse + narrow `liveMount.props`.
   const propsResult = aiGenerativeClipPropsSchema.safeParse(ctx.clip.liveMount.props);
   if (!propsResult.success) {
-    ctx.emitTelemetry('ai-generative-clip.mount.failure', {
+    emit('ai-generative-clip.mount.failure', {
       family,
       reason: 'invalid-props' satisfies AiGenerativeMountFailureReason,
       issues: propsResult.error.issues.map((i) => ({
@@ -118,7 +122,7 @@ async function mountAiGenerativeClip(
   //    a permission denial.
   const provider = options.provider;
   if (provider === undefined) {
-    ctx.emitTelemetry('ai-generative-clip.mount.failure', {
+    emit('ai-generative-clip.mount.failure', {
       family,
       reason: 'generator-unavailable' satisfies AiGenerativeMountFailureReason,
     });
@@ -131,7 +135,7 @@ async function mountAiGenerativeClip(
   //    strings ARE included; they are configuration, not user
   //    content. promptLength is the integer length only — never
   //    the prompt body.
-  ctx.emitTelemetry('ai-generative-clip.mount.start', {
+  emit('ai-generative-clip.mount.start', {
     family,
     provider: props.provider,
     model: props.model,
@@ -158,7 +162,7 @@ async function mountAiGenerativeClip(
   };
 
   // Telemetry — mount.success.
-  ctx.emitTelemetry('ai-generative-clip.mount.success', { family });
+  emit('ai-generative-clip.mount.success', { family });
 
   // ----- private helpers -----
 
@@ -214,7 +218,7 @@ async function mountAiGenerativeClip(
     const requestId = `req-${state.requestCounter}`;
     const startedAt = nowMs();
 
-    ctx.emitTelemetry('ai-generative-clip.generate.started', {
+    emit('ai-generative-clip.generate.started', {
       family,
       requestId,
       promptLength: props.prompt.length,
@@ -254,7 +258,7 @@ async function mountAiGenerativeClip(
         durationMs,
       });
 
-      ctx.emitTelemetry('ai-generative-clip.generate.resolved', {
+      emit('ai-generative-clip.generate.resolved', {
         family,
         requestId,
         durationMs,
@@ -273,7 +277,7 @@ async function mountAiGenerativeClip(
         dispatchError({ kind: 'aborted', message });
       }
 
-      ctx.emitTelemetry('ai-generative-clip.generate.error', {
+      emit('ai-generative-clip.generate.error', {
         family,
         requestId,
         errorKind,
@@ -321,7 +325,7 @@ async function mountAiGenerativeClip(
       state.img.parentNode.removeChild(state.img);
     }
     // 6. Final telemetry.
-    ctx.emitTelemetry('ai-generative-clip.dispose', { family });
+    emit('ai-generative-clip.dispose', { family });
   };
 
   // Wire signal.abort → dispose at the factory layer.

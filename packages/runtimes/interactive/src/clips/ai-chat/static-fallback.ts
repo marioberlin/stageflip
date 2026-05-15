@@ -226,6 +226,7 @@ export const aiChatStaticFallbackGenerator: StaticFallbackGenerator = ({
   clip,
   reason,
   emitTelemetry,
+  tenantId,
 }) => {
   const props = (clip.liveMount.props ?? {}) as {
     systemPrompt?: unknown;
@@ -249,6 +250,8 @@ export const aiChatStaticFallbackGenerator: StaticFallbackGenerator = ({
     // Privacy posture (D-T390-4 + AC #13): integer lengths only.
     transcriptTurnCount: capturedTranscript?.length ?? 0,
     systemPromptLength: systemPrompt.length,
+    // T-403 R-13 — tenant scope when supplied by the harness.
+    ...(tenantId !== undefined ? { tenantId } : {}),
   });
 
   return generated;

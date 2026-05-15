@@ -35,6 +35,14 @@ export interface StaticFallbackGeneratorContext {
   reason: string;
   /** Telemetry sink — same shape as `MountContext.emitTelemetry`. */
   emitTelemetry: EmitTelemetry;
+  /**
+   * T-403 R-13 — tenant identifier propagated from the harness. Static-
+   * fallback generators that emit telemetry SHOULD include this in
+   * their event payloads so per-tenant incident triage works on the
+   * static path too. Optional for back-compat with pre-T-403-R-13
+   * consumers / fixtures that omit a tenant scope.
+   */
+  tenantId?: string;
 }
 
 /**

@@ -82,6 +82,23 @@ export interface MountContext {
    * field and continue to type-check.
    */
   permissionPrePrompt?: boolean;
+  /**
+   * T-403 R-13 — tenant identifier propagated from the harness's mount
+   * call. When present, every clip-level telemetry event emitted by the
+   * factory MUST include `tenantId` in its event payload so post-hoc
+   * incident triage can scope events per-tenant. Optional for back-
+   * compat with pre-T-403 R-13 callers (test fixtures, local dev rigs)
+   * that did not yet thread tenant context; events from those mounts
+   * fall through with no `tenantId` attribute (legacy shape).
+   *
+   * The seam mirrors `PermissionShimMountOptions.tenantId` (T-403 R-12)
+   * and `TenantFlagGateInput.tenantId` (T-411c) — same identifier flows
+   * through every gate so an operator can correlate denial telemetry
+   * (`permission-denied` / `tenant-flag-denied`) with downstream clip
+   * lifecycle telemetry (`shader-clip.mount.failure`,
+   * `live-data-clip.fetch.error`, etc.).
+   */
+  tenantId?: string;
 }
 
 /**
@@ -119,3 +136,29 @@ export type ClipFactory = (ctx: MountContext) => Promise<MountHandle>;
 export const PERMISSIVE_TENANT_POLICY: TenantPolicy = {
   canMount: () => true,
 };
+
+/**
+ * T-403 R-13 — clip-factory helper. Returns a telemetry emitter that
+ * automatically injects `tenantId` (when `ctx.tenantId` is present) into
+ * every event payload. The mount-time `tenantId` is authoritative — it
+ * is spread AFTER per-call attributes so a clip cannot accidentally lie
+ * about its tenant scope by setting a different `tenantId` in the
+ * payload. When `ctx.tenantId` is `undefined`, the helper is a thin
+ * pass-through and no `tenantId` key appears in emitted events
+ * (preserves the pre-T-403-R-13 shape for back-compat with test rigs
+ * that omit tenant context entirely).
+ *
+ * Clip factories thread their telemetry through this rather than
+ * calling `ctx.emitTelemetry` directly, so per-call sites don't have
+ * to remember to spread `tenantId`. Adopting the helper at every
+ * `emitTelemetry` call site is the load-bearing R-13 closure.
+ */
+export function tenantScopedEmitter(ctx: MountContext): MountContext['emitTelemetry'] {
+  const { tenantId } = ctx;
+  if (tenantId === undefined) {
+    return ctx.emitTelemetry;
+  }
+  return (event: string, attributes: Record<string, unknown>): void => {
+    ctx.emitTelemetry(event, { ...attributes, tenantId });
+  };
+}

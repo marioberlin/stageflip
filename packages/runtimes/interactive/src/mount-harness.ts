@@ -71,6 +71,22 @@ export interface InteractiveMountOptions {
    * flag is ignored and the harness behaves as if `false`.
    */
   permissionPrePrompt?: boolean;
+  /**
+   * T-403 R-13 — per-mount tenant identifier. Threaded into:
+   *   1. `MountContext.tenantId` so the clip factory propagates it to
+   *      every `emitTelemetry` payload;
+   *   2. `PermissionShim.mount({ tenantId })` so the per-(session,
+   *      family) grant-cache key is scoped per tenant (T-403 R-12);
+   *   3. The harness's own `mount-fallback` telemetry event so denial
+   *      events also carry tenant scope.
+   *
+   * When omitted, the harness falls through to its constructor-bound
+   * `tenantId` (if any). When neither is set, telemetry events fire
+   * without a `tenantId` attribute — pre-T-403-R-13 back-compat shape.
+   * Hosts that may cycle tenants on a single harness instance SHOULD
+   * supply this per mount.
+   */
+  tenantId?: string;
 }
 
 /**
@@ -113,6 +129,16 @@ export interface InteractiveMountHarnessOptions {
    * absent + flag-on falls back to T-306 baseline (no pre-prompt).
    */
   permissionPrePromptHandler?: PermissionPrePromptHandler;
+  /**
+   * T-403 R-13 — harness-bound tenant identifier. Used as the default
+   * tenant scope for every `mount()` call that does not supply its own
+   * `tenantId` in `InteractiveMountOptions`. Threaded into the same
+   * three places per-mount `tenantId` is (`MountContext.tenantId`,
+   * `PermissionShim.mount({ tenantId })`, and the harness's
+   * `mount-fallback` telemetry payload). Optional — pre-T-403-R-13
+   * harnesses behave as before.
+   */
+  tenantId?: string;
 }
 
 /**
@@ -127,6 +153,7 @@ export class InteractiveMountHarness {
   private readonly tenantPolicy: TenantPolicy;
   private readonly emitTelemetry: EmitTelemetry;
   private readonly permissionPrePromptHandler: PermissionPrePromptHandler | undefined;
+  private readonly tenantId: string | undefined;
 
   constructor(options: InteractiveMountHarnessOptions = {}) {
     this.registry = options.registry ?? interactiveClipRegistry;
@@ -141,6 +168,7 @@ export class InteractiveMountHarness {
         emitTelemetry: this.emitTelemetry,
       });
     this.permissionPrePromptHandler = options.permissionPrePromptHandler;
+    this.tenantId = options.tenantId;
   }
 
   /**
@@ -159,6 +187,11 @@ export class InteractiveMountHarness {
     signal: AbortSignal,
     mountOptions: InteractiveMountOptions = {},
   ): Promise<MountHandle> {
+    // T-403 R-13 — resolve the effective tenant scope for this mount.
+    // Per-mount option wins; otherwise harness-bound default; otherwise
+    // undefined (legacy / no-tenant test rigs).
+    const effectiveTenantId = mountOptions.tenantId ?? this.tenantId;
+
     // Step 0 (T-385 D-T385-9): optional pre-prompt render cycle. Runs
     // BEFORE the shim so the user sees the in-app explanation before the
     // browser dialog. Skipped when:
@@ -180,14 +213,26 @@ export class InteractiveMountHarness {
           this.emitTelemetry('mount-fallback', {
             family: clip.family,
             reason: 'pre-prompt-cancelled',
+            ...(effectiveTenantId !== undefined ? { tenantId: effectiveTenantId } : {}),
           });
-          return this.mountStaticFallback(clip, root, signal, 'pre-prompt-cancelled');
+          return this.mountStaticFallback(
+            clip,
+            root,
+            signal,
+            'pre-prompt-cancelled',
+            effectiveTenantId,
+          );
         }
       }
     }
 
     // Step 1: permission shim — tenant-policy gate, then permission probes.
-    const permissionResult = await this.permissionShim.mount(clip);
+    // T-403 R-12 + R-13 — pass tenantId so shim cache key is scoped per
+    // tenant AND any shim-internal denial telemetry carries tenant scope.
+    const permissionResult = await this.permissionShim.mount(
+      clip,
+      effectiveTenantId !== undefined ? { tenantId: effectiveTenantId } : {},
+    );
 
     if (!permissionResult.granted) {
       // Step 1a (denial path): render static fallback and return a
@@ -195,8 +240,15 @@ export class InteractiveMountHarness {
       this.emitTelemetry('mount-fallback', {
         family: clip.family,
         reason: permissionResult.reason,
+        ...(effectiveTenantId !== undefined ? { tenantId: effectiveTenantId } : {}),
       });
-      return this.mountStaticFallback(clip, root, signal, permissionResult.reason);
+      return this.mountStaticFallback(
+        clip,
+        root,
+        signal,
+        permissionResult.reason,
+        effectiveTenantId,
+      );
     }
 
     // Step 2: resolve the factory.
@@ -225,6 +277,11 @@ export class InteractiveMountHarness {
       ...(mountOptions.permissionPrePrompt !== undefined
         ? { permissionPrePrompt: mountOptions.permissionPrePrompt }
         : {}),
+      // T-403 R-13 — propagate tenant scope into the factory so every
+      // clip-level emitTelemetry call can carry `tenantId`. Omit the
+      // field entirely when no tenant scope is in play (preserves the
+      // strict `exactOptionalPropertyTypes` posture).
+      ...(effectiveTenantId !== undefined ? { tenantId: effectiveTenantId } : {}),
     };
 
     const handle = await factory(context);
@@ -251,8 +308,9 @@ export class InteractiveMountHarness {
     root: HTMLElement,
     signal: AbortSignal,
     reason: string,
+    tenantId: string | undefined,
   ): MountHandle {
-    const elements = this.resolveStaticFallbackElements(clip, reason);
+    const elements = this.resolveStaticFallbackElements(clip, reason, tenantId);
     const fallback = renderStaticFallback(elements, root);
     let disposed = false;
     const dispose = (): void => {
@@ -294,6 +352,7 @@ export class InteractiveMountHarness {
   private resolveStaticFallbackElements(
     clip: InteractiveClip,
     reason: string,
+    tenantId: string | undefined,
   ): ReadonlyArray<Element> {
     const generator = this.staticFallbackGeneratorRegistry.resolve(clip.family);
 
@@ -305,6 +364,7 @@ export class InteractiveMountHarness {
           clip,
           reason: 'authored',
           emitTelemetry: this.emitTelemetry,
+          ...(tenantId !== undefined ? { tenantId } : {}),
         });
       }
       return clip.staticFallback;
@@ -322,6 +382,7 @@ export class InteractiveMountHarness {
       clip,
       reason,
       emitTelemetry: this.emitTelemetry,
+      ...(tenantId !== undefined ? { tenantId } : {}),
     });
   }
 

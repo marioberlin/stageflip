@@ -26,6 +26,7 @@ import { flushSync } from 'react-dom';
 import { type Root, createRoot } from 'react-dom/client';
 
 import type { ClipFactory, MountContext } from '../../contract.js';
+import { tenantScopedEmitter } from '../../contract.js';
 import type { LiveDataProvider } from './live-data-provider.js';
 import {
   type DataEvent,
@@ -92,11 +93,14 @@ async function mountLiveDataClip(
   options: LiveDataClipFactoryOptions,
 ): Promise<LiveDataClipMountHandle> {
   const family = ctx.clip.family;
+  // T-403 R-13 — tenant-scoped emitter; pass-through when ctx.tenantId
+  // is undefined.
+  const emit = tenantScopedEmitter(ctx);
 
   // 1. Parse + narrow `liveMount.props`.
   const propsResult = liveDataClipPropsSchema.safeParse(ctx.clip.liveMount.props);
   if (!propsResult.success) {
-    ctx.emitTelemetry('live-data-clip.mount.failure', {
+    emit('live-data-clip.mount.failure', {
       family,
       reason: 'invalid-props' satisfies LiveDataMountFailureReason,
       issues: propsResult.error.issues.map((i) => ({
@@ -115,7 +119,7 @@ async function mountLiveDataClip(
   //    permission denial.
   const provider = options.provider;
   if (provider === undefined) {
-    ctx.emitTelemetry('live-data-clip.mount.failure', {
+    emit('live-data-clip.mount.failure', {
       family,
       reason: 'fetcher-unavailable' satisfies LiveDataMountFailureReason,
     });
@@ -126,7 +130,7 @@ async function mountLiveDataClip(
 
   // 3. Telemetry — mount.start. Per D-T391-8 the configuration strings
   //    ARE included; they are configuration, not user content.
-  ctx.emitTelemetry('live-data-clip.mount.start', {
+  emit('live-data-clip.mount.start', {
     family,
     endpoint: props.endpoint,
     method: props.method,
@@ -150,7 +154,7 @@ async function mountLiveDataClip(
   });
 
   // Telemetry — mount.success.
-  ctx.emitTelemetry('live-data-clip.mount.success', { family });
+  emit('live-data-clip.mount.success', { family });
 
   // ----- private helpers -----
 
@@ -200,7 +204,7 @@ async function mountLiveDataClip(
     const requestId = `req-${state.requestCounter}`;
     const startedAt = nowMs();
 
-    ctx.emitTelemetry('live-data-clip.fetch.started', {
+    emit('live-data-clip.fetch.started', {
       family,
       requestId,
       endpoint: props.endpoint,
@@ -242,7 +246,7 @@ async function mountLiveDataClip(
         if (!state.disposed) {
           dispatchError({ kind: 'parse-error', message });
         }
-        ctx.emitTelemetry('live-data-clip.fetch.error', {
+        emit('live-data-clip.fetch.error', {
           family,
           requestId,
           errorKind: 'parse',
@@ -263,7 +267,7 @@ async function mountLiveDataClip(
         durationMs,
       });
 
-      ctx.emitTelemetry('live-data-clip.fetch.resolved', {
+      emit('live-data-clip.fetch.resolved', {
         family,
         requestId,
         status: response.status,
@@ -284,7 +288,7 @@ async function mountLiveDataClip(
         dispatchError({ kind: 'aborted', message });
       }
 
-      ctx.emitTelemetry('live-data-clip.fetch.error', {
+      emit('live-data-clip.fetch.error', {
         family,
         requestId,
         errorKind,
@@ -336,7 +340,7 @@ async function mountLiveDataClip(
     // 4. Unmount the React root.
     state.reactRoot.unmount();
     // 5. Final telemetry.
-    ctx.emitTelemetry('live-data-clip.dispose', { family });
+    emit('live-data-clip.dispose', { family });
   };
 
   // Wire signal.abort → dispose at the factory layer (the harness wraps

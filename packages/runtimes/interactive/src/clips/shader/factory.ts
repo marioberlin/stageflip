@@ -27,6 +27,7 @@ import { flushSync } from 'react-dom';
 import { type Root, createRoot } from 'react-dom/client';
 
 import type { ClipFactory, MountContext, MountHandle } from '../../contract.js';
+import { tenantScopedEmitter } from '../../contract.js';
 import { MissingFrameSourceError } from '../../frame-source.js';
 import { type UniformUpdater, defaultShaderUniforms } from './uniforms.js';
 
@@ -84,6 +85,10 @@ export class ShaderClipFactoryBuilder {
     glContextFactory: ShaderClipHostProps['glContextFactory'] | undefined,
   ): Promise<MountHandle> {
     const family = ctx.clip.family;
+    // T-403 R-13 — wrap the raw emitter so every event payload carries
+    // `tenantId` automatically when `ctx.tenantId` is supplied. Pass-
+    // through (no-op) when no tenant scope is in play.
+    const emit = tenantScopedEmitter(ctx);
 
     // 1. Frame source — frame-driven family invariant per AC #12.
     const frameSource = ctx.frameSource;
@@ -94,7 +99,7 @@ export class ShaderClipFactoryBuilder {
     // 2. Parse + narrow `liveMount.props`.
     const propsResult = shaderClipPropsSchema.safeParse(ctx.clip.liveMount.props);
     if (!propsResult.success) {
-      ctx.emitTelemetry('shader-clip.mount.failure', {
+      emit('shader-clip.mount.failure', {
         family,
         reason: 'invalid-props' satisfies ShaderMountFailureReason,
         issues: propsResult.error.issues.map((i) => ({
@@ -114,7 +119,7 @@ export class ShaderClipFactoryBuilder {
     try {
       validateFragmentShader(currentProps.fragmentShader, `shader-clip:${ctx.clip.id}`);
     } catch (err) {
-      ctx.emitTelemetry('shader-clip.mount.failure', {
+      emit('shader-clip.mount.failure', {
         family,
         reason: 'compile' satisfies ShaderMountFailureReason,
         message: err instanceof Error ? err.message : String(err),
@@ -123,7 +128,7 @@ export class ShaderClipFactoryBuilder {
     }
 
     // 4. Build a React root + render the host.
-    ctx.emitTelemetry('shader-clip.mount.start', {
+    emit('shader-clip.mount.start', {
       family,
       fragmentShaderLength: currentProps.fragmentShader.length,
       width: currentProps.width,
@@ -171,7 +176,7 @@ export class ShaderClipFactoryBuilder {
     // `performance.now()` is forbidden in this directory by T-309's
     // sub-rule. The success event itself is the load-bearing signal;
     // the timing attribute is decorative.
-    ctx.emitTelemetry('shader-clip.mount.success', {
+    emit('shader-clip.mount.success', {
       family,
       timeToFirstPaintUs: 0,
     });
@@ -203,7 +208,7 @@ export class ShaderClipFactoryBuilder {
         state.disposed = true;
         unsubscribe();
         state.reactRoot.unmount();
-        ctx.emitTelemetry('shader-clip.dispose', { family });
+        emit('shader-clip.dispose', { family });
       },
     };
   }

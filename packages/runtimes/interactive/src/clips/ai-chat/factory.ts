@@ -22,6 +22,7 @@ import { flushSync } from 'react-dom';
 import { type Root, createRoot } from 'react-dom/client';
 
 import type { ClipFactory, MountContext } from '../../contract.js';
+import { tenantScopedEmitter } from '../../contract.js';
 import type { LLMChatProvider } from './llm-chat-provider.js';
 import {
   type AiChatClipMountHandle,
@@ -100,11 +101,14 @@ async function mountAiChatClip(
   options: AiChatClipFactoryOptions,
 ): Promise<AiChatClipMountHandle> {
   const family = ctx.clip.family;
+  // T-403 R-13 — tenant-scoped emitter; pass-through when ctx.tenantId
+  // is undefined.
+  const emit = tenantScopedEmitter(ctx);
 
   // 1. Parse + narrow `liveMount.props`.
   const propsResult = aiChatClipPropsSchema.safeParse(ctx.clip.liveMount.props);
   if (!propsResult.success) {
-    ctx.emitTelemetry('ai-chat-clip.mount.failure', {
+    emit('ai-chat-clip.mount.failure', {
       family,
       reason: 'invalid-props' satisfies AiChatMountFailureReason,
       issues: propsResult.error.issues.map((i) => ({
@@ -123,7 +127,7 @@ async function mountAiChatClip(
   //    permission denial.
   const chatProvider = options.chatProvider;
   if (chatProvider === undefined) {
-    ctx.emitTelemetry('ai-chat-clip.mount.failure', {
+    emit('ai-chat-clip.mount.failure', {
       family,
       reason: 'provider-unavailable' satisfies AiChatMountFailureReason,
     });
@@ -134,7 +138,7 @@ async function mountAiChatClip(
 
   // 3. Telemetry — mount.start. Per D-T389-8 the `provider` and `model`
   //    strings ARE included; they are configuration, not user content.
-  ctx.emitTelemetry('ai-chat-clip.mount.start', {
+  emit('ai-chat-clip.mount.start', {
     family,
     provider: props.provider,
     model: props.model,
@@ -154,7 +158,7 @@ async function mountAiChatClip(
   });
 
   // Telemetry — mount.success.
-  ctx.emitTelemetry('ai-chat-clip.mount.success', { family });
+  emit('ai-chat-clip.mount.success', { family });
 
   // ----- private helpers -----
 
@@ -229,7 +233,7 @@ async function mountAiChatClip(
             // Emit turn.started exactly once, when the first token
             // arrives or — if no tokens arrive — after streamTurn
             // resolves. Doing it here ensures we have the turnId.
-            ctx.emitTelemetry('ai-chat-clip.turn.started', {
+            emit('ai-chat-clip.turn.started', {
               family,
               turnId,
               userMessageLength: userMessage.length,
@@ -256,7 +260,7 @@ async function mountAiChatClip(
       // emit turn.started now so the lifecycle pair stays balanced.
       if (turnIdForTelemetry === undefined) {
         turnIdForTelemetry = result.turnId;
-        ctx.emitTelemetry('ai-chat-clip.turn.started', {
+        emit('ai-chat-clip.turn.started', {
           family,
           turnId: result.turnId,
           userMessageLength: userMessage.length,
@@ -278,7 +282,7 @@ async function mountAiChatClip(
         timestampMs: finishedAt,
       });
 
-      ctx.emitTelemetry('ai-chat-clip.turn.finished', {
+      emit('ai-chat-clip.turn.finished', {
         family,
         turnId: result.turnId,
         durationMs: Math.max(0, finishedAt - startedAt),
@@ -302,7 +306,7 @@ async function mountAiChatClip(
         dispatchTurn({ kind: 'error', message, turnId });
       }
 
-      ctx.emitTelemetry('ai-chat-clip.turn.error', {
+      emit('ai-chat-clip.turn.error', {
         family,
         turnId,
         errorKind,
@@ -359,7 +363,7 @@ async function mountAiChatClip(
     // 4. Unmount the React root.
     state.reactRoot.unmount();
     // 5. Final telemetry.
-    ctx.emitTelemetry('ai-chat-clip.dispose', { family });
+    emit('ai-chat-clip.dispose', { family });
   };
 
   // Wire signal.abort → dispose at the factory layer (the harness wraps

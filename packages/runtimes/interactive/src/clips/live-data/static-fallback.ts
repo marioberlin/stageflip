@@ -209,6 +209,7 @@ export const liveDataStaticFallbackGenerator: StaticFallbackGenerator = ({
   clip,
   reason,
   emitTelemetry,
+  tenantId,
 }) => {
   const props = (clip.liveMount.props ?? {}) as {
     endpoint?: unknown;
@@ -234,6 +235,8 @@ export const liveDataStaticFallbackGenerator: StaticFallbackGenerator = ({
     // Privacy posture (D-T392-4 + AC #13): boolean + integer length only.
     hasSnapshot: cachedSnapshot !== undefined,
     bodyByteLength,
+    // T-403 R-13 — tenant scope when supplied by the harness.
+    ...(tenantId !== undefined ? { tenantId } : {}),
   });
 
   return generated;
