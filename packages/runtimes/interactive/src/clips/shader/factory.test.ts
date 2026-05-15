@@ -338,4 +338,176 @@ describe('shaderClipFactory (T-383)', () => {
     expect(() => handle.updateProps({ width: -10 } as Record<string, unknown>)).not.toThrow();
     handle.dispose();
   });
+
+  // -------------------------------------------------------------------
+  // T-403 R-6 — frame-budget kill-switch.
+  // -------------------------------------------------------------------
+
+  describe('T-403 R-6 — frame-budget kill-switch', () => {
+    /** Mock clock — advance manually between draw calls. */
+    function makeMockClock(initial: number): {
+      read: () => number;
+      advance: (delta: number) => void;
+    } {
+      let now = initial;
+      return {
+        read: () => now,
+        advance: (delta) => {
+          now += delta;
+        },
+      };
+    }
+
+    it('default budget — frame at 2ms is ok (no warn, no kill)', async () => {
+      const stub = makeGlStub();
+      const clock = makeMockClock(0);
+      const factory = ShaderClipFactoryBuilder.build({
+        glContextFactory: stub.factory,
+        clockMs: clock.read,
+        uniforms: (_frame, _ctx) => {
+          clock.advance(2); // 2ms per draw — well under default 16ms warn
+          return {};
+        },
+      });
+      const fs = new RecordModeFrameSource();
+      const events: Array<[string, Record<string, unknown>]> = [];
+      const ctx = makeContext({ frameSource: fs, emit: (e, a) => events.push([e, a]) });
+      const handle = await factory(ctx);
+      fs.advance(3);
+      expect(events.find((e) => e[0] === 'shader-clip.frame-budget-warning')).toBeUndefined();
+      expect(events.find((e) => e[0] === 'shader-clip.frame-budget-exceeded')).toBeUndefined();
+      handle.dispose();
+    });
+
+    it('default budget exceeded — frame advancing clock by 250ms triggers kill', async () => {
+      const stub = makeGlStub();
+      const clock = makeMockClock(0);
+      let frameCount = 0;
+      const factory = ShaderClipFactoryBuilder.build({
+        glContextFactory: stub.factory,
+        clockMs: clock.read,
+        uniforms: (_frame, _ctx) => {
+          frameCount += 1;
+          // First-paint stays under 16ms; second frame stalls hard.
+          if (frameCount === 1) {
+            clock.advance(1);
+          } else {
+            clock.advance(250);
+          }
+          return {};
+        },
+      });
+      const fs = new RecordModeFrameSource();
+      const events: Array<[string, Record<string, unknown>]> = [];
+      const ctx = makeContext({ frameSource: fs, emit: (e, a) => events.push([e, a]) });
+      const handle = await factory(ctx);
+      // Trigger one more frame — this is the stalled draw.
+      fs.advance(1);
+      const killEvent = events.find((e) => e[0] === 'shader-clip.frame-budget-exceeded');
+      expect(killEvent).toBeDefined();
+      expect(killEvent?.[1]).toMatchObject({
+        family: 'shader',
+        elapsedMs: 250,
+        killBudgetMs: 200,
+      });
+      // Dispose event also fires under the same path.
+      const disposeEvent = events.find(
+        (e) => e[0] === 'shader-clip.dispose' && e[1].reason === 'frame-budget-exceeded',
+      );
+      expect(disposeEvent).toBeDefined();
+      // Further frame ticks are no-ops (mount is torn down).
+      fs.advance(1);
+      const killCount = events.filter((e) => e[0] === 'shader-clip.frame-budget-exceeded').length;
+      expect(killCount).toBe(1); // one-shot
+      handle.dispose(); // idempotent post-kill
+    });
+
+    it('warn fires one-shot — same elapsed across multiple frames yields only one warning', async () => {
+      const stub = makeGlStub();
+      const clock = makeMockClock(0);
+      const factory = ShaderClipFactoryBuilder.build({
+        glContextFactory: stub.factory,
+        clockMs: clock.read,
+        uniforms: (_frame, _ctx) => {
+          clock.advance(20); // between 16 (warn) and 200 (kill)
+          return {};
+        },
+      });
+      const fs = new RecordModeFrameSource();
+      const events: Array<[string, Record<string, unknown>]> = [];
+      const ctx = makeContext({ frameSource: fs, emit: (e, a) => events.push([e, a]) });
+      const handle = await factory(ctx);
+      fs.advance(3);
+      const warnings = events.filter((e) => e[0] === 'shader-clip.frame-budget-warning');
+      expect(warnings.length).toBe(1); // one-shot dedup
+      handle.dispose();
+    });
+
+    it('first-paint kill — mount.failure with reason="frame-budget-exceeded" + throw', async () => {
+      const stub = makeGlStub();
+      const clock = makeMockClock(0);
+      const factory = ShaderClipFactoryBuilder.build({
+        glContextFactory: stub.factory,
+        clockMs: clock.read,
+        uniforms: (_frame, _ctx) => {
+          clock.advance(300); // first-paint blows the ceiling
+          return {};
+        },
+      });
+      const fs = new RecordModeFrameSource();
+      const events: Array<[string, Record<string, unknown>]> = [];
+      const ctx = makeContext({ frameSource: fs, emit: (e, a) => events.push([e, a]) });
+      await expect(factory(ctx)).rejects.toThrow(/frame-budget ceiling/);
+      const failure = events.find((e) => e[0] === 'shader-clip.mount.failure');
+      expect(failure?.[1]).toMatchObject({
+        reason: 'frame-budget-exceeded',
+        elapsedMs: 300,
+      });
+    });
+
+    it('custom frameBudgetMs prop — 50ms warn threshold; 40ms frame is ok', async () => {
+      const stub = makeGlStub();
+      const clock = makeMockClock(0);
+      const factory = ShaderClipFactoryBuilder.build({
+        glContextFactory: stub.factory,
+        clockMs: clock.read,
+        uniforms: (_frame, _ctx) => {
+          clock.advance(40);
+          return {};
+        },
+      });
+      const fs = new RecordModeFrameSource();
+      const events: Array<[string, Record<string, unknown>]> = [];
+      const ctx = makeContext({
+        props: makeProps({ frameBudgetMs: 50 }),
+        frameSource: fs,
+        emit: (e, a) => events.push([e, a]),
+      });
+      const handle = await factory(ctx);
+      fs.advance(3);
+      expect(events.find((e) => e[0] === 'shader-clip.frame-budget-warning')).toBeUndefined();
+      expect(events.find((e) => e[0] === 'shader-clip.frame-budget-exceeded')).toBeUndefined();
+      handle.dispose();
+    });
+
+    it('mount.success carries timeToFirstPaintUs derived from the budget monitor', async () => {
+      const stub = makeGlStub();
+      const clock = makeMockClock(0);
+      const factory = ShaderClipFactoryBuilder.build({
+        glContextFactory: stub.factory,
+        clockMs: clock.read,
+        uniforms: (_frame, _ctx) => {
+          clock.advance(3); // 3ms first paint
+          return {};
+        },
+      });
+      const fs = new RecordModeFrameSource();
+      const events: Array<[string, Record<string, unknown>]> = [];
+      const ctx = makeContext({ frameSource: fs, emit: (e, a) => events.push([e, a]) });
+      const handle = await factory(ctx);
+      const success = events.find((e) => e[0] === 'shader-clip.mount.success');
+      expect(success?.[1]).toMatchObject({ family: 'shader', timeToFirstPaintUs: 3000 });
+      handle.dispose();
+    });
+  });
 });

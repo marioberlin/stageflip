@@ -40,6 +40,21 @@ import { componentRefSchema } from '../interactive.js';
  *   the author's setup callback (D-T384-5). Default 0. The PRNG seed
  *   travels with the preset and produces the same output every render —
  *   this is the opt-in determinism path for three-scene authors.
+ * - `memoryBudgetMb` — T-403 R-7 DoS protection. Per-clip memory
+ *   ceiling in megabytes. Authors opt into enforcement by returning a
+ *   `getMemoryEstimateMb()` callback on the `ThreeClipHandle` produced
+ *   by their setup (e.g. summing geometry byte-lengths + texture
+ *   byte-lengths from their own scene graph). The factory polls the
+ *   estimate after first paint and on a frame-sample cadence; an
+ *   estimate at/above the budget triggers a kill + `staticFallback`
+ *   route + one-shot telemetry. Default `256` MB; absolute ceiling
+ *   `2048` MB. When the author opts out (no `getMemoryEstimateMb`),
+ *   the budget is informational only and no kill fires — the
+ *   protection is opt-in by design because `@stageflip/runtimes-three`
+ *   does not import THREE itself and cannot walk the author's scene.
+ *   See `docs/security-review-track-a.md` §5 R-7 for the threat
+ *   model and `packages/runtimes/three/src/types.ts` for the handle
+ *   extension.
  */
 export const threeSceneClipPropsSchema = z
   .object({
@@ -49,6 +64,12 @@ export const threeSceneClipPropsSchema = z
     setupProps: z.record(z.unknown()).default({}),
     posterFrame: z.number().int().nonnegative().default(0),
     prngSeed: z.number().int().nonnegative().default(0),
+    memoryBudgetMb: z
+      .number()
+      .int()
+      .min(16, 'memoryBudgetMb must be at least 16 (sane lower bound)')
+      .max(2048, 'memoryBudgetMb must be at most 2048 (DoS ceiling)')
+      .optional(),
   })
   .strict();
 

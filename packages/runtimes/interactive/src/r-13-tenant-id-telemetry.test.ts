@@ -217,7 +217,16 @@ describe('R-13: tenantId on every clip-level telemetry event (frontier × 7)', (
     // R-13 row description ('shader-clip.mount.failure') is not present
     // on the success path, so we re-check the success / dispose chain
     // by event name.
-    expect(events.map((e) => e.event)).toEqual([
+    // R-6 (YELLOW batch 3) added optional `shader-clip.frame-budget-warning`
+    // events that fire when the real `performance.now()` clock measures a
+    // first-paint over the 16ms WARN threshold under happy-dom. They carry
+    // tenantId via `tenantScopedEmitter` like every other event so the
+    // R-13 assertion (loop above) still holds. Strip them out for the
+    // strict-shape lifecycle assertion below.
+    const lifecycleEvents = events
+      .map((e) => e.event)
+      .filter((name) => name !== 'shader-clip.frame-budget-warning');
+    expect(lifecycleEvents).toEqual([
       'shader-clip.mount.start',
       'shader-clip.mount.success',
       'shader-clip.dispose',

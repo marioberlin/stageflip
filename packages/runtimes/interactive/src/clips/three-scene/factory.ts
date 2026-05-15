@@ -22,6 +22,8 @@ import {
   ThreeClipHost,
   type ThreeClipHostProps,
 } from '@stageflip/runtimes-three';
+// T-403 R-7 — note the import below crosses the determinism perimeter only
+// in the type-only direction; `ThreeClipHandle` is the load-bearing surface.
 import { type ThreeSceneClipProps, threeSceneClipPropsSchema } from '@stageflip/schema';
 import { createElement } from 'react';
 import { flushSync } from 'react-dom';
@@ -42,8 +44,38 @@ import { type SetupImporter, resolveSetupRef } from './setup-resolver.js';
 /**
  * Telemetry reasons routed via `MountContext.emitTelemetry`. T-384 D-T384-9
  * pins these strings; the security-review build (T-403/T-404) consumes them.
+ *
+ * `memory-budget-exceeded` — T-403 R-7 DoS-protection failure reason. Fires
+ * when the author's `ThreeClipHandle.getMemoryEstimateMb()` returns a
+ * value ≥ the per-clip `memoryBudgetMb` cap.
  */
-export type ThreeSceneMountFailureReason = 'setup-throw' | 'setupRef-resolve' | 'invalid-props';
+export type ThreeSceneMountFailureReason =
+  | 'setup-throw'
+  | 'setupRef-resolve'
+  | 'invalid-props'
+  | 'memory-budget-exceeded';
+
+/**
+ * Default memory budget in MB when `memoryBudgetMb` is omitted from props.
+ * Sized at 256 MB — generous for most three.js scenes (a 4K RGBA texture
+ * is ~64 MB, a million-vertex BufferGeometry is ~24 MB).
+ */
+export const MEMORY_BUDGET_DEFAULT_MB = 256;
+
+/**
+ * Hard upper bound on `memoryBudgetMb` accepted by the schema. Anything
+ * higher than 2 GB on the main thread is almost certainly a buggy
+ * estimator (or an adversarial preset); the schema validation rejects.
+ */
+export const MEMORY_BUDGET_CEILING_MB = 2048;
+
+/**
+ * Frame-tick cadence at which the factory polls the author's memory
+ * estimate. Every 30 frames ≈ 0.5s at 60fps — balances detection
+ * latency against per-frame overhead. The author's estimator may itself
+ * be O(scene) so polling every frame would be wasteful.
+ */
+export const MEMORY_POLL_FRAME_INTERVAL = 30;
 
 /**
  * Caller-supplied hook that resolves an `asset-gen` seedSrc descriptor
@@ -229,10 +261,22 @@ async function mountThreeScene(
     p: ThreeClipHostProps<Record<string, unknown>>,
   ) => ReturnType<typeof ThreeClipHost>;
 
+  // T-403 R-7 — memory ceiling state. The author's `ThreeClipHandle`
+  // arrives via the host's `onHandleReady` callback below; the factory
+  // polls `handle.getMemoryEstimateMb?.()` after first paint and on a
+  // sample cadence. When the author opts out (no `getMemoryEstimateMb`),
+  // the kill path is inert and only telemetry on first-paint emits the
+  // `memoryEstimateAvailable: false` attribute for observability.
+  const memoryBudgetMb = currentProps.memoryBudgetMb ?? MEMORY_BUDGET_DEFAULT_MB;
+  const handleRefBox: { current: ThreeClipHandle<Record<string, unknown>> | null } = {
+    current: null,
+  };
+
   const state = {
     reactRoot: createRoot(ctx.root) as Root,
     currentProps,
     disposed: false,
+    memoryKilled: false,
     renderHost(frame: number, props: ThreeSceneClipProps): void {
       const hostProps: ThreeClipHostProps<Record<string, unknown>> = {
         setup: wrappedSetup,
@@ -243,6 +287,9 @@ async function mountThreeScene(
         fps,
         clipDurationInFrames,
         prng,
+        onHandleReady: (h) => {
+          handleRefBox.current = h;
+        },
       };
       this.reactRoot.render(createElement(TypedThreeClipHost, hostProps));
     },
@@ -289,13 +336,87 @@ async function mountThreeScene(
     family,
   });
 
+  // T-403 R-7 — local helpers for memory polling. Hoisted into closure
+  // scope (not the state object) because they don't carry per-frame
+  // state; they read the current handle on each call. Returns `true`
+  // when the mount was killed by the budget check.
+  const sampleMemoryEstimate = (): number | undefined => {
+    const handle = handleRefBox.current;
+    const reporter = handle?.getMemoryEstimateMb;
+    if (reporter === undefined) return undefined;
+    try {
+      const mb = reporter.call(handle);
+      return typeof mb === 'number' && Number.isFinite(mb) ? mb : undefined;
+    } catch {
+      // Author estimator threw — treat as opt-out for this poll, do not
+      // kill. Telemetry below records the absent-estimate path.
+      return undefined;
+    }
+  };
+
+  // Two-stage flag set: `state.memoryKilled` signals the kill happened so
+  // `handle.dispose()` can short-circuit telemetry but STILL run the
+  // subscribe-cleanup. `state.disposed` is only set after the
+  // `unsubscribe()` call from within the kill path, mirroring the normal
+  // dispose-path ordering.
+  const checkMemoryAndMaybeKill = (frame: number, unsubscribeFn: () => void): boolean => {
+    if (state.disposed || state.memoryKilled) return false;
+    const estimateMb = sampleMemoryEstimate();
+    if (estimateMb === undefined) return false;
+    if (estimateMb < memoryBudgetMb) return false;
+    state.memoryKilled = true;
+    emit('three-scene-clip.memory-budget-exceeded', {
+      family,
+      memoryEstimateMb: estimateMb,
+      memoryBudgetMb,
+      frame,
+    });
+    state.disposed = true;
+    unsubscribeFn();
+    shim.uninstall();
+    state.reactRoot.unmount();
+    emit('three-scene-clip.dispose', { family, reason: 'memory-budget-exceeded' });
+    return true;
+  };
+
+  // First-paint memory check. The author's `setup()` has now run (see the
+  // setupThrown gate above); `handleRefBox.current` is populated when the
+  // author supplied a non-null handle. Real WebGL-disabled environments
+  // (happy-dom) keep this `null` because the host's silent-bail path
+  // skips the `onHandleReady` callback — the check is inert there and
+  // tests don't assert on the value.
+  const initialEstimate = sampleMemoryEstimate();
+  if (initialEstimate !== undefined && initialEstimate >= memoryBudgetMb) {
+    state.memoryKilled = true;
+    state.disposed = true;
+    emit('three-scene-clip.memory-budget-exceeded', {
+      family,
+      memoryEstimateMb: initialEstimate,
+      memoryBudgetMb,
+      frame: frameSource.current(),
+    });
+    shim.uninstall();
+    state.reactRoot.unmount();
+    throw new Error(
+      `threeSceneClipFactory: first-paint memory estimate (${initialEstimate} MB) exceeds budget (${memoryBudgetMb} MB) — see ADR-005 §D7 + docs/security-review-track-a.md §5 R-7.`,
+    );
+  }
+
   // Subscribe to frame ticks. flushSync per tick so render side-effects
-  // run before the next tick advances the clock.
+  // run before the next tick advances the clock. Memory ceiling check
+  // runs every {@link MEMORY_POLL_FRAME_INTERVAL} frames; an exceeded
+  // budget tears the mount down and emits the failure event one-shot.
+  let pollCounter = 0;
   const unsubscribe = frameSource.subscribe((frame) => {
     if (state.disposed) return;
     flushSync(() => {
       state.renderHost(frame, state.currentProps);
     });
+    pollCounter += 1;
+    if (pollCounter >= MEMORY_POLL_FRAME_INTERVAL) {
+      pollCounter = 0;
+      checkMemoryAndMaybeKill(frame, unsubscribe);
+    }
   });
 
   return {

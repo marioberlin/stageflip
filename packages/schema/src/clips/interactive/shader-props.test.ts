@@ -151,4 +151,59 @@ describe('shaderClipPropsSchema (T-383 AC #1)', () => {
       }),
     ).toThrow();
   });
+
+  // T-403 R-6 — frameBudgetMs DoS protection.
+  describe('frameBudgetMs (T-403 R-6)', () => {
+    it('accepts a valid frameBudgetMs', () => {
+      const parsed = shaderClipPropsSchema.parse({
+        fragmentShader: VALID_FRAGMENT,
+        width: 100,
+        height: 100,
+        frameBudgetMs: 50,
+      });
+      expect(parsed.frameBudgetMs).toBe(50);
+    });
+
+    it('omits frameBudgetMs when not supplied (optional)', () => {
+      const parsed = shaderClipPropsSchema.parse({
+        fragmentShader: VALID_FRAGMENT,
+        width: 100,
+        height: 100,
+      });
+      expect(parsed.frameBudgetMs).toBeUndefined();
+    });
+
+    it('rejects frameBudgetMs > 200 (DoS ceiling)', () => {
+      expect(() =>
+        shaderClipPropsSchema.parse({
+          fragmentShader: VALID_FRAGMENT,
+          width: 100,
+          height: 100,
+          frameBudgetMs: 250,
+        }),
+      ).toThrow(/at most 200/);
+    });
+
+    it('rejects frameBudgetMs < 4 (sane lower bound)', () => {
+      expect(() =>
+        shaderClipPropsSchema.parse({
+          fragmentShader: VALID_FRAGMENT,
+          width: 100,
+          height: 100,
+          frameBudgetMs: 2,
+        }),
+      ).toThrow(/at least 4/);
+    });
+
+    it('rejects non-integer frameBudgetMs', () => {
+      expect(() =>
+        shaderClipPropsSchema.parse({
+          fragmentShader: VALID_FRAGMENT,
+          width: 100,
+          height: 100,
+          frameBudgetMs: 16.5,
+        }),
+      ).toThrow();
+    });
+  });
 });

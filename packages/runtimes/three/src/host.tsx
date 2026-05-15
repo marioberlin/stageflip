@@ -42,6 +42,17 @@ export interface ThreeClipHostProps<P> {
    * `ThreeSceneClip` factory always does.
    */
   prng?: SetupPRNG;
+  /**
+   * T-403 R-7 — handle-observation seam. When supplied, the host invokes
+   * this callback after a successful `setup()` returns the
+   * `ThreeClipHandle`. The interactive-tier `ThreeSceneClip` factory uses
+   * this to capture the handle so it can poll `getMemoryEstimateMb()` for
+   * DoS-protection enforcement. The §3 `defineThreeClip` host wiring
+   * never sets this; the field is optional and back-compatible. The
+   * callback receives `null` on dispose (effect cleanup) so consumers
+   * can drop their reference.
+   */
+  onHandleReady?: (handle: ThreeClipHandle<P> | null) => void;
 }
 
 export function ThreeClipHost<P>({
@@ -53,6 +64,7 @@ export function ThreeClipHost<P>({
   fps,
   clipDurationInFrames,
   prng,
+  onHandleReady,
 }: ThreeClipHostProps<P>): ReactElement {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const handleRef = useRef<ThreeClipHandle<P> | null>(null);
@@ -62,6 +74,13 @@ export function ThreeClipHost<P>({
   // setup on every prop change and tear down the scene.
   const propsRef = useRef<P>(props);
   propsRef.current = props;
+
+  // T-403 R-7 — capture the latest `onHandleReady` in a ref so the setup
+  // effect can fire it once without listing it as a dep (which would
+  // re-run setup whenever the factory's closure identity changes). The
+  // factory passes a stable callback in practice; the ref is defensive.
+  const onHandleReadyRef = useRef<typeof onHandleReady>(onHandleReady);
+  onHandleReadyRef.current = onHandleReady;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -85,9 +104,11 @@ export function ThreeClipHost<P>({
       return;
     }
     handleRef.current = handle;
+    onHandleReadyRef.current?.(handle);
     return () => {
       handle?.dispose?.();
       handleRef.current = null;
+      onHandleReadyRef.current?.(null);
     };
     // Setup deps deliberately exclude `props`: prop updates flow through
     // the render-effect below, NOT through a full setup teardown. See file
