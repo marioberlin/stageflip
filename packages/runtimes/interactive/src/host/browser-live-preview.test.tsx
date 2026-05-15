@@ -21,7 +21,9 @@ import {
   BrowserLivePreview,
   type BrowserLivePreviewLifecycleEvent,
   type BrowserLivePreviewTenantPolicy,
+  __resetLivePreviewCredentialAuditForTests,
   browserLivePreviewGatingDecision,
+  setLivePreviewCredentialAuditSink,
 } from './browser-live-preview.js';
 
 afterEach(() => {
@@ -592,6 +594,75 @@ describe('BrowserLivePreview', () => {
     expect(browserLivePreviewGatingDecision('disabled')).toBe('static-fallback-only');
     expect(browserLivePreviewGatingDecision('preview')).toBe('live-mount');
     expect(browserLivePreviewGatingDecision('ga')).toBe('live-mount');
+  });
+
+  // T-403 R-16 — defensive observability: live-preview audits localStorage
+  // for credential-shaped keys at first mount and reports via the
+  // configurable sink. The audit is a one-time-per-page-load sweep.
+  it('R-16 — fires the audit sink when a credential-shaped localStorage key is present', async () => {
+    __resetLivePreviewCredentialAuditForTests();
+    const sink = vi.fn();
+    const previousSink = setLivePreviewCredentialAuditSink(sink);
+    try {
+      // happy-dom provides localStorage; seed two suspicious + one benign key.
+      globalThis.localStorage.clear();
+      globalThis.localStorage.setItem('app:user-name', 'mario');
+      globalThis.localStorage.setItem('tenant:apiKey:acme', 'abc');
+      globalThis.localStorage.setItem('session:bearer-token', 'xyz');
+
+      const registry = new InteractiveClipRegistry();
+      registry.register('shader', makeStubFactory());
+      render(
+        <BrowserLivePreview
+          family="shader"
+          props={{}}
+          staticFallback={fallback()}
+          tenantPolicy={makePolicy('preview')}
+          registry={registry}
+          permissionShim={makeGrantingShim()}
+        />,
+      );
+      await flushMicrotasks();
+
+      expect(sink).toHaveBeenCalledTimes(1);
+      const matched = (sink.mock.calls[0]?.[0] ?? []) as ReadonlyArray<string>;
+      expect(matched).toEqual(
+        expect.arrayContaining(['tenant:apiKey:acme', 'session:bearer-token']),
+      );
+      expect(matched).not.toContain('app:user-name');
+    } finally {
+      setLivePreviewCredentialAuditSink(previousSink);
+      globalThis.localStorage.clear();
+    }
+  });
+
+  it('R-16 — audit does not fire when no credential-shaped keys are present', async () => {
+    __resetLivePreviewCredentialAuditForTests();
+    const sink = vi.fn();
+    const previousSink = setLivePreviewCredentialAuditSink(sink);
+    try {
+      globalThis.localStorage.clear();
+      globalThis.localStorage.setItem('app:theme', 'dark');
+
+      const registry = new InteractiveClipRegistry();
+      registry.register('shader', makeStubFactory());
+      render(
+        <BrowserLivePreview
+          family="shader"
+          props={{}}
+          staticFallback={fallback()}
+          tenantPolicy={makePolicy('preview')}
+          registry={registry}
+          permissionShim={makeGrantingShim()}
+        />,
+      );
+      await flushMicrotasks();
+
+      expect(sink).not.toHaveBeenCalled();
+    } finally {
+      setLivePreviewCredentialAuditSink(previousSink);
+      globalThis.localStorage.clear();
+    }
   });
 
   it('does not use Date.now, setTimeout, Math.random, or requestAnimationFrame in source', () => {

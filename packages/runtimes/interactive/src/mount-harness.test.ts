@@ -548,6 +548,42 @@ describe('InteractiveMountHarness', () => {
     expect(source.includes('clip.family !== "voice"')).toBe(false);
   });
 
+  // T-403 R-18 — the permissions array on the MountContext handed to the
+  // factory is frozen, so a downstream variant-permutation that mutates
+  // it throws (TypeError under strict mode; ESM modules are strict by
+  // default).
+  it('R-18 — MountContext.permissions is frozen before the factory runs', async () => {
+    const registry = new InteractiveClipRegistry();
+    let capturedPermissions: ReadonlyArray<unknown> | undefined;
+    const factory: ClipFactory = async (ctx) => {
+      capturedPermissions = ctx.permissions;
+      return {
+        updateProps: () => undefined,
+        dispose: () => undefined,
+      };
+    };
+    registry.register('shader', factory);
+    const permissionShim = new PermissionShim({
+      browser: {
+        getUserMedia: async () =>
+          ({
+            getTracks: () => [{ stop: vi.fn() } as unknown as MediaStreamTrack],
+          }) as unknown as MediaStream,
+      },
+    });
+    const harness = new InteractiveMountHarness({ registry, permissionShim });
+    await harness.mount(
+      makeInteractiveClip({ permissions: ['mic'] }),
+      document.createElement('div'),
+      new AbortController().signal,
+    );
+    expect(capturedPermissions).toBeDefined();
+    expect(Object.isFrozen(capturedPermissions)).toBe(true);
+    expect(() => {
+      (capturedPermissions as unknown as Array<unknown>).push('extra');
+    }).toThrow(TypeError);
+  });
+
   it('static-fallback path: pre-aborted signal disposes immediately', async () => {
     const registry = new InteractiveClipRegistry();
     registry.register('shader', makeStubFactory());

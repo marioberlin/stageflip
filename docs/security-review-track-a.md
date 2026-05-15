@@ -22,7 +22,7 @@ reviewer: codex (AI; Codex/Claude operating as security reviewer per PO directio
 reviewerCaveats:
   - Codex is an AI; review covers source-code-grep + spec-vs-code coherence, NOT runtime penetration testing
   - On-device display player target DROPPED 2026-05-15 per PO (deployment target descoped); re-review caveat moot
-  - 9 YELLOW residual risks (§7.3) acknowledged not-blocking but tracked for post-GA hardening sprint
+  - 3 remaining YELLOW residual risks (R-6 / R-7 / R-13; §7.3) acknowledged not-blocking but tracked for post-GA hardening sprint; 6 of the original 9 closed in YELLOW batch 1 defensive PR (2026-05-15) — see §5 + §7.3 closure notes
 ---
 
 # Track A — Pre-preview security review
@@ -424,17 +424,17 @@ own judgments.
 | R-5 | All network-using clips (`ai-chat`, `live-data`, `web-embed`, `ai-generative`) | `'network'` permission is a no-op grant (`permission-shim.ts:244-246`); no per-tenant destination allowlist. | **MITIGATED (R-5 closure PR)** — `permission-shim.ts` now consults `evaluateNetworkGate` from `packages/runtimes/interactive/src/network-allowlist.ts` on every `'network'` request. Global allowlist (deny-all default); hosts seed via `extendNetworkAllowedHosts(patterns)`. PO decision (2026-05-14): global scope (not per-tenant); warn-then-enforce rollout with `ENFORCEMENT_STARTS_AT = 2026-06-13` (30-day grace). Each network request records the decision on `PermissionShim.lastNetworkGateDecision` for telemetry. Per-mount destination plumbing + clip-level fetch wrapper enforcement remain residual follow-up scope. |
 | R-6 | ShaderClip | No GPU frame-budget kill-switch (ADR-005 §D7 lists this as in-scope). | **YELLOW** — DoS scope only; not data-exfiltration. |
 | R-7 | ThreeSceneClip | No per-clip memory ceiling. | **YELLOW** — DoS scope. |
-| R-8 | VoiceClip | Provider transcript adapters do not yet ship a `SecurityManifest` (manifest pattern is Phase 14). | **YELLOW** — manifest required for GA. |
-| R-9 | AiChatClip | Same as R-8 for LLM provider adapters. | **YELLOW** — manifest required for GA. |
-| R-10 | AiGenerativeClip | Same as R-8 for generation provider adapters. PLUS: SVG `<script>` execution risk if host renders blob via `<object>` / inline DOM. | **YELLOW**+ — verify render path is `<img>`-only. |
+| R-8 | VoiceClip | Provider transcript adapters do not yet ship a `SecurityManifest` (manifest pattern is Phase 14). | **MITIGATED** — superseded by R-17 closure (PR #639). The voice provider seam now ships `packages/runtimes/interactive/src/clips/voice/security.json` and is covered by `check-data-flow-security`. |
+| R-9 | AiChatClip | Same as R-8 for LLM provider adapters. | **MITIGATED** — superseded by R-17 closure (PR #639). The ai-chat provider seam now ships `packages/runtimes/interactive/src/clips/ai-chat/security.json` and is covered by `check-data-flow-security`. |
+| R-10 | AiGenerativeClip | Same as R-8 for generation provider adapters. PLUS: SVG `<script>` execution risk if host renders blob via `<object>` / inline DOM. | **MITIGATED** — superseded by R-17 closure (PR #639). The ai-generative provider seam now ships `packages/runtimes/interactive/src/clips/ai-generative/security.json` and is covered by `check-data-flow-security`. SVG `<script>` render-path concern remains tracked in clip-family render-path docs (render is `<img>`-only). |
 | R-11 | On-device display player | **DROPPED 2026-05-15 per PO** — deployment target descoped from product (ADR-005 §D4 amended). T-399/T-400/T-401 scaffolds remain in-tree as deprecated; no consumer planned. Code-signing / auto-update / kiosk-crash recovery / local-data exfiltration concerns all moot. | **CLOSED (scope drop)** — no longer a security risk because the surface no longer ships. |
-| R-12 | Permission envelope | Per-(session, family) grant cache means a tenant-A clip grant could leak to tenant-B in the SAME browser session if the host re-uses the `PermissionShim` instance across tenant switches. | **YELLOW** — host-shell responsibility; verify scoping in editor + live-preview. |
+| R-12 | Permission envelope | Per-(session, family) grant cache means a tenant-A clip grant could leak to tenant-B in the SAME browser session if the host re-uses the `PermissionShim` instance across tenant switches. | **MITIGATED (YELLOW batch 1, 2026-05-15)** — `PermissionShim.mount()` now accepts an optional `tenantId` (and falls through to `tenantFlagGate.tenantId` when present); the per-(session, family) grant-cache key is prefixed with `${tenantId}:` whenever a tenant scope is supplied so tenant-A grants cannot serve tenant-B mounts on the same shim instance. Defensive escape hatch `PermissionShim.rebindTenant(tenantId?)` clears scoped entries (or all entries) at host-detected tenant-switch time. Pre-T-403 callers that omit `tenantId` continue to share the un-prefixed key namespace for back-compat with T-306 / T-385 / T-411c consumers. See `packages/runtimes/interactive/src/permission-shim.ts`. |
 | R-13 | Telemetry | Tenant id is not yet attached to every clip-level event (e.g., shader-clip mount-failure). T-411c plumbs this. | **YELLOW** — observability gap, not exploitable. |
-| R-14 | Renderer-cdp | Vendored `@hyperframes/engine` integrity test scope is checksum-only; not a SCA scan. | **YELLOW** — supply-chain audit cadence required. |
-| R-15 | Renderer-cdp | Page console.log of clip code is exempt from CLAUDE.md §3 (interactive tier exemption) — a careless clip could log credentials to renderer logs. | **YELLOW** — verify prod log retention / redaction policy. |
-| R-16 | Live-preview | Same-origin host page; no iframe isolation between clip and editor. By design. | **YELLOW** — verify editor session credentials are not reachable from clip code. |
+| R-14 | Renderer-cdp | Vendored `@hyperframes/engine` integrity test scope is checksum-only; not a SCA scan. | **MITIGATED (YELLOW batch 1, 2026-05-15)** — `.github/dependabot.yml` extended with explicit security-update grouping (`groups.security-updates.applies-to: security-updates`) and an explicit second `npm` ecosystem block targeting the vendored fork at `packages/renderer-cdp/vendor/engine`. GitHub's built-in security alert system + Dependabot's weekly cadence are the SCA equivalent for the BUSL-1.1 / Apache-2.0 dependency graph; no external SCA tool required. |
+| R-15 | Renderer-cdp | Page console.log of clip code is exempt from CLAUDE.md §3 (interactive tier exemption) — a careless clip could log credentials to renderer logs. | **MITIGATED (YELLOW batch 1, 2026-05-15)** — `installSensitiveLogRedactor(console)` ships in `@stageflip/runtimes-interactive` and wraps `console.log/info/warn/error/debug` with a credential-pattern scanner that replaces matched values with `[REDACTED]`. Patterns: `Bearer <token>` (RFC 6750), JWTs (`eyJ*.*.*` shape with length floors), API-key prefix family (`sk_*`, `pk_*`, `api_*`, `key_*`, `tok_*`, `secret_*` with ≥16 char trailing token). Recurses into plain objects + arrays; skips Errors / DOM nodes / class instances; cycle-safe via WeakSet. Idempotent install/uninstall via `WRAPPER_TAG`. Hosts call at boot. See `packages/runtimes/interactive/src/sensitive-log-redactor.ts`. |
+| R-16 | Live-preview | Same-origin host page; no iframe isolation between clip and editor. By design. | **MITIGATED (YELLOW batch 1, 2026-05-15)** — same-origin posture is intentional and documented in `docs/security-architecture/live-preview-isolation.md` (threat model + mitigations: tenant API keys never persisted to localStorage; provider seams hold credentials in closure scope; service worker scope excludes `/preview/*`; iframe sandbox token guard for WebEmbed). `BrowserLivePreview` now runs a one-time per-page-load defensive observability sweep that scans `localStorage` keys for credential-shaped tokens (`apikey`, `api_key`, `api-key`, `secret`, `token`, `bearer`, `password`, `credential`) and reports matches via the configurable `setLivePreviewCredentialAuditSink(sink)` hook (default sink: `console.warn`). Recommended follow-ups (CSP for `/preview/*`; same-origin-isolation lint check; iframe-isolated preview re-architecture) tracked but not blocking. |
 | R-17 | Cross-cutting | No SecurityManifest pattern (Phase 14 T-446) is retrofitted to Phase 13 frontier clips. Phase 14 manifest validates `pnpm check-data-flow-security` only for Phase 14 adapters. | **MITIGATED (R-17)** — closed via sidecar SecurityManifest backfill across the 5 Phase 13 frontier-clip provider seams: `packages/runtimes/interactive/src/clips/{voice,ai-chat,live-data,web-embed,ai-generative}/security.json`. `scripts/check-data-flow-security.ts` extended to discover + validate frontier-clip seams alongside Phase 14 adapters via `FRONTIER_CLIP_FAMILIES_REQUIRING_MANIFEST`. PO decision logged here 2026-05-15. |
-| R-18 | Variant-generation matrix (T-386) | No explicit immutability assertion that `liveMount.permissions` is preserved across permutation. | **GREEN** — verify in T-386 ACs. |
+| R-18 | Variant-generation matrix (T-386) | No explicit immutability assertion that `liveMount.permissions` is preserved across permutation. | **MITIGATED (YELLOW batch 1, 2026-05-15)** — `InteractiveMountHarness.mount()` now `Object.freeze`s `MountContext.permissions` before invoking the factory. A downstream variant-permutation that mutates the array throws `TypeError` under strict-mode (ESM modules are strict by default). See `packages/runtimes/interactive/src/mount-harness.ts`. |
 
 ## 6. Per-component sign-off matrix
 
@@ -513,14 +513,32 @@ security-team review").
 
 ### 7.3 Carried forward as `YELLOW`
 
-- R-6 (Shader GPU frame-budget kill-switch), R-7 (Three-scene memory
-  ceiling), R-8 / R-9 / R-10 (SecurityManifest for voice / ai-chat /
-  ai-generative adapters — subset of R-17), R-12 (per-(session,
-  family) grant cache scoping vs. tenant switching), R-13 (tenant id
-  on every clip-level event), R-14 (vendored `@hyperframes/engine` SCA
-  scan), R-15 (interactive-tier console.log exemption), R-16
-  (live-preview same-origin isolation), R-18 (T-386 permission-array
-  immutability assertion). Security team triages timing.
+**Remaining (3):**
+
+- R-6 (Shader GPU frame-budget kill-switch) — DoS scope only; not
+  data-exfiltration. Tracked for batch 2.
+- R-7 (Three-scene memory ceiling) — DoS scope. Tracked for batch 2.
+- R-13 (tenant id on every clip-level event) — observability gap, not
+  exploitable. T-411c plumbs the cache; the per-event attribute
+  threading is the residual scope. Tracked for batch 3.
+
+**Closed in YELLOW batch 1 defensive PR (2026-05-15):**
+
+- R-8 / R-9 / R-10 — superseded by R-17 closure (PR #639); voice /
+  ai-chat / ai-generative provider seams now covered by sidecar
+  `security.json` + `check-data-flow-security`.
+- R-12 — `PermissionShim` now scopes the per-(session, family) grant
+  cache by `tenantId` when supplied; `rebindTenant()` escape hatch.
+- R-14 — `.github/dependabot.yml` extended with security-update
+  grouping + explicit second `npm` ecosystem block for the vendored
+  `@hyperframes/engine` workspace.
+- R-15 — `installSensitiveLogRedactor(console)` ships in
+  `@stageflip/runtimes-interactive`; hosts wrap console at boot.
+- R-16 — `docs/security-architecture/live-preview-isolation.md` audit
+  doc; `BrowserLivePreview` runs a one-time defensive localStorage
+  credential-key scan via `setLivePreviewCredentialAuditSink(sink)`.
+- R-18 — `InteractiveMountHarness` now `Object.freeze`s
+  `MountContext.permissions` before factory invocation.
 
 ## 8. T-405 sign-off block — SIGNED 2026-05-14
 
@@ -538,7 +556,7 @@ I have reviewed:
    - R-5 network permission allowlist + 30-day warn-then-enforce — closed (PR #635)
    - R-11 On-device player — **DROPPED 2026-05-15 per PO** (deployment target descoped from product; ADR-005 §D4 amended; scaffolds remain deprecated in-tree; no consumer planned)
    - R-17 SecurityManifest gap on Phase 13 provider seams — deferred to post-GA week 2-3 hardening sprint per PO 2026-05-14
-3. **The 9 YELLOW residual risks** in §7.3 — acknowledged, none blocking GA, all tracked for post-GA triage by the next security pass.
+3. **The 9 YELLOW residual risks** in §7.3 — acknowledged, none blocking GA, all tracked for post-GA triage by the next security pass. **Update 2026-05-15:** YELLOW batch 1 defensive PR closed 6 of 9 (R-8 / R-9 / R-10 via R-17 supersede; R-12 / R-14 / R-15 / R-16 / R-18 directly). 3 remain (R-6 / R-7 / R-13) for batch 2 + 3.
 
 ### What this sign-off authorizes
 
@@ -558,7 +576,7 @@ I have reviewed:
    - STRIDE-by-component analysis
    - Residual-risk register triage
    - But NOT: live penetration testing, real-world adversarial input crafting, supply-chain dependency-tree audit beyond `pnpm check-licenses`, or red-team exercises.
-2. **The 9 YELLOW residual risks are NOT a clean bill of health** — they are deferred, not absolved. A post-GA hardening sprint MUST triage them in launch week 2-3 per PO 2026-05-14.
+2. **The 9 YELLOW residual risks are NOT a clean bill of health** — they are deferred, not absolved. A post-GA hardening sprint MUST triage them in launch week 2-3 per PO 2026-05-14. **2026-05-15 update:** YELLOW batch 1 defensive PR closed 6 of 9 ahead of the post-GA window; 3 remain (R-6 / R-7 / R-13) for batches 2 + 3.
 3. **On-device player binary** is the highest-blast-radius outstanding item per ADR-005 L141. The §6 row is conditionally signed because the scaffolds passed review; the binary itself has not been built and CANNOT ship under this sign-off.
 
 ### Sign-off transition

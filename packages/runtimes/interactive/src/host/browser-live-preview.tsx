@@ -224,6 +224,18 @@ export function BrowserLivePreview(props: BrowserLivePreviewProps): React.ReactE
   const featureDecision =
     TENANT_FLAG_GATING_MATRIX[tenantPolicy.featuresInteractive]['browser-live-preview'];
 
+  // T-403 R-16 — one-time same-origin isolation observability check.
+  // Browser live-preview shares the editor's origin BY DESIGN (see
+  // docs/security-architecture/live-preview-isolation.md). The check
+  // walks the editor's localStorage keys at mount time and emits a
+  // single telemetry warning if any credential-shaped key is present
+  // — a defensive observability hook, not a blocking gate. Process-
+  // module-level guard means the scan runs at most once per page
+  // load even if the host mounts dozens of live-previews.
+  React.useEffect(() => {
+    auditLocalStorageForCredentialKeys();
+  }, []);
+
   // Mount effect: feature flag pass → factory lookup → harness mount.
   // The effect re-runs when `family` changes (forcing a fresh mount).
   // Tenant-policy reference changes that DON'T affect the feature value
@@ -362,3 +374,107 @@ export function browserLivePreviewGatingDecision(
 // (no `featuresInteractive`). Callers must compose:
 //   `{ ...PERMISSIVE_TENANT_POLICY, featuresInteractive: 'preview' }`
 export { PERMISSIVE_TENANT_POLICY };
+
+/**
+ * T-403 R-16 — credential-shaped localStorage key patterns. Matched
+ * case-insensitively. The list is intentionally narrow (substring
+ * tokens, not regex) so the scanner stays cheap and the false-positive
+ * surface is auditable. Anything that contains one of these tokens is
+ * suspicious enough to warrant a one-time warning.
+ */
+const CREDENTIAL_KEY_TOKENS: ReadonlyArray<string> = [
+  'apikey',
+  'api_key',
+  'api-key',
+  'secret',
+  'token',
+  'bearer',
+  'password',
+  'credential',
+];
+
+/**
+ * Module-level latch — the audit runs at most once per page load
+ * regardless of how many `BrowserLivePreview` mounts happen. Mutating
+ * a module-scope `let` is acceptable here because `runtimes/interactive`
+ * is exempt from the determinism perimeter per ADR-003 §D5.
+ */
+let credentialAuditDone = false;
+
+/**
+ * Warning sink emitted by the credential-key audit. The default sink
+ * prints via `console.warn`; tests / production hosts can swap in a
+ * telemetry pipeline via `setLivePreviewCredentialAuditSink`.
+ */
+type CredentialAuditSink = (matchedKeys: ReadonlyArray<string>) => void;
+
+let credentialAuditSink: CredentialAuditSink = (matchedKeys) => {
+  // Default sink — host's console pipeline. Production hosts SHOULD
+  // override via `setLivePreviewCredentialAuditSink` to route into
+  // their telemetry stream rather than relying on console capture.
+  if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+    console.warn(
+      '[stageflip:browser-live-preview] credential-shaped localStorage keys detected; ' +
+        'live-preview shares the editor origin so clip code can read these. ' +
+        'See docs/security-architecture/live-preview-isolation.md.',
+      { matchedKeys },
+    );
+  }
+};
+
+/**
+ * Override the audit sink (telemetry routing). Returns the previous
+ * sink so consumers can restore on test teardown. Hosts that wire a
+ * proper OTel pipeline call this once at boot.
+ */
+export function setLivePreviewCredentialAuditSink(sink: CredentialAuditSink): CredentialAuditSink {
+  const previous = credentialAuditSink;
+  credentialAuditSink = sink;
+  return previous;
+}
+
+/**
+ * Test-only — reset the once-per-page latch so a test can re-run the
+ * audit. Safe to call from production code but not useful there.
+ */
+export function __resetLivePreviewCredentialAuditForTests(): void {
+  credentialAuditDone = false;
+}
+
+function auditLocalStorageForCredentialKeys(): void {
+  if (credentialAuditDone) {
+    return;
+  }
+  credentialAuditDone = true;
+  // SSR / non-browser bundle — bail.
+  if (typeof globalThis === 'undefined') {
+    return;
+  }
+  const ls = (globalThis as { localStorage?: Storage }).localStorage;
+  if (ls === undefined) {
+    return;
+  }
+  let matched: string[] = [];
+  try {
+    for (let i = 0; i < ls.length; i += 1) {
+      const key = ls.key(i);
+      if (key === null) {
+        continue;
+      }
+      const lower = key.toLowerCase();
+      for (const token of CREDENTIAL_KEY_TOKENS) {
+        if (lower.includes(token)) {
+          matched.push(key);
+          break;
+        }
+      }
+    }
+  } catch {
+    // localStorage access can throw under privacy modes / disabled
+    // storage; silently bail rather than crash the host.
+    matched = [];
+  }
+  if (matched.length > 0) {
+    credentialAuditSink(matched);
+  }
+}

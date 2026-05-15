@@ -99,12 +99,21 @@ export {
   type BrowserLivePreviewRefusalReason,
   type BrowserLivePreviewTenantPolicy,
   browserLivePreviewGatingDecision,
+  // T-403 R-16 — host-replaceable sink for the credential-shaped
+  // localStorage key audit (defensive observability; not blocking).
+  setLivePreviewCredentialAuditSink,
 } from './host/browser-live-preview.js';
 export {
   InteractiveClipFamilyAlreadyRegisteredError,
   InteractiveClipRegistry,
   interactiveClipRegistry,
 } from './registry.js';
+// T-403 R-15 — opt-in console.log credential redactor (host installs at boot).
+export {
+  type ConsoleLike,
+  installSensitiveLogRedactor,
+  uninstallSensitiveLogRedactor,
+} from './sensitive-log-redactor.js';
 export {
   StaticFallbackGeneratorAlreadyRegisteredError,
   type StaticFallbackGenerator,

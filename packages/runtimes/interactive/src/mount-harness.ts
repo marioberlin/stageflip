@@ -206,10 +206,19 @@ export class InteractiveMountHarness {
     }
 
     // Step 3: build context + invoke factory.
+    // T-403 R-18 — freeze the permission envelope before handing it
+    // to the factory so a downstream variant-permutation that
+    // accidentally mutates the array throws (frozen-target write
+    // throws under TS strict-mode at runtime in non-test bundles too;
+    // the assertion makes the violation loud rather than silent).
+    // Calling Object.freeze on an already-frozen value is a no-op.
+    const frozenPermissions = Object.isFrozen(permissionResult.permissions)
+      ? permissionResult.permissions
+      : Object.freeze([...permissionResult.permissions]);
     const context: MountContext = {
       clip,
       root,
-      permissions: permissionResult.permissions,
+      permissions: frozenPermissions,
       tenantPolicy: this.tenantPolicy,
       emitTelemetry: this.emitTelemetry,
       signal,
