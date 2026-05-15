@@ -24,7 +24,7 @@
     "hono": "^4.6.0",
     "linkedom": "^0.18.12",
     "puppeteer": "^24.0.0",
-    "puppeteer-core": "^24.39.1"
+    "puppeteer-core": "^25.0.2"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",
