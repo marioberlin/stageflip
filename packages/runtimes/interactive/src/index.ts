@@ -21,6 +21,7 @@ export {
   type MountContext,
   type MountHandle,
   PERMISSIVE_TENANT_POLICY,
+  tenantScopedEmitter,
   type TenantPolicy,
 } from './contract.js';
 export {

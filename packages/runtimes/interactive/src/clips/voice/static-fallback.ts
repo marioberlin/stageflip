@@ -194,6 +194,7 @@ export const voiceStaticFallbackGenerator: StaticFallbackGenerator = ({
   clip,
   reason,
   emitTelemetry,
+  tenantId,
 }) => {
   const props = (clip.liveMount.props ?? {}) as { posterText?: unknown };
   const posterText = typeof props.posterText === 'string' ? props.posterText : undefined;
@@ -209,6 +210,8 @@ export const voiceStaticFallbackGenerator: StaticFallbackGenerator = ({
     height: clip.transform.height,
     // Privacy posture (T-388 AC #14): integer length, never the body.
     posterTextLength: posterText !== undefined ? posterText.length : 0,
+    // T-403 R-13 — tenant scope when supplied by the harness.
+    ...(tenantId !== undefined ? { tenantId } : {}),
   });
   return generated;
 };

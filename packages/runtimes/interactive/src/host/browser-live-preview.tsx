@@ -93,6 +93,15 @@ export interface BrowserLivePreviewProps {
    */
   readonly permissions?: ReadonlyArray<Permission>;
   /**
+   * T-403 R-13 — tenant identifier. When supplied, propagates into the
+   * underlying `InteractiveMountHarness.mount()` so every clip-level
+   * telemetry event the live-mount factory emits carries `tenantId`.
+   * Optional for back-compat with pre-T-403-R-13 host shells; live-
+   * preview surfaces that omit it continue to work but emit telemetry
+   * without per-tenant scope.
+   */
+  readonly tenantId?: string;
+  /**
    * Test-only override for the registry. Production code uses the
    * module-level `interactiveClipRegistry` singleton.
    */
@@ -171,6 +180,7 @@ export function BrowserLivePreview(props: BrowserLivePreviewProps): React.ReactE
     tenantPolicy,
     onLifecycle,
     permissions,
+    tenantId,
     registry,
     permissionShim,
   } = props;
@@ -216,6 +226,10 @@ export function BrowserLivePreview(props: BrowserLivePreviewProps): React.ReactE
   permissionShimRef.current = permissionShim;
   const permissionsRef = React.useRef(permissions);
   permissionsRef.current = permissions;
+  // T-403 R-13 — same ref-mirroring pattern as the other props so a
+  // tenantId reference change does NOT trigger an unmount/remount cycle.
+  const tenantIdRef = React.useRef(tenantId);
+  tenantIdRef.current = tenantId;
 
   // Synchronous pre-check — feature-flag gate. The D-T411-4 matrix
   // decides; on `'static-fallback-only'` we short-circuit BEFORE the
@@ -294,8 +308,16 @@ export function BrowserLivePreview(props: BrowserLivePreviewProps): React.ReactE
       permissionsRef.current ?? [],
     );
 
+    // T-403 R-13 — propagate tenantId into the harness mount call so
+    // every clip-level emitTelemetry payload carries it. Build the
+    // options object with tenantId only when present so we preserve the
+    // exactOptionalPropertyTypes posture in the harness's
+    // InteractiveMountOptions type.
+    const currentTenantId = tenantIdRef.current;
+    const mountOptions = currentTenantId !== undefined ? { tenantId: currentTenantId } : {};
+
     harness
-      .mount(clip, container, abortController.signal)
+      .mount(clip, container, abortController.signal, mountOptions)
       .then((handle) => {
         if (cancelled) {
           handle.dispose();

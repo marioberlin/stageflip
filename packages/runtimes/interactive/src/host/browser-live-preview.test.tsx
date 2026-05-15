@@ -665,6 +665,67 @@ describe('BrowserLivePreview', () => {
     }
   });
 
+  // T-403 R-13 — tenantId prop reaches the harness and surfaces on the
+  // MountContext handed to the registered factory.
+  it('R-13 — tenantId prop reaches the factory via MountContext.tenantId', async () => {
+    const registry = new InteractiveClipRegistry();
+    let observedTenantId: string | undefined;
+    const factory: ClipFactory = async (ctx) => {
+      observedTenantId = ctx.tenantId;
+      const sentinel = ctx.root.ownerDocument.createElement('div');
+      ctx.root.appendChild(sentinel);
+      return {
+        updateProps: () => undefined,
+        dispose: () => undefined,
+      };
+    };
+    registry.register('shader', factory);
+
+    render(
+      <BrowserLivePreview
+        family="shader"
+        props={{}}
+        staticFallback={fallback()}
+        tenantPolicy={makePolicy('preview')}
+        registry={registry}
+        permissionShim={makeGrantingShim()}
+        tenantId="tenant-live-preview"
+      />,
+    );
+
+    await flushMicrotasks();
+
+    expect(observedTenantId).toBe('tenant-live-preview');
+  });
+
+  it('R-13 — omitted tenantId leaves MountContext.tenantId undefined (back-compat)', async () => {
+    const registry = new InteractiveClipRegistry();
+    let observedTenantId: string | undefined = 'sentinel-not-overwritten';
+    const factory: ClipFactory = async (ctx) => {
+      observedTenantId = ctx.tenantId;
+      return {
+        updateProps: () => undefined,
+        dispose: () => undefined,
+      };
+    };
+    registry.register('shader', factory);
+
+    render(
+      <BrowserLivePreview
+        family="shader"
+        props={{}}
+        staticFallback={fallback()}
+        tenantPolicy={makePolicy('preview')}
+        registry={registry}
+        permissionShim={makeGrantingShim()}
+      />,
+    );
+
+    await flushMicrotasks();
+
+    expect(observedTenantId).toBeUndefined();
+  });
+
   it('does not use Date.now, setTimeout, Math.random, or requestAnimationFrame in source', () => {
     const sourcePath = resolve(__dirname, 'browser-live-preview.tsx');
     const source = readFileSync(sourcePath, 'utf-8');

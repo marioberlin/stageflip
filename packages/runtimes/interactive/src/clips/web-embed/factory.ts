@@ -29,6 +29,7 @@
 import { type WebEmbedClipProps, webEmbedClipPropsSchema } from '@stageflip/schema';
 
 import type { ClipFactory, MountContext } from '../../contract.js';
+import { tenantScopedEmitter } from '../../contract.js';
 import type {
   WebEmbedClipMountHandle,
   WebEmbedMessageDropReason,
@@ -76,11 +77,14 @@ async function mountWebEmbedClip(
   options: WebEmbedClipFactoryOptions,
 ): Promise<WebEmbedClipMountHandle> {
   const family = ctx.clip.family;
+  // T-403 R-13 — tenant-scoped emitter; pass-through when ctx.tenantId
+  // is undefined.
+  const emit = tenantScopedEmitter(ctx);
 
   // 1. Parse + narrow `liveMount.props`.
   const propsResult = webEmbedClipPropsSchema.safeParse(ctx.clip.liveMount.props);
   if (!propsResult.success) {
-    ctx.emitTelemetry('web-embed-clip.mount.failure', {
+    emit('web-embed-clip.mount.failure', {
       family,
       reason: 'invalid-props' satisfies WebEmbedMountFailureReason,
       issues: propsResult.error.issues.map((i) => ({
@@ -102,7 +106,7 @@ async function mountWebEmbedClip(
   //    ARE included; they are configuration, not user content. The
   //    `hasAllowedOrigins` boolean lets observability distinguish
   //    "wide-open" from "filtered" without leaking the allowlist.
-  ctx.emitTelemetry('web-embed-clip.mount.start', {
+  emit('web-embed-clip.mount.start', {
     family,
     url: props.url,
     sandbox: props.sandbox.join(' '),
@@ -128,7 +132,7 @@ async function mountWebEmbedClip(
   const handlers = new Set<WebEmbedMessageHandler>();
 
   const dispatchDropped = (origin: string, reason: WebEmbedMessageDropReason): void => {
-    ctx.emitTelemetry('web-embed-clip.message.dropped', {
+    emit('web-embed-clip.message.dropped', {
       family,
       origin,
       reason,
@@ -159,7 +163,7 @@ async function mountWebEmbedClip(
     // event.data may be a Blob / ArrayBuffer / circular object that
     // JSON.stringify rejects (D-T393-8 escalation trigger).
     const byteLength = safeByteLength(event.data);
-    ctx.emitTelemetry('web-embed-clip.message.received', {
+    emit('web-embed-clip.message.received', {
       family,
       origin: event.origin,
       byteLength,
@@ -185,7 +189,7 @@ async function mountWebEmbedClip(
   };
 
   // Telemetry — mount.success.
-  ctx.emitTelemetry('web-embed-clip.mount.success', { family });
+  emit('web-embed-clip.mount.success', { family });
 
   // ----- handle methods -----
 
@@ -195,13 +199,13 @@ async function mountWebEmbedClip(
     // assignment as a navigation reload; we always assign the
     // configured URL to make stale iframe.src mutations recoverable.)
     state.iframe.setAttribute('src', props.url);
-    ctx.emitTelemetry('web-embed-clip.reload', { family });
+    emit('web-embed-clip.reload', { family });
   };
 
   const postMessage = (message: unknown): void => {
     const cw = state.iframe.contentWindow;
     if (state.disposed || cw === null) {
-      ctx.emitTelemetry('web-embed-clip.message.dropped', {
+      emit('web-embed-clip.message.dropped', {
         family,
         origin: state.targetOrigin,
         reason: state.disposed ? 'post-dispose' : 'pre-mount',
@@ -210,7 +214,7 @@ async function mountWebEmbedClip(
     }
     const byteLength = safeByteLength(message);
     cw.postMessage(message, state.targetOrigin);
-    ctx.emitTelemetry('web-embed-clip.message.outbound', {
+    emit('web-embed-clip.message.outbound', {
       family,
       targetOrigin: state.targetOrigin,
       byteLength,
@@ -240,7 +244,7 @@ async function mountWebEmbedClip(
     // 4. Clear subscriber set (D-T393-7 step 4).
     state.messageHandlers.clear();
     // 5. Final telemetry.
-    ctx.emitTelemetry('web-embed-clip.dispose', { family });
+    emit('web-embed-clip.dispose', { family });
   };
 
   // Wire signal.abort → dispose at the factory layer (the harness

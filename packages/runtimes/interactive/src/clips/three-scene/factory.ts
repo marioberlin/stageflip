@@ -28,6 +28,7 @@ import { flushSync } from 'react-dom';
 import { type Root, createRoot } from 'react-dom/client';
 
 import type { ClipFactory, MountContext, MountHandle } from '../../contract.js';
+import { tenantScopedEmitter } from '../../contract.js';
 import { MissingFrameSourceError } from '../../frame-source.js';
 import {
   ASSET_GEN_SETUP_PROPS_KEY,
@@ -128,6 +129,9 @@ async function mountThreeScene(
   options: ThreeSceneClipFactoryOptions,
 ): Promise<MountHandle> {
   const family = ctx.clip.family;
+  // T-403 R-13 — tenant-scoped emitter; pass-through when ctx.tenantId
+  // is undefined (back-compat with pre-R-13 fixtures).
+  const emit = tenantScopedEmitter(ctx);
   const fps = options.fps ?? 60;
   const clipDurationInFrames = options.clipDurationInFrames ?? Number.POSITIVE_INFINITY;
 
@@ -140,7 +144,7 @@ async function mountThreeScene(
   // 2. Parse + narrow `liveMount.props`.
   const propsResult = threeSceneClipPropsSchema.safeParse(ctx.clip.liveMount.props);
   if (!propsResult.success) {
-    ctx.emitTelemetry('three-scene-clip.mount.failure', {
+    emit('three-scene-clip.mount.failure', {
       family,
       reason: 'invalid-props' satisfies ThreeSceneMountFailureReason,
       issues: propsResult.error.issues.map((i) => ({
@@ -177,7 +181,7 @@ async function mountThreeScene(
   }
 
   // 3. Resolve `setupRef` via dynamic-import (D-T384-3).
-  ctx.emitTelemetry('three-scene-clip.mount.start', {
+  emit('three-scene-clip.mount.start', {
     family,
     width: currentProps.width,
     height: currentProps.height,
@@ -189,7 +193,7 @@ async function mountThreeScene(
     const resolveOptions = options.importer === undefined ? {} : { importer: options.importer };
     setup = await resolveSetupRef(currentProps.setupRef, resolveOptions);
   } catch (err) {
-    ctx.emitTelemetry('three-scene-clip.mount.failure', {
+    emit('three-scene-clip.mount.failure', {
       family,
       reason: 'setupRef-resolve' satisfies ThreeSceneMountFailureReason,
       message: err instanceof Error ? err.message : String(err),
@@ -254,7 +258,7 @@ async function mountThreeScene(
     // `setupThrown` is populated by `wrappedSetup` above. If a different
     // error escaped, prefer it.
     const failure = setupThrown ?? err;
-    ctx.emitTelemetry('three-scene-clip.mount.failure', {
+    emit('three-scene-clip.mount.failure', {
       family,
       reason: 'setup-throw' satisfies ThreeSceneMountFailureReason,
       message: failure instanceof Error ? failure.message : String(failure),
@@ -269,7 +273,7 @@ async function mountThreeScene(
   // try/catch. If it threw, surface that as the mount failure rather than
   // leaving the caller with a frozen first paint.
   if (setupThrown !== undefined) {
-    ctx.emitTelemetry('three-scene-clip.mount.failure', {
+    emit('three-scene-clip.mount.failure', {
       family,
       reason: 'setup-throw' satisfies ThreeSceneMountFailureReason,
       message: setupThrown instanceof Error ? setupThrown.message : String(setupThrown),
@@ -281,7 +285,7 @@ async function mountThreeScene(
 
   // Telemetry — success path. No time-to-first-paint attribute (same
   // `performance.now` constraint as T-383 in this directory).
-  ctx.emitTelemetry('three-scene-clip.mount.success', {
+  emit('three-scene-clip.mount.success', {
     family,
   });
 
@@ -318,7 +322,7 @@ async function mountThreeScene(
       // ThreeClipHost's effect-cleanup invokes the author's dispose handle
       // via React's normal unmount path.
       state.reactRoot.unmount();
-      ctx.emitTelemetry('three-scene-clip.dispose', { family });
+      emit('three-scene-clip.dispose', { family });
     },
   };
 }

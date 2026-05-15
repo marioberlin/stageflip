@@ -22,6 +22,7 @@ import { flushSync } from 'react-dom';
 import { type Root, createRoot } from 'react-dom/client';
 
 import type { ClipFactory, MountContext } from '../../contract.js';
+import { tenantScopedEmitter } from '../../contract.js';
 import {
   MediaGraph,
   type MediaGraphBrowserApi,
@@ -114,11 +115,14 @@ async function mountVoiceClip(
   options: VoiceClipFactoryOptions,
 ): Promise<VoiceClipMountHandle> {
   const family = ctx.clip.family;
+  // T-403 R-13 — tenant-scoped emitter; pass-through when ctx.tenantId
+  // is undefined.
+  const emit = tenantScopedEmitter(ctx);
 
   // 1. Parse + narrow `liveMount.props`.
   const propsResult = voiceClipPropsSchema.safeParse(ctx.clip.liveMount.props);
   if (!propsResult.success) {
-    ctx.emitTelemetry('voice-clip.mount.failure', {
+    emit('voice-clip.mount.failure', {
       family,
       reason: 'invalid-props' satisfies VoiceMountFailureReason,
       issues: propsResult.error.issues.map((i) => ({
@@ -136,7 +140,7 @@ async function mountVoiceClip(
   //    AudioContext — tests always inject a fake browser surface.
   const browser = resolveBrowserApi(options);
   if (browser === undefined) {
-    ctx.emitTelemetry('voice-clip.mount.failure', {
+    emit('voice-clip.mount.failure', {
       family,
       reason: 'web-audio-unavailable' satisfies VoiceMountFailureReason,
     });
@@ -147,7 +151,7 @@ async function mountVoiceClip(
   //    must be supported by the active browser; failure is reported via
   //    mount.failure with reason 'media-recorder-unsupported-mime'.
   if (!browser.mediaGraph.isMimeTypeSupported(props.mimeType)) {
-    ctx.emitTelemetry('voice-clip.mount.failure', {
+    emit('voice-clip.mount.failure', {
       family,
       reason: 'media-recorder-unsupported-mime' satisfies VoiceMountFailureReason,
       mimeType: props.mimeType,
@@ -159,7 +163,7 @@ async function mountVoiceClip(
 
   // 4. Telemetry — mount.start. NOTE: text body never appears in
   //    telemetry attributes (privacy posture, AC #16 + #24).
-  ctx.emitTelemetry('voice-clip.mount.start', {
+  emit('voice-clip.mount.start', {
     family,
     language: props.language,
     partialTranscripts: props.partialTranscripts,
@@ -186,19 +190,19 @@ async function mountVoiceClip(
   });
 
   // Telemetry — mount.success.
-  ctx.emitTelemetry('voice-clip.mount.success', { family });
+  emit('voice-clip.mount.success', { family });
 
   // ----- private helpers -----
 
   /** Dispatch one transcript event to every subscriber + emit telemetry. */
   const dispatchTranscript = (event: TranscriptEvent): void => {
     if (event.kind === 'partial') {
-      ctx.emitTelemetry('voice-clip.transcript.partial', {
+      emit('voice-clip.transcript.partial', {
         family,
         textLength: event.text.length,
       });
     } else if (event.kind === 'final') {
-      ctx.emitTelemetry('voice-clip.transcript.final', {
+      emit('voice-clip.transcript.final', {
         family,
         textLength: event.text.length,
       });
@@ -232,7 +236,7 @@ async function mountVoiceClip(
     state.mediaGraph = mediaGraph;
     mediaGraph.startRecording();
 
-    ctx.emitTelemetry('voice-clip.recording.started', {
+    emit('voice-clip.recording.started', {
       family,
       mimeType: props.mimeType,
     });
@@ -262,7 +266,7 @@ async function mountVoiceClip(
       const reason: VoiceMountFailureReason = isWebSpeech
         ? 'web-speech-unavailable'
         : 'transcription-failed';
-      ctx.emitTelemetry('voice-clip.mount.failure', {
+      emit('voice-clip.mount.failure', {
         family,
         reason,
       });
@@ -300,7 +304,7 @@ async function mountVoiceClip(
     // double-dispose.
     state.mediaGraph = undefined;
     graph.dispose();
-    ctx.emitTelemetry('voice-clip.recording.stopped', {
+    emit('voice-clip.recording.stopped', {
       family,
       durationMs,
     });
@@ -328,7 +332,7 @@ async function mountVoiceClip(
     }
     state.handlers.clear();
     state.reactRoot.unmount();
-    ctx.emitTelemetry('voice-clip.dispose', { family });
+    emit('voice-clip.dispose', { family });
   };
 
   return {

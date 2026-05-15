@@ -149,6 +149,7 @@ export const aiGenerativeStaticFallbackGenerator: StaticFallbackGenerator = ({
   clip,
   reason,
   emitTelemetry,
+  tenantId,
 }) => {
   const props = (clip.liveMount.props ?? {}) as { curatedExample?: unknown };
   const curatedExample = readCuratedExample(props.curatedExample);
@@ -167,6 +168,8 @@ export const aiGenerativeStaticFallbackGenerator: StaticFallbackGenerator = ({
     // Privacy posture (D-T396-4 + AC #11): boolean + integer length only.
     hasExample: curatedExample !== undefined,
     exampleSrcLength: curatedExample?.src.length ?? 0,
+    // T-403 R-13 — tenant scope when supplied by the harness.
+    ...(tenantId !== undefined ? { tenantId } : {}),
   });
 
   return generated;

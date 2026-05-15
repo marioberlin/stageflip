@@ -140,6 +140,7 @@ export const webEmbedStaticFallbackGenerator: StaticFallbackGenerator = ({
   clip,
   reason,
   emitTelemetry,
+  tenantId,
 }) => {
   const props = (clip.liveMount.props ?? {}) as { posterImage?: unknown };
   const posterImage = readPosterImage(props.posterImage);
@@ -158,6 +159,8 @@ export const webEmbedStaticFallbackGenerator: StaticFallbackGenerator = ({
     // Privacy posture (D-T394-4 + AC #11): boolean + integer length only.
     hasPoster: posterImage !== undefined,
     posterSrcLength: posterImage?.src.length ?? 0,
+    // T-403 R-13 — tenant scope when supplied by the harness.
+    ...(tenantId !== undefined ? { tenantId } : {}),
   });
 
   return generated;
