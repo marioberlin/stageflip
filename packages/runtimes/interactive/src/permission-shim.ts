@@ -75,13 +75,29 @@ export interface TenantFlagGateInput {
 }
 
 /**
- * Mount-time options. Today carries only the optional tenant-flag
- * gate; future mount-time inputs (per-mount tenant-policy override,
- * permission pre-prompt UI selection, etc.) accrete here.
+ * Mount-time options. Today carries the optional tenant-flag gate and
+ * the optional R-12 tenant-scope identifier for the per-(session,
+ * family) grant cache. Future mount-time inputs (per-mount tenant-
+ * policy override, permission pre-prompt UI selection, etc.) accrete
+ * here.
  */
 export interface PermissionShimMountOptions {
   /** Optional T-411c tenant-flag gate; back-compat default behaves as T-306. */
   tenantFlagGate?: TenantFlagGateInput;
+  /**
+   * T-403 R-12 — tenant identifier used to scope the per-(session,
+   * family) grant cache. When supplied, the cache key becomes
+   * `${tenantId}:${family}:${permission}` so a tenant-A grant cannot
+   * leak into a tenant-B mount on the SAME shim instance. When
+   * omitted, the cache key falls back to `${family}:${permission}`
+   * for back-compat with T-306 / T-385 / T-411c consumers that do
+   * NOT cycle tenants on a single shim. When `tenantFlagGate.tenantId`
+   * is supplied and `tenantId` is not, the shim uses
+   * `tenantFlagGate.tenantId` to scope the cache key. Hosts that may
+   * cycle tenants on a single editor shim SHOULD always supply this
+   * (or call `rebindTenant`) — see PermissionShim.rebindTenant.
+   */
+  tenantId?: string;
 }
 
 /**
@@ -155,9 +171,14 @@ export class PermissionShim {
   private readonly browser: PermissionBrowserApi;
 
   /**
-   * `(family, permission)` → granted? Caches successful grants only;
-   * denials are NOT cached (re-prompting on re-mount lets the user change
-   * their mind via browser UI).
+   * `(tenantId?, family, permission)` → granted? Caches successful
+   * grants only; denials are NOT cached (re-prompting on re-mount lets
+   * the user change their mind via browser UI). Per T-403 R-12 the key
+   * is prefixed with `tenantId` when one is supplied at mount time so
+   * tenant-A grants cannot leak into tenant-B mounts on the same shim
+   * instance. Pre-T-403 callers that omit `tenantId` continue to share
+   * the un-prefixed key namespace for back-compat with the T-306 /
+   * T-385 / T-411c cache shape.
    */
   private readonly grantCache = new Map<string, true>();
 
@@ -222,8 +243,13 @@ export class PermissionShim {
     }
 
     // Step 2: iterate declared permissions in declaration order.
+    // T-403 R-12: scope cache keys by tenantId when one is supplied
+    // (explicit `options.tenantId` wins; otherwise the tenant-flag
+    // gate's tenantId is used; otherwise we fall back to the
+    // un-prefixed key for back-compat).
+    const tenantScope = options.tenantId ?? options.tenantFlagGate?.tenantId;
     for (const permission of clip.liveMount.permissions) {
-      const cacheKey = `${clip.family}:${permission}`;
+      const cacheKey = makeGrantCacheKey(tenantScope, clip.family, permission);
       if (this.grantCache.has(cacheKey)) {
         continue;
       }
@@ -304,8 +330,58 @@ export class PermissionShim {
    * The permission-flow retry path uses this so a successful re-prompt
    * does not need to re-walk the full envelope or invalidate sibling
    * grants. No-op when the entry is absent.
+   *
+   * T-403 R-12: when `tenantId` is supplied, the entry is scoped to
+   * that tenant; when omitted, the un-prefixed (legacy) key is cleared.
+   * Hosts that supplied `tenantId` to `mount()` MUST supply the same
+   * `tenantId` here, otherwise the entry will not match.
    */
-  clearCacheEntry(family: InteractiveClip['family'], permission: Permission): void {
-    this.grantCache.delete(`${family}:${permission}`);
+  clearCacheEntry(
+    family: InteractiveClip['family'],
+    permission: Permission,
+    tenantId?: string,
+  ): void {
+    this.grantCache.delete(makeGrantCacheKey(tenantId, family, permission));
   }
+
+  /**
+   * T-403 R-12 — host-callable defensive escape hatch. Clears every
+   * grant entry whose key is scoped to `tenantId` (and ONLY those —
+   * un-prefixed legacy entries and other tenants' entries are left
+   * untouched). When `tenantId` is omitted, every entry is cleared
+   * (equivalent to `clearCache()` but named for tenant-switch intent).
+   *
+   * Host shells that detect a tenant switch on the SAME shim instance
+   * SHOULD call this with the OUTGOING tenant id at switch time. The
+   * cache-key prefixing path in `mount()` already scopes new grants by
+   * tenant, so this method is a belt-and-braces sweep — useful when
+   * the host wants to release memory or audit explicit tenant boundary
+   * crossings.
+   */
+  rebindTenant(tenantId?: string): void {
+    if (tenantId === undefined) {
+      this.grantCache.clear();
+      return;
+    }
+    const prefix = `${tenantId}:`;
+    for (const key of this.grantCache.keys()) {
+      if (key.startsWith(prefix)) {
+        this.grantCache.delete(key);
+      }
+    }
+  }
+}
+
+/**
+ * Internal: build the grant-cache key. Pulled out so `mount()` and
+ * `clearCacheEntry()` can not drift on key shape. T-403 R-12 contract:
+ * with a tenant scope the key is `${tenantId}:${family}:${permission}`;
+ * without one it is `${family}:${permission}` (back-compat).
+ */
+function makeGrantCacheKey(
+  tenantId: string | undefined,
+  family: InteractiveClip['family'],
+  permission: Permission,
+): string {
+  return tenantId === undefined ? `${family}:${permission}` : `${tenantId}:${family}:${permission}`;
 }

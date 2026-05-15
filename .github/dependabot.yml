@@ -5,6 +5,16 @@
 # ADR-001 §D4 and docs/dependencies.md §4 ('blocked majors' list).
 #
 # Weekly schedule aligns with .github/workflows/audit.yml (Monday 09:00 UTC).
+#
+# T-403 R-15 (closed 2026-05-15): supply-chain SCA cadence is provided by
+# this Dependabot configuration plus GitHub's built-in security alerts
+# (no external SCA tool required). Security-only updates are grouped
+# weekly into a single PR so triage can land them as one change-set.
+# The vendored `@hyperframes/engine` workspace under
+# `packages/renderer-cdp/vendor/engine` ships its own package.json and
+# is covered by the workspace-root `npm` ecosystem block — Dependabot
+# walks every workspace package.json from `directory: /` (pnpm
+# workspace).
 
 version: 2
 
@@ -23,6 +33,16 @@ updates:
     commit-message:
       prefix: chore(deps)
       include: scope
+    # T-403 R-14 closure (2026-05-15): group security-flagged updates into a
+    # single weekly PR so reviewers can land them as one set. Dependabot
+    # treats security updates as a separate stream from version updates;
+    # the `applies-to: security-updates` selector below is the canonical
+    # group target.
+    groups:
+      security-updates:
+        applies-to: security-updates
+        patterns:
+          - "*"
     # Block majors explicitly for every package docs/dependencies.md §4 lists
     # as blocked. Dependabot will not open PRs attempting these bumps.
     ignore:
@@ -46,6 +66,32 @@ updates:
         update-types: [version-update:semver-major]
       - dependency-name: "@size-limit/preset-big-lib"
         update-types: [version-update:semver-major]
+
+  # T-403 R-14 closure (2026-05-15): explicit coverage of the vendored
+  # `@hyperframes/engine` Apache 2.0 fork. Already reachable from the
+  # workspace-root npm block above (pnpm workspaces are walked), but
+  # called out separately so a future vendored-fork extraction does not
+  # silently lose SCA coverage.
+  - package-ecosystem: npm
+    directory: /packages/renderer-cdp/vendor/engine
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: UTC
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - automated
+      - vendored
+    commit-message:
+      prefix: chore(vendor)
+      include: scope
+    groups:
+      security-updates:
+        applies-to: security-updates
+        patterns:
+          - "*"
 
   - package-ecosystem: github-actions
     directory: /

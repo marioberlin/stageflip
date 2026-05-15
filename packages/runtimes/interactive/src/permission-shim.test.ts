@@ -374,6 +374,101 @@ describe('PermissionShim — T-411c tenant-flag matrix', () => {
     expect(canMount).toHaveBeenCalledWith('shader');
   });
 
+  // T-403 R-12 — per-tenant grant cache scoping. A grant for tenant-A must
+  // not be served to tenant-B on the SAME shim instance. Cache key
+  // prefixing + rebindTenant() are the two complementary mechanisms.
+  it('R-12 — tenant-A grant does NOT leak to tenant-B on the same shim', async () => {
+    const stream: MediaStream = {
+      getTracks: () => [{ stop: vi.fn() } as unknown as MediaStreamTrack],
+    } as unknown as MediaStream;
+    const getUserMedia = vi.fn().mockResolvedValue(stream);
+    const shim = new PermissionShim({ browser: makeBrowser(getUserMedia) });
+    const clip = makeInteractiveClip({ family: 'shader', permissions: ['mic'] });
+    await shim.mount(clip, { tenantId: 'tenant-A' });
+    expect(getUserMedia).toHaveBeenCalledTimes(1);
+    // Same family + permission, different tenant → MUST re-prompt.
+    await shim.mount(clip, { tenantId: 'tenant-B' });
+    expect(getUserMedia).toHaveBeenCalledTimes(2);
+  });
+
+  it('R-12 — same tenant + same family + same permission → cached (no re-prompt)', async () => {
+    const stream: MediaStream = {
+      getTracks: () => [{ stop: vi.fn() } as unknown as MediaStreamTrack],
+    } as unknown as MediaStream;
+    const getUserMedia = vi.fn().mockResolvedValue(stream);
+    const shim = new PermissionShim({ browser: makeBrowser(getUserMedia) });
+    const clip = makeInteractiveClip({ family: 'shader', permissions: ['mic'] });
+    await shim.mount(clip, { tenantId: 'tenant-A' });
+    await shim.mount(clip, { tenantId: 'tenant-A' });
+    expect(getUserMedia).toHaveBeenCalledTimes(1);
+  });
+
+  it('R-12 — rebindTenant(tenantId) clears only that tenant entries', async () => {
+    const stream: MediaStream = {
+      getTracks: () => [{ stop: vi.fn() } as unknown as MediaStreamTrack],
+    } as unknown as MediaStream;
+    const getUserMedia = vi.fn().mockResolvedValue(stream);
+    const shim = new PermissionShim({ browser: makeBrowser(getUserMedia) });
+    const clip = makeInteractiveClip({ family: 'shader', permissions: ['mic'] });
+    await shim.mount(clip, { tenantId: 'tenant-A' });
+    await shim.mount(clip, { tenantId: 'tenant-B' });
+    expect(getUserMedia).toHaveBeenCalledTimes(2);
+    // Clear only tenant-A. Re-mount A should re-prompt; B should still cache.
+    shim.rebindTenant('tenant-A');
+    await shim.mount(clip, { tenantId: 'tenant-A' });
+    expect(getUserMedia).toHaveBeenCalledTimes(3);
+    await shim.mount(clip, { tenantId: 'tenant-B' });
+    expect(getUserMedia).toHaveBeenCalledTimes(3);
+  });
+
+  it('R-12 — rebindTenant() with no arg clears every entry', async () => {
+    const stream: MediaStream = {
+      getTracks: () => [{ stop: vi.fn() } as unknown as MediaStreamTrack],
+    } as unknown as MediaStream;
+    const getUserMedia = vi.fn().mockResolvedValue(stream);
+    const shim = new PermissionShim({ browser: makeBrowser(getUserMedia) });
+    const clip = makeInteractiveClip({ family: 'shader', permissions: ['mic'] });
+    await shim.mount(clip, { tenantId: 'tenant-A' });
+    await shim.mount(clip, { tenantId: 'tenant-B' });
+    shim.rebindTenant();
+    await shim.mount(clip, { tenantId: 'tenant-A' });
+    await shim.mount(clip, { tenantId: 'tenant-B' });
+    expect(getUserMedia).toHaveBeenCalledTimes(4);
+  });
+
+  it('R-12 — tenantFlagGate.tenantId scopes the cache when no explicit tenantId is supplied', async () => {
+    const stream: MediaStream = {
+      getTracks: () => [{ stop: vi.fn() } as unknown as MediaStreamTrack],
+    } as unknown as MediaStream;
+    const getUserMedia = vi.fn().mockResolvedValue(stream);
+    const shim = new PermissionShim({ browser: makeBrowser(getUserMedia) });
+    const cache = createTenantFlagCache({ populator: makePopulator('ga') });
+    await cache.populate('tenant-A');
+    await cache.populate('tenant-B');
+    const clip = makeInteractiveClip({ family: 'shader', permissions: ['mic'] });
+    await shim.mount(clip, {
+      tenantFlagGate: { cache, tenantId: 'tenant-A', target: 'browser-live-preview' },
+    });
+    await shim.mount(clip, {
+      tenantFlagGate: { cache, tenantId: 'tenant-B', target: 'browser-live-preview' },
+    });
+    // Different tenants → distinct cache keys → both re-prompted.
+    expect(getUserMedia).toHaveBeenCalledTimes(2);
+  });
+
+  it('R-12 — pre-T-403 callers that omit tenantId continue to share the un-prefixed namespace', async () => {
+    const stream: MediaStream = {
+      getTracks: () => [{ stop: vi.fn() } as unknown as MediaStreamTrack],
+    } as unknown as MediaStream;
+    const getUserMedia = vi.fn().mockResolvedValue(stream);
+    const shim = new PermissionShim({ browser: makeBrowser(getUserMedia) });
+    const clip = makeInteractiveClip({ family: 'shader', permissions: ['mic'] });
+    // No tenantId on either mount → both keyed under `shader:mic` → second is cached.
+    await shim.mount(clip);
+    await shim.mount(clip);
+    expect(getUserMedia).toHaveBeenCalledTimes(1);
+  });
+
   it('AC #18 — back-compat: shim with no tenantFlagGate option behaves identically to the T-306 baseline', async () => {
     const stream: MediaStream = {
       getTracks: () => [{ stop: vi.fn() } as unknown as MediaStreamTrack],
