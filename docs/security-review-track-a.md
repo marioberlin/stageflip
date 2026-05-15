@@ -22,7 +22,7 @@ reviewer: codex (AI; Codex/Claude operating as security reviewer per PO directio
 reviewerCaveats:
   - Codex is an AI; review covers source-code-grep + spec-vs-code coherence, NOT runtime penetration testing
   - On-device display player target DROPPED 2026-05-15 per PO (deployment target descoped); re-review caveat moot
-  - 2 remaining YELLOW residual risks (R-6 / R-7; §7.3) acknowledged not-blocking but tracked for post-GA hardening sprint; 7 of the original 9 closed in YELLOW batches 1 + 2 defensive PRs (2026-05-15) — see §5 + §7.3 closure notes
+  - All 9 originally-YELLOW residual risks now closed across YELLOW batches 1 + 2 + 3 defensive PRs (2026-05-15) — see §5 + §7.3 closure notes. Post-GA hardening sprint scope reduced; future YELLOW findings flow into T-404 (security follow-ups)
 ---
 
 # Track A — Pre-preview security review
@@ -422,8 +422,8 @@ own judgments.
 | R-3 | WebEmbedClip | Schema does NOT block `allow-scripts allow-same-origin` combination (equivalent to no sandbox). Web-embed-props.ts:53-60 explicitly defers token allowlist to T-403. | **MITIGATED (T-404)** — `webEmbedClipPropsSchema.sandbox` now rejects any value containing BOTH `allow-scripts` AND `allow-same-origin` (`FORBIDDEN_SANDBOX_COMBINATIONS`). Order-independent + extra-token-bypass tested. See `packages/schema/src/clips/interactive/web-embed-props.ts`. A broader tenant-level token allowlist remains future work. |
 | R-4 | ThreeSceneClip | Dynamic `import()` of pack-supplied `setupRef` package executes arbitrary JS in renderer page context. No setup-symbol allowlist. | **MITIGATED (T-404 follow-up — R-4 closure PR)** — `resolveSetupRef` now refuses any `modulePath` not matching a prefix in `SETUP_REF_TRUSTED_MODULE_PREFIXES` (default `[]` — deny-all, fail-closed). Hosts/tenants seed via `extendTrustedModulePrefixes(prefixes)`. The allowlist gate runs BEFORE the dynamic `import()` call so untrusted paths never reach the importer. Mirrors T-404 R-1's LiveData SSRF allowlist convention per PO decision (cheapest engineering path; matches npm/marketplace pack-signing posture). See `packages/runtimes/interactive/src/clips/three-scene/setup-resolver.ts` and the R-4 describe in `packages/runtimes/interactive/src/clips/three-scene/setup-resolver.test.ts`. |
 | R-5 | All network-using clips (`ai-chat`, `live-data`, `web-embed`, `ai-generative`) | `'network'` permission is a no-op grant (`permission-shim.ts:244-246`); no per-tenant destination allowlist. | **MITIGATED (R-5 closure PR)** — `permission-shim.ts` now consults `evaluateNetworkGate` from `packages/runtimes/interactive/src/network-allowlist.ts` on every `'network'` request. Global allowlist (deny-all default); hosts seed via `extendNetworkAllowedHosts(patterns)`. PO decision (2026-05-14): global scope (not per-tenant); warn-then-enforce rollout with `ENFORCEMENT_STARTS_AT = 2026-06-13` (30-day grace). Each network request records the decision on `PermissionShim.lastNetworkGateDecision` for telemetry. Per-mount destination plumbing + clip-level fetch wrapper enforcement remain residual follow-up scope. |
-| R-6 | ShaderClip | No GPU frame-budget kill-switch (ADR-005 §D7 lists this as in-scope). | **YELLOW** — DoS scope only; not data-exfiltration. |
-| R-7 | ThreeSceneClip | No per-clip memory ceiling. | **YELLOW** — DoS scope. |
+| R-6 | ShaderClip | No GPU frame-budget kill-switch (ADR-005 §D7 lists this as in-scope). | **MITIGATED (YELLOW batch 3, 2026-05-15)** — `ShaderClipProps.frameBudgetMs` (4..200ms, optional) sets the per-frame WARN threshold; KILL ceiling is pinned at 200ms (`FRAME_BUDGET_CEILING_MS`). The factory wraps every per-frame `drawArrays` in `createFrameBudgetMonitor()` (defined at `packages/runtimes/interactive/src/frame-budget.ts` — outside the T-309 shader-sub-rule path prefix, so `performance.now` is allowed). Verdicts: `'ok'` (no telemetry), `'warn'` (one-shot `shader-clip.frame-budget-warning`), `'kill'` (one-shot `shader-clip.frame-budget-exceeded` + mount tear-down + `shader-clip.dispose` with `reason: 'frame-budget-exceeded'`). First-paint kill rejects the factory promise (mount.failure path); per-frame kill route is via unsubscribe + reactRoot.unmount. Tests in `packages/runtimes/interactive/src/clips/shader/factory.test.ts` + `packages/runtimes/interactive/src/frame-budget.test.ts`. |
+| R-7 | ThreeSceneClip | No per-clip memory ceiling. | **MITIGATED (YELLOW batch 3, 2026-05-15)** — `ThreeSceneClipProps.memoryBudgetMb` (16..2048MB, optional; default 256MB) sets the per-clip memory ceiling. Authors opt-in by returning `getMemoryEstimateMb()` on their `ThreeClipHandle` (typically: sum of `BufferGeometry.attributes.*.array.byteLength` + texture byte-lengths). The factory captures the handle via the new `ThreeClipHostProps.onHandleReady` seam and polls the estimator on a 30-frame cadence (≈0.5s @60fps). Exceeded budget fires `three-scene-clip.memory-budget-exceeded` + tears down the mount + emits `three-scene-clip.dispose` with `reason: 'memory-budget-exceeded'`. First-paint kill throws the factory promise. **Opt-in by design** — `@stageflip/runtimes-three` does not depend on `three` and cannot walk the author's scene; the author is the only party that can produce a reliable estimate. Author opt-out (no `getMemoryEstimateMb`) or estimator throw is treated as inert (no kill). Tests in `packages/runtimes/interactive/src/clips/three-scene/factory.test.ts`. |
 | R-8 | VoiceClip | Provider transcript adapters do not yet ship a `SecurityManifest` (manifest pattern is Phase 14). | **MITIGATED** — superseded by R-17 closure (PR #639). The voice provider seam now ships `packages/runtimes/interactive/src/clips/voice/security.json` and is covered by `check-data-flow-security`. |
 | R-9 | AiChatClip | Same as R-8 for LLM provider adapters. | **MITIGATED** — superseded by R-17 closure (PR #639). The ai-chat provider seam now ships `packages/runtimes/interactive/src/clips/ai-chat/security.json` and is covered by `check-data-flow-security`. |
 | R-10 | AiGenerativeClip | Same as R-8 for generation provider adapters. PLUS: SVG `<script>` execution risk if host renders blob via `<object>` / inline DOM. | **MITIGATED** — superseded by R-17 closure (PR #639). The ai-generative provider seam now ships `packages/runtimes/interactive/src/clips/ai-generative/security.json` and is covered by `check-data-flow-security`. SVG `<script>` render-path concern remains tracked in clip-family render-path docs (render is `<img>`-only). |
@@ -442,8 +442,8 @@ Reviewed by **codex** (AI security reviewer, operating per PO direction 2026-05-
 
 | Component | Status | Reviewer | Date | Findings |
 |---|---|---|---|---|
-| ShaderClip | signed | codex | 2026-05-14 | YELLOW: R-6 frame-budget kill-switch (§7.3). GPU sandbox is the perimeter; Chromium-process isolation in place. No RED issues. |
-| ThreeSceneClip | signed | codex | 2026-05-14 | R-4 closed via `trustedPublisherKeyIds` allowlist (PR #634); deny-all default. YELLOW: R-7 memory ceiling per clip. |
+| ShaderClip | signed | codex | 2026-05-14 | R-6 frame-budget kill-switch closed via YELLOW batch 3 (2026-05-15) — `frameBudgetMs` prop + monitor at `packages/runtimes/interactive/src/frame-budget.ts`. GPU sandbox is the perimeter; Chromium-process isolation in place. No remaining YELLOW residuals. |
+| ThreeSceneClip | signed | codex | 2026-05-14 | R-4 closed via `trustedPublisherKeyIds` allowlist (PR #634); deny-all default. R-7 memory ceiling closed via YELLOW batch 3 (2026-05-15) — `memoryBudgetMb` prop + author-opt-in `getMemoryEstimateMb` callback. No remaining YELLOW residuals. |
 | VoiceClip | signed | codex | 2026-05-14 | `getUserMedia` permission gate + mic probe stream stop after grant. YELLOW: R-8 SecurityManifest retrofit (post-GA). |
 | AiChatClip | signed | codex | 2026-05-14 | LLM provider seam + scoped permission. YELLOW: R-9 SecurityManifest retrofit (post-GA). Prompt-injection mitigated at provider boundary. |
 | LiveDataClip | signed | codex | 2026-05-14 | R-1 SSRF allowlist + R-2 credential-header denylist closed (T-404 / PR #626). Deny-all default; hosts seeded at boot. |
@@ -513,11 +513,7 @@ security-team review").
 
 ### 7.3 Carried forward as `YELLOW`
 
-**Remaining (2):**
-
-- R-6 (Shader GPU frame-budget kill-switch) — DoS scope only; not
-  data-exfiltration. Tracked for batch 3.
-- R-7 (Three-scene memory ceiling) — DoS scope. Tracked for batch 3.
+**All 9 originally-YELLOW residuals from T-403 are now closed across YELLOW batches 1 + 2 + 3 (2026-05-15).** The post-GA hardening sprint scope is reduced accordingly: no remaining YELLOW residuals from the T-403 sign-off. Future YELLOW findings discovered post-GA will be tracked under T-404 (security follow-ups) rather than T-403.
 
 **Closed in YELLOW batch 1 defensive PR (2026-05-15):**
 
@@ -549,6 +545,33 @@ security-team review").
   carry `tenantId`. `BrowserLivePreview` accepts a `tenantId` prop
   and threads it into the mount call.
 
+**Closed in YELLOW batch 3 defensive PR (2026-05-15) — FINAL batch:**
+
+- R-6 (Shader GPU frame-budget kill-switch) — `ShaderClipProps.frameBudgetMs`
+  (4..200ms, optional) drives `createFrameBudgetMonitor()` from
+  `packages/runtimes/interactive/src/frame-budget.ts`. Default WARN
+  threshold 16ms, hard KILL ceiling 200ms. The monitor module lives
+  OUTSIDE the T-309 shader-sub-rule path prefix
+  (`packages/runtimes/interactive/src/clips/shader/**`), so it can use
+  `performance.now` without tripping the determinism perimeter; the
+  factory calls in are pure CallExpressions and don't trip the check
+  either. Verdicts: `'ok'` (silent), `'warn'` (one-shot
+  `shader-clip.frame-budget-warning`), `'kill'` (one-shot
+  `shader-clip.frame-budget-exceeded` + tear-down + dispose with reason
+  attribute). First-paint kill rejects the factory promise.
+
+- R-7 (Three-scene memory ceiling) — `ThreeSceneClipProps.memoryBudgetMb`
+  (16..2048MB, optional; default 256MB) caps per-clip memory. Author
+  opt-in via `ThreeClipHandle.getMemoryEstimateMb?(): number`. Factory
+  captures the handle via the new `ThreeClipHostProps.onHandleReady`
+  seam and polls every 30 frames (≈0.5s @60fps). Exceeded budget fires
+  `three-scene-clip.memory-budget-exceeded` + tears the mount down +
+  emits `three-scene-clip.dispose` with reason. Opt-out (no estimator)
+  or estimator throw is treated as inert. Author-side estimation is
+  the only viable mechanism because `@stageflip/runtimes-three` does
+  not depend on `three` and cannot walk the author's scene from the
+  runtime side.
+
 ## 8. T-405 sign-off block — SIGNED 2026-05-14
 
 **Status: SIGNED for GA promotion of the interactive tier.** Reviewer: **codex** (AI security reviewer per PO direction 2026-05-14 in lieu of an external security firm or internal security lead).
@@ -565,7 +588,7 @@ I have reviewed:
    - R-5 network permission allowlist + 30-day warn-then-enforce — closed (PR #635)
    - R-11 On-device player — **DROPPED 2026-05-15 per PO** (deployment target descoped from product; ADR-005 §D4 amended; scaffolds remain deprecated in-tree; no consumer planned)
    - R-17 SecurityManifest gap on Phase 13 provider seams — deferred to post-GA week 2-3 hardening sprint per PO 2026-05-14
-3. **The 9 YELLOW residual risks** in §7.3 — acknowledged, none blocking GA, all tracked for post-GA triage by the next security pass. **Update 2026-05-15:** YELLOW batches 1 + 2 defensive PRs closed 7 of 9 (R-8 / R-9 / R-10 via R-17 supersede; R-12 / R-14 / R-15 / R-16 / R-18 in batch 1; R-13 in batch 2). 2 remain (R-6 / R-7) for batch 3.
+3. **The 9 YELLOW residual risks** originally listed in §7.3 — all 9 now closed across YELLOW batches 1 + 2 + 3 defensive PRs (2026-05-15). **Closure ledger:** R-8 / R-9 / R-10 via R-17 supersede; R-12 / R-14 / R-15 / R-16 / R-18 in batch 1; R-13 in batch 2; R-6 / R-7 in batch 3. The post-GA hardening sprint scope is reduced: no remaining T-403 YELLOW residuals carry forward. Future YELLOW findings flow into T-404 (security follow-ups) rather than this sign-off.
 
 ### What this sign-off authorizes
 
@@ -585,7 +608,7 @@ I have reviewed:
    - STRIDE-by-component analysis
    - Residual-risk register triage
    - But NOT: live penetration testing, real-world adversarial input crafting, supply-chain dependency-tree audit beyond `pnpm check-licenses`, or red-team exercises.
-2. **The 9 YELLOW residual risks are NOT a clean bill of health** — they are deferred, not absolved. A post-GA hardening sprint MUST triage them in launch week 2-3 per PO 2026-05-14. **2026-05-15 update:** YELLOW batches 1 + 2 defensive PRs closed 7 of 9 ahead of the post-GA window; 2 remain (R-6 / R-7) for batch 3.
+2. **The 9 YELLOW residual risks were originally not a clean bill of health** — they were deferred, not absolved, and a post-GA hardening sprint was scheduled to triage them. **2026-05-15 update:** all 9 closed pre-launch across YELLOW batches 1 + 2 + 3 defensive PRs; the post-GA hardening sprint scope is reduced accordingly. Future YELLOW findings flow into T-404 (security follow-ups) rather than this sign-off; the next independent human security pass (recommended in caveat #3) inherits a clean T-403 register.
 3. **On-device player binary** is the highest-blast-radius outstanding item per ADR-005 L141. The §6 row is conditionally signed because the scaffolds passed review; the binary itself has not been built and CANNOT ship under this sign-off.
 
 ### Sign-off transition

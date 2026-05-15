@@ -217,7 +217,20 @@ describe('R-13: tenantId on every clip-level telemetry event (frontier × 7)', (
     // R-13 row description ('shader-clip.mount.failure') is not present
     // on the success path, so we re-check the success / dispose chain
     // by event name.
-    expect(events.map((e) => e.event)).toEqual([
+    // R-6 (YELLOW batch 3) added optional `shader-clip.frame-budget-warning`
+    // and `shader-clip.frame-budget-exceeded` events that fire when the real
+    // `performance.now()` clock under happy-dom measures a first-paint over
+    // the WARN / CEILING thresholds. Both carry tenantId via
+    // `tenantScopedEmitter` (loop assertion above still holds). Strip the
+    // entire frame-budget event family for the strict-shape lifecycle
+    // assertion. Note: when CEILING is exceeded, the factory KILLS the mount
+    // before mount.success fires — in that case this test would legitimately
+    // fail and indicates the ceiling needs raising for CI. If you see this
+    // comment because of a regression, check whether ceiling=200ms was hit.
+    const lifecycleEvents = events
+      .map((e) => e.event)
+      .filter((name) => !name.startsWith('shader-clip.frame-budget'));
+    expect(lifecycleEvents).toEqual([
       'shader-clip.mount.start',
       'shader-clip.mount.success',
       'shader-clip.dispose',

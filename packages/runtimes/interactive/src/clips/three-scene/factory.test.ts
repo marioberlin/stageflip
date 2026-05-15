@@ -465,4 +465,187 @@ describe('threeSceneClipFactory (T-384)', () => {
     expect(resolver).not.toHaveBeenCalled();
     handle.dispose();
   });
+
+  // ---------------------------------------------------------------------
+  // T-403 R-7 — memory-ceiling kill-switch.
+  // ---------------------------------------------------------------------
+  describe('T-403 R-7 — memory-ceiling kill-switch', () => {
+    /**
+     * Build a setup that exposes a `getMemoryEstimateMb` callback returning
+     * the given fixed value (or one read off a closure box for dynamic
+     * tests). Mirrors `makeFakeSetup` but adds the R-7 hook.
+     */
+    function makeMemEstimateSetup(
+      state: SceneState,
+      estimateRef: { current: number | undefined },
+    ): ThreeClipSetup<Record<string, unknown>> {
+      return ({ container, props }) => {
+        state.setupCalled += 1;
+        state.lastProps = props;
+        const sentinel = document.createElement('div');
+        sentinel.setAttribute('data-stageflip-three-scene-test', 'true');
+        container.appendChild(sentinel);
+        const handle: ThreeClipHandle<Record<string, unknown>> = {
+          render: (args) => {
+            state.renderCalled += 1;
+            state.lastFrame = args.frame;
+            state.lastProps = args.props;
+          },
+          dispose: () => {
+            state.disposeCalled += 1;
+          },
+          getMemoryEstimateMb: () => estimateRef.current ?? 0,
+        };
+        return handle;
+      };
+    }
+
+    it('empty estimate (0 MB) — no kill, no telemetry', async () => {
+      const state = freshSceneState();
+      const ref = { current: 0 };
+      const factory = ThreeSceneClipFactoryBuilder.build({
+        importer: async () => ({ MySetup: makeMemEstimateSetup(state, ref) }),
+      });
+      const fs = new RecordModeFrameSource();
+      const events: Array<[string, Record<string, unknown>]> = [];
+      const ctx = makeContext({ frameSource: fs, emit: (e, a) => events.push([e, a]) });
+      const handle = await factory(ctx);
+      // Drive past the poll cadence so any kill would fire.
+      fs.advance(35);
+      const kill = events.find((e) => e[0] === 'three-scene-clip.memory-budget-exceeded');
+      expect(kill).toBeUndefined();
+      handle.dispose();
+    });
+
+    it('estimate under default 256 MB budget — no kill', async () => {
+      const state = freshSceneState();
+      const ref = { current: 100 };
+      const factory = ThreeSceneClipFactoryBuilder.build({
+        importer: async () => ({ MySetup: makeMemEstimateSetup(state, ref) }),
+      });
+      const fs = new RecordModeFrameSource();
+      const events: Array<[string, Record<string, unknown>]> = [];
+      const ctx = makeContext({ frameSource: fs, emit: (e, a) => events.push([e, a]) });
+      const handle = await factory(ctx);
+      fs.advance(35);
+      const kill = events.find((e) => e[0] === 'three-scene-clip.memory-budget-exceeded');
+      expect(kill).toBeUndefined();
+      handle.dispose();
+    });
+
+    it('first-paint estimate above default 256 MB budget — kill on mount + throw', async () => {
+      const state = freshSceneState();
+      const ref = { current: 300 };
+      const factory = ThreeSceneClipFactoryBuilder.build({
+        importer: async () => ({ MySetup: makeMemEstimateSetup(state, ref) }),
+      });
+      const fs = new RecordModeFrameSource();
+      const events: Array<[string, Record<string, unknown>]> = [];
+      const ctx = makeContext({ frameSource: fs, emit: (e, a) => events.push([e, a]) });
+      await expect(factory(ctx)).rejects.toThrow(/memory estimate/);
+      const kill = events.find((e) => e[0] === 'three-scene-clip.memory-budget-exceeded');
+      expect(kill?.[1]).toMatchObject({
+        memoryEstimateMb: 300,
+        memoryBudgetMb: 256,
+      });
+    });
+
+    it('custom 64 MB budget — estimate of 80 MB triggers first-paint kill', async () => {
+      const state = freshSceneState();
+      const ref = { current: 80 };
+      const factory = ThreeSceneClipFactoryBuilder.build({
+        importer: async () => ({ MySetup: makeMemEstimateSetup(state, ref) }),
+      });
+      const fs = new RecordModeFrameSource();
+      const events: Array<[string, Record<string, unknown>]> = [];
+      const ctx = makeContext({
+        frameSource: fs,
+        emit: (e, a) => events.push([e, a]),
+      });
+      // Custom budget via setupProps NOT setupProps — via top-level prop.
+      (ctx.clip.liveMount.props as Record<string, unknown>).memoryBudgetMb = 64;
+      await expect(factory(ctx)).rejects.toThrow(/memory estimate/);
+      const kill = events.find((e) => e[0] === 'three-scene-clip.memory-budget-exceeded');
+      expect(kill?.[1]).toMatchObject({
+        memoryEstimateMb: 80,
+        memoryBudgetMb: 64,
+      });
+    });
+
+    it('growth past budget post-mount — kill fires on the polling tick', async () => {
+      const state = freshSceneState();
+      const ref = { current: 10 };
+      const factory = ThreeSceneClipFactoryBuilder.build({
+        importer: async () => ({ MySetup: makeMemEstimateSetup(state, ref) }),
+      });
+      const fs = new RecordModeFrameSource();
+      const events: Array<[string, Record<string, unknown>]> = [];
+      const ctx = makeContext({ frameSource: fs, emit: (e, a) => events.push([e, a]) });
+      const handle = await factory(ctx);
+      // Now grow the scene past the default 256 MB budget.
+      ref.current = 400;
+      // The polling cadence is every 30 frames; drive past it.
+      fs.advance(30);
+      const kill = events.find((e) => e[0] === 'three-scene-clip.memory-budget-exceeded');
+      expect(kill).toBeDefined();
+      expect(kill?.[1]).toMatchObject({
+        memoryEstimateMb: 400,
+        memoryBudgetMb: 256,
+      });
+      // Subsequent ticks are no-ops (mount torn down).
+      fs.advance(30);
+      const killCount = events.filter(
+        (e) => e[0] === 'three-scene-clip.memory-budget-exceeded',
+      ).length;
+      expect(killCount).toBe(1);
+      handle.dispose(); // idempotent
+    });
+
+    it('author opt-out (no getMemoryEstimateMb) — kill never fires regardless of cadence', async () => {
+      const state = freshSceneState();
+      // makeFakeSetup does NOT include getMemoryEstimateMb.
+      const factory = ThreeSceneClipFactoryBuilder.build({
+        importer: async () => ({ MySetup: makeFakeSetup(state) }),
+      });
+      const fs = new RecordModeFrameSource();
+      const events: Array<[string, Record<string, unknown>]> = [];
+      const ctx = makeContext({ frameSource: fs, emit: (e, a) => events.push([e, a]) });
+      const handle = await factory(ctx);
+      fs.advance(120);
+      const kill = events.find((e) => e[0] === 'three-scene-clip.memory-budget-exceeded');
+      expect(kill).toBeUndefined();
+      handle.dispose();
+    });
+
+    it('author estimator throws — treated as opt-out, no kill', async () => {
+      const state = freshSceneState();
+      const setup: ThreeClipSetup<Record<string, unknown>> = ({ container }) => {
+        const sentinel = document.createElement('div');
+        sentinel.setAttribute('data-stageflip-three-scene-test', 'true');
+        container.appendChild(sentinel);
+        return {
+          render: () => {
+            state.renderCalled += 1;
+          },
+          dispose: () => {
+            state.disposeCalled += 1;
+          },
+          getMemoryEstimateMb: () => {
+            throw new Error('author estimator blew up');
+          },
+        };
+      };
+      const factory = ThreeSceneClipFactoryBuilder.build({
+        importer: async () => ({ MySetup: setup }),
+      });
+      const fs = new RecordModeFrameSource();
+      const events: Array<[string, Record<string, unknown>]> = [];
+      const ctx = makeContext({ frameSource: fs, emit: (e, a) => events.push([e, a]) });
+      const handle = await factory(ctx);
+      fs.advance(35);
+      const kill = events.find((e) => e[0] === 'three-scene-clip.memory-budget-exceeded');
+      expect(kill).toBeUndefined();
+      handle.dispose();
+    });
+  });
 });

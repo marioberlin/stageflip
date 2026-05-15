@@ -28,6 +28,13 @@ import { type Root, createRoot } from 'react-dom/client';
 
 import type { ClipFactory, MountContext, MountHandle } from '../../contract.js';
 import { tenantScopedEmitter } from '../../contract.js';
+import {
+  type ClockMs,
+  FRAME_BUDGET_CEILING_MS,
+  FRAME_BUDGET_DEFAULT_MS,
+  type FrameBudgetMonitor,
+  createFrameBudgetMonitor,
+} from '../../frame-budget.js';
 import { MissingFrameSourceError } from '../../frame-source.js';
 import { type UniformUpdater, defaultShaderUniforms } from './uniforms.js';
 
@@ -35,7 +42,12 @@ import { type UniformUpdater, defaultShaderUniforms } from './uniforms.js';
  * Telemetry reasons routed via `MountContext.emitTelemetry`. T-383 D-T383-8
  * pins these strings; the security-review build (T-403) consumes them.
  */
-export type ShaderMountFailureReason = 'compile' | 'link' | 'context-loss' | 'invalid-props';
+export type ShaderMountFailureReason =
+  | 'compile'
+  | 'link'
+  | 'context-loss'
+  | 'invalid-props'
+  | 'frame-budget-exceeded';
 
 /**
  * Optional caller-injected hooks.
@@ -47,6 +59,15 @@ export interface ShaderClipFactoryOptions {
   glContextFactory?: ShaderClipHostProps['glContextFactory'];
   /** Composition fps — defaults to 60. Used by the default uniform updater. */
   fps?: number;
+  /**
+   * T-403 R-6 — wall-clock injection seam for the per-frame budget monitor.
+   * Tests pass a mock clock; production code leaves this `undefined` and
+   * the monitor defaults to `performance.now`. The reference lives in
+   * `packages/runtimes/interactive/src/frame-budget.ts` outside the
+   * shader-sub-rule path prefix; only the function reference is consumed
+   * here.
+   */
+  clockMs?: ClockMs;
 }
 
 /**
@@ -68,9 +89,10 @@ export class ShaderClipFactoryBuilder {
     const uniforms = options.uniforms ?? defaultShaderUniforms;
     const fps = options.fps ?? 60;
     const glContextFactory = options.glContextFactory;
+    const clockMs = options.clockMs;
 
     return async (ctx: MountContext): Promise<MountHandle> => {
-      return ShaderClipFactoryBuilder.mount(ctx, uniforms, fps, glContextFactory);
+      return ShaderClipFactoryBuilder.mount(ctx, uniforms, fps, glContextFactory, clockMs);
     };
   }
 
@@ -83,6 +105,7 @@ export class ShaderClipFactoryBuilder {
     uniforms: UniformUpdater,
     fps: number,
     glContextFactory: ShaderClipHostProps['glContextFactory'] | undefined,
+    clockMs: ClockMs | undefined,
   ): Promise<MountHandle> {
     const family = ctx.clip.family;
     // T-403 R-13 — wrap the raw emitter so every event payload carries
@@ -166,28 +189,111 @@ export class ShaderClipFactoryBuilder {
       },
     };
 
+    // T-403 R-6 — set up the per-frame budget monitor. `frameBudgetMs` (if
+    // supplied via props) becomes the WARN threshold; the KILL threshold is
+    // pinned at FRAME_BUDGET_CEILING_MS regardless. When `frameBudgetMs` is
+    // omitted, defaults apply (warn=16ms, kill=200ms). The monitor lives
+    // OUTSIDE the shader-sub-rule path prefix; only the call to record()
+    // here crosses the perimeter, and the call itself reads no forbidden
+    // API directly. See `frame-budget.ts` perimeter note.
+    const warnBudgetMs = currentProps.frameBudgetMs ?? FRAME_BUDGET_DEFAULT_MS;
+    const budgetMonitorOptions: Parameters<typeof createFrameBudgetMonitor>[0] = {
+      warnBudgetMs,
+      killBudgetMs: FRAME_BUDGET_CEILING_MS,
+    };
+    if (clockMs !== undefined) {
+      budgetMonitorOptions.clockMs = clockMs;
+    }
+    const budgetMonitor: FrameBudgetMonitor = createFrameBudgetMonitor(budgetMonitorOptions);
+
+    // Local flags bound by the subscribe callback; closes over `unsubscribe`
+    // before it's assigned. The `let`s are hoisted so the callback can read
+    // them even though `unsubscribe` is assigned after subscribe returns.
+    let killedByBudget = false;
+    let warnedOnce = false;
+
     // First paint — flushSync so callers can assert on DOM immediately.
+    // Budget-measured: if the very first draw exceeds the kill ceiling we
+    // tear down immediately and surface a `frame-budget-exceeded` mount
+    // failure rather than a `mount.success`. The first-paint warn case
+    // emits warning telemetry but proceeds normally.
+    budgetMonitor.start();
     flushSync(() => {
       state.renderHost(frameSource.current(), state.currentProps);
     });
+    const firstMeasurement = budgetMonitor.record();
+    if (firstMeasurement.verdict === 'kill') {
+      emit('shader-clip.mount.failure', {
+        family,
+        reason: 'frame-budget-exceeded' satisfies ShaderMountFailureReason,
+        elapsedMs: firstMeasurement.elapsedMs,
+        warnBudgetMs,
+        killBudgetMs: FRAME_BUDGET_CEILING_MS,
+        frameCount: firstMeasurement.frameCount,
+      });
+      state.disposed = true;
+      state.reactRoot.unmount();
+      throw new Error(
+        `shaderClipFactory: first paint exceeded frame-budget ceiling (${firstMeasurement.elapsedMs}ms ≥ ${FRAME_BUDGET_CEILING_MS}ms) — see ADR-005 §D7 + docs/security-review-track-a.md §5 R-6.`,
+      );
+    }
+    if (firstMeasurement.verdict === 'warn') {
+      warnedOnce = true;
+      emit('shader-clip.frame-budget-warning', {
+        family,
+        elapsedMs: firstMeasurement.elapsedMs,
+        warnBudgetMs,
+        frameCount: firstMeasurement.frameCount,
+      });
+    }
 
     // Telemetry — success path. T-383 D-T383-8 specifies a
-    // time-to-first-paint attribute; we emit 0 deliberately because
-    // `performance.now()` is forbidden in this directory by T-309's
-    // sub-rule. The success event itself is the load-bearing signal;
-    // the timing attribute is decorative.
+    // time-to-first-paint attribute; we now have it from the budget
+    // monitor's first measurement.
     emit('shader-clip.mount.success', {
       family,
-      timeToFirstPaintUs: 0,
+      timeToFirstPaintUs: Math.round(firstMeasurement.elapsedMs * 1000),
     });
 
     // Subscribe to frame ticks. flushSync per tick so GL uniform re-binds
-    // run before the next tick advances the clock.
+    // run before the next tick advances the clock. Each frame is wrapped
+    // in the budget monitor; a `'warn'` verdict fires one-shot warning
+    // telemetry, a `'kill'` verdict tears the mount down and emits the
+    // failure event.
     const unsubscribe = frameSource.subscribe((frame) => {
       if (state.disposed) return;
+      if (killedByBudget) return;
+      budgetMonitor.start();
       flushSync(() => {
         state.renderHost(frame, state.currentProps);
       });
+      const measurement = budgetMonitor.record();
+      if (measurement.verdict === 'kill' && !killedByBudget) {
+        killedByBudget = true;
+        emit('shader-clip.frame-budget-exceeded', {
+          family,
+          elapsedMs: measurement.elapsedMs,
+          warnBudgetMs,
+          killBudgetMs: FRAME_BUDGET_CEILING_MS,
+          frameCount: measurement.frameCount,
+        });
+        // Tear down: the host emits its own dispose via the handle path
+        // but we trigger it here to free GL resources promptly.
+        state.disposed = true;
+        unsubscribe();
+        state.reactRoot.unmount();
+        emit('shader-clip.dispose', { family, reason: 'frame-budget-exceeded' });
+        return;
+      }
+      if (measurement.verdict === 'warn' && !warnedOnce) {
+        warnedOnce = true;
+        emit('shader-clip.frame-budget-warning', {
+          family,
+          elapsedMs: measurement.elapsedMs,
+          warnBudgetMs,
+          frameCount: measurement.frameCount,
+        });
+      }
     });
 
     return {

@@ -43,6 +43,16 @@ export type UniformValue = z.infer<typeof uniformValueSchema>;
  * - `posterFrame` — frame at which `staticFallback` is sampled by
  *   cluster-author tooling. Default 0 keeps the schema usable without a
  *   poster-generation pipeline (T-383 out-of-scope).
+ * - `frameBudgetMs` — T-403 R-6 DoS protection. Per-frame soft-warn
+ *   threshold for the GPU draw call. Frames over this duration emit
+ *   one-shot warning telemetry; frames at/above the absolute ceiling
+ *   (200ms) trigger a kill + `staticFallback` route. Default `16`
+ *   (60fps headroom). Authors with legitimately heavy shaders (post-
+ *   processing, multi-pass) raise this; the absolute ceiling stays at
+ *   200ms so a runaway shader cannot stall the GPU watchdog. See
+ *   `packages/runtimes/interactive/src/frame-budget.ts` for the
+ *   monitor and `docs/security-review-track-a.md` §5 R-6 for the
+ *   threat model.
  */
 export const shaderClipPropsSchema = z
   .object({
@@ -51,6 +61,12 @@ export const shaderClipPropsSchema = z
     width: z.number().int().positive('width must be a positive integer'),
     height: z.number().int().positive('height must be a positive integer'),
     posterFrame: z.number().int().nonnegative().default(0),
+    frameBudgetMs: z
+      .number()
+      .int()
+      .min(4, 'frameBudgetMs must be at least 4 (≥240fps headroom)')
+      .max(200, 'frameBudgetMs must be at most 200 (DoS ceiling)')
+      .optional(),
   })
   .strict();
 

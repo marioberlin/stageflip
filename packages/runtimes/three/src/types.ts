@@ -24,10 +24,24 @@ export interface ThreeClipRenderArgs<P = unknown> {
  * Object returned by a clip's `setup`. The host calls `render` every frame
  * and `dispose` on unmount. Authors typically close over their scene /
  * camera / renderer / meshes inside these callbacks.
+ *
+ * `getMemoryEstimateMb` — T-403 R-7 opt-in DoS protection. Authors who
+ * want their clip to be protected against unbounded scene-graph growth
+ * return a function that estimates the current memory usage of their
+ * scene in megabytes (typically: sum of `BufferGeometry.attributes.*.array.byteLength`
+ * plus texture byte-lengths plus material/cached resources). When the
+ * factory-supplied `memoryBudgetMb` is exceeded by the returned estimate,
+ * the interactive-tier wrapper tears the mount down and routes to
+ * `staticFallback`. The estimate is opt-in by design: `@stageflip/runtimes-three`
+ * does NOT depend on `three` and cannot walk the author's scene; the
+ * author is the only party that can produce a reliable estimate. When
+ * the callback is absent, the budget is informational only and no kill
+ * fires. See `docs/security-review-track-a.md` §5 R-7.
  */
 export interface ThreeClipHandle<P = unknown> {
   render(args: ThreeClipRenderArgs<P>): void;
   dispose?(): void;
+  getMemoryEstimateMb?(): number;
 }
 
 /**

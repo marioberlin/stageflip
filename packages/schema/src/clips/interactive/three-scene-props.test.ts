@@ -159,4 +159,59 @@ describe('threeSceneClipPropsSchema (T-384 AC #1)', () => {
       }),
     ).toThrow();
   });
+
+  // T-403 R-7 — memoryBudgetMb DoS protection.
+  describe('memoryBudgetMb (T-403 R-7)', () => {
+    it('accepts a valid memoryBudgetMb', () => {
+      const parsed = threeSceneClipPropsSchema.parse({
+        setupRef: { module: VALID_REF },
+        width: 100,
+        height: 100,
+        memoryBudgetMb: 512,
+      });
+      expect(parsed.memoryBudgetMb).toBe(512);
+    });
+
+    it('omits memoryBudgetMb when not supplied (optional)', () => {
+      const parsed = threeSceneClipPropsSchema.parse({
+        setupRef: { module: VALID_REF },
+        width: 100,
+        height: 100,
+      });
+      expect(parsed.memoryBudgetMb).toBeUndefined();
+    });
+
+    it('rejects memoryBudgetMb > 2048 (DoS ceiling)', () => {
+      expect(() =>
+        threeSceneClipPropsSchema.parse({
+          setupRef: { module: VALID_REF },
+          width: 100,
+          height: 100,
+          memoryBudgetMb: 4096,
+        }),
+      ).toThrow(/at most 2048/);
+    });
+
+    it('rejects memoryBudgetMb < 16 (sane lower bound)', () => {
+      expect(() =>
+        threeSceneClipPropsSchema.parse({
+          setupRef: { module: VALID_REF },
+          width: 100,
+          height: 100,
+          memoryBudgetMb: 8,
+        }),
+      ).toThrow(/at least 16/);
+    });
+
+    it('rejects non-integer memoryBudgetMb', () => {
+      expect(() =>
+        threeSceneClipPropsSchema.parse({
+          setupRef: { module: VALID_REF },
+          width: 100,
+          height: 100,
+          memoryBudgetMb: 64.5,
+        }),
+      ).toThrow();
+    });
+  });
 });
