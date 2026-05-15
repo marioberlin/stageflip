@@ -23,7 +23,7 @@
     "@hyperframes/core": "workspace:^",
     "hono": "^4.6.0",
     "linkedom": "^0.18.12",
-    "puppeteer": "^24.0.0",
+    "puppeteer": "^25.0.2",
     "puppeteer-core": "^24.39.1"
   },
   "devDependencies": {
