@@ -182,10 +182,10 @@ importers:
         version: 19.2.3(@types/react@19.2.14)
       '@vitejs/plugin-react':
         specifier: 4.7.0
-        version: 4.7.0(vite@5.4.21(@types/node@25.6.0)(terser@5.46.2))
+        version: 4.7.0(vite@5.4.21(@types/node@25.7.0)(terser@5.46.2))
       vite:
         specifier: 5.4.21
-        version: 5.4.21(@types/node@25.6.0)(terser@5.46.2)
+        version: 5.4.21(@types/node@25.7.0)(terser@5.46.2)
 
   apps/docs:
     dependencies:
@@ -477,10 +477,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/3d-tripo:
     dependencies:
@@ -496,10 +496,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/adapter-regression:
     dependencies:
@@ -542,10 +542,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/adapter-sandbox:
     dependencies:
@@ -555,10 +555,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/adapters-core:
     dependencies:
@@ -568,10 +568,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/agent:
     dependencies:
@@ -608,19 +608,19 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/asset-cache:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/asset-gen-contract:
     dependencies:
@@ -633,10 +633,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/audience-contract:
     dependencies:
@@ -649,10 +649,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/audience-join-shared:
     dependencies:
@@ -780,7 +780,7 @@ importers:
         version: 19.2.14
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       happy-dom:
         specifier: 20.9.0
         version: 20.9.0
@@ -792,7 +792,7 @@ importers:
         version: 19.2.5(react@19.2.5)
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/auth-middleware:
     dependencies:
@@ -802,10 +802,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/auth-schema:
     dependencies:
@@ -815,10 +815,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/capability-router:
     dependencies:
@@ -828,10 +828,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/captions:
     dependencies:
@@ -844,10 +844,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/cdp-host-bundle:
     dependencies:
@@ -899,19 +899,19 @@ importers:
         version: 19.2.3(@types/react@19.2.14)
       '@vitejs/plugin-react':
         specifier: 4.7.0
-        version: 4.7.0(vite@5.4.21(@types/node@25.6.0)(terser@5.46.2))
+        version: 4.7.0(vite@5.4.21(@types/node@25.7.0)(terser@5.46.2))
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       happy-dom:
         specifier: 20.9.0
         version: 20.9.0
       vite:
         specifier: 5.4.21
-        version: 5.4.21(@types/node@25.6.0)(terser@5.46.2)
+        version: 5.4.21(@types/node@25.7.0)(terser@5.46.2)
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/collab:
     dependencies:
@@ -936,10 +936,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/determinism: {}
 
@@ -1049,13 +1049,13 @@ importers:
         version: 6.0.5
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       pngjs:
         specifier: 7.0.0
         version: 7.0.0
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/export-html5-zip:
     dependencies:
@@ -1080,10 +1080,10 @@ importers:
         version: 6.0.5
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/export-loss-flags: {}
 
@@ -1114,10 +1114,10 @@ importers:
         version: link:../import-pptx
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/export-router:
     dependencies:
@@ -1127,10 +1127,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/export-video:
     dependencies:
@@ -1140,10 +1140,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/fonts:
     dependencies:
@@ -1227,10 +1227,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/import-hyperframes-html:
     dependencies:
@@ -1246,10 +1246,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/import-pptx:
     dependencies:
@@ -1268,10 +1268,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/import-slidemotion-legacy:
     dependencies:
@@ -1298,10 +1298,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/marketplace-conversion:
     devDependencies:
@@ -1398,7 +1398,7 @@ importers:
     devDependencies:
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
       zod:
         specifier: 3.25.76
         version: 3.25.76
@@ -1417,10 +1417,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/music-yue:
     dependencies:
@@ -1436,10 +1436,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/observability:
     dependencies:
@@ -1473,10 +1473,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/on-device-player-ops:
     dependencies:
@@ -1775,10 +1775,10 @@ importers:
         version: 6.0.5
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/parity-cli:
     dependencies:
@@ -1806,13 +1806,13 @@ importers:
         version: 6.0.5
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       pngjs:
         specifier: 7.0.0
         version: 7.0.0
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/plugin:
     dependencies:
@@ -1822,7 +1822,7 @@ importers:
     devDependencies:
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/presence:
     dependencies:
@@ -1832,10 +1832,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/profiles/contract:
     dependencies:
@@ -1848,10 +1848,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/profiles/display:
     dependencies:
@@ -1870,10 +1870,10 @@ importers:
         version: link:../../rir
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/profiles/slide: {}
 
@@ -1894,10 +1894,10 @@ importers:
         version: link:../../rir
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/rasterize:
     dependencies:
@@ -1910,19 +1910,19 @@ importers:
         version: 6.0.5
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/rate-limit:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/render-farm:
     dependencies:
@@ -1967,8 +1967,8 @@ importers:
         specifier: workspace:*
         version: link:../runtimes/contract
       puppeteer-core:
-        specifier: 23.11.1
-        version: 23.11.1
+        specifier: 24.43.1
+        version: 24.43.1
     devDependencies:
       happy-dom:
         specifier: 20.9.0
@@ -2082,10 +2082,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/runtimes/contract:
     dependencies:
@@ -2222,7 +2222,7 @@ importers:
         version: 19.2.3(@types/react@19.2.14)
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       happy-dom:
         specifier: 20.9.0
         version: 20.9.0
@@ -2234,7 +2234,7 @@ importers:
         version: 19.2.5(react@19.2.5)
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/runtimes/lottie:
     dependencies:
@@ -2356,10 +2356,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/skills: {}
 
@@ -2416,10 +2416,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/storage-postgres:
     dependencies:
@@ -2435,13 +2435,13 @@ importers:
         version: 8.11.10
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       pg-mem:
         specifier: 3.0.5
         version: 3.0.5
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/testing:
     dependencies:
@@ -2454,10 +2454,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/tts-fish-speech:
     dependencies:
@@ -2473,10 +2473,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/tts-kokoro:
     dependencies:
@@ -2492,10 +2492,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/ui-kit: {}
 
@@ -2507,10 +2507,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/validation:
     dependencies:
@@ -2523,10 +2523,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/variant-gen:
     dependencies:
@@ -2539,10 +2539,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/video-runway:
     dependencies:
@@ -2558,10 +2558,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   packages/video-seedance:
     dependencies:
@@ -2577,10 +2577,10 @@ importers:
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 2.1.9
-        version: 2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))
+        version: 2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))
       vitest:
         specifier: 2.1.9
-        version: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+        version: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
 
   scripts:
     dependencies:
@@ -4057,8 +4057,8 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  '@puppeteer/browsers@2.6.1':
-    resolution: {integrity: sha512-aBSREisdsGH890S2rQqK82qmQYU3uFpSH8wcZWHgHzl3LfzsxAKbLNiAG9mO8v1Y0UICBeClICxPJvyr0rcuxg==}
+  '@puppeteer/browsers@2.13.2':
+    resolution: {integrity: sha512-5EUZSUIc37H6aIXyWO0Z4y8NlF8NnjgmqeQgOGiswAU7pY0HOo16ho4+alIWmSfdZnjqBRawMsP3I5YqLSn6kw==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -4473,8 +4473,8 @@ packages:
   '@types/node@24.12.2':
     resolution: {integrity: sha512-A1sre26ke7HDIuY/M23nd9gfB+nrmhtYyMINbjI1zHJxYteKR6qSMX56FsmjMcDb3SMcjJg5BiRRgOCC/yBD0g==}
 
-  '@types/node@25.6.0':
-    resolution: {integrity: sha512-+qIYRKdNYJwY3vRCZMdJbPLJAtGjQBudzZzdzwQYkEPQd+PJGixUL5QfvCLDaULoLv+RhT3LDkwEfKaAkgSmNQ==}
+  '@types/node@25.7.0':
+    resolution: {integrity: sha512-z+pdZyxE+RTQE9AcboAZCb4otwcrvgHD+GlBpPgn0emDVt0ohrTMhAwlr2Wd9nZ+nihhYFxO2pThz3C5qSu2Eg==}
 
   '@types/pg-pool@2.0.7':
     resolution: {integrity: sha512-U4CwmGVQcbEuqpyju8/ptOKg6gEC+Tqsvj2xS9o1g71bUh8twxnC6ZL5rZKCsGN0iyH0CwgUyc9VR5owNQF9Ng==}
@@ -4555,6 +4555,7 @@ packages:
 
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
+    deprecated: Potential CWE-502 - Update to 1.3.1 or higher
 
   '@vitejs/plugin-react@4.7.0':
     resolution: {integrity: sha512-gUu9hwfWvvEDBBmgtAowQCojwZmJ5mcLn3aufeCsitijs3+f2NsrPtlAWIR6OPiqljl96GVCUbLe0HyqIpVaoA==}
@@ -4864,8 +4865,8 @@ packages:
     resolution: {integrity: sha512-qIj0G9wZbMGNLjLmg1PT6v2mE9AH2zlnADJD/2tC6E00hgmhUOfEB6greHPAfLRSufHqROIUTkw6E+M3lH0PTQ==}
     engines: {node: '>= 0.4'}
 
-  b4a@1.8.0:
-    resolution: {integrity: sha512-qRuSmNSkGQaHwNbM7J78Wwy+ghLEYF1zNrSeMxj4Kgw6y33O3mXcQ6Ie9fRvfU/YnxWkOchPXbaLb73TkIsfdg==}
+  b4a@1.8.1:
+    resolution: {integrity: sha512-aiqre1Nr0B/6DgE2N5vwTc+2/oQZ4Wh1t4NznYY4E00y8LCt6NqdRv81so00oo27D8MVKTpUa/MwUUtBLXCoDw==}
     peerDependencies:
       react-native-b4a: '*'
     peerDependenciesMeta:
@@ -4899,15 +4900,15 @@ packages:
       bare-buffer:
         optional: true
 
-  bare-os@3.8.7:
-    resolution: {integrity: sha512-G4Gr1UsGeEy2qtDTZwL7JFLo2wapUarz7iTMcYcMFdS89AIQuBoyjgXZz0Utv7uHs3xA9LckhVbeBi8lEQrC+w==}
+  bare-os@3.9.1:
+    resolution: {integrity: sha512-6M5XjcnsygQNPMCMPXSK379xrJFiZ/AEMNBmFEmQW8d/789VQATvriyi5r0HYTL9TkQ26rn3kgdTG3aisbrXkQ==}
     engines: {bare: '>=1.14.0'}
 
   bare-path@3.0.0:
     resolution: {integrity: sha512-tyfW2cQcB5NN8Saijrhqn0Zh7AnFNsnczRcuWODH0eYAXBsJ5gVxAUuNr7tsHSC6IZ77cA0SitzT+s47kot8Mw==}
 
-  bare-stream@2.13.0:
-    resolution: {integrity: sha512-3zAJRZMDFGjdn+RVnNpF9kuELw+0Fl3lpndM4NcEOhb9zwtSo/deETfuIwMSE5BXanA0FrN1qVjffGwAg2Y7EA==}
+  bare-stream@2.13.1:
+    resolution: {integrity: sha512-Vp0cnjYyrEC4whYTymQ+YZi6pBpfiICZO3cfRG8sy67ZNWe951urv1x4eW1BKNngw3U+3fPYb5JQvHbCtxH7Ow==}
     peerDependencies:
       bare-abort-controller: '*'
       bare-buffer: '*'
@@ -4920,8 +4921,8 @@ packages:
       bare-events:
         optional: true
 
-  bare-url@2.4.1:
-    resolution: {integrity: sha512-fZapLWNB25gS+etK27NV9KgBNXgo2yeYHuj+OyPblQd6GYAE3JVy6aKxszMV5jhGGFwraXQKA5fldvf3lMyEqw==}
+  bare-url@2.4.3:
+    resolution: {integrity: sha512-Kccpc7ACfXaxfeInfqKcZtW4pT5YBn1mesc4sCsun6sRwtbJ4h+sNOaksUpYEJUKfN65YWC6Bw2OJEFiKxq8nQ==}
 
   base-64@1.0.0:
     resolution: {integrity: sha512-kwDPIFCGx0NZHog36dj+tHiwP4QMzsZ3AgMViUBKI0+V5n4U0ufTCUMhnQ04diaRI8EX/QcPfql7zlhZ7j4zgg==}
@@ -4934,8 +4935,8 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
 
-  basic-ftp@5.3.0:
-    resolution: {integrity: sha512-5K9eNNn7ywHPsYnFwjKgYH8Hf8B5emh7JKcPaVjjrMJFQQwGpwowEnZNEtHs7DfR7hCZsmaK3VA4HUK0YarT+w==}
+  basic-ftp@5.3.1:
+    resolution: {integrity: sha512-bopVNp6ugyA150DDuZfPFdt1KZ5a94ZDiwX4hMgZDzF+GttD80lEy8kj98kbyhLXnPvhtIo93mdnLIjpCAeeOw==}
     engines: {node: '>=10.0.0'}
 
   bcp-47-match@2.0.3:
@@ -4993,9 +4994,6 @@ packages:
 
   buffer-from@1.1.2:
     resolution: {integrity: sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ==}
-
-  buffer@5.7.1:
-    resolution: {integrity: sha512-EHcyIPBQ4BSGlvjB16k5KgAJ27CIsHY/2JBmCRReo48y9rQ3MaUzWX3KVlBa4U7MyX02HdVj0K7C3WaB3ju7FQ==}
 
   bullmq@5.21.2:
     resolution: {integrity: sha512-LPuNoGaDc5CON2X6h4cJ2iVfd+B+02xubFU+IB/fyJHd+/HqUZRqnlYryUCAuhVHBhUKtA6oyVdJxqSa62i+og==}
@@ -5087,8 +5085,8 @@ packages:
     resolution: {integrity: sha512-rNjApaLzuwaOTjCiT8lSDdGN1APCiqkChLMJxJPWLunPAt5fy8xgU9/jNOchV84wfIxrA0lRQB7oCT8jrn/wrQ==}
     engines: {node: '>=6.0'}
 
-  chromium-bidi@0.11.0:
-    resolution: {integrity: sha512-6CJWHkNRoyZyjV9Rwv2lYONZf1Xm0IuDyNq97nwSsxxP3wf5Bwy15K5rOvVKMtJ127jJBmxFUanSAOjgFRxgrA==}
+  chromium-bidi@14.0.0:
+    resolution: {integrity: sha512-9gYlLtS6tStdRWzrtXaTMnqcM4dudNegMXJxkR0I/CXObHalYeYcAMPrL19eroNZHtJ8DQmu1E+ZNOYu/IXMXw==}
     peerDependencies:
       devtools-protocol: '*'
 
@@ -5338,11 +5336,11 @@ packages:
   devlop@1.1.0:
     resolution: {integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==}
 
-  devtools-protocol@0.0.1367902:
-    resolution: {integrity: sha512-XxtPuC3PGakY6PD7dG66/o8KwJ/LkH2/EKe19Dcw58w53dv4/vSQEkn/SzuyhHE2q4zPgCkxQBxus3VV4ql+Pg==}
-
   devtools-protocol@0.0.1495869:
     resolution: {integrity: sha512-i+bkd9UYFis40RcnkW7XrOprCujXRAHg62IVh/Ah3G8MmNXpCGt1m0dTFhSdx/AVs8XEMbdOGRwdkR1Bcta8AA==}
+
+  devtools-protocol@0.0.1608973:
+    resolution: {integrity: sha512-Tpm17fxYzt+J7VrGdc1k8YdRqS3YV7se/M6KeemEqvUbq/n7At1rWVuXMxQgpWkdwSdIEKYbU//Bve+Shm4YNQ==}
 
   dezalgo@1.0.4:
     resolution: {integrity: sha512-rXSP0bf+5n0Qonsb+SVVfNfIsimO4HEtmnIpPHY8Q1UCzKlQrDMfdobr8nJOOsRgWCyMRqeSBQzmWUMq7zvVig==}
@@ -6021,9 +6019,6 @@ packages:
     resolution: {integrity: sha512-im9DjEDQ55s9fL4EYzOAv0yMqmMBSZp6G0VvFyTMPKWxiSBHUj9NW/qqLmXUwXrrM7AvqSlTCfvqRb0cM8yYqw==}
     engines: {node: '>=0.10.0'}
 
-  ieee754@1.2.1:
-    resolution: {integrity: sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA==}
-
   ignore@5.3.2:
     resolution: {integrity: sha512-hsBTNUqQTDwkWtcdYI2i06Y/nUBEsNEDJKjWdigLvegy8kDuJAS8uRlpkkcQpyEXL0Z/pjDy5HBmMjRCJ2gq+g==}
     engines: {node: '>= 4'}
@@ -6057,6 +6052,10 @@ packages:
 
   ip-address@10.1.0:
     resolution: {integrity: sha512-XXADHxXmvT9+CRxhXg56LJovE+bmWnEWB78LB83VZTprKTmaC5QfruXocxzTZ2Kl0DNwKuBdlIhjL8LeY8Sf8Q==}
+    engines: {node: '>= 12'}
+
+  ip-address@10.2.0:
+    resolution: {integrity: sha512-/+S6j4E9AHvW9SWMSEY9Xfy66O5PWvVEJ08O0y5JGyEKQpojb0K0GKpz/v5HJ/G0vi3D2sjGK78119oXZeE0qA==}
     engines: {node: '>= 12'}
 
   ipaddr.js@1.9.1:
@@ -7270,12 +7269,12 @@ packages:
   pump@3.0.4:
     resolution: {integrity: sha512-VS7sjc6KR7e1ukRFhQSY5LM2uBWAUPiOPa/A3mkKmiMwSmRFUITt0xuj+/lesgnCv+dPIEYlkzrcyXgquIHMcA==}
 
-  puppeteer-core@23.11.1:
-    resolution: {integrity: sha512-3HZ2/7hdDKZvZQ7dhhITOUg4/wOrDRjyK2ZBllRB0ZCOi9u0cwq1ACHDjBB+nX+7+kltHjQvBRdeY7+W0T+7Gg==}
-    engines: {node: '>=18'}
-
   puppeteer-core@24.22.0:
     resolution: {integrity: sha512-oUeWlIg0pMz8YM5pu0uqakM+cCyYyXkHBxx9di9OUELu9X9+AYrNGGRLK9tNME3WfN3JGGqQIH3b4/E9LGek/w==}
+    engines: {node: '>=18'}
+
+  puppeteer-core@24.43.1:
+    resolution: {integrity: sha512-T5ScUMAsmhdNbgDR41AGESYeS6V9MSgetkSnVhhW+gXvzC42VesKCn5ld87gAZDJ6vLHL9GkRvY9WtQWSnwFbw==}
     engines: {node: '>=18'}
 
   pure-rand@6.1.0:
@@ -7564,6 +7563,11 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  semver@7.8.0:
+    resolution: {integrity: sha512-AcM7dV/5ul4EekoQ29Agm5vri8JNqRyj39o0qpX6vDF2GZrtutZl5RwgD1XnZjiTAfncsJhMI48QQH3sN87YNA==}
+    engines: {node: '>=10'}
+    hasBin: true
+
   send@0.19.2:
     resolution: {integrity: sha512-VMbMxbDeehAxpOtWJXlcUS5E8iXh6QmN+BkRX1GARS3wRaXEEgzCcB10gTQazO42tpNIya8xIyNx8fll1OFPrg==}
     engines: {node: '>= 0.8.0'}
@@ -7659,8 +7663,8 @@ packages:
     resolution: {integrity: sha512-HehCEsotFqbPW9sJ8WVYB6UbmIMv7kUUORIF2Nncq4VQvBfNBLibW9YZR5dlYCSUhwcD628pRllm7n+E+YTzJw==}
     engines: {node: '>= 14'}
 
-  socks@2.8.7:
-    resolution: {integrity: sha512-HLpt+uLy/pxB+bum/9DzAgiKS8CX1EvbWxI4zlmgGCExImLdiad2iCwXT5Z4c9c3Eq8rP2318mPW2c+QbtjK8A==}
+  socks@2.8.9:
+    resolution: {integrity: sha512-LJhUYUvItdQ0LkJTmPeaEObWXAqFyfmP85x0tch/ez9cahmhlBBLbIqDFnvBnUJGagb0JbIQrkBs1wJ+yRYpEw==}
     engines: {node: '>= 10.0.0', npm: '>= 3.0.0'}
 
   sonic-boom@4.2.1:
@@ -7839,8 +7843,8 @@ packages:
   tar-fs@3.1.2:
     resolution: {integrity: sha512-QGxxTxxyleAdyM3kpFs14ymbYmNFrfY+pHj7Z8FgtbZ7w2//VAgLMac7sT6nRpIHjppXO2AwwEOg0bPFVRcmXw==}
 
-  tar-stream@3.1.8:
-    resolution: {integrity: sha512-U6QpVRyCGHva435KoNWy9PRoi2IFYCgtEhq9nmrPPpbRacPs9IH4aJ3gbrFC8dPcXvdSZ4XXfXT5Fshbp2MtlQ==}
+  tar-stream@3.2.0:
+    resolution: {integrity: sha512-ojzvCvVaNp6aOTFmG7jaRD0meowIAuPc3cMMhSgKiVWws1GyHbGd/xvnyuRKcKlMpt3qvxx6r0hreCNITP9hIg==}
 
   teeny-request@9.0.0:
     resolution: {integrity: sha512-resvxdc6Mgb7YEThw6G6bExlXKkv6+YbuzGg9xuXxSgxJF7Ozs+o8Y9+2R3sArdWdW8nOokoQb1yrpFB0pQK2g==}
@@ -7894,9 +7898,6 @@ packages:
 
   three@0.184.0:
     resolution: {integrity: sha512-wtTRjG92pM5eUg/KuUnHsqSAlPM296brTOcLgMRqEeylYTh/CdtvKUvCyyCQTzFuStieWxvZb8mVTMvdPyUpxg==}
-
-  through@2.3.8:
-    resolution: {integrity: sha512-w89qg7PI8wAdvX60bMDP+bFoD5Dvhm9oLheFp5O4a2QF0cSBGsBX4qZmadPMvVqlLJBBci+WqGGOAPvcDeNSVg==}
 
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
@@ -8008,8 +8009,8 @@ packages:
     resolution: {integrity: sha512-OZs6gsjF4vMp32qrCbiVSkrFmXtG/AZhY3t0iAMrMBiAZyV9oALtXO8hsrHbMXF9x6L3grlFuwW2oAz7cav+Gw==}
     engines: {node: '>= 0.6'}
 
-  typed-query-selector@2.12.1:
-    resolution: {integrity: sha512-uzR+FzI8qrUEIu96oaeBJmd9E7CFEiQ3goA5qCVgc4s5llSubcfGHq9yUstZx/k4s9dXHVKsE35YWoFyvEqEHA==}
+  typed-query-selector@2.12.2:
+    resolution: {integrity: sha512-EOPFbyIub4ngnEdqi2yOcNeDLaX/0jcE1JoAXQDDMIthap7FoN795lc/SHfIq2d416VufXpM8z/lD+WRm2gfOQ==}
 
   typesafe-path@0.2.2:
     resolution: {integrity: sha512-OJabfkAg1WLZSqJAJ0Z6Sdt3utnbzr/jh+NAHoyWHJe8CMSy79Gm085094M9nvTPy22KzTVn5Zq5mbapCI/hPA==}
@@ -8028,9 +8029,6 @@ packages:
   ultrahtml@1.6.0:
     resolution: {integrity: sha512-R9fBn90VTJrqqLDwyMph+HGne8eqY1iPfYhPzZrvKpIfwkWZbcYlfpsb8B9dTvBfpy1/hqAD7Wi8EKfP9e8zdw==}
 
-  unbzip2-stream@1.4.3:
-    resolution: {integrity: sha512-mlExGW4w71ebDJviH16lQLtZS32VKqsSfk80GCfUlwT/4/hNRFsoscrF/c++9xinkMzECL1uL9DDwXqFWkruPg==}
-
   uncrypto@0.1.3:
     resolution: {integrity: sha512-Ql87qFHB3s/De2ClA9e0gsnS6zXG27SkTiSJwjCc9MebbfapQfuPzumMIUMi38ezPZVNFcHI9sUIepeQfw8J8Q==}
 
@@ -8040,8 +8038,8 @@ packages:
   undici-types@7.16.0:
     resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
 
-  undici-types@7.19.2:
-    resolution: {integrity: sha512-qYVnV5OEm2AW8cJMCpdV20CDyaN3g0AjDlOGf1OW4iaDEx8MwdtChUp4zu4H0VP3nDRF/8RKWH+IPp9uW0YGZg==}
+  undici-types@7.21.0:
+    resolution: {integrity: sha512-w9IMgQrz4O0YN1LtB7K5P63vhlIOvC7opSmouCJ+ZywlPAlO9gIkJ+otk6LvGpAs2wg4econaCz3TvQ9xPoyuQ==}
 
   unified@11.0.5:
     resolution: {integrity: sha512-xKvGhPWw3k84Qjh8bI3ZeJjqnyadK+GEFtazSfZv/rKeTkTjOJho6mFqh2SM96iIcZokxiOpg78GazTSg8+KHA==}
@@ -8168,10 +8166,12 @@ packages:
 
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   uuid@9.0.1:
     resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   validate-npm-package-license@3.0.4:
@@ -8401,6 +8401,9 @@ packages:
   webdriver-bidi-protocol@0.2.11:
     resolution: {integrity: sha512-Y9E1/oi4XMxcR8AT0ZC4OvYntl34SPgwjmELH+owjBr0korAX4jKgZULBWILGCVGdVCQ0dodTToIETozhG8zvA==}
 
+  webdriver-bidi-protocol@0.4.1:
+    resolution: {integrity: sha512-ARrjNjtWRRs2w4Tk7nqrf2gBI0QXWuOmMCx2hU+1jUt6d00MjMxURrhxhGbrsoiZKJrhTSTzbIrc554iKI10qw==}
+
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
 
@@ -8584,9 +8587,6 @@ packages:
     peerDependencies:
       typescript: ^4.9.4 || ^5.0.2
       zod: ^3
-
-  zod@3.23.8:
-    resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
 
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
@@ -10073,7 +10073,7 @@ snapshots:
       extract-zip: 2.0.1
       progress: 2.0.3
       proxy-agent: 6.5.0
-      semver: 7.7.4
+      semver: 7.8.0
       tar-fs: 3.1.2
       yargs: 17.7.2
     transitivePeerDependencies:
@@ -10082,15 +10082,14 @@ snapshots:
       - react-native-b4a
       - supports-color
 
-  '@puppeteer/browsers@2.6.1':
+  '@puppeteer/browsers@2.13.2':
     dependencies:
       debug: 4.4.3
       extract-zip: 2.0.1
       progress: 2.0.3
       proxy-agent: 6.5.0
-      semver: 7.7.4
+      semver: 7.8.0
       tar-fs: 3.1.2
-      unbzip2-stream: 1.4.3
       yargs: 17.7.2
     transitivePeerDependencies:
       - bare-abort-controller
@@ -10535,9 +10534,9 @@ snapshots:
     dependencies:
       undici-types: 7.16.0
 
-  '@types/node@25.6.0':
+  '@types/node@25.7.0':
     dependencies:
-      undici-types: 7.19.2
+      undici-types: 7.21.0
     optional: true
 
   '@types/pg-pool@2.0.7':
@@ -10642,7 +10641,7 @@ snapshots:
 
   '@ungap/structured-clone@1.3.0': {}
 
-  '@vitejs/plugin-react@4.7.0(vite@5.4.21(@types/node@25.6.0)(terser@5.46.2))':
+  '@vitejs/plugin-react@4.7.0(vite@5.4.21(@types/node@25.7.0)(terser@5.46.2))':
     dependencies:
       '@babel/core': 7.29.0
       '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.29.0)
@@ -10650,7 +10649,7 @@ snapshots:
       '@rolldown/pluginutils': 1.0.0-beta.27
       '@types/babel__core': 7.20.5
       react-refresh: 0.17.0
-      vite: 5.4.21(@types/node@25.6.0)(terser@5.46.2)
+      vite: 5.4.21(@types/node@25.7.0)(terser@5.46.2)
     transitivePeerDependencies:
       - supports-color
 
@@ -10672,7 +10671,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vitest/coverage-v8@2.1.9(vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2))':
+  '@vitest/coverage-v8@2.1.9(vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2))':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 0.2.3
@@ -10686,7 +10685,7 @@ snapshots:
       std-env: 3.10.0
       test-exclude: 7.0.2
       tinyrainbow: 1.2.0
-      vitest: 2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2)
+      vitest: 2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2)
     transitivePeerDependencies:
       - supports-color
 
@@ -10705,13 +10704,13 @@ snapshots:
     optionalDependencies:
       vite: 5.4.21(@types/node@22.19.17)(terser@5.46.2)
 
-  '@vitest/mocker@2.1.9(vite@5.4.21(@types/node@25.6.0)(terser@5.46.2))':
+  '@vitest/mocker@2.1.9(vite@5.4.21(@types/node@25.7.0)(terser@5.46.2))':
     dependencies:
       '@vitest/spy': 2.1.9
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 5.4.21(@types/node@25.6.0)(terser@5.46.2)
+      vite: 5.4.21(@types/node@25.7.0)(terser@5.46.2)
 
   '@vitest/pretty-format@2.1.9':
     dependencies:
@@ -11104,7 +11103,7 @@ snapshots:
 
   axobject-query@4.1.0: {}
 
-  b4a@1.8.0: {}
+  b4a@1.8.1: {}
 
   bail@2.0.2: {}
 
@@ -11118,20 +11117,20 @@ snapshots:
     dependencies:
       bare-events: 2.8.2
       bare-path: 3.0.0
-      bare-stream: 2.13.0(bare-events@2.8.2)
-      bare-url: 2.4.1
+      bare-stream: 2.13.1(bare-events@2.8.2)
+      bare-url: 2.4.3
       fast-fifo: 1.3.2
     transitivePeerDependencies:
       - bare-abort-controller
       - react-native-b4a
 
-  bare-os@3.8.7: {}
+  bare-os@3.9.1: {}
 
   bare-path@3.0.0:
     dependencies:
-      bare-os: 3.8.7
+      bare-os: 3.9.1
 
-  bare-stream@2.13.0(bare-events@2.8.2):
+  bare-stream@2.13.1(bare-events@2.8.2):
     dependencies:
       streamx: 2.25.0
       teex: 1.0.1
@@ -11140,7 +11139,7 @@ snapshots:
     transitivePeerDependencies:
       - react-native-b4a
 
-  bare-url@2.4.1:
+  bare-url@2.4.3:
     dependencies:
       bare-path: 3.0.0
 
@@ -11150,7 +11149,7 @@ snapshots:
 
   baseline-browser-mapping@2.10.20: {}
 
-  basic-ftp@5.3.0: {}
+  basic-ftp@5.3.1: {}
 
   bcp-47-match@2.0.3: {}
 
@@ -11241,11 +11240,6 @@ snapshots:
 
   buffer-from@1.1.2: {}
 
-  buffer@5.7.1:
-    dependencies:
-      base64-js: 1.5.1
-      ieee754: 1.2.1
-
   bullmq@5.21.2:
     dependencies:
       cron-parser: 4.9.0
@@ -11332,11 +11326,11 @@ snapshots:
 
   chrome-trace-event@1.0.4: {}
 
-  chromium-bidi@0.11.0(devtools-protocol@0.0.1367902):
+  chromium-bidi@14.0.0(devtools-protocol@0.0.1608973):
     dependencies:
-      devtools-protocol: 0.0.1367902
+      devtools-protocol: 0.0.1608973
       mitt: 3.0.1
-      zod: 3.23.8
+      zod: 3.25.76
 
   chromium-bidi@8.0.0(devtools-protocol@0.0.1495869):
     dependencies:
@@ -11518,9 +11512,9 @@ snapshots:
     dependencies:
       dequal: 2.0.3
 
-  devtools-protocol@0.0.1367902: {}
-
   devtools-protocol@0.0.1495869: {}
+
+  devtools-protocol@0.0.1608973: {}
 
   dezalgo@1.0.4:
     dependencies:
@@ -12174,7 +12168,7 @@ snapshots:
 
   get-uri@6.0.5:
     dependencies:
-      basic-ftp: 5.3.0
+      basic-ftp: 5.3.1
       data-uri-to-buffer: 6.0.2
       debug: 4.4.3
     transitivePeerDependencies:
@@ -12573,8 +12567,6 @@ snapshots:
     dependencies:
       safer-buffer: 2.1.2
 
-  ieee754@1.2.1: {}
-
   ignore@5.3.2: {}
 
   immutable@4.3.8: {}
@@ -12619,6 +12611,8 @@ snapshots:
       - supports-color
 
   ip-address@10.1.0: {}
+
+  ip-address@10.2.0: {}
 
   ipaddr.js@1.9.1: {}
 
@@ -14026,14 +14020,15 @@ snapshots:
       end-of-stream: 1.4.5
       once: 1.4.0
 
-  puppeteer-core@23.11.1:
+  puppeteer-core@24.22.0:
     dependencies:
-      '@puppeteer/browsers': 2.6.1
-      chromium-bidi: 0.11.0(devtools-protocol@0.0.1367902)
+      '@puppeteer/browsers': 2.10.10
+      chromium-bidi: 8.0.0(devtools-protocol@0.0.1495869)
       debug: 4.4.3
-      devtools-protocol: 0.0.1367902
-      typed-query-selector: 2.12.1
-      ws: 8.18.0
+      devtools-protocol: 0.0.1495869
+      typed-query-selector: 2.12.2
+      webdriver-bidi-protocol: 0.2.11
+      ws: 8.20.0
     transitivePeerDependencies:
       - bare-abort-controller
       - bare-buffer
@@ -14042,14 +14037,14 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  puppeteer-core@24.22.0:
+  puppeteer-core@24.43.1:
     dependencies:
-      '@puppeteer/browsers': 2.10.10
-      chromium-bidi: 8.0.0(devtools-protocol@0.0.1495869)
+      '@puppeteer/browsers': 2.13.2
+      chromium-bidi: 14.0.0(devtools-protocol@0.0.1608973)
       debug: 4.4.3
-      devtools-protocol: 0.0.1495869
-      typed-query-selector: 2.12.1
-      webdriver-bidi-protocol: 0.2.11
+      devtools-protocol: 0.0.1608973
+      typed-query-selector: 2.12.2
+      webdriver-bidi-protocol: 0.4.1
       ws: 8.20.0
     transitivePeerDependencies:
       - bare-abort-controller
@@ -14455,6 +14450,8 @@ snapshots:
 
   semver@7.7.4: {}
 
+  semver@7.8.0: {}
+
   send@0.19.2:
     dependencies:
       debug: 2.6.9
@@ -14611,13 +14608,13 @@ snapshots:
     dependencies:
       agent-base: 7.1.4
       debug: 4.4.3
-      socks: 2.8.7
+      socks: 2.8.9
     transitivePeerDependencies:
       - supports-color
 
-  socks@2.8.7:
+  socks@2.8.9:
     dependencies:
-      ip-address: 10.1.0
+      ip-address: 10.2.0
       smart-buffer: 4.2.0
 
   sonic-boom@4.2.1:
@@ -14792,7 +14789,7 @@ snapshots:
   tar-fs@3.1.2:
     dependencies:
       pump: 3.0.4
-      tar-stream: 3.1.8
+      tar-stream: 3.2.0
     optionalDependencies:
       bare-fs: 4.7.1
       bare-path: 3.0.0
@@ -14801,9 +14798,9 @@ snapshots:
       - bare-buffer
       - react-native-b4a
 
-  tar-stream@3.1.8:
+  tar-stream@3.2.0:
     dependencies:
-      b4a: 1.8.0
+      b4a: 1.8.1
       bare-fs: 4.7.1
       fast-fifo: 1.3.2
       streamx: 2.25.0
@@ -14855,7 +14852,7 @@ snapshots:
 
   text-decoder@1.2.7:
     dependencies:
-      b4a: 1.8.0
+      b4a: 1.8.1
     transitivePeerDependencies:
       - react-native-b4a
 
@@ -14872,8 +14869,6 @@ snapshots:
       real-require: 0.2.0
 
   three@0.184.0: {}
-
-  through@2.3.8: {}
 
   tinybench@2.9.0: {}
 
@@ -14977,13 +14972,13 @@ snapshots:
       media-typer: 1.1.0
       mime-types: 3.0.2
 
-  typed-query-selector@2.12.1: {}
+  typed-query-selector@2.12.2: {}
 
   typesafe-path@0.2.2: {}
 
   typescript-auto-import-cache@0.3.6:
     dependencies:
-      semver: 7.7.4
+      semver: 7.8.0
 
   typescript@5.6.3: {}
 
@@ -14991,18 +14986,13 @@ snapshots:
 
   ultrahtml@1.6.0: {}
 
-  unbzip2-stream@1.4.3:
-    dependencies:
-      buffer: 5.7.1
-      through: 2.3.8
-
   uncrypto@0.1.3: {}
 
   undici-types@6.21.0: {}
 
   undici-types@7.16.0: {}
 
-  undici-types@7.19.2:
+  undici-types@7.21.0:
     optional: true
 
   unified@11.0.5:
@@ -15134,13 +15124,13 @@ snapshots:
       - supports-color
       - terser
 
-  vite-node@2.1.9(@types/node@25.6.0)(terser@5.46.2):
+  vite-node@2.1.9(@types/node@25.7.0)(terser@5.46.2):
     dependencies:
       cac: 6.7.14
       debug: 4.4.3
       es-module-lexer: 1.7.0
       pathe: 1.1.2
-      vite: 5.4.21(@types/node@25.6.0)(terser@5.46.2)
+      vite: 5.4.21(@types/node@25.7.0)(terser@5.46.2)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -15162,13 +15152,13 @@ snapshots:
       fsevents: 2.3.3
       terser: 5.46.2
 
-  vite@5.4.21(@types/node@25.6.0)(terser@5.46.2):
+  vite@5.4.21(@types/node@25.7.0)(terser@5.46.2):
     dependencies:
       esbuild: 0.21.5
       postcss: 8.5.10
       rollup: 4.60.2
     optionalDependencies:
-      '@types/node': 25.6.0
+      '@types/node': 25.7.0
       fsevents: 2.3.3
       terser: 5.46.2
 
@@ -15228,10 +15218,10 @@ snapshots:
       - supports-color
       - terser
 
-  vitest@2.1.9(@types/node@25.6.0)(happy-dom@20.9.0)(terser@5.46.2):
+  vitest@2.1.9(@types/node@25.7.0)(happy-dom@20.9.0)(terser@5.46.2):
     dependencies:
       '@vitest/expect': 2.1.9
-      '@vitest/mocker': 2.1.9(vite@5.4.21(@types/node@25.6.0)(terser@5.46.2))
+      '@vitest/mocker': 2.1.9(vite@5.4.21(@types/node@25.7.0)(terser@5.46.2))
       '@vitest/pretty-format': 2.1.9
       '@vitest/runner': 2.1.9
       '@vitest/snapshot': 2.1.9
@@ -15247,11 +15237,11 @@ snapshots:
       tinyexec: 0.3.2
       tinypool: 1.1.1
       tinyrainbow: 1.2.0
-      vite: 5.4.21(@types/node@25.6.0)(terser@5.46.2)
-      vite-node: 2.1.9(@types/node@25.6.0)(terser@5.46.2)
+      vite: 5.4.21(@types/node@25.7.0)(terser@5.46.2)
+      vite-node: 2.1.9(@types/node@25.7.0)(terser@5.46.2)
       why-is-node-running: 2.3.0
     optionalDependencies:
-      '@types/node': 25.6.0
+      '@types/node': 25.7.0
       happy-dom: 20.9.0
     transitivePeerDependencies:
       - less
@@ -15369,6 +15359,8 @@ snapshots:
   web-namespaces@2.0.1: {}
 
   webdriver-bidi-protocol@0.2.11: {}
+
+  webdriver-bidi-protocol@0.4.1: {}
 
   webidl-conversions@3.0.1: {}
 
@@ -15559,8 +15551,6 @@ snapshots:
     dependencies:
       typescript: 5.6.3
       zod: 3.25.76
-
-  zod@3.23.8: {}
 
   zod@3.25.76: {}
 
